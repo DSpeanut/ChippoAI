@@ -34,6 +34,14 @@
     {
       "heading": "End-to-End Evaluation and LLM-as-Judge",
       "body": "End-to-end evaluation: given (query, answer, ground_truth_answer), judge correctness. Three approaches: (1) Exact match — answer exactly equals ground truth (only works for factual, short answers: dates, numbers); (2) Semantic similarity — embed answer and ground truth, compute cosine similarity (captures paraphrases but not factual correctness); (3) LLM-as-judge — prompt an LLM to judge whether the answer is correct, faithful, and helpful given the question and context. LLM-as-judge (Zheng et al. 2023) correlates well with human judgment (0.8+ Pearson correlation on MT-Bench) but introduces evaluator bias. Best practice: use a different LLM as the judge than the one generating answers; use structured evaluation rubrics; validate judge agreement with human annotators on a sample. [1]"
+    },
+    {
+      "heading": "LLM-as-Judge Calibration and Bias",
+      "body": "LLM judges carry systematic biases: (1) Verbosity bias — longer answers score higher regardless of quality; counter: normalise length or instruct the judge to ignore it; (2) Position bias — when shown two answers, judges prefer the first; counter: run twice with answers swapped and average; (3) Self-enhancement bias — GPT-4 judges may favour GPT-4 outputs; counter: use a different model family as judge; (4) Sycophancy — judges agree with the question's implied premise even if the answer is wrong. Calibration: run the LLM judge on 200 human-labelled examples, compute Spearman correlation with human scores. Target rho > 0.7 for the judge to be production-reliable. [2]"
+    },
+    {
+      "heading": "Building and Maintaining a Regression Dataset",
+      "body": "A golden evaluation dataset is your most valuable evaluation asset. Construction: (1) Sample 100-200 queries from production logs spanning all major query types; (2) Generate reference answers with GPT-4o; (3) Domain expert review and correction; (4) Version the dataset alongside code (Git LFS or DVC). Freshness: sample 20 fresh production queries monthly, add to dataset, update baseline scores. Re-baselining: when > 20% of examples are new, re-run all metrics to establish a new baseline — commit baselines.json with model version and dataset hash so any engineer can reproduce it. [1]"
     }
   ],
   "takeaways": [
@@ -54,7 +62,18 @@
     }
   ],
   "sources": [
-    { "label": "Es et al. (2023) — RAGAS: Automated Evaluation of Retrieval Augmented Generation", "url": "https://arxiv.org/abs/2309.15217" },
-    { "label": "Zheng et al. (2023) — Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena", "url": "https://arxiv.org/abs/2306.05685" }
-  ]
+    {
+      "label": "Es et al. (2023) — RAGAS: Automated Evaluation of Retrieval Augmented Generation",
+      "url": "https://arxiv.org/abs/2309.15217"
+    },
+    {
+      "label": "Zheng et al. (2023) — Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena",
+      "url": "https://arxiv.org/abs/2306.05685"
+    }
+  ],
+  "visualizationType": "rag-eval-viz",
+  "codeSnapshot": {
+    "label": "rag_evaluation.py",
+    "code": "from ragas import evaluate\nfrom ragas.metrics import faithfulness, answer_relevancy, context_precision, context_recall\nfrom datasets import Dataset\nfrom langchain_openai import ChatOpenAI, OpenAIEmbeddings\n\n# Build eval dataset — replace with your actual RAG pipeline output\nquestions = [\"What is RAG?\", \"How does chunking affect retrieval?\"]\nanswers   = [\"RAG combines retrieval with LLM generation.\", \"Chunk size trades precision vs context.\"]\ncontexts  = [[\"RAG = Retrieval-Augmented Generation\", \"RAG retrieves context before generating.\"],\n             [\"Chunking splits docs before embedding\", \"Smaller chunks = higher precision\"]]\nground_truths = [[\"RAG augments LLMs with retrieved docs.\"], [\"Smaller chunks improve retrieval precision.\"]]\n\ndataset = Dataset.from_dict({\n    \"question\": questions,\n    \"answer\": answers,\n    \"contexts\": contexts,\n    \"ground_truth\": ground_truths,\n})\n\n# faithfulness     — every claim in answer supported by retrieved context?\n# answer_relevancy — does the answer actually address the question?\n# context_precision  — are useful chunks ranked above useless ones?\n# context_recall   — does retrieved context cover the ground truth?\nresults = evaluate(\n    dataset=dataset,\n    metrics=[faithfulness, answer_relevancy, context_precision, context_recall],\n    llm=ChatOpenAI(model=\"gpt-4o\", temperature=0),\n    embeddings=OpenAIEmbeddings(model=\"text-embedding-3-small\"),\n)\nprint(results.to_pandas()[[\"question\",\"faithfulness\",\"answer_relevancy\",\"context_precision\",\"context_recall\"]])"
+  }
 }

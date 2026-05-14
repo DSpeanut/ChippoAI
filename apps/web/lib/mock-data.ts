@@ -61,7 +61,7 @@ export const categories = [
     slug: "deep-learning",
     subcategories: [
       { id: "5-1", name: "Fundamentals", slug: "dl-fundamentals", entryCount: 4 },
-      { id: "5-2", name: "CNNs", slug: "cnns", entryCount: 6 },
+      { id: "5-2", name: "CNNs", slug: "cnns", entryCount: 7 },
       { id: "5-3", name: "RNNs & Sequence Models", slug: "rnns-sequence-models", entryCount: 5 },
       { id: "5-4", name: "Transformers", slug: "transformers", entryCount: 5 },
       { id: "5-5", name: "Generative Models", slug: "generative-models", entryCount: 4 },
@@ -546,6 +546,45 @@ export const mockEntries: WikiEntry[] = [
   { id: "e274", title: "Fraud Detection", slug: "fraud-detection", difficulty: "advanced" as const, status: "published" as const, subcategoryId: "9-7", tags: ["fraud-detection", "class-imbalance", "real-time", "adversarial"] },
   { id: "e275", title: "Ad Click Prediction", slug: "ad-click-prediction", difficulty: "advanced" as const, status: "published" as const, subcategoryId: "9-7", tags: ["ctr-prediction", "online-learning", "ftrl", "auction"] },
   { id: "e276", title: "LLM Serving at Scale", slug: "llm-serving-at-scale", difficulty: "advanced" as const, status: "published" as const, subcategoryId: "9-7", tags: ["llm", "kv-cache", "continuous-batching", "speculative-decoding"] },
+  // Deep Learning — 5-1 Fundamentals (e277–e280)
+  { id: "e277", title: "Perceptron", slug: "perceptron", difficulty: "beginner" as const, status: "published" as const, subcategoryId: "5-1", tags: ["deep-learning", "fundamentals", "neural-networks", "linear-classifier"] },
+  { id: "e278", title: "Activation Functions", slug: "activation-functions", difficulty: "beginner" as const, status: "published" as const, subcategoryId: "5-1", tags: ["deep-learning", "fundamentals", "relu", "gelu", "vanishing-gradient"] },
+  { id: "e279", title: "Neural Network Architecture", slug: "neural-network-architecture", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "5-1", tags: ["deep-learning", "fundamentals", "mlp", "backpropagation", "weight-initialization"] },
+  { id: "e280", title: "Universal Approximation Theorem", slug: "universal-approximation-theorem", difficulty: "advanced" as const, status: "published" as const, subcategoryId: "5-1", tags: ["deep-learning", "fundamentals", "theory", "expressiveness"] },
+  // Deep Learning — 5-2 CNNs (e281–e287)
+  { id: "e281", title: "Convolution Operation", slug: "convolution-operation", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "5-2", tags: ["cnn", "convolution", "feature-maps", "parameter-sharing"] },
+  { id: "e282", title: "Pooling", slug: "pooling", difficulty: "beginner" as const, status: "published" as const, subcategoryId: "5-2", tags: ["cnn", "max-pooling", "average-pooling", "translation-invariance"] },
+  { id: "e283", title: "Stride and Padding", slug: "stride-padding", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "5-2", tags: ["cnn", "stride", "padding", "dilated-convolution", "transposed-convolution"] },
+  { id: "e284", title: "ResNet", slug: "resnet", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "5-2", tags: ["cnn", "residual-connections", "skip-connections", "deep-networks"] },
+  { id: "e285", title: "VGG", slug: "vgg", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "5-2", tags: ["cnn", "vgg16", "vgg19", "architecture", "style-transfer"] },
+  { id: "e286", title: "EfficientNet", slug: "efficientnet", difficulty: "advanced" as const, status: "published" as const, subcategoryId: "5-2", tags: ["cnn", "compound-scaling", "mbconv", "squeeze-excitation", "neural-architecture-search"] },
+  { id: "e287", title: "Transfer Learning", slug: "transfer-learning", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "5-2", tags: ["transfer-learning", "fine-tuning", "feature-extraction", "catastrophic-forgetting"] },
+  // Deep Learning — 5-3 RNNs & Sequence Models (e288–e292)
+  { id: "e288", title: "RNN", slug: "rnn", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "5-3", tags: ["rnn", "sequence-models", "bptt", "vanishing-gradient"] },
+  { id: "e289", title: "LSTM", slug: "lstm", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "5-3", tags: ["lstm", "sequence-models", "gates", "cell-state", "long-term-dependencies"] },
+  { id: "e290", title: "GRU", slug: "gru", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "5-3", tags: ["gru", "sequence-models", "gates", "update-gate", "reset-gate"] },
+  { id: "e291", title: "Seq2Seq", slug: "seq2seq", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "5-3", tags: ["seq2seq", "encoder-decoder", "machine-translation", "teacher-forcing"] },
+  { id: "e292", title: "Attention Mechanism", slug: "attention-mechanism", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "5-3", tags: ["attention", "bahdanau", "luong", "sequence-models", "alignment"] },
+  // Deep Learning — 5-4 Transformers (e293–e296)
+  { id: "e293", title: "Multi-Head Attention", slug: "multi-head-attention", difficulty: "advanced" as const, status: "published" as const, subcategoryId: "5-4", tags: ["transformers", "attention", "multi-head", "query-key-value", "flash-attention"] },
+  { id: "e294", title: "Positional Encoding", slug: "positional-encoding", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "5-4", tags: ["transformers", "positional-encoding", "rope", "alibi", "sinusoidal"] },
+  { id: "e295", title: "Encoder-Decoder Transformer", slug: "encoder-decoder-transformer", difficulty: "advanced" as const, status: "published" as const, subcategoryId: "5-4", tags: ["transformers", "encoder", "decoder", "cross-attention", "seq2seq"] },
+  { id: "e296", title: "Vision Transformer (ViT)", slug: "vit", difficulty: "advanced" as const, status: "published" as const, subcategoryId: "5-4", tags: ["transformers", "vit", "patch-embedding", "image-classification", "self-supervised"] },
+  // Deep Learning — 5-5 Generative Models (e297–e300)
+  { id: "e297", title: "GANs", slug: "gans", difficulty: "advanced" as const, status: "published" as const, subcategoryId: "5-5", tags: ["gans", "generative", "discriminator", "generator", "wgan", "mode-collapse"] },
+  { id: "e298", title: "VAEs", slug: "vaes", difficulty: "advanced" as const, status: "published" as const, subcategoryId: "5-5", tags: ["vae", "generative", "elbo", "reparameterization", "latent-space"] },
+  { id: "e299", title: "Diffusion Models", slug: "diffusion-models", difficulty: "advanced" as const, status: "published" as const, subcategoryId: "5-5", tags: ["diffusion", "ddpm", "ddim", "score-matching", "stable-diffusion"] },
+  { id: "e300", title: "Normalizing Flows", slug: "normalizing-flows", difficulty: "advanced" as const, status: "published" as const, subcategoryId: "5-5", tags: ["normalizing-flows", "realnvp", "maf", "iaf", "change-of-variables"] },
+  // Deep Learning — 5-6 Graph Neural Networks (e301–e304)
+  { id: "e301", title: "GCN", slug: "gcn", difficulty: "advanced" as const, status: "published" as const, subcategoryId: "5-6", tags: ["gnn", "gcn", "graph-convolution", "message-passing", "node-classification"] },
+  { id: "e302", title: "GAT", slug: "gat", difficulty: "advanced" as const, status: "published" as const, subcategoryId: "5-6", tags: ["gnn", "gat", "attention", "graph-attention", "gatv2"] },
+  { id: "e303", title: "GraphSAGE", slug: "graphsage", difficulty: "advanced" as const, status: "published" as const, subcategoryId: "5-6", tags: ["gnn", "graphsage", "inductive", "neighbourhood-sampling", "pinsage"] },
+  { id: "e304", title: "Message Passing Neural Networks", slug: "message-passing", difficulty: "advanced" as const, status: "published" as const, subcategoryId: "5-6", tags: ["gnn", "mpnn", "message-passing", "aggregation", "gin"] },
+  // Deep Learning — 5-7 Reinforcement Learning Deep (e305–e308)
+  { id: "e305", title: "DQN", slug: "dqn", difficulty: "advanced" as const, status: "published" as const, subcategoryId: "5-7", tags: ["deep-rl", "dqn", "q-learning", "replay-buffer", "target-network"] },
+  { id: "e306", title: "PPO", slug: "ppo", difficulty: "advanced" as const, status: "published" as const, subcategoryId: "5-7", tags: ["deep-rl", "ppo", "policy-gradient", "clipped-objective", "rlhf"] },
+  { id: "e307", title: "DDPG", slug: "ddpg", difficulty: "advanced" as const, status: "published" as const, subcategoryId: "5-7", tags: ["deep-rl", "ddpg", "actor-critic", "deterministic-policy", "continuous-control"] },
+  { id: "e308", title: "A3C", slug: "a3c", difficulty: "advanced" as const, status: "published" as const, subcategoryId: "5-7", tags: ["deep-rl", "a3c", "a2c", "async", "advantage", "parallel-workers"] },
 ]
 
 export const difficultyColors = {

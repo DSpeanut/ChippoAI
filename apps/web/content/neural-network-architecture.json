@@ -1,0 +1,75 @@
+{
+  "visualizationType": "neural-network-architecture-viz",
+  "codeSnapshot": {
+    "label": "mlp.py",
+    "code": "import torch\nimport torch.nn as nn\nimport torch.optim as optim\n\n# --- 2-layer MLP in PyTorch ---\nclass MLP(nn.Module):\n    def __init__(self, in_features: int, hidden: int, out_features: int):\n        super().__init__()\n        self.net = nn.Sequential(\n            nn.Linear(in_features, hidden),   # W1 (hidden x in), b1 (hidden)\n            nn.ReLU(),\n            nn.Linear(hidden, out_features),  # W2 (out x hidden), b2 (out)\n        )\n\n    def forward(self, x: torch.Tensor) -> torch.Tensor:\n        return self.net(x)  # forward pass\n\n# --- instantiate and inspect ---\nmodel = MLP(in_features=784, hidden=256, out_features=10)\nprint(model)\n\n# parameter counts\ntotal = sum(p.numel() for p in model.parameters())\nprint(f\"Total parameters: {total:,}\")\n# W1: 784*256=200704, b1: 256, W2: 256*10=2560, b2: 10  => 203,530\n\n# --- forward pass on random data (batch_size=32) ---\nx = torch.randn(32, 784)\nlogits = model(x)\nprint(f\"Output shape: {logits.shape}\")  # [32, 10]\n\n# --- training step ---\noptimizer = optim.Adam(model.parameters(), lr=1e-3)\nloss_fn   = nn.CrossEntropyLoss()\ny = torch.randint(0, 10, (32,))\n\noptimizer.zero_grad()\nloss = loss_fn(logits, y)\nloss.backward()    # compute gradients via backprop\noptimizer.step()   # update weights\nprint(f\"Loss: {loss.item():.4f}\")"
+  },
+  "eli3": [
+    "A neural network is layers of simple calculators (neurons) stacked in sequence. Each neuron takes numbers from the previous layer, multiplies each by a learned weight, adds them up with a bias, passes the result through an activation function, and sends the output to the next layer.",
+    "The network has three kinds of layers: the input layer (just receives the raw data), hidden layers (where the actual learning happens), and an output layer (gives the final prediction). The more hidden layers you add, the 'deeper' the network — that's where the term 'deep learning' comes from.",
+    "Training adjusts all the weights automatically using backpropagation: the network makes a prediction, checks how wrong it is (the loss), then works backwards through the layers computing how much each weight contributed to the error, and nudges each weight a small amount in the right direction."
+  ],
+  "whenWhy": [
+    {
+      "title": "Tabular data classification and regression",
+      "body": "Fully connected (dense) MLPs are the workhorse for tabular data where inputs are fixed-length feature vectors. A 2–4 hidden layer MLP often matches or beats gradient boosting on tabular tasks when data is sufficiently large (>100k rows). The matrix multiply + activation structure is highly optimised on modern hardware (BLAS, cuBLAS), making inference fast. Key design decisions: hidden layer width (128–2048 neurons), depth (2–5 layers), activation (ReLU/GELU), and regularisation (dropout, weight decay)."
+    },
+    {
+      "title": "Foundation for all deep architectures",
+      "body": "CNNs, RNNs, and Transformers all use fully connected layers as their final classification head and in intermediate components (e.g., the FFN sublayer in Transformers is a 2-layer MLP applied pointwise). Understanding the MLP — forward pass, loss computation, backpropagation, gradient descent — is required before studying any specialised architecture. Every advanced architecture extends MLP principles rather than replacing them."
+    },
+    {
+      "title": "Expressiveness via depth and width",
+      "body": "The Universal Approximation Theorem guarantees that a single hidden layer MLP can approximate any continuous function given sufficient width, but this can require exponentially many neurons. Depth provides exponential expressiveness gains: a function requiring O(2^n) neurons in a 1-hidden-layer network may require only O(n) neurons with L layers (depth separation results). In practice, deeper networks generalise better and train more efficiently on structured data, motivating the shift from wide-and-shallow to deep-and-narrow architectures."
+    }
+  ],
+  "deepDiveIntro": [
+    "A feedforward neural network (also called a multi-layer perceptron, MLP) is a function f: ℝᵈ → ℝᵏ composed of L layers. Each layer l computes h^(l) = f_l(W^(l)h^(l-1) + b^(l)) where W^(l) ∈ ℝ^{d_l × d_{l-1}} is the weight matrix, b^(l) ∈ ℝ^{d_l} is the bias vector, and f_l is an element-wise activation function. The final layer typically uses a task-specific output activation (softmax for classification, linear for regression). Training minimises a loss L(ŷ, y) using gradient descent; gradients ∂L/∂W^(l) are computed via backpropagation — the recursive application of the chain rule from the output layer back to the input. [1]",
+    "The representational capacity of an MLP is controlled by three factors: width (number of neurons per layer), depth (number of layers), and the choice of activation. Width controls the number of linear regions per layer; depth allows composing features hierarchically. Empirically, modern architectures favour depth over width: ResNet-50 has 50 layers with modest width, not 2 layers with enormous width. The choice of width and depth is often made via neural architecture search or heuristic rules of thumb (halve/double width at each layer, use skip connections for depths > 10). [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Forward Pass: Matrix Algebra",
+      "body": "For a batch of inputs X ∈ ℝ^{N×d_0}, the forward pass through layer l is: Z^(l) = H^(l-1)W^(l)ᵀ + b^(l) (broadcasting b over the batch), H^(l) = f_l(Z^(l)). The pre-activation Z^(l) is a linear transformation; H^(l) is the post-activation. The final output is ŷ = softmax(H^(L)) for classification. Memory cost is O(N·Σ d_l) for storing activations during the forward pass (required for backpropagation). In PyTorch, this is handled automatically; in production inference with no gradient computation (torch.no_grad()), activation storage is skipped, reducing memory. [1]"
+    },
+    {
+      "heading": "Backpropagation: Chain Rule Through Layers",
+      "body": "Backpropagation computes ∂L/∂W^(l) for all l by applying the chain rule from layer L to layer 1. Define the error signal δ^(l) = ∂L/∂Z^(l). Then: δ^(L) = ∂L/∂ŷ ⊙ f'_L(Z^(L)); δ^(l) = (δ^(l+1)W^(l+1)) ⊙ f'_l(Z^(l)). Weight gradients: ∂L/∂W^(l) = (δ^(l))ᵀ H^(l-1). The ⊙ denotes element-wise product with the activation derivative. Key insight: the error signal δ^(l) is propagated backwards by multiplying with W^(l+1)ᵀ, which is why weight matrix transposes appear in the backward pass. Gradients can vanish when f'_l(Z^(l)) ≈ 0 (saturated activations) or explode when ‖W^(l)‖ >> 1 accumulated over L layers. [1]"
+    },
+    {
+      "heading": "Weight Initialisation",
+      "body": "Weights must be initialised to break symmetry (all-zero weights produce identical gradients for all neurons — the symmetry breaking problem). Standard initialisations: Xavier/Glorot (Glorot & Bengio, 2010) for sigmoid/tanh: W ~ U(-√(6/(fan_in+fan_out)), √(6/(fan_in+fan_out))); He/Kaiming (He et al., 2015) for ReLU: W ~ N(0, 2/fan_in). The variance formulas are derived by ensuring the activation variance is preserved across layers. Biases are typically initialised to zero. Bad initialisation (e.g., N(0,1) with no scaling) causes variance explosion or collapse in the first few layers, making training fail immediately. [1]"
+    },
+    {
+      "heading": "Depth, Width, and the Expressiveness Tradeoff",
+      "body": "Width d_l determines the number of distinct linear pieces the network can compute in a given layer. Depth L allows composing these pieces hierarchically — exponentially more complex functions for the same total parameter count. Formally, Montufar et al. (2014) showed that a depth-L ReLU network with width d can produce O((d/n)^{n(L-1)} · d^n) linear regions in n-dimensional input space — exponential in depth. In practice, deeper networks (ResNet, VGG) outperform shallower wide networks with the same parameter count on image tasks. However, depth increases training difficulty (vanishing gradients, optimisation landscape complexity), motivating residual connections and normalisation. [2]"
+    }
+  ],
+  "takeaways": [
+    "MLP: stack of layers h^(l) = f(W^(l)h^(l-1) + b^(l)); forward pass is sequential matrix multiply + activation. [1]",
+    "Backpropagation applies the chain rule backwards through layers to compute weight gradients efficiently. [1]",
+    "He initialisation (N(0, 2/fan_in)) prevents variance collapse/explosion for ReLU networks. [1]",
+    "Depth provides exponential expressiveness gains over width for the same parameter budget — motivation for deep architectures. [2]",
+    "Output activation encodes the task: softmax (multi-class), sigmoid (binary), linear (regression). [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why does making a network very wide but shallow underperform a deep narrow network with the same parameters?",
+      "a": "Wide shallow networks represent features via many parallel linear transformations followed by a single non-linearity — they can represent complex functions but require exponentially many neurons to do so (width exponential in the function complexity). Deep networks compose simple features hierarchically: early layers detect low-level patterns (edges, n-grams), middle layers combine them into mid-level features (textures, phrases), and final layers combine these into high-level concepts. This compositional structure matches the hierarchical nature of natural data (images, language, audio). Empirically on ImageNet, a 50-layer ResNet with ~25M parameters outperforms a 2-layer network with 25M parameters — depth provides inductive bias that width alone cannot."
+    },
+    {
+      "q": "What is the vanishing gradient problem and when does it manifest in MLPs?",
+      "a": "During backpropagation, gradients flow through the chain rule product ∏_l (W^(l) · f'_l(Z^(l))). If activation derivatives f'_l are systematically < 1 (sigmoid derivative ≤ 0.25), this product shrinks exponentially with depth. After 10 layers of sigmoid, gradients are ≈ (0.25)^9 ≈ 4×10^{-6} — too small to update early-layer weights. Signs: loss stops improving, early layer weights barely change during training, gradient norms plotted per layer show a steep decline from output to input. Solutions: ReLU activations (derivative = 1 in the positive regime), residual connections (provide a gradient highway bypassing the chain rule product), and Batch Normalisation (keeps activations in a regime where derivatives are non-saturated)."
+    }
+  ],
+  "sources": [
+    {
+      "label": "Goodfellow, Bengio & Courville (2016) — Deep Learning, MIT Press (Chapter 6: Deep Feedforward Networks)",
+      "url": "https://www.deeplearningbook.org/contents/mlp.html"
+    },
+    {
+      "label": "LeCun, Bengio & Hinton (2015) — Deep Learning, Nature 521, pp. 436–444",
+      "url": "https://doi.org/10.1038/nature14539"
+    }
+  ]
+}

@@ -43,6 +43,14 @@
     {
       "heading": "Learning to Rank (LTR) for Domain-Specific Reranking",
       "body": "General-purpose cross-encoders (ms-marco-MiniLM, Cohere Rerank) are trained on web search query-document pairs from MS MARCO. For domain-specific RAG (medical records, legal contracts, financial filings), the ranking patterns differ significantly from web search — users ask narrow technical questions and relevant passages use specialised vocabulary. Fine-tuning a cross-encoder on domain data consistently improves NDCG@5 by 5-15% on in-domain queries without degrading general query performance. Data collection: implicit feedback is the most scalable source. Log which retrieved documents a user selects, expands, or copies — these are positive relevance signals. Documents retrieved but not interacted with are weak negatives. For higher-quality labels, use LLM-assisted annotation: present (query, passage) pairs to GPT-4o and ask it to score relevance on a 0-3 scale. Generate 500-2000 labelled pairs per domain. Training: start from ms-marco-MiniLM-L-6-v2 (strong general initialisation) and fine-tune with contrastive loss (positive passage ranked above negative passages in a triplet). The `sentence-transformers` library provides a standard cross-encoder training API: `CrossEncoderTrainer` with `CrossEncoderRankingLoss`. Training data format: list of `InputExample(texts=[query, positive, negative])`. When LTR pays off: your retrieval recall is already high (Hit@20 > 0.85) but precision is low — users are finding the corpus has relevant content but the top-3 results are often wrong for their specific query type. LTR directly targets this precision-at-top-k failure mode. [1]"
+    },
+    {
+      "heading": "Reciprocal Rank Fusion (RRF) Implementation",
+      "body": "RRF merges two ranked lists without requiring score normalisation. Formula: RRF_score(d) = sum(1/(k + rank_i(d))), where k=60 is the smoothing constant and rank_i(d) is document d's rank in list i. Python: create rank dicts for dense results and BM25 results, compute RRF scores for the union of documents, sort descending. Why k=60: empirically optimal on BEIR benchmark — small enough to up-weight top results, large enough to prevent a single low-rank in one list from crushing a document that ranks well in the other. RRF consistently outperforms linear score interpolation (which requires normalising incomparable scales: cosine similarity vs. BM25 TF-IDF). Production: Elasticsearch and Weaviate expose RRF natively; in pgvector, implement in application code. [1]"
+    },
+    {
+      "heading": "Learning to Rank (LTR) for Domain-Specific Reranking",
+      "body": "Generic cross-encoders (ms-marco-MiniLM) are trained on web search relevance. Domain-specific corpora (legal, medical, financial) have different relevance signals. LTR fine-tuning: (1) Collect query-document relevance pairs from production click logs (1000+ pairs); (2) Fine-tune from ms-marco-MiniLM base using contrastive loss (MultipleNegativesRankingLoss in sentence-transformers) on domain pairs; (3) Evaluate: NDCG@5 on held-out query set; typical improvement 5-15% over generic reranker. When it pays off: when your query distribution differs significantly from web search (technical jargon, abbreviations, specialised concepts). For no-GPU environments: use Cohere or AWS Bedrock hosted fine-tuning. [2]"
     }
   ],
   "takeaways": [
@@ -63,7 +71,17 @@
     }
   ],
   "sources": [
-    { "label": "Nogueira & Cho (2019) — Passage Re-ranking with BERT, arXiv", "url": "https://arxiv.org/abs/1901.04085" },
-    { "label": "Cormack et al. (2009) — Reciprocal Rank Fusion Outperforms Condorcet and Individual Rank Learning Methods, SIGIR 2009", "url": "https://dl.acm.org/doi/10.1145/1571941.1572114" }
-  ]
+    {
+      "label": "Nogueira & Cho (2019) — Passage Re-ranking with BERT, arXiv",
+      "url": "https://arxiv.org/abs/1901.04085"
+    },
+    {
+      "label": "Cormack et al. (2009) — Reciprocal Rank Fusion Outperforms Condorcet and Individual Rank Learning Methods, SIGIR 2009",
+      "url": "https://dl.acm.org/doi/10.1145/1571941.1572114"
+    }
+  ],
+  "codeSnapshot": {
+    "label": "reranking.py",
+    "code": "from sentence_transformers import CrossEncoder\nfrom langchain_cohere import CohereRerank\nfrom langchain.retrievers import ContextualCompressionRetriever\nfrom langchain_chroma import Chroma\nfrom langchain_openai import OpenAIEmbeddings\n\n# Approach 1: Local cross-encoder reranker\nmodel = CrossEncoder(\"cross-encoder/ms-marco-MiniLM-L-6-v2\")\nquery = \"What is the capital of France?\"\ncandidates = [\"Paris is the capital.\", \"France has many cities.\", \"The Eiffel Tower is in Paris.\"]\nscores = model.predict([(query, doc) for doc in candidates])\nranked = sorted(zip(scores, candidates), reverse=True)\nprint(\"Top result:\", ranked[0][1])\n\n# Approach 2: Cohere Rerank via LangChain ContextualCompressionRetriever\nembeddings = OpenAIEmbeddings(model=\"text-embedding-3-small\")\nvectorstore = Chroma(embedding_function=embeddings)\nbase_retriever = vectorstore.as_retriever(search_kwargs={\"k\": 20})\n\nreranker = CohereRerank(top_n=5)\ncompression_retriever = ContextualCompressionRetriever(\n    base_compressor=reranker,\n    base_retriever=base_retriever\n)\nresults = compression_retriever.invoke(\"What is RAG?\")\nfor doc in results:\n    print(doc.metadata.get(\"relevance_score\"), doc.page_content[:80])"
+  }
 }

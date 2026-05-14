@@ -1,0 +1,75 @@
+{
+  "visualizationType": "universal-approximation-viz",
+  "codeSnapshot": {
+    "label": "uat_demo.py",
+    "code": "import torch\nimport torch.nn as nn\nimport numpy as np\nimport matplotlib.pyplot as plt\n\n# Target: approximate f(x) = sin(3x) + 0.5*cos(7x) on [-pi, pi]\ndef target(x): return np.sin(3*x) + 0.5*np.cos(7*x)\n\nx_np = np.linspace(-np.pi, np.pi, 500).reshape(-1, 1)\ny_np = target(x_np)\n\nx = torch.tensor(x_np, dtype=torch.float32)\ny = torch.tensor(y_np, dtype=torch.float32)\n\n# 1-hidden-layer MLP with increasing width\nfor hidden in [8, 32, 128]:\n    model = nn.Sequential(\n        nn.Linear(1, hidden),\n        nn.Tanh(),            # smooth activation for regression\n        nn.Linear(hidden, 1)\n    )\n    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)\n    for _ in range(5000):\n        loss = nn.functional.mse_loss(model(x), y)\n        optimizer.zero_grad(); loss.backward(); optimizer.step()\n    with torch.no_grad():\n        pred = model(x).numpy()\n    print(f\"Width={hidden:4d}  MSE={loss.item():.6f}\")\n\nplt.plot(x_np, y_np, label='target')\nplt.plot(x_np, pred, label=f'MLP width={hidden}')\nplt.legend(); plt.title('UAT demo — 1 hidden layer'); plt.show()"
+  },
+  "eli3": [
+    "The Universal Approximation Theorem says that a neural network with just one hidden layer — but as many neurons as needed — can approximate any smooth function to any desired accuracy. It's like saying a single-layer of adjustable sliders can match any curve you draw, as long as you have enough sliders.",
+    "This sounds amazing, but it comes with a catch: 'as many neurons as needed' can mean an astronomically large number. For complicated functions, you might need more neurons than there are atoms in the universe. That's why deep networks with many layers are used in practice — depth makes the network much more efficient.",
+    "The theorem also doesn't say anything about finding the right weights. It only guarantees that the right weights exist, not that training (gradient descent) will actually find them. So UAT is a statement about the network's capacity, not its learnability."
+  ],
+  "whenWhy": [
+    {
+      "title": "Theoretical justification for using neural networks",
+      "body": "The UAT provides the mathematical foundation for why neural networks are used as general-purpose function approximators. Before it, there was no proof that parameterised neural networks could represent arbitrary functions — you might design a network and find it structurally incapable of the target mapping. The theorem confirms this is not a structural limitation: any continuous function on a compact domain can be represented (not learned, but represented) by a single-hidden-layer network with a sufficient number of neurons and a non-polynomial activation."
+    },
+    {
+      "title": "Motivation for activation function design",
+      "body": "The original Cybenko theorem required a sigmoidal (S-shaped) activation function. Hornik later showed the result holds for any non-polynomial activation. This drove research into activation functions: proving that ReLU, Leaky ReLU, GELU etc. satisfy the non-polynomial condition (they do, since they are piecewise linear and not globally polynomial). The theorem also motivates the search for activations that make the approximation efficient (fewer neurons), not just theoretically possible."
+    },
+    {
+      "title": "Understanding depth vs width tradeoffs",
+      "body": "The UAT applies to networks of any depth ≥ 1, but it is most commonly stated for single-hidden-layer networks. Depth-separation results complement the UAT: some functions that require exponentially many neurons in a 1-hidden-layer network require only polynomially many in a deep network. This is the theoretical foundation for preferring deep architectures over wide-shallow ones — depth buys exponential efficiency in representational capacity."
+    }
+  ],
+  "deepDiveIntro": [
+    "Cybenko (1989) proved the original Universal Approximation Theorem: for any continuous function f: [0,1]^n → ℝ and any ε > 0, there exists a 1-hidden-layer network with sigmoidal activations g(x) = Σ_j α_j σ(w_j · x + b_j) such that |g(x) − f(x)| < ε for all x ∈ [0,1]^n. The number of hidden neurons is finite but not bounded in the theorem — it could be arbitrarily large. Hornik (1991) extended the result to show that the sigmoidal condition is not essential: any continuous, non-polynomial activation function suffices. This means ReLU networks are also universal approximators, even though ReLU is not sigmoidal (though proving ReLU satisfies the conditions requires care since it is not bounded). [1]",
+    "The practical implications are subtle. The theorem guarantees existence of parameters that achieve ε-approximation, but says nothing about: (1) how many neurons are required — for some functions it is exponential in dimension; (2) whether gradient descent can find the optimal parameters — this is a separate optimisation question; (3) generalisation — a network that fits the training function may not fit unseen points if it is not regularised. The UAT is thus a necessary but far from sufficient condition for neural networks to solve real problems. The shift from wide-shallow to deep networks was driven by empirical evidence that depth provides better generalisation and more sample-efficient training, even though both architectures are universal approximators in the limit. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Cybenko (1989) and Hornik (1991) — Statement and Proof Sketch",
+      "body": "Cybenko's proof uses the Hahn-Banach theorem from functional analysis. It proceeds by contradiction: assume no finite network g can approximate f. Then there exists a nonzero regular Borel measure μ on [0,1]^n that integrates to zero against all sigmoidal networks but not against f. Using properties of the Fourier transform and the density of trigonometric polynomials, this leads to a contradiction. The constructive version of the proof (which gives an explicit network) uses the fact that scaled and shifted sigmoid functions can approximate indicator functions of half-spaces, and that sums of indicator functions of half-spaces can approximate any measurable function via measure theory. Hornik's extension shows the result holds for any 'discriminatory' activation function — one for which the only measure integrating to zero against all affine transforms of the function is the zero measure. ReLU satisfies this. [1]"
+    },
+    {
+      "heading": "Depth-Separation: Why Depth Matters",
+      "body": "The UAT proves a 1-hidden-layer sufficiency result, but exponential width may be required. Depth-separation theorems show that certain function families require exponentially many neurons in a shallow network but only polynomially many in a deep one. Telgarsky (2016) constructed explicit piecewise linear functions that require exponentially many neurons in a 2-layer network but can be computed exactly by a 3-layer network with O(n) total neurons. Montufar et al. (2014) showed that a depth-L ReLU network can produce O(d/n)^{n(L-1)} · d^n linear regions in n-dimensional space — exponential in depth L — while a 2-layer network with the same total neurons produces far fewer. These results explain the empirical success of deep architectures: depth exponentially increases the number of distinct linear regions (hence representational power) for a given parameter budget. [2]"
+    },
+    {
+      "heading": "Width Bounds and Practical Implications",
+      "body": "For continuous functions on [0,1]^d, the number of neurons required in a single hidden layer to achieve ε-approximation can grow as O((1/ε)^d) in the worst case — the curse of dimensionality. A function on a 784-dimensional input (28×28 image) might require an intractable number of neurons. Deep networks avoid this by exploiting the compositional structure of natural functions: images have hierarchical structure (pixels → edges → textures → objects), and a 50-layer network with width 256 can represent this hierarchy with ~13M parameters, while a 2-layer network would need exponentially more. The UAT's bound is not tight for such structured functions — deep networks are exponentially more efficient for the functions that occur in practice. [1]"
+  },
+    {
+      "heading": "Limitations: What the UAT Does Not Say",
+      "body": "The UAT makes existence claims, not algorithmic ones. It does not say: (1) gradient descent will find the right weights — the optimisation landscape of neural networks is non-convex and can have many local minima, saddle points, and flat regions; (2) generalisation is guaranteed — a network that perfectly fits a training function may have poor generalisation (overfitting) if not regularised; (3) the network will be efficient in the number of neurons — for some target functions the required width is exponential; (4) the result extends trivially to multiple outputs — multi-output approximation requires separate analysis. The UAT is best understood as a theoretical existence certificate: the architecture class is expressive enough, but expressiveness does not imply learnability. [2]"
+    }
+  ],
+  "takeaways": [
+    "Cybenko (1989): a 1-hidden-layer network with sigmoidal activation can approximate any continuous function on a compact domain to arbitrary accuracy. [1]",
+    "Hornik (1991): the result extends to any non-polynomial activation (including ReLU), confirming neural networks are universal approximators. [1]",
+    "The UAT guarantees existence of parameters, not that gradient descent will find them or that the network will generalise. [2]",
+    "Depth-separation results show deep networks require exponentially fewer neurons than shallow ones for certain function families. [2]",
+    "In practice, depth provides better generalisation and efficiency than width for structured data (images, language). [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "If a 1-hidden-layer network is a universal approximator, why do we use deep networks?",
+      "a": "Three reasons: (1) Efficiency — representing certain functions in a 1-layer network may require exponentially many neurons; a deep network can represent the same function with polynomially many. Depth-separation results (Telgarsky 2016) prove this formally. (2) Generalisation — empirically, deep networks generalise better than wide-shallow networks with the same parameter count. The hierarchical feature learning in deep networks matches the compositional structure of natural data. (3) Optimisation — surprisingly, very deep networks (with residual connections) are often easier to optimise than very wide shallow ones, because the residual connections provide gradient highways and the loss landscape has better curvature properties."
+    },
+    {
+      "q": "Does the UAT apply to ReLU networks, given that ReLU is not bounded like sigmoid?",
+      "a": "Yes, with some care. Cybenko's original proof required a sigmoidal (bounded) activation. ReLU is not bounded (it grows linearly for x > 0). However, Lu et al. (2017) 'The Expressive Power of Neural Networks: A View from the Width' proved that a ReLU network with width ≥ n+4 (where n is input dimension) can approximate any Lebesgue-integrable function. The proof technique is different from Cybenko's: it uses the ability of piecewise-linear functions to approximate any measurable function. So ReLU networks are universal approximators, but the proof requires either sufficient width (Lu et al.) or sufficient depth (other results). In practice, the theoretical width bound is extremely conservative — networks with width >> input dimension are used."
+    }
+  ],
+  "sources": [
+    {
+      "label": "Cybenko (1989) — Approximation by Superpositions of a Sigmoidal Function, Mathematics of Control, Signals and Systems 2(4)",
+      "url": "https://doi.org/10.1007/BF02551274"
+    },
+    {
+      "label": "Hornik (1991) — Approximation Capabilities of Multilayer Feedforward Networks, Neural Networks 4(2)",
+      "url": "https://doi.org/10.1016/0893-6080(91)90009-T"
+    }
+  ]
+}

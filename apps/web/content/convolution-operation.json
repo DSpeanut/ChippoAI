@@ -1,0 +1,75 @@
+{
+  "visualizationType": "convolution-operation-viz",
+  "codeSnapshot": {
+    "label": "convolution.py",
+    "code": "import torch\nimport torch.nn as nn\nimport torchvision.transforms as T\nfrom PIL import Image\nimport matplotlib.pyplot as plt\n\n# --- 1. Single Conv2d layer ---\nconv = nn.Conv2d(\n    in_channels=1,   # grayscale input\n    out_channels=8,  # 8 filters => 8 feature maps\n    kernel_size=3,   # 3x3 filters\n    stride=1,\n    padding=1        # same padding: output H,W = input H,W\n)\nprint(f\"Filter shape: {conv.weight.shape}\")  # [8, 1, 3, 3]\nprint(f\"Bias shape:   {conv.bias.shape}\")    # [8]\n\n# --- 2. Forward pass ---\nx = torch.randn(1, 1, 28, 28)  # batch=1, channels=1, H=28, W=28\nout = conv(x)\nprint(f\"Input:  {x.shape}\")    # [1, 1, 28, 28]\nprint(f\"Output: {out.shape}\")  # [1, 8, 28, 28] (same padding)\n\n# --- 3. Edge detection with a hand-crafted Sobel filter ---\nsobel_x = torch.tensor(\n    [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], dtype=torch.float32\n).reshape(1, 1, 3, 3)\n\nimg = torch.randn(1, 1, 64, 64)  # dummy grayscale image\nedges = nn.functional.conv2d(img, sobel_x, padding=1)\nprint(f\"Edge map shape: {edges.shape}\")  # [1, 1, 64, 64]"
+  },
+  "eli3": [
+    "Imagine sliding a small magnifying glass (the filter/kernel) across a photo. At each position, you multiply what you see under the glass by the numbers in the filter and add them up. That sum is one pixel in the output image. Slide the glass all the way across and you get a whole new image called a feature map.",
+    "Different filters detect different things: one filter might light up wherever it sees a vertical edge, another where it sees a diagonal line, another where there's a certain colour. During training, the network learns which filters are useful for the task — you don't design them by hand.",
+    "The key advantage over a regular fully-connected layer is parameter sharing: the same filter is used at every position in the image. A 3×3 filter has 9 weights and that's all — whether the image is 32×32 or 1000×1000. This makes CNNs much more efficient for images and gives them translation equivariance."
+  ],
+  "whenWhy": [
+    {
+      "title": "Image recognition and computer vision tasks",
+      "body": "Convolutional layers are the backbone of every vision model: image classification (ResNet, EfficientNet), object detection (YOLO, Faster R-CNN), segmentation (U-Net, DeepLab). The convolution operation exploits two properties of images: locality (nearby pixels are more correlated than distant ones, so a 3×3 filter captures the relevant context) and translation equivariance (the same feature — an edge, a curve — should be detected regardless of where it appears in the image). These inductive biases make CNNs far more sample-efficient on image data than fully-connected layers."
+    },
+    {
+      "title": "1D convolutions for sequence data",
+      "body": "Conv1d applies a kernel along the time/sequence dimension: useful for audio waveforms, time series, and NLP (TextCNN). A 1D convolution with kernel size k and stride 1 extracts local patterns of length k — analogous to n-gram detection in text. Compared to RNNs, 1D convolutions are parallelisable (no sequential dependency) and have fixed receptive fields, making them faster but less capable of capturing very long-range dependencies without stacking many layers."
+    },
+    {
+      "title": "Feature extraction and transfer learning",
+      "body": "Convolutional feature maps from pretrained networks (ResNet, VGG, EfficientNet trained on ImageNet) are powerful general-purpose visual features. Freezing the convolutional layers and training only the final classification head (feature extraction) requires minimal data and compute. Fine-tuning the entire network on a target dataset with a lower learning rate for early layers is the standard approach for domain adaptation. This works because early convolutional layers learn universal features (edges, textures) that transfer across domains."
+    }
+  ],
+  "deepDiveIntro": [
+    "The discrete 2D cross-correlation (commonly called convolution in deep learning, though technically it omits the kernel flip) is: (I ★ K)[i,j] = Σ_m Σ_n I[i+m, j+n] · K[m,n], where I is the input feature map, K is the kernel, and (i,j) indexes the output. For a kernel of size k×k, each output value is a weighted sum of a k×k patch of the input. An nn.Conv2d layer with C_in input channels and C_out output channels has C_out kernels, each of shape C_in×k×k — yielding C_in·C_out·k² weight parameters plus C_out biases. The parameters are shared across all spatial positions, dramatically reducing the parameter count compared to a fully-connected layer that would require (H·W·C_in) × (H·W·C_out) parameters. [1]",
+    "The convolution operation gives CNNs two inductive biases: (1) locality — each output unit depends only on a local receptive field of the input, not all input pixels; (2) parameter sharing (weight sharing) — the same kernel is applied at every spatial location, implementing translation equivariance: if the input shifts by Δ pixels, the output feature map shifts by Δ/stride pixels. These biases encode the prior that images have local, translation-equivariant structure — a prior that makes CNNs sample-efficient on visual data. Note: pooling breaks equivariance into invariance at coarser spatial scales. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Output Dimension Formula",
+      "body": "Given input of size H×W, kernel size K×K, stride S, and padding P, the output dimensions are: H_out = floor((H + 2P − K) / S) + 1, W_out = floor((W + 2P − K) / S) + 1. Examples: 28×28 input, K=3, S=1, P=0 → 26×26 output (valid convolution); K=3, S=1, P=1 → 28×28 output (same convolution); K=3, S=2, P=1 → 14×14 output (strided convolution, halves spatial dimensions). Strided convolutions are often used instead of max pooling for downsampling (fewer hyperparameters, learnable). The total parameter count for one layer: C_out × (C_in × K × K + 1) — independent of input spatial dimensions. [1]"
+    },
+    {
+      "heading": "Receptive Field and Depth",
+      "body": "The receptive field of an output unit is the region of the input that influences it. A single conv layer with K=3 has receptive field 3×3. After L such layers (each with K=3, S=1), the receptive field is (2L+1)×(2L+1). After 5 layers: 11×11. With strided convolutions or pooling (stride S=2), the receptive field grows faster: each stride-2 layer doubles the receptive field in terms of input pixels. Dilated (atrous) convolutions expand the receptive field without adding parameters: a dilation rate d=2 uses kernel positions {0,2,4} instead of {0,1,2}, giving a 5×5 receptive field with a 3×3 kernel and no extra parameters. Dilated convolutions are used in DeepLab for semantic segmentation. [2]"
+    },
+    {
+      "heading": "Depthwise Separable Convolutions",
+      "body": "Standard convolution applies a C_in×K×K filter to produce each output channel — cost O(H·W·C_in·C_out·K²). Depthwise separable convolution (Chollet, 2017; MobileNet) factorises this into two steps: (1) depthwise convolution — apply a single K×K filter per input channel independently (C_in filters, no cross-channel mixing) — cost O(H·W·C_in·K²); (2) pointwise convolution — apply 1×1 convolutions to mix channels — cost O(H·W·C_in·C_out). Total cost: O(H·W·C_in·(K²+C_out)). For K=3, C_out=256, the speedup factor is (K²+C_out)/(K²·C_out) ≈ 1/K² ≈ 1/9 — a ~9× reduction in computation and parameters. Depthwise separable convolutions are the foundation of MobileNet, EfficientNet, and Xception. [2]"
+    },
+    {
+      "heading": "Visualising What Filters Learn",
+      "body": "Zeiler & Fergus (2014) used deconvnets to visualise what each convolutional filter has learned. Layer 1 filters detect oriented edges, colour blobs, and Gabor-like patterns — features also found in the mammalian primary visual cortex. Layer 2 combines these into textures and simple shapes. Layer 3 detects higher-level structures (wheels, faces, text). This hierarchical feature learning is why pretrained CNN features transfer to new visual domains: the low-level features (edges, textures) are domain-general. Filter visualisation is also a debugging tool: filters that look noisy or nearly identical may indicate too many filters (redundancy) or poor initialisation. [1]"
+    }
+  ],
+  "takeaways": [
+    "2D convolution (cross-correlation): (I★K)[i,j] = Σ_{m,n} I[i+m,j+n]·K[m,n]; parameter sharing across spatial positions. [1]",
+    "Output size: H_out = floor((H + 2P − K)/S) + 1; parameter count: C_out×(C_in×K²+1), independent of input size. [1]",
+    "Local connectivity and weight sharing give CNNs translation equivariance and sample efficiency on images. [1]",
+    "Receptive field grows as O(K·L) with depth L; dilated convolutions expand it without adding parameters. [2]",
+    "Depthwise separable convolutions reduce computation ~K² times vs standard convolutions (foundation of MobileNet). [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "What is the difference between convolution and cross-correlation, and does it matter in practice?",
+      "a": "True convolution flips the kernel before sliding: (I * K)[i,j] = Σ_{m,n} I[i−m,j−n]·K[m,n]. Cross-correlation does not flip: (I ★ K)[i,j] = Σ_{m,n} I[i+m,j+n]·K[m,n]. PyTorch and all major frameworks implement cross-correlation and call it 'convolution'. This does not matter in practice because the kernel weights are learned — if the network needs the flipped version, it can learn a flipped kernel. The distinction matters only when computing convolutions by hand with hand-designed kernels (e.g., Sobel filters) or when working with signal processing conventions."
+    },
+    {
+      "q": "Why are 1×1 convolutions useful, and when are they used?",
+      "a": "A 1×1 convolution with C_out output channels is a learnable linear combination of input channels at each spatial position — equivalent to a fully-connected layer applied independently at every spatial location. Uses: (1) Channel dimensionality reduction (bottleneck layers in ResNet, Inception): reduce C_in=256 channels to C_out=64 before an expensive 3×3 conv, reducing compute by 4×; (2) Channel mixing after depthwise convolutions (MobileNet pointwise step); (3) Increasing model depth without increasing receptive field. The key property: 1×1 convs mix information across channels while preserving spatial structure, whereas 3×3 convs mix information across both channels and spatial neighbourhoods."
+    }
+  ],
+  "sources": [
+    {
+      "label": "LeCun et al. (1998) — Gradient-Based Learning Applied to Document Recognition, Proceedings of the IEEE 86(11)",
+      "url": "http://yann.lecun.com/exdb/publis/pdf/lecun-98.pdf"
+    },
+    {
+      "label": "Goodfellow, Bengio & Courville (2016) — Deep Learning, MIT Press (Chapter 9: Convolutional Networks)",
+      "url": "https://www.deeplearningbook.org/contents/convnets.html"
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "visualizationType": "transfer-learning-viz",
+  "codeSnapshot": {
+    "label": "transfer_learning.py",
+    "code": "import torch\nimport torch.nn as nn\nimport torch.optim as optim\nfrom torchvision import models, datasets, transforms\nfrom torch.utils.data import DataLoader\n\n# --- Load pretrained ResNet-50 ---\nmodel = models.resnet50(weights=models.ResNet50_Weights.DEFAULT)\n\n# --- Strategy 1: Feature Extraction (freeze backbone) ---\nfor param in model.parameters():\n    param.requires_grad = False          # freeze all\n\n# Replace final FC layer for custom task (e.g., 5 classes)\nnum_ftrs = model.fc.in_features          # 2048\nmodel.fc = nn.Linear(num_ftrs, 5)        # only this layer is trainable\n\ntrained = sum(p.numel() for p in model.parameters() if p.requires_grad)\ntotal   = sum(p.numel() for p in model.parameters())\nprint(f\"Strategy 1 — Trainable: {trained:,} / {total:,} params\")\n\n# --- Strategy 2: Fine-tuning (unfreeze all, lower LR for backbone) ---\nfor param in model.parameters():\n    param.requires_grad = True\n\n# Differential learning rates: lower LR for early layers\noptimizer = optim.SGD([\n    {\"params\": model.layer1.parameters(), \"lr\": 1e-5},\n    {\"params\": model.layer2.parameters(), \"lr\": 1e-5},\n    {\"params\": model.layer3.parameters(), \"lr\": 1e-4},\n    {\"params\": model.layer4.parameters(), \"lr\": 1e-4},\n    {\"params\": model.fc.parameters(),     \"lr\": 1e-3},   # head: highest LR\n], momentum=0.9, weight_decay=1e-4)\n\nprint(\"Strategy 2 — Fine-tuning with differential learning rates set up.\")\nprint(f\"Backbone LR: 1e-5 (early), 1e-4 (deep) | Head LR: 1e-3\")"
+  },
+  "eli3": [
+    "Transfer learning is reusing knowledge from one task to speed up learning on another. A network trained on 1 million images has learned to recognise useful things: edges, textures, shapes, objects. Instead of starting from scratch for a new task, you take this pretrained network and adapt it.",
+    "The simplest approach: keep all the layers that extract features (the backbone) exactly as they are, and replace only the final classification layer with a new one for your task. Train only the new layer. This is fast and works well when your new task is similar to the original.",
+    "A more powerful approach: after the quick training above, unfreeze the backbone and train everything together at a much lower learning rate. The early layers already know what edges and textures look like — you just want to gently specialise the deep layers for your specific domain."
+  ],
+  "whenWhy": [
+    {
+      "title": "Small labeled datasets (< 10k images)",
+      "body": "Training a CNN from scratch on a small dataset leads to severe overfitting — a ResNet-50 with 25M parameters needs hundreds of thousands of labeled images to converge well. Transfer learning from ImageNet-pretrained weights provides a powerful prior: the backbone has already learned generic visual features. Even with 500 images, feature extraction (frozen backbone + trained linear head) often achieves >80% accuracy on domain-specific classification tasks. Fine-tuning with careful regularisation (dropout, weight decay, early stopping) can further improve performance."
+    },
+    {
+      "title": "Domain adaptation for specialised visual domains",
+      "body": "Medical imaging (X-rays, histopathology slides), satellite imagery, microscopy, and industrial inspection use image statistics very different from ImageNet. Despite this domain shift, ImageNet-pretrained features transfer remarkably well: low-level features (edges, textures) are universal, and even high-level features partially transfer. Ke et al. (2021) found that fine-tuning from ImageNet consistently outperforms training from scratch on medical imaging even with large domain gaps. The exception: tasks requiring very specialised low-level features (e.g., spectroscopy data not resembling images at all) may benefit more from task-specific initialisation."
+    },
+    {
+      "title": "Reducing compute for large model training",
+      "body": "Training large vision models (ViT-L, EfficientNet-B7) from scratch on ImageNet requires millions of GPU-hours. Transfer learning from pretrained checkpoints reduces this to hours for fine-tuning. Models like CLIP (trained on 400M image-text pairs) or DINOv2 (self-supervised) provide even richer pretrained representations that transfer to downstream tasks with minimal labeled data, enabling few-shot or even zero-shot classification."
+    }
+  ],
+  "deepDiveIntro": [
+    "Transfer learning in deep vision exploits two properties: (1) the hierarchical feature learning of CNNs produces generic low-level features (edges, textures, shapes) that are useful across visual domains; (2) pretraining on large-scale datasets (ImageNet: 1.2M images, 1000 classes) provides a good parameter initialisation that is close to a good solution for many downstream tasks. The standard transfer learning pipeline: load pretrained weights → modify the task head (final FC layer) → freeze/unfreeze layers as needed → train on the target dataset with a schedule that prioritises the head (high LR) over the backbone (low LR or frozen). [1]",
+    "Pan & Yang (2010) formalised transfer learning: given a source domain D_S with task T_S and target domain D_T with task T_T, transfer learning uses knowledge from (D_S, T_S) to improve performance on (D_T, T_T), where D_S ≠ D_T or T_S ≠ T_T. In deep learning, the 'knowledge' transferred is the model weights. Two transfer regimes: (1) feature extraction — frozen backbone extracts representations, only a shallow classifier is trained on target data; (2) fine-tuning — the full network (or part of it) continues training on the target domain. Yosinski et al. (2014) showed that transferability of features decreases with depth (deeper features are more task-specific), motivating lower learning rates for early layers during fine-tuning. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Feature Extraction vs Fine-Tuning — When to Use Each",
+      "body": "Feature extraction (frozen backbone): appropriate when (1) the target dataset is very small (<1000 examples) and fine-tuning would overfit; (2) the source and target domains are similar (both are natural images); (3) compute is limited (only the head needs training). Fine-tuning (unfreezing backbone): appropriate when (1) the target dataset is medium to large (>10k examples); (2) there is significant domain shift (medical vs natural images) — the backbone needs to adapt; (3) you have compute budget. Gradual unfreezing: start by training only the head, then unfreeze the last few backbone layers, then unfreeze all layers — progressively allows the backbone to adapt without catastrophic forgetting of earlier representations. [1]"
+    },
+    {
+      "heading": "Differential Learning Rates",
+      "body": "During fine-tuning, using a single learning rate for all layers is suboptimal. The head (new task-specific layers) needs to learn from scratch — a higher LR (e.g., 1e-3) is appropriate. Early backbone layers have already learned general features (edges, textures) that are widely transferable — a very low LR (1e-5) or frozen parameters prevent catastrophic forgetting of these. Late backbone layers encode more task-specific features — a moderate LR (1e-4). A practical rule: set LR as η · (1/γ)^l where l=0 for the head and increases toward the input, with decay factor γ ∈ [2, 10]. Fast.ai's discriminative fine-tuning uses this approach: the head LR is the base, each layer group gets LR/γ. [2]"
+    },
+    {
+      "heading": "Transferability of CNN Features",
+      "body": "Yosinski et al. (2014) systematically studied feature transferability by training split-network experiments: fix the first n layers from a source network, fine-tune the remaining L−n layers on a target task. Results: (1) first 1–2 layers (edge detectors, colour blobs) transfer nearly perfectly — these are universal. (2) Middle layers (layers 3–5, texture and shape detectors) transfer well but degrade slightly on dissimilar domains. (3) Deepest layers (layers 6–8, high-level object detectors) are most task-specific — transfer degrades significantly if the target task is different. This motivates the standard practice of keeping the backbone's early layers frozen and fine-tuning only later layers. [2]"
+    },
+    {
+      "heading": "Self-Supervised and Foundation Model Transfer",
+      "body": "Beyond supervised ImageNet pretraining, self-supervised models (SimCLR, MoCo, DINO, MAE) learn representations without labels by using contrastive objectives or masked image reconstruction. CLIP (Radford et al., 2021) trains on 400M image-text pairs with a contrastive objective, learning semantically rich representations that enable zero-shot classification: given a set of text prompts 'a photo of a {class}', classify images without any labeled training data. DINOv2 (Oquab et al., 2023) uses self-distillation with no labels to train ViT features that outperform supervised ImageNet features on many transfer benchmarks. For new tasks, CLIP and DINOv2 pretrained features are increasingly the starting point, outperforming supervised ImageNet pretraining. [1]"
+    }
+  ],
+  "takeaways": [
+    "Feature extraction (frozen backbone) is best for small datasets; fine-tuning (unfrozen) is best for larger or domain-shifted datasets. [1]",
+    "Early CNN layers (edges, textures) are universal and highly transferable; deep layers are task-specific. [2]",
+    "Differential learning rates: high LR for head, low LR (1e-5) for early backbone layers to prevent catastrophic forgetting. [2]",
+    "Gradual unfreezing: train head first, then progressively unfreeze backbone layers to avoid catastrophic forgetting. [1]",
+    "Self-supervised pretrained models (CLIP, DINOv2) increasingly outperform supervised ImageNet features as transfer learning backbones. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "What is catastrophic forgetting and how do you prevent it during fine-tuning?",
+      "a": "Catastrophic forgetting (McCloskey & Cohen, 1989) occurs when fine-tuning on a new task overwrites knowledge from the pretrained task, degrading performance on the original domain. In the context of transfer learning, this means the backbone loses its general-purpose feature quality as it overfits the target domain. Prevention strategies: (1) Low LR for backbone layers — small weight updates preserve most pretrained knowledge; (2) L2 regularisation toward pretrained weights — EWC (Elastic Weight Consolidation) penalises changes to weights important for the original task; (3) Gradual unfreezing — unfreeze layers from the top down, allowing the network to adapt gradually; (4) Mixed training — train on a mix of source and target data if source data is available. The most practical approach for standard transfer learning is low LR + early stopping."
+    },
+    {
+      "q": "When does transfer learning from ImageNet fail, and what do you do instead?",
+      "a": "Transfer from ImageNet fails or underperforms when: (1) input modality is fundamentally different — spectroscopy, tabular data, 3D point clouds don't benefit from ImageNet visual features; (2) very fine-grained low-level features matter — plant disease classification sometimes benefits from initialisation on a plant-specific dataset more than ImageNet; (3) the source and target distributions are extremely different in statistics (e.g., satellite multispectral imagery with non-RGB channels). Alternatives: (1) find a pretrained model on a closer domain (BioViL for chest X-rays, SatMAE for satellite imagery, Wav2Vec for audio); (2) use self-supervised pretraining on your target domain data if you have unlabeled data but few labels; (3) if data is truly scarce, few-shot learning methods (ProtoNets, MAML) may outperform fine-tuning."
+    }
+  ],
+  "sources": [
+    {
+      "label": "Yosinski et al. (2014) — How Transferable are Features in Deep Neural Networks? NeurIPS 2014",
+      "url": "https://arxiv.org/abs/1411.1792"
+    },
+    {
+      "label": "Pan & Yang (2010) — A Survey on Transfer Learning, IEEE Transactions on Knowledge and Data Engineering 22(10)",
+      "url": "https://doi.org/10.1109/TKDE.2009.191"
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "visualizationType": "perceptron-viz",
+  "codeSnapshot": {
+    "label": "perceptron.py",
+    "code": "import numpy as np\n\nclass Perceptron:\n    \"\"\"Rosenblatt Perceptron (1958) — linear threshold unit.\"\"\"\n    def __init__(self, lr: float = 0.1, n_epochs: int = 50):\n        self.lr = lr\n        self.n_epochs = n_epochs\n        self.weights = None\n        self.bias = None\n\n    def fit(self, X: np.ndarray, y: np.ndarray) -> \"Perceptron\":\n        n_samples, n_features = X.shape\n        self.weights = np.zeros(n_features)\n        self.bias = 0.0\n        for _ in range(self.n_epochs):\n            for xi, yi in zip(X, y):\n                y_hat = self._predict_single(xi)\n                delta = self.lr * (yi - y_hat)\n                self.weights += delta * xi\n                self.bias   += delta\n        return self\n\n    def _predict_single(self, x: np.ndarray) -> int:\n        return 1 if np.dot(x, self.weights) + self.bias >= 0 else 0\n\n    def predict(self, X: np.ndarray) -> np.ndarray:\n        return np.array([self._predict_single(x) for x in X])\n\n# --- AND gate (linearly separable) ---\nX = np.array([[0,0],[0,1],[1,0],[1,1]], dtype=float)\ny = np.array([0, 0, 0, 1])\n\nmodel = Perceptron(lr=0.1, n_epochs=20)\nmodel.fit(X, y)\nprint(\"Predictions:\", model.predict(X))  # [0 0 0 1]\nprint(\"Weights:\",     model.weights)\nprint(\"Bias:   \",     model.bias)"
+  },
+  "eli3": [
+    "A perceptron is the simplest possible brain cell for a computer. It looks at some numbers, multiplies each by a weight (how important it is), adds them up, and if the total is big enough it says 'yes', otherwise 'no'.",
+    "Training it is like adjusting the dials: if it said 'yes' when it should have said 'no', you turn the relevant dials down a bit. If it said 'no' when it should have said 'yes', you turn them up. Do this enough times on examples and it learns the pattern.",
+    "The big catch: a single perceptron can only learn patterns that can be split by a straight line. XOR — where (0,0)→0, (0,1)→1, (1,0)→1, (1,1)→0 — cannot be separated by any straight line, so a single perceptron can never learn it. You need multiple layers to escape this limitation."
+  ],
+  "whenWhy": [
+    {
+      "title": "Binary linear classification baselines",
+      "body": "Before reaching for a neural network, the perceptron provides the simplest possible linear decision boundary. It is computationally free to train (no matrix inversion, just sequential updates), interpretable (weights directly represent feature importance for the decision), and converges in finite steps on any linearly separable dataset by the Perceptron Convergence Theorem. Use it as a sanity-check baseline: if your problem is not linearly separable the perceptron will fail, confirming you need a more complex model."
+    },
+    {
+      "title": "Understanding gradient-based learning",
+      "body": "The perceptron is the conceptual building block for deep learning. Its update rule — Δw = η(y − ŷ)x — is the simplest form of error-driven weight adjustment. Understanding why the perceptron converges on linearly separable data, and why it fails on XOR, directly motivates multi-layer networks and non-linear activations. It is the canonical entry point for teaching backpropagation and the credit-assignment problem."
+    },
+    {
+      "title": "Online learning on streaming data",
+      "body": "The perceptron update is fully online: each example updates the model immediately, with no need to hold a full dataset in memory. For streaming binary classification with stationary linear decision boundaries (e.g., simple spam filters, sensor threshold detection), the perceptron's O(d) update per example makes it practical where batch training is infeasible."
+    }
+  ],
+  "deepDiveIntro": [
+    "The Perceptron was introduced by Frank Rosenblatt in 1958 as a probabilistic model of information storage and organisation in the brain. It formalises a single neuron: a linear threshold unit that computes ŷ = sign(w·x + b), where w ∈ ℝᵈ is a weight vector and b is a bias. The step activation — output 1 if the weighted sum exceeds the threshold, else 0 — is non-differentiable, which is why the learning rule is not gradient descent but a direct error-correction rule: Δw = η(y − ŷ)x, Δb = η(y − ŷ). When the prediction is correct, no update is made; when wrong, the weights are nudged toward the correct classification. [1]",
+    "The Perceptron Convergence Theorem (Rosenblatt, 1958; Block, 1962) guarantees that if the training data is linearly separable, the perceptron algorithm will converge to a correct weight vector in a finite number of updates bounded by (R/γ)² where R = max‖xᵢ‖ is the feature vector radius and γ is the margin of the separating hyperplane. The proof constructs the ratio ‖w*‖/‖w_t‖ and shows it must grow, bounding the total mistakes. When data is not linearly separable the algorithm oscillates forever — a fundamental limitation exposed by Minsky and Papert in 1969, who proved that the single-layer perceptron cannot represent XOR. This result temporarily set back neural network research until the multi-layer perceptron (MLP) and backpropagation were developed in the 1980s. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Geometry: the Decision Hyperplane",
+      "body": "The perceptron partitions input space with a hyperplane w·x + b = 0. Points where w·x + b ≥ 0 are class 1; points where w·x + b < 0 are class 0. The weight vector w is perpendicular to this hyperplane and points toward the positive class. Training moves the hyperplane to correctly classify misclassified examples: when a positive example x is misclassified (w·x + b < 0), adding ηx to w rotates the hyperplane toward x, increasing w·x. When a negative example is misclassified (w·x + b ≥ 0), subtracting ηx from w rotates the hyperplane away. The margin — the distance from the hyperplane to the nearest correctly classified point — is not maximised by the perceptron; that is the job of the Support Vector Machine. [1]"
+    },
+    {
+      "heading": "Convergence Theorem and Bounds",
+      "body": "Let the training set be {(xᵢ, yᵢ)} with yᵢ ∈ {-1, +1}, and assume it is linearly separable with unit-norm separator w* such that yᵢ(w*·xᵢ) ≥ γ > 0 for all i, and ‖xᵢ‖ ≤ R. The number of mistakes k made by the perceptron before convergence satisfies k ≤ (R/γ)². This bound is tight: there exist datasets achieving it. Crucially, the bound depends on the margin γ and data radius R, not on the dimension d or the number of training examples. The mistake bound implies that harder separations (small γ) or larger feature spaces (large R) require more updates. The bound makes no assumption about the learning rate η because scaling η just scales all weights uniformly without changing the classification boundary. [1]"
+    },
+    {
+      "heading": "The XOR Problem and the Limits of Linear Classifiers",
+      "body": "XOR is not linearly separable: no single hyperplane can separate (0,0)→0, (0,1)→1, (1,0)→1, (1,1)→0. Minsky and Papert (1969) formalised this by showing that many interesting Boolean functions — parity, connectedness — are not representable by single-layer perceptrons. Their analysis severely damaged interest in neural networks until the multi-layer perceptron (MLP) with non-linear activations was shown to be a universal approximator. A 2-layer MLP with one hidden unit of non-linear activation can represent XOR: hidden unit h₁ computes OR, h₂ computes NAND; the output AND(h₁, h₂) = XOR. The XOR problem remains the canonical motivation for deep architectures. [2]"
+    },
+    {
+      "heading": "Relation to Logistic Regression and Modern Networks",
+      "body": "The perceptron uses a step (Heaviside) activation; replacing it with a sigmoid σ(w·x + b) and minimising cross-entropy loss via gradient descent gives logistic regression — a probabilistic, differentiable variant. The perceptron update rule is in fact the gradient-descent update for a hinge-like loss in the zero-margin case. Modern deep networks are multi-layer perceptrons (MLPs) with continuous activations (ReLU, GELU): each layer applies a linear transform followed by a pointwise non-linearity. Backpropagation is the recursive application of the chain rule to compute gradients layer-by-layer, generalising the perceptron update to arbitrary depth. The perceptron's legacy is thus not the algorithm itself but the conceptual framework it established: parameterised weights, example-driven error correction, and the idea that learning means adjusting weights to reduce mistakes. [1]"
+    }
+  ],
+  "takeaways": [
+    "Perceptron: ŷ = sign(w·x + b); update rule Δw = η(y − ŷ)x only fires on misclassified examples. [1]",
+    "Convergence Theorem: on linearly separable data, mistakes ≤ (R/γ)²; convergence guaranteed in finite steps. [1]",
+    "The perceptron cannot learn XOR — it requires a non-linearly separable boundary — proven by Minsky & Papert (1969). [2]",
+    "Replacing the step function with sigmoid and using cross-entropy loss yields logistic regression. [1]",
+    "Modern deep networks are stacked perceptrons with non-linear activations; backpropagation generalises the update rule. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why does the perceptron learning rule not use gradient descent?",
+      "a": "The step activation function (Heaviside) is discontinuous and has zero gradient almost everywhere, so gradient descent cannot be applied directly. The perceptron rule is instead an error-correction rule: when a point is correctly classified, the gradient of the step function is zero and no update is needed; when misclassified, the update Δw = η(y − ŷ)x moves the weights in the direction that would correct the error. This is equivalent to the gradient of a piecewise-linear loss. Logistic regression solves the differentiability problem by replacing the step function with a smooth sigmoid, enabling true gradient descent on the log-loss."
+    },
+    {
+      "q": "What happens when data is not linearly separable — does the perceptron still converge?",
+      "a": "No. When data is not linearly separable the perceptron oscillates indefinitely: every proposed weight vector misclassifies at least one example, so the algorithm never terminates. Practical mitigations: (1) Pocket algorithm — keep a 'pocket' copy of the best weight vector seen so far (fewest misclassifications), return it after a fixed number of iterations; (2) add a bias feature and use a kernel trick for non-linear boundaries; (3) switch to logistic regression or an SVM with slack variables which have well-defined optima on non-separable data."
+    }
+  ],
+  "sources": [
+    {
+      "label": "Rosenblatt (1958) — The Perceptron: A Probabilistic Model for Information Storage and Organization in the Brain, Psychological Review 65(6)",
+      "url": "https://doi.org/10.1037/h0042519"
+    },
+    {
+      "label": "Minsky & Papert (1969) — Perceptrons: An Introduction to Computational Geometry, MIT Press",
+      "url": "https://mitpress.mit.edu/9780262630221/perceptrons/"
+    }
+  ]
+}

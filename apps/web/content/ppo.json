@@ -1,0 +1,75 @@
+{
+  "visualizationType": "ppo-viz",
+  "codeSnapshot": {
+    "label": "ppo_continuous.py",
+    "code": "import torch\nimport torch.nn as nn\nimport torch.optim as optim\nfrom torch.distributions import Normal\n\nclass ActorCritic(nn.Module):\n    \"\"\"Shared backbone actor-critic for continuous control.\"\"\"\n    def __init__(self, state_dim: int, action_dim: int):\n        super().__init__()\n        self.shared = nn.Sequential(\n            nn.Linear(state_dim, 64), nn.Tanh(),\n            nn.Linear(64, 64),        nn.Tanh(),\n        )\n        self.actor_mean   = nn.Linear(64, action_dim)\n        self.actor_logstd = nn.Parameter(torch.zeros(action_dim))\n        self.critic       = nn.Linear(64, 1)\n\n    def forward(self, x):\n        h = self.shared(x)\n        mean = self.actor_mean(h)\n        std  = self.actor_logstd.exp().expand_as(mean)\n        dist = Normal(mean, std)\n        value = self.critic(h).squeeze(-1)\n        return dist, value\n\ndef ppo_update(model, optimizer, states, actions, old_log_probs,\n               advantages, returns, clip_eps=0.2, epochs=4, mini_batch=64):\n    \"\"\"\n    PPO clipped surrogate objective update.\n    L^CLIP(θ) = E[min(r_t(θ)·A_t, clip(r_t(θ), 1-ε, 1+ε)·A_t)]\n    \"\"\"\n    for _ in range(epochs):\n        idx = torch.randperm(len(states))\n        for start in range(0, len(states), mini_batch):\n            mb = idx[start:start + mini_batch]\n            dist, values = model(states[mb])\n            new_log_probs = dist.log_prob(actions[mb]).sum(-1)\n\n            # Probability ratio r_t(θ) = π_θ(a|s) / π_θ_old(a|s)\n            ratio = (new_log_probs - old_log_probs[mb]).exp()\n\n            # Clipped surrogate loss\n            surr1 = ratio * advantages[mb]\n            surr2 = ratio.clamp(1 - clip_eps, 1 + clip_eps) * advantages[mb]\n            actor_loss  = -torch.min(surr1, surr2).mean()\n\n            # Value function loss + entropy bonus\n            critic_loss = 0.5 * (values - returns[mb]).pow(2).mean()\n            entropy     = dist.entropy().sum(-1).mean()\n            loss = actor_loss + 0.5 * critic_loss - 0.01 * entropy\n\n            optimizer.zero_grad(); loss.backward(); \n            nn.utils.clip_grad_norm_(model.parameters(), 0.5)\n            optimizer.step()"
+  },
+  "eli3": [
+    "Policy gradient methods directly learn a policy π(a|s) — a probability distribution over actions — instead of learning Q-values. The goal is to update the policy to make high-reward actions more likely and low-reward actions less likely. The gradient of the expected reward is: ∇J(θ) = E[∇ log π(a|s) · A(s,a)], where A is the advantage (how much better was this action than average).",
+    "The problem with vanilla policy gradients: if you take a big gradient step, the new policy can be very different from the old one — and since you're only using data from the old policy, the gradient estimate may no longer be accurate. This can cause catastrophic policy collapse. PPO (Proximal Policy Optimisation) solves this by clipping the policy update: if the new policy deviates too far from the old one (more than ε=20%), the gradient is zeroed out, preventing destabilising updates.",
+    "PPO is the workhorse of modern RL applications. It's simpler to implement than TRPO (its predecessor), stable enough to train on complex continuous control tasks (MuJoCo, robotics), and fast enough for RLHF (the technique used to align ChatGPT and Claude). The clipping trick provides a simple, effective constraint on policy change without requiring the second-order optimisation of TRPO."
+  ],
+  "whenWhy": [
+    {
+      "title": "Continuous control tasks (robotics, locomotion)",
+      "body": "PPO is the standard algorithm for continuous action spaces: robot joint torques, locomotion gaits, manipulation. It outputs a Gaussian policy π_θ(a|s) = N(μ_θ(s), σ²) and trains with the clipped surrogate objective. On MuJoCo benchmarks (HalfCheetah, Hopper, Ant), PPO achieves competitive performance to SAC and TD3 with fewer hyperparameters. The on-policy collection of trajectories with a known policy distribution enables principled advantage estimation via GAE, avoiding the distribution shift issues that affect off-policy methods on continuous control."
+    },
+    {
+      "title": "RLHF for language model alignment",
+      "body": "PPO is the RL algorithm used in InstructGPT (Ouyang et al., 2022) and the core alignment step of ChatGPT, Claude, and Gemini. The reward model (trained on human preference pairs) scores LM outputs; PPO maximises expected reward while keeping the LM close to the reference policy (SFT model) via a KL penalty: r(x,y) = r_φ(x,y) − β·KL(π_θ(y|x)||π_ref(y|x)). PPO's stability is critical here: a single large policy update could collapse the LM's fluency. The clipped objective prevents the policy from exploiting the reward model with degenerate outputs."
+    },
+    {
+      "title": "Game playing and competitive environments",
+      "body": "PPO (and its multi-agent extension MAPPO) is used for training agents in complex game environments: OpenAI Five (Dota 2, defeating professional human players) used a PPO variant with population-based self-play. AlphaStar (StarCraft II) used a combination of PPO and league-based self-play. The policy gradient formulation naturally handles the large discrete action spaces of real-time strategy games (10^26 possible actions in Dota) through autoregressive action factorisation, whereas DQN's argmax selection over all actions would be intractable."
+    }
+  ],
+  "deepDiveIntro": [
+    "Schulman et al. (2017) introduced PPO as a simpler alternative to TRPO (Trust Region Policy Optimisation). TRPO maximises the surrogate objective subject to a KL constraint: max_{θ} L^{CPI}(θ) = E[π_θ(a|s)/π_{θ_old}(a|s) · A(s,a)] subject to E[KL(π_{θ_old}||π_θ)] ≤ δ. The constraint prevents the new policy from deviating too far, but requires computing the Fisher information matrix and solving a constrained optimisation problem — expensive and complex. PPO replaces the KL constraint with a clipped objective: L^{CLIP}(θ) = E[min(r_t(θ)·A_t, clip(r_t(θ), 1−ε, 1+ε)·A_t)], where r_t(θ) = π_θ(a_t|s_t)/π_{θ_old}(a_t|s_t). The clipping prevents r_t from moving outside [1−ε, 1+ε], automatically limiting the policy update. [1]",
+    "PPO training proceeds in epochs: (1) Collect T timesteps of experience using the current policy π_{θ_old}; (2) Compute advantages Â_t using Generalised Advantage Estimation (GAE): Â_t = Σ_{l=0}^∞ (γλ)^l δ_{t+l}, where δ_t = r_t + γV(s_{t+1}) − V(s_t). GAE with λ ∈ [0,1] interpolates between high-variance (λ=1, Monte Carlo returns) and high-bias (λ=0, one-step TD) advantage estimates; (3) Update the policy by running K epochs of minibatch gradient ascent on L^{CLIP} using the T collected transitions; (4) Update the value network on the same transitions. The PPO total loss: L = L^{CLIP} − c_1·L^{VF} + c_2·S[π_θ], where L^{VF} is the value loss and S is an entropy bonus for exploration. [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Clipped Surrogate Objective",
+      "body": "The clipped loss L^{CLIP}(θ) = E[min(r_t·A_t, clip(r_t, 1−ε, 1+ε)·A_t)] has a piecewise gradient: when A_t > 0 (good action), r_t is increased but clipped at 1+ε — pushing the policy to prefer this action, but not too strongly. When A_t < 0 (bad action), r_t is decreased but clipped at 1−ε — discouraging the action, but preventing collapse to zero probability. The min operation selects the pessimistic (lower) bound, ensuring the gradient never makes the policy update larger than the clip permits. The ε=0.2 hyperparameter is robust: Schulman et al. tested ε ∈ {0.1, 0.2, 0.3} and found 0.2 consistently best across benchmarks. The clipping is asymmetric in effect: when a good action was rare under the old policy, r_t can be large, and the clip limits the update — critical for sparse reward environments. [1]"
+    },
+    {
+      "heading": "Generalised Advantage Estimation (GAE)",
+      "body": "Computing the advantage A(s,a) = Q(s,a) − V(s) requires accurate Q and V estimates. Two extremes: (1) Monte Carlo return: A_t = Σ_{l=0}^∞ γ^l r_{t+l} − V(s_t) — unbiased but very high variance (depends on the entire future trajectory); (2) TD(0): A_t = r_t + γV(s_{t+1}) − V(s_t) — low variance but biased (relies on V being accurate). GAE (Schulman et al., 2016) interpolates via the λ parameter: Â_t^{GAE(γ,λ)} = Σ_{l=0}^∞ (γλ)^l δ_{t+l}, where δ_t = r_t + γV(s_{t+1}) − V(s_t) is the TD residual. λ=0 gives TD(0) (low variance, high bias); λ=1 gives Monte Carlo (high variance, low bias). λ=0.95 with γ=0.99 is the standard PPO configuration, providing a bias-variance tradeoff that works well in practice. [1]"
+    },
+    {
+      "heading": "PPO vs TRPO: Simplicity and Performance",
+      "body": "TRPO requires: (1) computing the KL divergence constraint; (2) computing the Fisher-vector product (second-order information); (3) solving the constrained optimisation via conjugate gradients; (4) a line search to ensure constraint satisfaction. Total: 10× more computation per update than first-order methods. PPO replaces all of this with a simple clip and runs K=4–10 epochs of mini-batch Adam updates on the collected transitions. Performance comparison on MuJoCo (Schulman et al., 2017): TRPO and PPO achieve similar final rewards on most tasks, but PPO is simpler to implement, has fewer hyperparameters, and scales better to large neural networks. PPO is preferred for: language model RLHF (first-order optimisers mandatory for billion-parameter models), multi-agent settings, and hierarchical RL. TRPO retains an advantage when sample efficiency is critical and the KL constraint must be exactly enforced. [1]"
+    },
+    {
+      "heading": "PPO for RLHF: InstructGPT and ChatGPT",
+      "body": "Ouyang et al. (2022) applied PPO to align language models with human preferences. The reward function: r(x,y) = r_φ(x,y) − β·log(π_θ(y|x)/π_{SFT}(y|x)), where r_φ is a reward model trained on human preference comparisons and the KL term prevents the RL policy from drifting too far from the supervised fine-tuned (SFT) reference model. The KL penalty (β≈0.02) is crucial: without it, the policy exploits the reward model by generating 'reward hacking' outputs that score highly but are incoherent. PPO-specific challenges in RLHF: (1) the policy is a 1.3B–175B parameter LM — requires gradient checkpointing, mixed precision, and careful memory management; (2) the reward is per-sequence (sparse), not per-token — GAE distributes it across tokens; (3) the rollout buffer stores full token sequences (∼1024 tokens) rather than state-action pairs. [1]"
+    }
+  ],
+  "takeaways": [
+    "PPO clipped objective: L^CLIP = E[min(r_t·A_t, clip(r_t, 1-ε, 1+ε)·A_t)]; prevents destabilising policy updates. [1]",
+    "On-policy: collect T steps with π_{θ_old}, run K epochs of mini-batch updates, then discard old transitions. [1]",
+    "GAE: Â_t = Σ(γλ)^l δ_{t+l}; λ=0.95 balances bias (TD) and variance (MC) for advantage estimation. [1]",
+    "PPO total loss: L^CLIP − c_1·L_VF + c_2·entropy; entropy bonus encourages exploration. [1]",
+    "RLHF: PPO trains LMs with r(x,y) = reward_model(x,y) − β·KL(π||π_SFT); foundation of ChatGPT/Claude alignment. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why does PPO require on-policy data, and how does this affect sample efficiency?",
+      "a": "PPO is an on-policy algorithm: the clipped surrogate objective L^CLIP is a first-order approximation of the policy improvement that is only valid when the new policy π_θ is close to the data-generating policy π_{θ_old}. If you use transitions generated by a policy that is very different from π_{θ_old}, the importance weights r_t = π_θ/π_{θ_old} can become very large (importance sampling variance explodes), making the surrogate objective a poor proxy for the true objective. Consequence: PPO must discard its replay buffer after each update cycle — each environment transition is used for only K=4–10 gradient updates before being thrown away. This makes PPO much less sample-efficient than off-policy methods like SAC or TD3 (which reuse transitions thousands of times). On MuJoCo HalfCheetah, SAC achieves the same performance as PPO with ~5–10× fewer environment interactions. For real-world robotics where each environment interaction is expensive, SAC is preferred. PPO is preferred when interaction is cheap (simulation) or the policy must be constrained (RLHF)."
+    },
+    {
+      "q": "What is reward hacking in RLHF and how does the KL penalty in PPO prevent it?",
+      "a": "Reward hacking (also called reward model exploitation or reward overoptimisation) occurs when the RL policy learns to generate outputs that score highly on the reward model r_φ but are actually low-quality or incoherent to humans. The reward model r_φ is trained on a finite set of human preference comparisons and inevitably has imperfections — regions of the output space where it assigns high reward to bad outputs. A PPO policy without constraints will rapidly exploit these regions. The KL penalty r(x,y) = r_φ(x,y) − β·KL(π_θ||π_SFT) constrains the policy: any output that would require the policy to diverge significantly from the SFT distribution incurs a KL cost. The KL term essentially bounds how far the policy can move from the SFT model in probability space. Empirically (Gao et al., 2022): at low KL divergence (0–3 nats), reward model score and human evaluation both increase; at high KL (>5 nats), reward model score continues increasing while human evaluation decreases — the classic reward hacking signature. β is tuned to keep the policy in the 'good' regime."
+    }
+  ],
+  "sources": [
+    {
+      "label": "Schulman et al. (2017) — Proximal Policy Optimization Algorithms, arXiv:1707.06347",
+      "url": "https://arxiv.org/abs/1707.06347"
+    },
+    {
+      "label": "Ouyang et al. (2022) — Training language models to follow instructions with human feedback (InstructGPT), NeurIPS 2022 arXiv:2203.02155",
+      "url": "https://arxiv.org/abs/2203.02155"
+    }
+  ]
+}

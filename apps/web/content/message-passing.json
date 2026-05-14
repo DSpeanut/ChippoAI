@@ -1,0 +1,75 @@
+{
+  "visualizationType": "message-passing-viz",
+  "codeSnapshot": {
+    "label": "mpnn_molecular.py",
+    "code": "import torch\nimport torch.nn as nn\nimport torch.nn.functional as F\nfrom torch_geometric.nn import MessagePassing\nfrom torch_geometric.utils import add_self_loops, degree\n\nclass MPNNLayer(MessagePassing):\n    \"\"\"\n    Message Passing Neural Network layer (Gilmer et al., 2017).\n    Unifies GCN, GAT, GraphSAGE under a single MPNN framework.\n    \"\"\"\n    def __init__(self, in_channels: int, out_channels: int):\n        super().__init__(aggr='add')  # aggregation: add, mean, max\n        # Message function: transforms source + edge features\n        self.message_mlp = nn.Sequential(\n            nn.Linear(2 * in_channels, out_channels),\n            nn.ReLU(),\n            nn.Linear(out_channels, out_channels)\n        )\n        # Update function: transforms aggregated messages + self\n        self.update_mlp = nn.Sequential(\n            nn.Linear(in_channels + out_channels, out_channels),\n            nn.ReLU()\n        )\n\n    def forward(self, x: torch.Tensor, edge_index: torch.Tensor):\n        edge_index, _ = add_self_loops(edge_index, num_nodes=x.size(0))\n        return self.propagate(edge_index, x=x)\n\n    def message(self, x_i: torch.Tensor, x_j: torch.Tensor):\n        \"\"\"m_{ij} = M(h_i, h_j, e_ij) — message from j to i.\"\"\"\n        # x_i: target node features, x_j: source node features\n        return self.message_mlp(torch.cat([x_i, x_j], dim=-1))\n\n    def update(self, aggr_out: torch.Tensor, x: torch.Tensor):\n        \"\"\"h_i' = U(h_i, sum_j m_{ij}) — update target node.\"\"\"\n        return self.update_mlp(torch.cat([x, aggr_out], dim=-1))\n\n# Test\nlayer = MPNNLayer(16, 32)\nx = torch.randn(5, 16)                           # 5 nodes, 16 features\nedge_index = torch.tensor([[0,1,2,3], [1,2,3,4]])  # edges\nout = layer(x, edge_index)\nprint(f\"Output shape: {out.shape}\")              # [5, 32]"
+  },
+  "eli3": [
+    "Almost all graph neural networks — GCN, GAT, GraphSAGE, GIN, MPNN — follow the same basic recipe: each node sends messages to its neighbours, each node collects all incoming messages and aggregates them, and each node updates its own representation based on the aggregated messages. This recipe is called the Message Passing framework.",
+    "Think of it like a town hall meeting: each person (node) writes notes to their friends (neighbours) based on their own status (message function). Everyone reads the notes they received and summarises them (aggregate function: mean, sum, max). Then each person updates their own view based on their summary (update function). After a few rounds, each person's view reflects their local neighbourhood.",
+    "The message passing framework (MPNN) is a unifying lens — different GNNs differ only in how they define the message function, the aggregation function, and the update function. GCN uses a weighted sum message with degree normalisation. GAT uses an attention-weighted sum. GIN uses a sum with a learnable ε. Understanding the MPNN framework lets you design new GNN layers by just specifying these three functions."
+  ],
+  "whenWhy": [
+    {
+      "title": "Molecular property prediction with bond features",
+      "body": "Gilmer et al. (2017) introduced the MPNN framework specifically for quantum chemistry property prediction (QM9 dataset: 130K molecules, 13 quantum properties including dipole moment, energy). The MPNN formulation naturally incorporates edge features (bond type, bond length, aromaticity): the message function M(h_i, h_j, e_ij) conditions on both source node features and edge features. This is essential in chemistry where bond type determines chemical reactivity. Neural FP (Duvenaud et al., 2015) and DTNN (Schütt et al., 2017) are unified as special cases of MPNN, enabling systematic comparison."
+    },
+    {
+      "title": "Unifying and comparing GNN architectures",
+      "body": "The MPNN framework (Gilmer et al., 2017) and the more general Graph Network framework (Battaglia et al., 2018) provide a common language for describing and comparing GNN architectures. Xu et al. (2019) used this framework to characterise the expressive power of GNNs via the Weisfeiler-Leman test: they proved that sum aggregation is strictly more powerful than mean or max aggregation for graph isomorphism tasks. This theoretical analysis led directly to Graph Isomorphism Networks (GIN), which are provably maximally expressive among 1-WL algorithms."
+    },
+    {
+      "title": "Custom GNN layers for new domains",
+      "body": "PyTorch Geometric's MessagePassing base class implements the MPNN framework, allowing domain-specific GNN layers by overriding only the message() and update() functions. This is used in physics simulations (interaction networks: nodes = particles, edges = forces), knowledge graph completion (R-GCN: type-specific message matrices), and social network analysis (relational GNNs). The framework ensures correct neighbourhood aggregation, handles sparse edge_index tensors, and supports different aggregation modes (add, mean, max) without custom CUDA kernels."
+    }
+  ],
+  "deepDiveIntro": [
+    "Gilmer et al. (2017) formalised the MPNN framework as a 3-step computation per layer: (1) Message computation: m_{ij}^t = M_t(h_i^t, h_j^t, e_{ij}), where M_t is the message function, h_i^t is the current representation of node i, and e_{ij} are edge features; (2) Aggregation: m_i^t = Σ_{j ∈ N(i)} m_{ij}^t (sum, mean, or max over incoming messages); (3) Node update: h_i^{t+1} = U_t(h_i^t, m_i^t), where U_t is the update function. After T message passing steps, a readout function computes graph-level representations: ŷ = R({h_i^T, i ∈ G}). All existing GNNs of the time were special cases of this formulation with specific choices of M_t, U_t, and R. [1]",
+    "Battaglia et al. (2018) extended the MPNN framework to Graph Networks (GN), adding edge-level and global-level representations: each GN block maintains h_i (node), e_{ij} (edge), and u (global context) representations and updates all three in each step. The GN update equations: e_{ij}' = φ^e(h_i, h_j, e_{ij}, u) (edge update), h_i' = φ^v(h_i, agg_e, u) (node update), u' = φ^u(agg_h, agg_e, u) (global update). This generality captures not just GNNs but also graph attention networks, interaction networks, deep sets, and transformers as special cases. The graph networks framework informs the design of modern architectures for physics simulation (GraphCast, GNS) and relational reasoning. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Message, Aggregate, Update: Dissecting GNN Architectures",
+      "body": "Different GNN layers differ only in their M and U functions: GCN — message: M(h_i, h_j) = W·h_j / √(d_i·d_j); aggregate: sum; update: U(h_i, m_i) = σ(m_i) (no concatenation). GraphSAGE — message: M(h_i, h_j) = h_j; aggregate: mean; update: U(h_i, m_i) = σ(W·[h_i||m_i]). GAT — message: M(h_i, h_j) = α_{ij}·W·h_j where α is attention; aggregate: sum; update: U(h_i, m_i) = σ(m_i). GIN — message: M(h_i, h_j) = h_j; aggregate: sum; update: U(h_i, m_i) = MLP((1+ε)h_i + m_i). The GIN update is the most expressive: by using sum (preserves multiset information) + MLP (approximates any function), GIN achieves the maximum 1-WL expressiveness. [1]"
+    },
+    {
+      "heading": "Aggregation Function Expressiveness",
+      "body": "The choice of aggregation function determines the expressive power of the GNN. Xu et al. (2019) proved: (1) Sum aggregation: distinguishes all multisets that 1-WL can distinguish — provably optimal for 1-WL expressiveness. (2) Mean aggregation: cannot distinguish nodes with the same mean neighbourhood distribution but different multisets (e.g., two nodes with neighbourhoods {1,1,1,2,2,2} vs {1,2} have the same mean). Useful when node density information (neighbourhood size) is irrelevant. (3) Max aggregation: cannot distinguish sets from multisets (loses count information). Useful when the most extreme value in the neighbourhood is informative (detecting rare events, outlier nodes). In practice on real benchmarks: the differences are task-dependent — for molecular property prediction, sum aggregation is standard (GIN); for node classification on citation networks, mean aggregation (GraphSAGE) is competitive. [2]"
+    },
+    {
+      "heading": "Edge Features in Message Passing",
+      "body": "Many real-world graphs have edge features: bond type in molecules, relation type in knowledge graphs, strength in weighted networks. Standard GCN ignores edge features — it only uses edge connectivity for aggregation. MPNN incorporates edge features in the message function: m_{ij} = M(h_i, h_j, e_{ij}). Common implementations: (1) Concatenation: M(h_i, h_j, e_{ij}) = MLP([h_j || e_{ij}]) or MLP([h_i || h_j || e_{ij}]); (2) Edge gating: M(h_i, h_j, e_{ij}) = h_j ⊙ σ(W_e e_{ij}) — edge features gate the message; (3) Edge networks (MPNN original): M(h_j, e_{ij}) = A(e_{ij})·h_j where A is a learned edge-specific matrix. R-GCN (for knowledge graphs) uses relation-specific weight matrices: M_r(h_j) = W_r·h_j, with a separate W_r per relation type r. For graphs with many relation types (KB-237: 237 relations), basis decomposition reduces parameters: W_r = Σ_b a_{rb}·V_b. [1]"
+    },
+    {
+      "heading": "Beyond 1-WL: Higher-Order GNNs",
+      "body": "Standard MPNNs are bounded by the 1-Weisfeiler-Leman (1-WL) test — they cannot distinguish certain pairs of non-isomorphic graphs (e.g., two regular graphs of the same degree). Higher-order WL tests (k-WL) operate on k-tuples of nodes and are more expressive but computationally expensive. Practical higher-order approaches: (1) k-GNN (Morris et al., 2019): operate on sets of k nodes instead of single nodes; k=3 gives strictly more expressive than 1-WL; (2) Structural features: augment node features with local structural information (triangle count, cycle membership, distance encodings) to break symmetries that 1-WL cannot; (3) Random node initialisation: initialise each node with a unique random feature at each inference — equivalent to higher expressiveness but stochastic (Random Graph Neural Networks); (4) OSAN and SWL (subgraph WL): enumerate local subgraphs and aggregate their representations, achieving polynomial expressiveness gains. [2]"
+    }
+  ],
+  "takeaways": [
+    "MPNN framework: m_{ij} = M(h_i, h_j, e_{ij}) → aggregate → h_i' = U(h_i, agg_j m_{ij}); GCN/GAT/GraphSAGE/GIN are special cases. [1]",
+    "Sum aggregation is provably more expressive than mean or max for graph isomorphism tasks (1-WL bound). [2]",
+    "GIN: h_v^k = MLP((1+ε)h_v^{k-1} + Σ_{u∈N(v)} h_u^{k-1}); maximally expressive among 1-WL algorithms. [2]",
+    "Edge features incorporated in message function: M(h_i, h_j, e_{ij}); essential for molecular and KG applications. [1]",
+    "Beyond 1-WL: k-GNN (k-tuple nodes), structural features, or random initialisation required for higher expressiveness. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why can't standard MPNNs count triangles, and why does that matter?",
+      "a": "Standard MPNNs (bounded by 1-WL) cannot count triangles (3-cycles) in a graph. Two graphs can be 1-WL equivalent (indistinguishable) but have different triangle counts — the MPNN assigns them identical node representations. This matters because: (1) Triangles are structurally important: high triangle density indicates community structure, clustering; low triangle density indicates sparse, hierarchical structure. Social networks, biological networks, and financial fraud all exhibit characteristic triangle distributions. (2) Tasks that require triangle-awareness (link prediction in social networks, friendship recommendation) require either: structural features pre-computed and added as node features (clustering coefficient, number of triangles per node), or higher-order GNNs that explicitly consider pairs or triples. In practice: for most node classification tasks (citation networks, molecular graphs), 1-WL expressiveness is sufficient. For graph-level tasks requiring structural awareness (molecule generation, graph similarity), this limitation matters more."
+    },
+    {
+      "q": "How does the readout function work for graph-level tasks, and what are its limitations?",
+      "a": "After T message passing steps, graph-level predictions require aggregating all node representations into a single graph representation: ŷ = R({h_i^T, i ∈ G}). Common readout functions: (1) Sum/mean/max global pooling: ŷ = Σ_i h_i^T — simple but loses structural information (e.g., can't distinguish graph size from node features). (2) Hierarchical pooling (DiffPool, MinCut): learn to cluster nodes into coarser graphs, then apply message passing at each level — captures multi-scale structure but adds complexity. (3) Set2Vec: apply a memory-augmented RNN (LSTM with attention) over node embeddings — permutation-invariant by design, but expensive. (4) Global attention pooling: ŷ = Σ_i softmax(gate(h_i)) ⊙ h_i^T — learned node importance weights. The fundamental limitation: global pooling compresses variable-length node sets to fixed-size vectors, losing some structural information. For graphs requiring exact structural matching (graph isomorphism tasks), all existing polynomial readout functions are insufficient."
+    }
+  ],
+  "sources": [
+    {
+      "label": "Gilmer et al. (2017) — Neural Message Passing for Quantum Chemistry, ICML 2017 arXiv:1704.01212",
+      "url": "https://arxiv.org/abs/1704.01212"
+    },
+    {
+      "label": "Xu et al. (2019) — How Powerful are Graph Neural Networks? (GIN), ICLR 2019 arXiv:1810.00826",
+      "url": "https://arxiv.org/abs/1810.00826"
+    }
+  ]
+}

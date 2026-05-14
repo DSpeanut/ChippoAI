@@ -1,0 +1,75 @@
+{
+  "visualizationType": "gcn-viz",
+  "codeSnapshot": {
+    "label": "gcn_cora.py",
+    "code": "import torch\nimport torch.nn.functional as F\nfrom torch_geometric.nn import GCNConv\nfrom torch_geometric.datasets import Planetoid\n\n# --- Load Cora citation network ---\ndataset = Planetoid(root='/tmp/Cora', name='Cora')\ndata    = dataset[0]\nprint(f\"Nodes: {data.num_nodes}, Edges: {data.num_edges}\")\nprint(f\"Features: {data.num_features}, Classes: {dataset.num_classes}\")\nprint(f\"Train mask: {data.train_mask.sum()} nodes\")\n\n# --- 2-layer GCN ---\nclass GCN(torch.nn.Module):\n    def __init__(self, in_channels, hidden, out_channels):\n        super().__init__()\n        self.conv1 = GCNConv(in_channels, hidden)\n        self.conv2 = GCNConv(hidden, out_channels)\n\n    def forward(self, x, edge_index):\n        x = F.relu(self.conv1(x, edge_index))   # H^(1) = ReLU(AH^(0)W^(0))\n        x = F.dropout(x, p=0.5, training=self.training)\n        return self.conv2(x, edge_index)         # H^(2) = AH^(1)W^(1)\n\ndevice = torch.device('cuda' if torch.cuda.is_available() else 'cpu')\nmodel  = GCN(dataset.num_features, 16, dataset.num_classes).to(device)\ndata   = data.to(device)\noptimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=5e-4)\n\nfor epoch in range(200):\n    model.train()\n    optimizer.zero_grad()\n    out  = model(data.x, data.edge_index)\n    loss = F.cross_entropy(out[data.train_mask], data.y[data.train_mask])\n    loss.backward(); optimizer.step()\n\nmodel.eval()\nwith torch.no_grad():\n    pred = model(data.x, data.edge_index).argmax(dim=1)\n    acc  = (pred[data.test_mask] == data.y[data.test_mask]).float().mean()\nprint(f\"Test accuracy: {acc.item():.4f}\")  # ~0.81"
+  },
+  "eli3": [
+    "GCNs (Graph Convolutional Networks) apply convolution-like operations to graphs — data structures where items (nodes) are connected to each other (edges). Unlike images where each pixel has the same number of neighbours in the same positions, graph nodes can have any number of connections to any other nodes.",
+    "The core idea: each node updates its representation by averaging the features of all its neighbours (plus itself), then multiplying by a learned weight matrix. Do this for a few rounds, and each node's representation captures not just its own features, but information from its local neighbourhood.",
+    "GCNs are used for tasks like: predicting whether a protein will bind to a drug (nodes = atoms, edges = bonds), predicting citation categories for academic papers (nodes = papers, edges = citations), or detecting fraud in transaction networks (nodes = accounts, edges = transactions)."
+  ],
+  "whenWhy": [
+    {
+      "title": "Node classification on citation and social networks",
+      "body": "GCN was introduced for semi-supervised node classification where only a fraction of nodes are labeled. Kipf & Welling (2017) demonstrated this on citation networks (Cora, Citeseer, Pubmed): nodes = papers, edges = citations, features = bag-of-words representations. With only 20 labeled examples per class, GCN achieves 81.5% accuracy on Cora — significantly better than feature-only MLP (57%) or label propagation (68%). The message passing mechanism allows information to flow from labeled to unlabeled nodes through the graph structure."
+    },
+    {
+      "title": "Molecular property prediction",
+      "body": "GCNs and their variants (MPNN, GIN) are the standard approach for predicting molecular properties (solubility, toxicity, binding affinity) from molecular graphs. Nodes = atoms (with atomic number, charge, hybridisation as features), edges = bonds (with bond type, aromaticity). The GCN aggregates atom features with bonding structure, producing a molecular fingerprint for property prediction. This is faster and often more accurate than traditional cheminformatics fingerprints (Morgan algorithm) for learned property prediction."
+    },
+    {
+      "title": "Recommendation systems with user-item graphs",
+      "body": "Large-scale recommendation systems model users and items as nodes in a bipartite graph with edges = interactions (clicks, purchases, ratings). GCN-based methods (PinSage, LightGCN) propagate user preferences through the interaction graph: a user's representation is informed by the items they interacted with, which are in turn informed by other users who interacted with them. Pinterest's PinSage processes a graph with 3B nodes and 18B edges using mini-batch GCN training with importance sampling."
+    }
+  ],
+  "deepDiveIntro": [
+    "Kipf & Welling (2016) introduced the graph convolutional network with layer-wise propagation: H^{(l+1)} = σ(D̃^{-1/2} Ã D̃^{-1/2} H^{(l)} W^{(l)}), where Ã = A + I_N is the adjacency matrix with self-loops added, D̃ is the degree matrix of Ã (D̃_{ii} = Σ_j Ã_{ij}), and W^{(l)} ∈ ℝ^{d_l×d_{l+1}} is the learnable weight matrix. The D̃^{-1/2} Ã D̃^{-1/2} term is the symmetrically normalised adjacency matrix: it ensures that the aggregated feature vector is a normalised average of neighbour features, preventing high-degree nodes from dominating. For a single node v: h_v^{(l+1)} = σ(W^{(l)} · Σ_{u ∈ N(v) ∪ {v}} h_u^{(l)} / √(d_v+1)·√(d_u+1)), where d_v is the degree of node v. [1]",
+    "The spectral interpretation: GCN is derived from spectral graph theory. The graph Laplacian L = D − A and its normalised version L̃ = I − D^{-1/2}AD^{-1/2} encode the graph's spectral structure. Graph convolution in the spectral domain is g_θ ★ x = U g_θ(Λ) U^T x, where U is the eigenvectors of L and Λ the eigenvalues. Kipf & Welling approximate g_θ(Λ) ≈ θ_0 + θ_1 Λ (first-order Chebyshev approximation) and use a single parameter θ = θ_0 = −θ_1, giving the D^{-1/2}ÃD^{-1/2} propagation rule. The spatial interpretation is more intuitive: each node aggregates a normalised average of its neighbours' features. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Symmetric Normalisation: Why It Matters",
+      "body": "Without normalisation (H^{l+1} = σ(ÃH^{l}W)), aggregating features from all neighbours increases the magnitude of features for high-degree nodes (hubs) — gradients would be dominated by high-degree nodes and features would be numerically unstable. D^{-1/2} Ã D^{-1/2} normalises each edge (i,j) by 1/√(d_i · d_j): the contribution of node j to node i is weighted by the geometric mean of their degrees. Alternative: simple mean aggregation D^{-1}Ã (divide by source degree). Symmetric normalisation is more statistically justified: it's equivalent to graph normalised cuts and is the standard in spectral graph theory. For directed graphs, the asymmetric version D^{-1}Ã is used (row-wise normalisation). [1]"
+    },
+    {
+      "heading": "Over-smoothing: Depth Limitation of GCN",
+      "body": "A critical limitation: deep GCNs suffer over-smoothing — as the number of layers increases, node representations converge to the same value (become indistinguishable). Formally, D^{-1/2}ÃD^{-1/2} is a doubly stochastic matrix with spectral radius ≤ 1; repeated multiplication drives all features toward the eigenvector corresponding to the largest eigenvalue (constant vector). Li et al. (2018) showed that after L layers, all node representations converge to the graph's stationary distribution weighted by √d_v. Mitigation: (1) use only 2–3 layers in practice; (2) residual connections (GCNII): h^{(l)} = σ(((1−α)D^{-1/2}ÃD^{-1/2}h^{(l-1)} + α h^{(0)})W^{(l)}) — retains original features at every layer; (3) jumping knowledge networks — concatenate hidden states from all layers. [2]"
+    },
+    {
+      "heading": "Semi-Supervised Learning with GCN",
+      "body": "Kipf & Welling's original setting: only a small fraction of nodes are labeled (20 per class on Cora ≈ 5% labeled). The GCN is trained with cross-entropy on labeled nodes only: L = Σ_{v ∈ labeled} CE(h_v^{(L)}, y_v). But because GCN aggregates features across the graph, unlabeled nodes influence the representations of labeled nodes and vice versa — the graph structure acts as a regulariser that propagates label information. This is a form of graph-based semi-supervised learning without explicit graph Laplacian regularisation (as in earlier methods like label propagation). Performance comparison (Cora, 140 labeled nodes): Logistic regression on features: 57.2%; DeepWalk: 67.2%; GCN: 81.5%. [1]"
+    },
+    {
+      "heading": "Mini-Batch Training and Neighbourhood Sampling",
+      "body": "Full-batch GCN computes the propagation on the entire graph at once — infeasible for large graphs (millions of nodes). Two main approaches for scalable training: (1) GraphSAGE (Hamilton et al., 2017) — for each target node, sample a fixed-size neighbourhood at each layer; compute the aggregation only over sampled neighbours; use mini-batch gradient descent on subgraphs. (2) Cluster-GCN (Chiang et al., 2019) — partition the graph into clusters (e.g., using METIS), sample entire clusters as mini-batches, computing gradients within-cluster only. The inter-cluster edges are discarded for the mini-batch (introducing approximation). In PyTorch Geometric, NeighborLoader implements (1): sample up to k neighbours per layer for each target node, building a sampled subgraph for each mini-batch. [2]"
+    }
+  ],
+  "takeaways": [
+    "GCN propagation: H^(l+1) = σ(D̃^{-1/2}ÃD̃^{-1/2}H^(l)W^(l)); symmetric normalisation prevents degree bias. [1]",
+    "Spectral derivation: first-order Chebyshev approximation of spectral graph convolution. [2]",
+    "Over-smoothing: deep GCNs converge to constant representations; use 2–3 layers + residual connections in practice. [2]",
+    "Semi-supervised: train on labeled nodes only; graph structure regularises by propagating label information. [1]",
+    "Mini-batch training: GraphSAGE neighbourhood sampling or Cluster-GCN for graphs too large for full-batch. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why does GCN add self-loops (Ã = A + I) before normalisation?",
+      "a": "Without self-loops, a node's aggregation at layer l depends only on its neighbours' features from layer l-1 — the node's own features are not directly included. This means a node can receive information from neighbours but cannot directly retain its own identity. Adding a self-loop (Ã = A + I) includes the node itself in its own neighbourhood, so the aggregated representation is: h_v^{(l+1)} = σ(W^{(l)} · Σ_{u ∈ N(v) ∪ {v}} h_u^{(l)/normalisation}). This allows each node to retain some of its own representation while incorporating neighbourhood information. Without self-loops, GCN would need a separate residual connection to preserve node features — adding the self-loop is the simpler equivalent."
+    },
+    {
+      "q": "What is the difference between GCN and the simpler mean aggregation?",
+      "a": "Simple mean aggregation: h_v^{(l+1)} = σ(W^{(l)} · mean_{u ∈ N(v) ∪ {v}}(h_u^{(l)})). GCN uses symmetric normalisation: 1/√(d_v+1)·√(d_u+1) per edge, not 1/(d_v+1). The difference: (1) simple mean treats all neighbours equally regardless of their degrees — a hub and a leaf contribute equally to the average. Symmetric normalisation down-weights contributions from high-degree nodes (hubs), reducing their influence on local representations. (2) Spectral motivation: symmetric normalisation is derived from spectral graph theory and corresponds to the random walk normalised Laplacian, with cleaner convergence properties. In practice, the difference in accuracy is modest; GraphSAGE with mean aggregation sometimes outperforms GCN on certain benchmarks."
+    }
+  ],
+  "sources": [
+    {
+      "label": "Kipf & Welling (2016) — Semi-Supervised Classification with Graph Convolutional Networks, ICLR 2017 arXiv:1609.02907",
+      "url": "https://arxiv.org/abs/1609.02907"
+    },
+    {
+      "label": "Wu et al. (2019) — Simplifying Graph Convolutional Networks, ICML 2019 arXiv:1902.07153",
+      "url": "https://arxiv.org/abs/1902.07153"
+    }
+  ]
+}

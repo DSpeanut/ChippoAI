@@ -1,0 +1,75 @@
+{
+  "visualizationType": "pooling-viz",
+  "codeSnapshot": {
+    "label": "pooling.py",
+    "code": "import torch\nimport torch.nn as nn\n\n# --- Max Pooling vs Average Pooling ---\nx = torch.tensor([[[[1., 3., 2., 4.],\n                    [5., 6., 1., 2.],\n                    [3., 1., 4., 5.],\n                    [2., 3., 2., 1.]]]])  # [1, 1, 4, 4]\n\nmax_pool = nn.MaxPool2d(kernel_size=2, stride=2)\navg_pool = nn.AvgPool2d(kernel_size=2, stride=2)\ngap      = nn.AdaptiveAvgPool2d(output_size=(1, 1))  # Global Average Pooling\n\nprint(\"Input:\")\nprint(x.squeeze())\nprint(\"\\nMaxPool2d(2,2):\")\nprint(max_pool(x).squeeze())  # [[6,4],[3,5]]\nprint(\"\\nAvgPool2d(2,2):\")\nprint(avg_pool(x).squeeze())  # [[3.75, 2.25],[2.25, 3.0]]\nprint(\"\\nGlobal Average Pooling:\")\nprint(gap(x).squeeze())      # scalar: mean of all values\n\n# --- Dimension calculation ---\n# Input: H=8, kernel=2, stride=2, padding=0\n# H_out = floor((8 + 2*0 - 2) / 2) + 1 = floor(6/2) + 1 = 4\nH_in, K, S, P = 8, 2, 2, 0\nH_out = (H_in + 2*P - K) // S + 1\nprint(f\"\\nH_in={H_in} -> H_out={H_out} with K={K}, S={S}\")"
+  },
+  "eli3": [
+    "After a convolutional layer produces feature maps, pooling shrinks them down. Imagine dividing the feature map into small boxes and keeping only one number per box — either the biggest number (max pooling) or the average. The map gets smaller but the important information is preserved.",
+    "Max pooling keeps the strongest activation in each region — it's asking 'was this feature present anywhere in this patch?' Average pooling asks 'how strong was this feature on average?' Max pooling is more common in CNNs because detecting the presence of a feature is usually more important than its average strength.",
+    "The main benefit of pooling is spatial down-sampling: it shrinks the feature map so deeper layers see bigger portions of the original image. It also provides a small degree of translation invariance — if a feature shifts by one pixel, the max pool output is the same as long as the feature stays within the same pooling window."
+  ],
+  "whenWhy": [
+    {
+      "title": "Spatial downsampling between convolutional layers",
+      "body": "Pooling reduces spatial dimensions (H×W) between convolutional blocks, reducing computation in subsequent layers. Without downsampling, applying 10 conv layers to a 224×224 image keeps every feature map at 224×224 — computationally expensive. A 2×2 max pool with stride 2 halves H and W, reducing the feature map size by 4×. Modern networks often use strided convolutions (stride=2) instead of max pooling for downsampling, giving the network more flexibility, but max pooling remains common in established architectures like VGG."
+    },
+    {
+      "title": "Translation invariance for classification",
+      "body": "Max pooling provides a degree of translation invariance within the pooling window: if a feature shifts by at most k pixels (k < pool size), the max pool output is unchanged. This helps image classifiers handle small geometric variations — the network doesn't need to see the exact same pixel pattern in the same position. Global average pooling (GAP) at the end of the network provides complete translation invariance: it summarises the entire feature map as a single vector, regardless of the feature's spatial position."
+    },
+    {
+      "title": "Global Average Pooling as replacement for FC layers",
+      "body": "Lin et al. (2013) proposed replacing the final fully-connected layers with Global Average Pooling (GAP): for each of the C output channels, compute the spatial average, yielding a C-dimensional vector. Benefits: drastically reduces parameters (no large FC weight matrices), makes the network accept arbitrary-size inputs (no fixed spatial dimension requirement), provides stronger regularisation against overfitting, and gives each channel a natural interpretation as a class response map. GAP is used in ResNet, MobileNet, EfficientNet, and most modern CNNs."
+    }
+  ],
+  "deepDiveIntro": [
+    "Pooling is a spatial aggregation operation applied independently to each channel of a feature map. Max pooling over a k×k window with stride s computes: output[i,j] = max_{m,n ∈ [0,k-1]} input[i·s+m, j·s+n]. Average pooling replaces max with mean. Output dimensions follow the same formula as convolution: H_out = floor((H + 2P − K)/S) + 1. The most common configuration is K=2, S=2, P=0, which halves spatial dimensions (H_out = H/2, W_out = W/2) and reduces the number of activations by 4× per channel. Pooling has no learnable parameters — unlike strided convolutions, it cannot adapt its aggregation to the data. [1]",
+    "The role of pooling in CNNs has evolved. Early architectures (LeNet-5, AlexNet, VGG) used max pooling after every 1–2 convolutional layers to progressively reduce spatial resolution. Later architectures (ResNet, Inception) use strided convolutions for downsampling and pool only at the end (global average pooling). The argument for strided convolutions: the network can learn the optimal downsampling kernel rather than using a fixed max or average. However, max pooling is computationally cheaper (no parameters) and has useful theoretical properties: it is a differentiable function everywhere except at ties, and its gradients during backpropagation route only through the argmax location — a form of sparse gradient. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Max Pooling Gradient Flow",
+      "body": "During backpropagation, max pooling routes the gradient from the output unit back to the input unit that achieved the maximum value (the argmax), and zero to all other units in the pooling window. This means only one position per pooling region receives a gradient signal — max pooling is inherently sparse. In practice this can reduce gradient signal to early layers (fewer neurons receive gradients), but it also acts as a regulariser. Ties in the argmax are handled by routing the gradient to the first occurring maximum by convention. Average pooling distributes the gradient equally among all units in the window (gradient = 1/K² per unit), giving denser gradients but no sparsity effect. [1]"
+    },
+    {
+      "heading": "Global Average Pooling vs Flatten + FC",
+      "body": "Traditional classification heads: after the last convolutional block, flatten the feature map (H×W×C → H·W·C) and pass through 1–2 fully connected layers. For VGG-16 with C=512 feature maps of size 7×7, the flatten layer produces 512×7×7=25,088 activations, followed by FC layers with 4096 units — contributing ~100M parameters out of VGG-16's 138M total. Global Average Pooling (GAP) replaces this: average over H×W for each channel → C-dimensional vector → FC(C, n_classes). For ResNet-50, this changes the head from 25,088×2048 (51M parameters) to 2048×1000 (2M parameters) while achieving better accuracy due to reduced overfitting and a regularisation effect. GAP also enables variable-input-size inference. [2]"
+    },
+    {
+      "heading": "Translation Invariance vs Equivariance",
+      "body": "Convolution is translation equivariant: shifting the input by Δ pixels shifts the feature map by Δ/stride pixels. Max pooling introduces local translation invariance within the pooling window: features can shift by up to k/2 pixels without changing the pooled output. This is desirable for classification (an object is the same class regardless of exact position) but undesirable for tasks requiring spatial precision (segmentation, keypoint detection, object detection). For tasks requiring spatial precision, pooling is avoided or special handling is used: U-Net uses skip connections to restore spatial information lost during pooling; deformable convolutions learn spatially-aware filters; the 'where' information is preserved alongside the 'what' information. [1]"
+    },
+    {
+      "heading": "Adaptive Pooling and Multi-Scale Models",
+      "body": "Adaptive pooling (nn.AdaptiveAvgPool2d or AdaptiveMaxPool2d) generalises fixed-size pooling to produce any target output size, regardless of input size. For example, AdaptiveAvgPool2d(7) produces a 7×7 output from any input size by dynamically computing the kernel size and stride. This enables: (1) accepting variable-size inputs in a single model; (2) Spatial Pyramid Pooling (SPP) — apply adaptive pooling at multiple target sizes (e.g., 1×1, 2×2, 4×4) and concatenate the results, giving multi-scale features without requiring fixed input size. SPP-Net used this to enable region proposal networks to work with any image size. [2]"
+    }
+  ],
+  "takeaways": [
+    "Max pooling: takes the maximum in each k×k window; provides local translation invariance and sparse gradients. [1]",
+    "Average pooling: takes the mean; denser gradients but weaker invariance. [1]",
+    "Global Average Pooling replaces flatten+FC with per-channel spatial averages — fewer parameters, better regularisation. [2]",
+    "Standard 2×2 max pool with stride 2 halves H and W, reducing feature map size 4× per channel. [1]",
+    "Modern architectures often use strided convolutions instead of max pooling for downsampling (learnable, more flexible). [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why do detection and segmentation models avoid or specially handle max pooling?",
+      "a": "Max pooling discards spatial information — it tells you whether a feature was present in a region but not exactly where. For object detection (need bounding box coordinates) and segmentation (need per-pixel labels), precise spatial location is critical. Solutions: (1) U-Net uses max-pooling indices to unpool during the decoder path, partially restoring spatial information; (2) Feature Pyramid Networks (FPN) combine multi-scale feature maps from before and after pooling; (3) RoI Pooling / RoI Align in Faster R-CNN applies pooling to specific regions of interest without downsampling the full feature map first; (4) Fully convolutional networks avoid pooling altogether for dense prediction tasks."
+    },
+    {
+      "q": "Does max pooling hurt gradient flow compared to average pooling?",
+      "a": "Max pooling routes gradients only through the argmax position (one unit per pooling window), while average pooling distributes gradients equally (all units per window). In theory, max pooling provides sparser gradients, which could slow training in early layers. In practice, this effect is minor because (1) the argmax positions change across training examples, so all units eventually receive gradients; (2) the sparse gradient of max pooling acts as a regulariser, improving generalisation; (3) residual connections and batch normalisation in modern architectures mitigate gradient flow issues regardless of pooling type. For very deep early-architecture networks (VGG without residuals), average pooling can sometimes improve training stability."
+    }
+  ],
+  "sources": [
+    {
+      "label": "Scherer, Müller & Behnke (2010) — Evaluation of Pooling Operations in CNN for Object Recognition, ICANN 2010",
+      "url": "https://doi.org/10.1007/978-3-642-15825-4_10"
+    },
+    {
+      "label": "Lin et al. (2013) — Network in Network (Global Average Pooling proposal), arXiv:1312.4400",
+      "url": "https://arxiv.org/abs/1312.4400"
+    }
+  ]
+}

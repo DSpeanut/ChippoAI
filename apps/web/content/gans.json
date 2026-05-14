@@ -1,0 +1,75 @@
+{
+  "visualizationType": "gans-viz",
+  "codeSnapshot": {
+    "label": "dcgan.py",
+    "code": "import torch\nimport torch.nn as nn\n\n# --- DCGAN Generator (Radford et al., 2015) ---\nclass Generator(nn.Module):\n    def __init__(self, z_dim=100, ngf=64):\n        super().__init__()\n        self.net = nn.Sequential(\n            # Input: z_dim x 1 x 1\n            nn.ConvTranspose2d(z_dim, ngf*8, 4, 1, 0, bias=False),\n            nn.BatchNorm2d(ngf*8), nn.ReLU(True),  # -> 512 x 4 x 4\n            nn.ConvTranspose2d(ngf*8, ngf*4, 4, 2, 1, bias=False),\n            nn.BatchNorm2d(ngf*4), nn.ReLU(True),  # -> 256 x 8 x 8\n            nn.ConvTranspose2d(ngf*4, ngf*2, 4, 2, 1, bias=False),\n            nn.BatchNorm2d(ngf*2), nn.ReLU(True),  # -> 128 x 16 x 16\n            nn.ConvTranspose2d(ngf*2, ngf,   4, 2, 1, bias=False),\n            nn.BatchNorm2d(ngf),   nn.ReLU(True),  # ->  64 x 32 x 32\n            nn.ConvTranspose2d(ngf, 3,       4, 2, 1, bias=False),\n            nn.Tanh()                              # ->   3 x 64 x 64\n        )\n    def forward(self, z): return self.net(z)\n\n# --- DCGAN Discriminator ---\nclass Discriminator(nn.Module):\n    def __init__(self, ndf=64):\n        super().__init__()\n        self.net = nn.Sequential(\n            nn.Conv2d(3, ndf,   4, 2, 1, bias=False), nn.LeakyReLU(0.2, True),\n            nn.Conv2d(ndf, ndf*2, 4, 2, 1, bias=False), nn.BatchNorm2d(ndf*2), nn.LeakyReLU(0.2, True),\n            nn.Conv2d(ndf*2, ndf*4, 4, 2, 1, bias=False), nn.BatchNorm2d(ndf*4), nn.LeakyReLU(0.2, True),\n            nn.Conv2d(ndf*4, ndf*8, 4, 2, 1, bias=False), nn.BatchNorm2d(ndf*8), nn.LeakyReLU(0.2, True),\n            nn.Conv2d(ndf*8, 1,     4, 1, 0, bias=False), nn.Sigmoid()\n        )\n    def forward(self, x): return self.net(x).view(-1)\n\nG = Generator(); D = Discriminator()\nz = torch.randn(4, 100, 1, 1)\nfake = G(z)\nprint(f\"Fake images: {fake.shape}\")      # [4, 3, 64, 64]\nprint(f\"D(fake): {D(fake).shape}\")       # [4]"
+  },
+  "eli3": [
+    "A GAN pits two neural networks against each other like a counterfeiter and a detective. The generator tries to create fake images so convincing that the discriminator (the detective) can't tell them apart from real ones. The discriminator tries to detect fakes. Each improves by competing with the other.",
+    "Training works in turns: first train the discriminator to get better at spotting fakes, then train the generator to fool the better discriminator. Back and forth. At the end, the generator has learned to produce images that look completely real — faces of people who don't exist, bedrooms, artwork.",
+    "The problem: this competition can be unstable. Sometimes the generator finds one kind of image that fools the discriminator and keeps generating only that — called mode collapse. Or the discriminator gets so good so fast that the generator receives no useful gradient to improve from. GANs are powerful but notoriously difficult to train stably."
+  ],
+  "whenWhy": [
+    {
+      "title": "High-fidelity image synthesis and data augmentation",
+      "body": "GANs produce the highest visual quality images among generative models in their era. StyleGAN2 (Karras et al., 2020) generates photorealistic 1024×1024 faces indistinguishable from photographs. GANs are used for data augmentation in domains where labeled data is scarce (medical imaging, rare defect detection): generate synthetic labeled examples to supplement real data. ProGAN and StyleGAN progressively grow resolution, enabling stable high-res generation. While Diffusion Models have recently surpassed GANs in quality, GANs remain faster at inference (single forward pass vs hundreds of diffusion steps)."
+    },
+    {
+      "title": "Image-to-image translation (pix2pix, CycleGAN)",
+      "body": "Conditional GANs translate between paired (pix2pix: edges → photos, maps → satellite) or unpaired (CycleGAN: summer → winter, horses → zebras) image domains. The discriminator is conditioned on the input image, requiring the generator to produce outputs realistic not just in isolation but consistent with the input. CycleGAN uses cycle-consistency loss: translating from domain A → B → A should recover the original image. This allows translation without paired training data — a major practical advantage for domains where paired examples are expensive or impossible to collect."
+    },
+    {
+      "title": "Understanding generative modelling and implicit distributions",
+      "body": "GANs learn an implicit generative distribution — there is no explicit likelihood p_θ(x). The generator G: ℝ^z → ℝ^d maps a known prior (Gaussian noise) to the data space; the discriminator provides a learning signal without requiring density estimation. This contrasts with VAEs (explicit ELBO) and diffusion models (explicit denoising objective). Understanding the minimax game formulation is foundational for generative modelling theory, including the connections between GAN training and f-divergence minimisation (f-GANs) and optimal transport (Wasserstein GAN)."
+    }
+  ],
+  "deepDiveIntro": [
+    "Goodfellow et al. (2014) formulated GAN training as a minimax game: min_G max_D V(D,G) = E_{x~p_data}[log D(x)] + E_{z~p_z}[log(1 − D(G(z)))]. The discriminator D maximises V (distinguish real from fake); the generator G minimises V (fool the discriminator). At the Nash equilibrium, the optimal discriminator for any generator is D*(x) = p_data(x) / (p_data(x) + p_G(x)). Substituting D* back gives: V(G, D*) = -log 4 + 2·JSD(p_data || p_G), where JSD is the Jensen-Shannon divergence. Thus GAN training minimises JSD between the data and generator distributions. The global optimum is p_G = p_data (JSD=0), but achieving this requires alternating gradient updates that may not converge in practice. [1]",
+    "In practice, the log(1−D(G(z))) loss provides vanishing gradients when D is strong (D(G(z)) ≈ 0). A practical fix: train G to maximise log D(G(z)) instead (non-saturating loss). Arjovsky et al. (2017) proposed Wasserstein GAN (WGAN) using the Wasserstein-1 (Earth Mover's) distance instead of JSD. WGAN's objective is: min_G max_{‖f‖_L≤1} E[f(x)] − E[f(G(z))], where f is a 1-Lipschitz function (enforced via weight clipping or gradient penalty). WGAN provides meaningful gradients even when the real and fake distributions have non-overlapping support — a condition where JSD is undefined (GAN's discriminator becomes perfect with 0 gradient to the generator). [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Training Dynamics: Balanced Adversarial Training",
+      "body": "GAN training alternates: (1) update D for k steps using real and fake examples (maximise V); (2) update G for 1 step (minimise V or maximise log D(G(z))). The ratio k:1 is a hyperparameter; k=1 is most common but some papers use k=5 (more discriminator updates). The discriminator must not get too strong (no gradient to G) or too weak (no learning signal). Monitoring: plot D(x) (should be ~0.5 at equilibrium, real samples should score ~0.7 early in training and converge to ~0.5) and D(G(z)) (should converge to ~0.5). If D(G(z)) → 0, the discriminator is too strong; if D(G(z)) → 1 too quickly, the generator is dominating. Spectral normalisation on D layers (Miyato et al., 2018) is a widely used stabiliser: constrain each weight matrix W to have spectral norm 1 by dividing by its largest singular value. [1]"
+    },
+    {
+      "heading": "Mode Collapse: Causes and Mitigations",
+      "body": "Mode collapse occurs when G maps most of the z space to a single or few modes of the data distribution — generating varied latent codes z produces nearly identical outputs. Causes: the discriminator is fooled by one mode; the generator exploits this by always generating that mode instead of exploring the full distribution. Mitigations: (1) Minibatch discrimination — the discriminator computes features across a minibatch to detect low diversity, penalising collapse; (2) Unrolled GAN — unroll the discriminator's optimisation k steps before computing G's gradient, providing G with a more stable training signal; (3) WGAN — the Wasserstein distance provides gradients from the full distribution shape, not just whether individual samples are real/fake; (4) Mode diversity loss — penalise small ‖G(z_1) − G(z_2)‖ for nearby z. [2]"
+    },
+    {
+      "heading": "StyleGAN: Controlling the Generation Process",
+      "body": "StyleGAN (Karras et al., 2019) introduced several architectural innovations that made high-fidelity controllable generation practical. (1) Mapping network: maps latent z ∈ ℝ^512 through 8 FC layers to an intermediate latent W space — this disentangles latent factors (different parts of W control independent visual attributes). (2) Adaptive Instance Normalisation (AdaIN): at each generator layer, normalise feature maps and affinely transform using style vectors derived from W: AdaIN(x, y) = y_s (x − μ(x))/σ(x) + y_b. This injects style at every scale. (3) Stochastic variation: add per-pixel Gaussian noise after each layer for fine details (hair strands, skin pores). StyleGAN2 removed the 'water droplet' artefacts of StyleGAN1 by normalising weight matrices per-pixel instead of feature maps. [2]"
+    },
+    {
+      "heading": "Evaluation Metrics: FID and IS",
+      "body": "Inception Score (IS, Salimans et al., 2016): IS = exp(E_x[KL(p(y|x) || p(y))]), where y are ImageNet classes predicted by an Inception network. High IS means: each individual image looks like a specific class (p(y|x) is sharp), and the diversity across images is high (p(y) is uniform). Fréchet Inception Distance (FID, Heusel et al., 2017): compute the Fréchet distance between Gaussian distributions fitted to Inception-v3 features of real and generated images: FID = ‖μ_r − μ_g‖² + Tr(Σ_r + Σ_g − 2(Σ_rΣ_g)^{1/2}). Lower FID is better. FID is more reliable than IS for detecting mode collapse (IS doesn't penalise collapse, FID does). Standard practice: compute FID on 50k generated vs 50k real samples for comparability. [1]"
+    }
+  ],
+  "takeaways": [
+    "GAN objective: min_G max_D E[log D(x)] + E[log(1−D(G(z)))]; Nash equilibrium minimises JSD(p_data||p_G). [1]",
+    "Non-saturating loss: train G to maximise log D(G(z)) instead of minimise log(1−D(G(z))) to avoid vanishing gradients. [1]",
+    "WGAN replaces JSD with Wasserstein-1 distance via gradient penalty — stable training even with non-overlapping supports. [2]",
+    "Mode collapse: G generates limited variety; mitigations include minibatch discrimination, unrolled GAN, WGAN. [2]",
+    "FID (lower=better) measures Fréchet distance between Inception features of real and generated samples — standard GAN metric. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why does the original GAN loss (log(1−D(G(z)))) cause vanishing gradients and how does the non-saturating fix work?",
+      "a": "When D is strong (D(G(z)) ≈ 0), the gradient of log(1−D(G(z))) w.r.t. G's parameters is ≈ 0 — the loss is saturated. G receives no useful gradient and cannot improve. In the non-saturating variant, G is trained to maximise log D(G(z)) instead. When D(G(z)) ≈ 0, the gradient of log D(G(z)) is 1/D(G(z))·∇D(G(z)) — large gradient, strong learning signal. When D(G(z)) ≈ 1 (G successfully fools D), gradient ≈ 0 — training slows down when G is already succeeding. This non-saturating behaviour matches the desired training dynamic: strong gradient when G needs to improve, weak gradient when G is already good."
+    },
+    {
+      "q": "When would you use a GAN vs a Diffusion Model for image generation in 2024?",
+      "a": "Use GANs when: (1) inference speed is critical — a GAN generates an image in a single forward pass (~milliseconds); diffusion models require 20–1000 denoising steps (~seconds to minutes). (2) latency-sensitive applications (real-time video generation, interactive tools). (3) image-to-image translation with paired data (pix2pix) — GANs are well-studied and produce crisp, deterministic outputs. Use Diffusion Models when: (1) image quality and diversity are the primary concern — DALL-E 3, Stable Diffusion, Imagen outperform the best GANs on FID and human evaluation. (2) text-conditional generation — text-to-image diffusion models are far more controllable than GANs. (3) training stability — diffusion models are much easier to train than GANs. The consensus in 2024: diffusion models for quality and controllability; GANs for speed-critical applications."
+    }
+  ],
+  "sources": [
+    {
+      "label": "Goodfellow et al. (2014) — Generative Adversarial Nets, NeurIPS 2014 arXiv:1406.2661",
+      "url": "https://arxiv.org/abs/1406.2661"
+    },
+    {
+      "label": "Arjovsky, Chintala & Bottou (2017) — Wasserstein GAN, ICML 2017 arXiv:1701.07875",
+      "url": "https://arxiv.org/abs/1701.07875"
+    }
+  ]
+}

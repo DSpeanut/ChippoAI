@@ -1,0 +1,75 @@
+{
+  "visualizationType": "gru-viz",
+  "codeSnapshot": {
+    "label": "gru_vs_lstm.py",
+    "code": "import torch\nimport torch.nn as nn\n\n# Compare GRU vs LSTM parameter counts and shapes\nhidden = 256\ninput_dim = 128\n\nlstm = nn.LSTM(input_dim, hidden, batch_first=True)\ngru  = nn.GRU(input_dim,  hidden, batch_first=True)\n\ndef count_params(model):\n    return sum(p.numel() for p in model.parameters())\n\nprint(f\"LSTM params: {count_params(lstm):,}\")  # 4 * hidden*(hidden+input+1)\nprint(f\"GRU  params: {count_params(gru):,}\")   # 3 * hidden*(hidden+input+1)\n# LSTM: ~394k   GRU: ~295k  (ratio ~4:3)\n\n# --- GRU forward pass ---\nclass GRUClassifier(nn.Module):\n    def __init__(self, vocab_size, embed_dim, hidden_dim, n_classes):\n        super().__init__()\n        self.embed = nn.Embedding(vocab_size, embed_dim)\n        self.gru   = nn.GRU(embed_dim, hidden_dim, num_layers=2,\n                            batch_first=True, dropout=0.3, bidirectional=False)\n        self.fc    = nn.Linear(hidden_dim, n_classes)\n\n    def forward(self, x):\n        emb = self.embed(x)                 # [B, T, embed]\n        out, h_n = self.gru(emb)            # h_n: [num_layers, B, hidden]\n        return self.fc(h_n[-1])             # last layer final hidden: [B, n_classes]\n\nmodel = GRUClassifier(10000, 128, 256, 2)\nx = torch.randint(1, 10000, (32, 50))      # batch=32, seq_len=50\nprint(f\"Output shape: {model(x).shape}\")   # [32, 2]"
+  },
+  "eli3": [
+    "The GRU (Gated Recurrent Unit) is a simplified version of the LSTM that achieves similar performance with fewer moving parts. While an LSTM has three gates (forget, input, output) and two memory vectors (cell state and hidden state), a GRU merges these into just two gates and one memory vector.",
+    "The update gate decides how much of the previous memory to keep and how much to update with new information. The reset gate decides how much of the past memory to use when computing the new candidate memory. These two gates work together like a combination of LSTM's forget and input gates.",
+    "In practice, GRU and LSTM perform very similarly on most tasks, but GRU is faster to train because it has about 25% fewer parameters. Many practitioners try both and pick whichever achieves better validation performance in fewer epochs."
+  ],
+  "whenWhy": [
+    {
+      "title": "When compute efficiency matters (faster training, smaller models)",
+      "body": "GRU trains ~25% faster than LSTM for the same hidden dimension because it has 3 gate matrices instead of 4. For real-time applications (voice assistants, online sequence labelling) where inference latency is constrained, GRU is preferred. On medium-sized datasets and shorter sequence tasks, GRU matches LSTM accuracy with lower computational cost. The choice between GRU and LSTM is empirical — run a hyperparameter sweep with both architectures before committing."
+    },
+    {
+      "title": "Sequence modelling with moderate-length dependencies",
+      "body": "For sequences with moderate-length dependencies (50–200 steps), GRU and LSTM achieve comparable accuracy. GRU's simpler gating is sufficient to capture these dependencies without the full LSTM machinery. Examples: sentiment analysis, text classification, short-sequence time series forecasting. For very long dependencies (> 500 steps), LSTM's separate cell state sometimes provides a marginal advantage, though both are outperformed by Transformers at this scale."
+    },
+    {
+      "title": "Ablation studies and architecture search",
+      "body": "GRU is the natural comparison point for LSTM ablation studies. Chung et al. (2014) compared GRU and LSTM empirically on polyphonic music modelling and speech signal modelling — neither consistently outperformed the other. Greff et al. (2017) conducted a larger systematic comparison: both gates in LSTM are individually important; removing the forget gate hurts most. GRU effectively merges the forget and input gates — its simplicity is justified by the empirical evidence that both architectures work similarly."
+    }
+  ],
+  "deepDiveIntro": [
+    "Cho et al. (2014) introduced the GRU as a simpler alternative to LSTM with only two gates. The GRU equations: z_t = σ(W_z[h_{t-1}, x_t] + b_z) (update gate); r_t = σ(W_r[h_{t-1}, x_t] + b_r) (reset gate); h̃_t = tanh(W[r_t ⊙ h_{t-1}, x_t] + b) (candidate hidden state); h_t = (1 − z_t) ⊙ h_{t-1} + z_t ⊙ h̃_t (update). The GRU has no separate cell state — h_t serves both the memory and output roles. The update gate z_t controls how much of the old hidden state to retain (z_t ≈ 0 → keep old; z_t ≈ 1 → replace with new). The reset gate r_t controls how much of the old state influences the candidate update (r_t ≈ 0 → ignore past; r_t ≈ 1 → use past). [1]",
+    "Comparing GRU and LSTM structurally: GRU's update gate z_t combines LSTM's forget gate and input gate — (1−z_t) acts as the forget gate (keep old) and z_t as the input gate (write new). This coupling means GRU cannot independently control how much to forget and how much to input — LSTM can. Empirically, this simplification rarely hurts because in many sequences, when you forget old information you naturally write new information. GRU has no output gate — the full hidden state h_t is always exposed, whereas LSTM's o_t controls which parts of the cell state are exposed as h_t. This architectural difference means LSTM can maintain hidden state values that are not used at the current step (stored in C_t but gated by o_t), which may matter for very long sequences. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "GRU Gate Mechanics",
+      "body": "The update gate z_t ∈ (0,1) is computed from both the previous hidden state and current input. When z_t ≈ 0 for a dimension: h_t ≈ h_{t-1} (memory preserved unchanged, like an open forget gate in LSTM). When z_t ≈ 1: h_t ≈ h̃_t (full replacement with the candidate, like an open input gate). In practice, z_t is smooth and dimension-specific — different dimensions of h_t can be updated at different rates depending on the input. The reset gate r_t ∈ (0,1) modulates how much the previous state contributes to the candidate h̃_t. When r_t ≈ 0, the candidate ignores the past: h̃_t = tanh(W[:,x_t·]x_t + b) — a standard dense layer on the input alone. This allows GRU to 'start fresh' when it encounters a context-resetting input (e.g., a new topic in a document). [1]"
+    },
+    {
+      "heading": "Comparison Table: GRU vs LSTM",
+      "body": "Key differences: Parameters — GRU: 3n(n+d+1); LSTM: 4n(n+d+1); GRU is 25% smaller. Memory vectors — GRU: 1 (h_t); LSTM: 2 (h_t, C_t). Gates — GRU: update z, reset r; LSTM: forget f, input i, output o + candidate C̃. Gradient flow — both improved over vanilla RNN; LSTM's cell state provides an additional gradient highway. Empirical performance: on polyphonic music, speech signals, and short text — comparable. On very long sequences (> 500 steps) — LSTM sometimes edges GRU due to the cell state. Training speed: GRU is faster due to fewer computations. Recommended choice: GRU as default when speed matters; LSTM when you need the extra expressiveness and have the compute budget. [2]"
+    },
+    {
+      "heading": "Minimal Gated Unit and Other Variants",
+      "body": "Since LSTM and GRU, several simpler gated units have been proposed. The Minimal Gated Unit (MGU, Zhou et al., 2016) merges the reset and update gates into a single gate f: h̃_t = tanh(W[f_t ⊙ h_{t-1}, x_t]); h_t = (1−f_t) ⊙ h_{t-1} + f_t ⊙ h̃_t. This reduces to 2 gate matrices (vs GRU's 3), with only minimal accuracy loss. Light GRU (Li & Wu, 2018) further simplifies by removing tanh from the candidate update, improving CPU inference speed. At the other extreme, LSTM variants (peephole connections, coupled forget-input gates) add complexity without consistent empirical improvement (Greff et al., 2017). The main lesson: simple gating (2–3 gates) is sufficient for most tasks; the default choice is GRU or LSTM based on empirical comparison. [1]"
+    },
+    {
+      "heading": "When GRU Underperforms LSTM",
+      "body": "GRU's coupled forget-input gate (z_t) is a structural constraint: you can't independently choose to forget a lot and write a little (or vice versa). For tasks requiring selective, fine-grained memory management — e.g., tracking multiple entities simultaneously in a long document, or modelling complex musical structure — LSTM's independent gating may be advantageous. Greff et al. (2017) found that the forget gate is the most important single gate in LSTM (removing it hurts most), and GRU captures this functionality with its update gate. However, the output gate (absent in GRU) was also found to contribute, especially for tasks requiring controlled information exposure at each timestep. For these tasks, try LSTM explicitly. [2]"
+    }
+  ],
+  "takeaways": [
+    "GRU equations: update z_t, reset r_t, candidate h̃_t, update rule h_t = (1−z_t)⊙h_{t-1} + z_t⊙h̃_t. [1]",
+    "GRU merges LSTM's forget+input gates into update gate z_t; no separate cell state — simpler and 25% fewer params. [2]",
+    "Update gate z≈0: keep old state; z≈1: replace with new — analogous to LSTM's forget+input gates coupled. [1]",
+    "GRU and LSTM achieve comparable accuracy on most benchmarks; GRU preferred when training speed matters. [2]",
+    "LSTM's separate cell state may give a marginal edge on very long sequences (> 500 steps) due to independent gating. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "In the GRU update, why is the candidate h̃_t computed as tanh(W[r_t⊙h_{t-1}, x_t]) rather than tanh(W[h_{t-1}, x_t])?",
+      "a": "The reset gate r_t⊙h_{t-1} selectively zeros out parts of the previous hidden state before computing the candidate update. When r_t ≈ 0 for some dimensions, those dimensions of h_{t-1} are ignored in the candidate computation — the candidate is based primarily on the current input x_t. This allows the GRU to 'forget the past' when computing the new candidate, creating two distinct types of forgetting: (1) if z_t ≈ 0, the output retains the old state (forget the new candidate); (2) if r_t ≈ 0, the candidate ignores the past state (forget the old state when computing the update). This dual mechanism is more flexible than a single forgetting signal."
+    },
+    {
+      "q": "How do you choose the hidden size and number of layers for GRU in practice?",
+      "a": "Hidden size: start with 128–256 for small datasets, 512–1024 for large. The hidden size is the primary lever for model capacity — it scales parameters as O(n²). Too small: underfitting; too large: overfitting + slow training. Number of layers: 1 layer for most tasks; 2 layers if 1 layer underperforms and you have enough data; rarely > 3 (diminishing returns, slower training). Always use dropout (p=0.2–0.5) between layers for regularisation. Practical rule: fix hidden size first, add layers only if the 1-layer model has underfitted. The first thing to tune is the learning rate (Adam 3e-4 is a good starting point), not the architecture."
+    }
+  ],
+  "sources": [
+    {
+      "label": "Cho et al. (2014) — Learning Phrase Representations using RNN Encoder-Decoder for Statistical Machine Translation, EMNLP 2014 arXiv:1406.1078",
+      "url": "https://arxiv.org/abs/1406.1078"
+    },
+    {
+      "label": "Chung et al. (2014) — Empirical Evaluation of Gated Recurrent Neural Networks on Sequence Modeling, arXiv:1412.3555",
+      "url": "https://arxiv.org/abs/1412.3555"
+    }
+  ]
+}

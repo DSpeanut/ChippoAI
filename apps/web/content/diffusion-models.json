@@ -1,0 +1,75 @@
+{
+  "visualizationType": "diffusion-models-viz",
+  "codeSnapshot": {
+    "label": "ddpm_noise_schedule.py",
+    "code": "import torch\nimport numpy as np\nimport matplotlib.pyplot as plt\n\n# --- DDPM Noise Schedule (Ho et al., 2020) ---\nT = 1000\nbetas = torch.linspace(1e-4, 0.02, T)          # linear schedule\nalphas = 1.0 - betas                            # alpha_t = 1 - beta_t\nalphas_cumprod = torch.cumprod(alphas, dim=0)   # alpha_bar_t = prod_{s=1}^{t} alpha_s\n\nprint(f\"alpha_bar_1:    {alphas_cumprod[0]:.4f}\")    # ~0.9999 (very little noise at t=1)\nprint(f\"alpha_bar_500:  {alphas_cumprod[499]:.4f}\")  # ~0.20   (significant noise)\nprint(f\"alpha_bar_1000: {alphas_cumprod[999]:.4f}\")  # ~0.0001 (almost pure noise)\n\n# --- Forward process: add noise to an image ---\ndef q_sample(x0: torch.Tensor, t: int) -> torch.Tensor:\n    \"\"\"Sample x_t | x_0:  x_t = sqrt(alpha_bar_t)*x_0 + sqrt(1-alpha_bar_t)*eps\"\"\"\n    a_bar = alphas_cumprod[t]\n    eps   = torch.randn_like(x0)\n    return a_bar.sqrt() * x0 + (1 - a_bar).sqrt() * eps, eps\n\nx0  = torch.randn(1, 3, 32, 32)   # clean image\nx_t, _ = q_sample(x0, t=500)\nsnr = alphas_cumprod[499] / (1 - alphas_cumprod[499])\nprint(f\"SNR at t=500: {snr.item():.4f}\")  # signal-to-noise ratio\n\n# --- Training objective ---\n# L_simple = E_t[ ||eps - eps_theta(x_t, t)||^2 ]\n# We just show the loss shape:\n# model_pred = noise_prediction_network(x_t, t)  # your UNet here\n# loss = F.mse_loss(model_pred, eps)"
+  },
+  "eli3": [
+    "Diffusion models learn to generate images by learning how to reverse a gradual noise process. Think of it like this: start with a clear photo, then add a tiny bit of random noise, then add more, then more — until after 1000 steps you have pure white noise. Diffusion models learn to run this in reverse: given a slightly noisy image, predict the original.",
+    "At inference (generation), you start with pure random noise and repeatedly ask the model 'if this was the slightly noisy version, what was the image before?'. After 1000 denoising steps, you've generated a brand new image. The model's job at each step is simply to predict the noise that was added.",
+    "This might sound slow (1000 steps!), and it is — but DDIM (a smarter sampling strategy) can do it in 20–50 steps. The advantage over GANs: no adversarial training, no mode collapse, and you can control the generation precisely with text prompts using classifier-free guidance. Stable Diffusion, DALL-E 3, and Midjourney are all built on this idea."
+  ],
+  "whenWhy": [
+    {
+      "title": "State-of-the-art image generation and text-to-image synthesis",
+      "body": "Diffusion models (Stable Diffusion, DALL-E 3, Imagen, Midjourney v5+) produce the highest-quality images of any generative model as of 2024, exceeding GANs in FID on standard benchmarks and in human evaluation. The combination of a powerful UNet denoising network, CLIP-based text conditioning, and classifier-free guidance enables precise control over generated content. The denoising framework is stable to train compared to GANs — no adversarial dynamics, no mode collapse."
+    },
+    {
+      "title": "Scientific applications: protein structure, drug discovery",
+      "body": "Diffusion models have been applied to 3D molecular generation (DiffSBDD, TargetDiff), protein backbone design (RFdiffusion, Chroma), and material discovery. The continuous denoising process handles 3D coordinate prediction naturally. AlphaFold 3 uses a diffusion module for all-atom structure prediction. The ability to condition the diffusion process on molecular properties enables targeted generation (design molecules with specific binding affinity to a target protein)."
+    },
+    {
+      "title": "Audio, video, and multimodal generation",
+      "body": "WaveGrad and DiffWave apply diffusion to audio waveform generation; AudioDiffusion to spectrogram synthesis. Video diffusion models (Sora, Make-A-Video) extend the UNet to 3D (spatial + temporal). The same denoising objective works across modalities by defining the noise process in the appropriate data space (pixel space, latent space, audio waveform space). Latent diffusion models (Rombach et al., 2022) compress images to a lower-dimensional latent space first, running the diffusion process in that space for dramatic speed and memory improvements."
+  }
+  ],
+  "deepDiveIntro": [
+    "DDPM (Ho et al., 2020) defines a forward Markov chain that gradually adds Gaussian noise: q(x_t|x_{t-1}) = N(x_t; √(1−β_t)x_{t-1}, β_tI), where β_t ∈ (0,1) is a noise schedule. By the Markov property, the marginal at step t is tractable: q(x_t|x_0) = N(x_t; √ᾱ_t x_0, (1−ᾱ_t)I), where ᾱ_t = ∏_{s=1}^t αs, αs = 1−βs. This allows directly sampling x_t = √ᾱ_t x_0 + √(1−ᾱ_t) ε, ε ~ N(0,I). The reverse process p_θ(x_{t-1}|x_t) = N(x_{t-1}; μ_θ(x_t,t), σ_t²I) is parameterised by a neural network. Ho et al. showed that parameterising the network to predict the noise ε (rather than the mean) gives the simplified training objective: L_{simple} = E_{t,x_0,ε}[‖ε − ε_θ(x_t, t)‖²]. [1]",
+    "DDIM (Song et al., 2020) rewrites the reverse process as a deterministic (non-Markovian) ODE, enabling few-step sampling: a model trained with the DDPM objective can be sampled in 20–50 steps by using a deterministic integrator over the probability flow ODE, reducing inference time by 20–50× at modest quality cost. Classifier-free guidance (Ho & Salimans, 2021) trains a single conditional model by randomly dropping the conditioning signal (text, class label) during training with probability p≈0.1–0.2. At inference: ε_guided(x_t, c) = ε_θ(x_t, ∅) + w·(ε_θ(x_t, c) − ε_θ(x_t, ∅)), where w is the guidance scale (w=7.5 is typical). Higher w increases conditioning adherence at the cost of diversity. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Forward Process and Noise Schedule",
+      "body": "The noise schedule β_1,...,β_T controls the rate of noise addition. Linear schedule (Ho et al., 2020): β_t linearly increases from 1e-4 to 0.02. Cosine schedule (Nichol & Dhariwal, 2021): ᾱ_t = cos²(π(t/T + 0.008)/(1 + 0.008)) — a smoother transition that avoids too-little noise at the end of the forward process (where the linear schedule keeps some residual structure). The cosine schedule improved FID on CIFAR-10 and ImageNet. At the end of the forward process (t=T), x_T ≈ N(0,I) (ᾱ_T ≈ 0). The signal-to-noise ratio SNR(t) = ᾱ_t/(1−ᾱ_t) monotonically decreases from SNR(1) ≈ ∞ to SNR(T) ≈ 0. [1]"
+    },
+    {
+      "heading": "UNet Architecture for Noise Prediction",
+      "body": "The noise prediction network ε_θ(x_t, t) is typically a UNet with time conditioning. Time t is encoded as a sinusoidal embedding (same formula as Transformer PE) and injected into each residual block via scale-shift (AdaGN): h ← (1 + γ(t))·GroupNorm(h) + δ(t), where γ and δ are linear projections of the time embedding. The UNet has: encoder path (Conv+ResBlock+downsample), bottleneck (ResBlock+MultiHeadAttention), decoder path (ResBlock+upsample+skip connections from encoder). Skip connections preserve spatial details lost during downsampling. Resolution-dependent attention: full attention at lower resolutions (8×8, 16×16), no attention at higher resolutions (64×64+) to control computational cost. Classifier-free guidance is conditioned by injecting CLIP text embeddings into cross-attention layers. [2]"
+    },
+    {
+      "heading": "Latent Diffusion Models (Stable Diffusion)",
+      "body": "Running diffusion in pixel space is expensive: a 512×512 image has 786,432 pixels per channel. Latent Diffusion Models (Rombach et al., 2022) use a pretrained VQ-VAE encoder to compress images to a lower-dimensional latent: 512×512×3 → 64×64×4 (downsampling factor 8). The diffusion process runs in this 64×64×4 latent space — 48× fewer elements. At inference, the denoised latent is decoded back to pixel space. Memory reduction: 786k pixels → 16k latents (50× reduction). Stable Diffusion, FLUX, and most modern text-to-image models are latent diffusion models. The VAE's latent space preserves semantic structure, so diffusion in the latent space still captures meaningful visual semantics while being far more efficient than pixel-space diffusion. [2]"
+    },
+    {
+      "heading": "Score Matching Interpretation",
+      "body": "Song & Ermon (2020) showed that denoising diffusion is equivalent to score matching: the network learns the score (gradient of log density) of the data distribution ∇_x log p(x). The denoising score matching objective is: E[‖s_θ(x_t, t) − ∇_{x_t} log q(x_t|x_0)‖²]. Since ∇_{x_t} log q(x_t|x_0) = −ε/√(1−ᾱ_t), learning to predict ε is equivalent to learning the score. Sampling via the score is then Langevin dynamics: x_{t-1} = x_t + η·s_θ(x_t, t) + √(2η)·ε. This score-based view unifies DDPM, DDIM, and score-based SDEs (Song et al., 2020b) into a single probabilistic framework, enabling continuous-time formulations and more principled ODE/SDE samplers like DPM-Solver and DEIS. [1]"
+    }
+  ],
+  "takeaways": [
+    "Forward: q(x_t|x_0) = N(√ᾱ_t·x_0, (1−ᾱ_t)I); x_t = √ᾱ_t·x_0 + √(1−ᾱ_t)·ε; ᾱ_t = ∏αs. [1]",
+    "Training: L = E[‖ε − ε_θ(x_t, t)‖²]; predict the added noise, not the image directly. [1]",
+    "DDIM: deterministic sampling from same model in 20–50 steps (vs 1000 for DDPM) via probability flow ODE. [2]",
+    "Classifier-free guidance: ε_guided = ε_uncond + w(ε_cond − ε_uncond); higher w = stronger conditioning. [2]",
+    "Latent diffusion (Stable Diffusion): run diffusion in VQ-VAE latent space (64×64×4), 50× cheaper than pixel space. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why is the simplified ELBO for DDPM just the noise prediction MSE — what happened to the original ELBO?",
+      "a": "The full ELBO for DDPM is: L = E[L_T + Σ L_{t-1} + L_0], where L_{t-1} = KL(q(x_{t-1}|x_t,x_0) || p_θ(x_{t-1}|x_t)). Each KL term is between two Gaussians, computable in closed form. Parameterising μ_θ as a function of ε_θ (noise predictor) and simplifying, the full ELBO reduces to a weighted sum of noise prediction MSEs over timesteps: L = E_t[w_t · ‖ε − ε_θ(x_t, t)‖²], where w_t depends on the noise schedule. Ho et al. found empirically that the simplified (uniformly weighted) version L_simple = E_t[‖ε − ε_θ(x_t, t)‖²] performs better than the full ELBO — the weighting downplays high-noise timesteps that are easy (mostly noise) in favour of medium-noise timesteps where the signal is most informative."
+    },
+    {
+      "q": "What is the guidance scale in classifier-free guidance, and how do you choose it?",
+      "a": "The guidance scale w controls the strength of text/class conditioning: ε_guided(x_t, c) = ε_θ(x_t, ∅) + w·(ε_θ(x_t, c) − ε_θ(x_t, ∅)). At w=0: unconditional sampling (ignores conditioning). At w=1: standard conditional sampling. At w>1: extrapolate in the direction of the conditioning signal — images more closely match the prompt but with reduced diversity. Typical values: w=7.5 for Stable Diffusion (text-to-image), w=2–5 for class-conditional generation. FID vs CLIP score tradeoff: higher w improves CLIP score (prompt adherence) but increases FID (reduces diversity). Recommended practice: start with w=7.5 for general text-to-image, reduce to w=3–5 for creative/diverse outputs, increase to w=10–20 for precise prompt following. Negative prompts extend this: ε_guided = ε(x,c) + w·(ε(x,c) − ε(x,c_neg))."
+    }
+  ],
+  "sources": [
+    {
+      "label": "Ho, Jain & Abbeel (2020) — Denoising Diffusion Probabilistic Models, NeurIPS 2020 arXiv:2006.11239",
+      "url": "https://arxiv.org/abs/2006.11239"
+    },
+    {
+      "label": "Song et al. (2020) — Denoising Diffusion Implicit Models, ICLR 2021 arXiv:2010.02502",
+      "url": "https://arxiv.org/abs/2010.02502"
+    }
+  ]
+}

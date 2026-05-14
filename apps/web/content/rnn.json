@@ -1,0 +1,75 @@
+{
+  "visualizationType": "rnn-viz",
+  "codeSnapshot": {
+    "label": "rnn_char.py",
+    "code": "import torch\nimport torch.nn as nn\n\n# Character-level RNN: predict next character in a sequence\nclass CharRNN(nn.Module):\n    def __init__(self, vocab_size: int, hidden_size: int = 128, num_layers: int = 1):\n        super().__init__()\n        self.embed  = nn.Embedding(vocab_size, hidden_size)\n        self.rnn    = nn.RNN(hidden_size, hidden_size, num_layers, batch_first=True)\n        self.fc     = nn.Linear(hidden_size, vocab_size)\n\n    def forward(self, x, h=None):\n        # x: [batch, seq_len]  (token indices)\n        emb = self.embed(x)           # [batch, seq_len, hidden]\n        out, h = self.rnn(emb, h)     # out: [batch, seq_len, hidden]\n        logits = self.fc(out)         # [batch, seq_len, vocab_size]\n        return logits, h\n\n# Toy example\nvocab = list(\"helo\")                  # 4 characters\nchar2idx = {c: i for i, c in enumerate(vocab)}\n\n# Encode \"hell\" -> predict \"ello\"\ninput_str  = \"hell\"\ntarget_str = \"ello\"\n\nx = torch.tensor([[char2idx[c] for c in input_str]])   # [1, 4]\ny = torch.tensor([[char2idx[c] for c in target_str]])  # [1, 4]\n\nmodel   = CharRNN(vocab_size=4)\noptimizer = torch.optim.Adam(model.parameters(), lr=1e-3)\nloss_fn = nn.CrossEntropyLoss()\n\nfor step in range(200):\n    logits, _ = model(x)                     # [1, 4, 4]\n    loss = loss_fn(logits.view(-1, 4), y.view(-1))\n    optimizer.zero_grad(); loss.backward(); optimizer.step()\n\nwith torch.no_grad():\n    logits, _ = model(x)\n    preds = logits.argmax(-1).squeeze().tolist()\nprint(\"Predicted:\", \"\".join(vocab[i] for i in preds))  # \"ello\""
+  },
+  "eli3": [
+    "A recurrent neural network (RNN) is designed for sequences — things that come one after another, like words in a sentence, frames in a video, or stock prices over time. Unlike a regular neural network that processes each input independently, an RNN has a memory: it keeps a hidden state that carries information from previous steps to the current one.",
+    "At each step, the RNN takes the current input and the previous hidden state, combines them, and produces a new hidden state (and optionally an output). The hidden state is like a running summary of everything the network has seen so far. By passing this summary forward at each step, the network can use context from early in the sequence when processing later parts.",
+    "The problem is that this 'telephone game' doesn't work well over long sequences. Information from step 1 has to pass through 100 hidden states to reach step 100, getting diluted or distorted along the way. Gradients also vanish during training, making early steps nearly impossible to learn from. LSTM and GRU were designed to fix exactly this problem."
+  ],
+  "whenWhy": [
+    {
+      "title": "Sequential data with variable-length inputs",
+      "body": "RNNs process sequences of arbitrary length by iterating a fixed-size recurrence over timesteps. This makes them natural for NLP tasks (sentences have variable lengths), time series, audio, and genomic sequences. A standard feedforward network requires a fixed input size — handling variable-length sequences would require padding to a maximum length and ignoring most of the network's capacity on short sequences. The RNN's recurrence naturally adapts to any length."
+    },
+    {
+      "title": "Language modelling (predicting the next token)",
+      "body": "Character-level and word-level RNN language models were the standard approach before Transformers. The RNN reads a sequence token by token, and at each step predicts the probability distribution over the next token (using the hidden state as context). Karpathy's (2015) 'Unreasonable Effectiveness of Recurrent Neural Networks' demonstrated that character-level RNNs could generate convincing text, code, and mathematics — a formative result that motivated subsequent LLM research."
+    },
+    {
+      "title": "Understanding the LSTM and Transformer motivation",
+      "body": "The vanilla RNN is rarely used in production today — it has been superseded by LSTMs, GRUs, and Transformers. However, understanding RNN fundamentals is essential for understanding why these architectures were developed: LSTM gates directly address the vanishing gradient problem of vanilla RNNs; the Transformer's attention mechanism replaces sequential processing entirely with direct token-to-token connections. Without understanding RNN failure modes (vanishing gradients, fixed-size bottleneck), the motivation for LSTM gates and self-attention is unclear."
+    }
+  ],
+  "deepDiveIntro": [
+    "The vanilla RNN defines a recurrence over a sequence (x_1, ..., x_T): h_t = tanh(W_h h_{t-1} + W_x x_t + b), ŷ_t = W_y h_t + b_y, where h_t ∈ ℝ^n is the hidden state, W_h ∈ ℝ^{n×n} is the recurrent weight matrix, W_x ∈ ℝ^{n×d} maps the input, and tanh is the activation. The same weights (W_h, W_x, b) are shared across all timesteps — this is why the RNN can handle sequences of any length with a fixed parameter count. The hidden state h_t is a fixed-size vector that encodes the network's 'memory' of the input history. [1]",
+    "Training RNNs uses Backpropagation Through Time (BPTT): unroll the RNN across all T timesteps, treating each step as a layer in a T-deep feedforward network, then apply standard backpropagation. The gradient of the loss with respect to h_0 involves the product ∏_{t=1}^{T} W_h · diag(tanh'(z_t)), where tanh'(z) = 1 − tanh²(z) ∈ (0, 1]. Over long sequences (large T), this product can vanish exponentially (if the spectral radius ρ(W_h) < 1) or explode (if ρ(W_h) > 1). This is the fundamental limitation of the vanilla RNN that motivated LSTM (Hochreiter & Schmidhuber, 1997) and gradient clipping as a training technique. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Vanishing and Exploding Gradients in BPTT",
+      "body": "During BPTT, the gradient of the loss at timestep T with respect to the hidden state at timestep t is: ∂L_T/∂h_t = ∂L_T/∂h_T · ∏_{k=t+1}^{T} W_h^T · diag(f'(z_k)). For tanh, f'(z) ≤ 1; for the product of T terms with ‖W_h‖ < 1, the gradient decays exponentially toward early timesteps. For ‖W_h‖ > 1, it grows exponentially. Vanishing means early-timestep weights receive near-zero gradients and never update — the network cannot learn long-range dependencies. Exploding causes training instability. Exploding is easier to fix (gradient clipping: clip ‖g‖ to a threshold), but vanishing requires architectural changes (LSTM, GRU) or replacing sequential processing (Transformer). [2]"
+    },
+    {
+      "heading": "Truncated BPTT and Memory Efficiency",
+      "body": "Full BPTT stores activations for all T timesteps to compute gradients — O(T·n) memory for a sequence of length T with hidden size n. For long sequences (T=1000, n=512), this is 512K floats per sequence — expensive. Truncated BPTT (T-BPTT): split the sequence into chunks of length k, backpropagate only within each chunk, carry the hidden state forward (but not gradients) across chunks. This limits gradient flow to k steps (reducing long-range dependency learning) but reduces memory to O(k·n) and improves training speed. k=20–50 is typical for language models. The detach() operation in PyTorch stops gradient flow across chunks: h = h.detach() at the start of each chunk. [1]"
+    },
+    {
+      "heading": "Bidirectional RNNs",
+      "body": "A standard RNN processes sequences left-to-right: h_t depends only on x_1,...,x_t (causal). For tasks where future context is available at training time (e.g., NER, sequence labelling, translation encoder), a bidirectional RNN (BiRNN) runs two RNNs — one forward (→) and one backward (←) — and concatenates their hidden states: h_t = [h_t^→; h_t^←]. This doubles the hidden dimension and allows each position to see the full sequence context. BiRNNs are used as encoders in seq2seq models and were the basis of ELMo (2018), the first large contextual language model, before BERT replaced them with bidirectional Transformers. [1]"
+    },
+    {
+      "heading": "Stacked (Deep) RNNs",
+      "body": "Multiple RNN layers can be stacked: the output sequence of layer l becomes the input to layer l+1, with each layer maintaining its own hidden state. A 2-layer RNN with hidden size n has 2×(n² + n·d + n) parameters (plus biases). Stacking allows hierarchical feature extraction: lower layers learn local patterns (phonemes, n-grams), higher layers learn longer-range structure (words, phrases). PyTorch's nn.RNN supports num_layers > 1 directly and applies dropout between layers for regularisation. Empirically, 2–4 stacked LSTM layers are the standard for sequence-to-sequence models (machine translation, speech recognition) before Transformers took over. [2]"
+    }
+  ],
+  "takeaways": [
+    "RNN recurrence: h_t = tanh(W_h·h_{t-1} + W_x·x_t + b); same weights shared across all timesteps. [1]",
+    "BPTT trains by unrolling across T steps; gradients decay exponentially with T due to the W_h product. [2]",
+    "Vanishing gradients prevent learning long-range dependencies — the primary motivation for LSTM and GRU. [2]",
+    "Gradient clipping (clip ‖g‖ to a threshold) addresses exploding gradients; vanishing requires architectural changes. [2]",
+    "Bidirectional RNNs concatenate forward and backward hidden states — sees full sequence context, used in encoders. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "How does gradient clipping work and what threshold should you use?",
+      "a": "Gradient clipping rescales the gradient vector if its norm exceeds a threshold: if ‖g‖ > threshold, g ← g · threshold/‖g‖. This ensures the gradient step size never exceeds a fixed amount regardless of gradient magnitude. In PyTorch: torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=5.0). Typical thresholds: 1.0–5.0 for RNN/LSTM training; 1.0 for Transformer training. To set the threshold: monitor ‖g‖ during the first few epochs; set it just above the typical norm to clip only the occasional spike without affecting normal training. Global norm clipping (clip the norm of the concatenated gradient vector) is preferred over per-parameter clipping because it preserves the gradient direction."
+    },
+    {
+      "q": "Why are Transformers preferred over RNNs for long sequences today?",
+      "a": "Three fundamental advantages of Transformers: (1) Parallelism — RNNs process sequences step-by-step (sequential dependency h_t depends on h_{t-1}); Transformers compute all positions simultaneously via matrix multiplications — GPU/TPU throughput utilised fully. (2) Long-range dependencies — Transformers connect any two positions directly via attention (O(1) path length); RNNs must propagate information through O(T) steps with vanishing gradients. (3) Scalability — Transformer training scales well with data and compute; RNN training does not scale as effectively. The trade-off: Transformer attention is O(T²) in sequence length; RNNs are O(T) — RNNs are still relevant for very long sequences or strictly streaming settings where future context is unavailable."
+    }
+  ],
+  "sources": [
+    {
+      "label": "Rumelhart, Hinton & Williams (1986) — Learning Representations by Back-Propagating Errors, Nature 323",
+      "url": "https://doi.org/10.1038/323533a0"
+    },
+    {
+      "label": "Bengio, Simard & Frasconi (1994) — Learning Long-Term Dependencies with Gradient Descent is Difficult, IEEE Transactions on Neural Networks 5(2)",
+      "url": "https://doi.org/10.1109/72.279181"
+    }
+  ]
+}

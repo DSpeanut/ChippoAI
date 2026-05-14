@@ -1,0 +1,75 @@
+{
+  "visualizationType": "activation-functions-viz",
+  "codeSnapshot": {
+    "label": "activation_functions.py",
+    "code": "import numpy as np\nimport matplotlib.pyplot as plt\n\nx = np.linspace(-4, 4, 400)\n\ndef sigmoid(x): return 1 / (1 + np.exp(-x))\ndef tanh(x):    return np.tanh(x)\ndef relu(x):    return np.maximum(0, x)\ndef leaky_relu(x, alpha=0.01): return np.where(x >= 0, x, alpha * x)\ndef elu(x, alpha=1.0): return np.where(x >= 0, x, alpha * (np.exp(x) - 1))\ndef gelu(x):    return x * sigmoid(1.702 * x)  # fast approximation\ndef swish(x):   return x * sigmoid(x)\n\nfunctions = {\n    \"Sigmoid\":   sigmoid(x),\n    \"Tanh\":      tanh(x),\n    \"ReLU\":      relu(x),\n    \"LeakyReLU\": leaky_relu(x),\n    \"ELU\":       elu(x),\n    \"GELU\":      gelu(x),\n    \"Swish\":     swish(x),\n}\n\nfig, axes = plt.subplots(2, 4, figsize=(16, 6))\nfor ax, (name, y) in zip(axes.flat, functions.items()):\n    ax.plot(x, y, lw=2)\n    # also plot derivative\n    dy = np.gradient(y, x)\n    ax.plot(x, dy, lw=1.5, linestyle='--', alpha=0.6, label='derivative')\n    ax.axhline(0, color='k', linewidth=0.5)\n    ax.axvline(0, color='k', linewidth=0.5)\n    ax.set_title(name)\n    ax.set_ylim(-1.5, 2)\naxes.flat[-1].set_visible(False)\nplt.tight_layout()\nplt.savefig('activation_functions.png', dpi=150)\nplt.show()"
+  },
+  "eli3": [
+    "After a neuron multiplies inputs by weights and adds them up, it passes the result through an activation function before sending it to the next layer. Without this function, the whole network would just be a big multiplication — it could only learn straight-line patterns no matter how many layers you added.",
+    "The activation function introduces a bend or kink in the output. ReLU, the most popular one, simply outputs zero for negative inputs and the number itself for positive inputs. This small non-linearity, applied millions of times across the network, is enough to learn hugely complex patterns.",
+    "Different activations have different tradeoffs: sigmoid squashes everything between 0 and 1 (useful for probabilities) but causes gradients to vanish in deep networks; ReLU is fast and avoids vanishing gradients but 'dies' if neurons get stuck outputting zero; GELU is smoother than ReLU and is used in modern transformers like BERT and GPT."
+  ],
+  "whenWhy": [
+    {
+      "title": "Hidden layers in feedforward and convolutional networks",
+      "body": "The default activation for hidden layers in modern networks is ReLU or one of its variants (Leaky ReLU, ELU, GELU). ReLU's zero-gradient for negative inputs (sparsity) and unit gradient for positive inputs (no vanishing gradient in the positive regime) made it the catalyst for training very deep networks. For transformer architectures, GELU is preferred because it provides smooth, non-zero gradients everywhere, which helps with stable training dynamics on large language models."
+    },
+    {
+      "title": "Output layer activation depends on the task",
+      "body": "The output activation encodes the problem structure: sigmoid for binary classification (outputs a probability ∈ (0,1)); softmax for multi-class classification (outputs a probability distribution summing to 1); linear (no activation) for regression (unbounded real output). Choosing the wrong output activation is a common bug — using sigmoid instead of softmax for multi-class problems gives unnormalised scores, and using linear output for classification makes cross-entropy loss ill-defined."
+    },
+    {
+      "title": "Addressing vanishing gradients in deep networks",
+      "body": "Sigmoid and tanh have gradients that saturate near 0 or 1, producing near-zero gradients that vanish when multiplied across many layers (backpropagation multiplies gradients layer by layer). ReLU avoids this in the positive regime by having a constant gradient of 1. Leaky ReLU and ELU extend this by providing small non-zero gradients for negative inputs, preventing dead neurons. Batch Normalisation and residual connections address the same problem from the architecture side, complementing the activation choice."
+    }
+  ],
+  "deepDiveIntro": [
+    "An activation function f is applied element-wise after the linear transformation of each layer: h = f(Wx + b). Without non-linearity, any stack of linear layers collapses to a single linear transformation W_n···W_1 regardless of depth — the universal approximation theorem requires at least one non-linear activation. The choice of activation function affects three critical properties: the gradient flow during backpropagation (vanishing/exploding gradient problem), the sparsity of activations (ReLU sets negative activations to zero), and the computational cost of the forward and backward pass. [1]",
+    "The dominant activation in modern deep learning is ReLU (Nair & Hinton, 2010): f(x) = max(0, x). Its derivative is 1 for x > 0 and 0 for x ≤ 0, which has two consequences. Positive: the constant gradient of 1 prevents gradient vanishing in the active regime. Negative: neurons with x ≤ 0 contribute zero gradient — they are 'dead' and never update their weights. Variants address the dying-ReLU problem: Leaky ReLU uses a small slope α ≈ 0.01 for negative inputs; ELU uses an exponential for x < 0; Parametric ReLU (PReLU) learns α. GELU (Gaussian Error Linear Unit), used in BERT and GPT, approximates a smooth ReLU-like function by weighting inputs by their cumulative normal probability. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Sigmoid and Tanh — Historical and Output Layer Roles",
+      "body": "Sigmoid σ(x) = 1/(1+e^{-x}) and tanh(x) = (e^x - e^{-x})/(e^x + e^{-x}) were the default activations before ReLU. Both are smooth and bounded: sigmoid ∈ (0,1), tanh ∈ (-1,1). Their saturation is their downfall for deep hidden layers: the gradient is σ'(x) = σ(x)(1−σ(x)) ≤ 0.25, meaning each layer attenuates gradients by at least 4×. Over 10 layers this shrinks gradients to (0.25)^10 ≈ 10^{-6} — essentially zero. Tanh is zero-centred (unlike sigmoid) which mitigates some gradient issues. Today, sigmoid is used only in output layers for binary classification and gating mechanisms (LSTM gates), and tanh for output normalisation in RNNs. [1]"
+    },
+    {
+      "heading": "ReLU and the Dead Neuron Problem",
+      "body": "ReLU f(x) = max(0, x) has gradient 1 for x > 0 and 0 for x ≤ 0. The zero gradient for x ≤ 0 causes dead neurons: if a neuron's pre-activation is consistently negative (e.g., after a large negative gradient update to its incoming weights), it will output 0 and receive 0 gradient forever — its weights will never update again. In practice, 10–40% of ReLU neurons die in poorly tuned networks. Mitigations: (1) Leaky ReLU f(x) = max(αx, x) with α ≈ 0.01 — small gradient even for negative inputs; (2) Parametric ReLU (PReLU) — α is learned; (3) ELU f(x) = x if x≥0, α(e^x − 1) if x<0 — smooth negative region, negative saturation at −α; (4) careful weight initialisation (He init) and low learning rates. [1]"
+  },
+    {
+      "heading": "GELU and Swish — Modern Transformer Activations",
+      "body": "GELU (Hendrycks & Gimpel, 2016) is defined as x·Φ(x) where Φ is the cumulative distribution function of the standard normal. The intuition: each input is multiplied by the probability that a standard normal draw is less than it — inputs in the negative regime are attenuated stochastically. In practice the fast approximation GELU(x) ≈ 0.5x(1 + tanh(√(2/π)(x + 0.044715x³))) is used. GELU is smooth everywhere (no kink at zero like ReLU) and has been found to outperform ReLU on language tasks, becoming the standard in BERT, GPT-2, and subsequent transformers. Swish (Ramachandran et al., 2017) is defined as x·σ(x) — very similar to GELU in shape. Both provide small negative outputs for slightly negative inputs, which acts as a soft gate and improves gradient flow. [2]"
+    },
+    {
+      "heading": "Activation Function and Gradient Vanishing — Quantitative View",
+      "body": "Backpropagation multiplies partial derivatives across layers: ∂L/∂h^(1) = (∂L/∂h^(L)) · ∏_{l=2}^{L} W^(l) · f'(z^(l)). For sigmoid, f'(z) ≤ 0.25, so with L=10 layers and unit weight norms, gradient magnitude scales as (0.25)^9 ≈ 3.8×10^{-6}. For ReLU, f'(z) ∈ {0, 1} — the gradient passes through unchanged in the active regime, maintaining magnitude. This is the main reason deep networks became trainable after ReLU adoption: gradients reach early layers with enough magnitude to update weights. Residual connections provide an additional gradient highway (∂L/∂x = ∂L/∂(x+F(x)) · (1 + F'(x))), further stabilising deep training independent of activation choice. [1]"
+    }
+  ],
+  "takeaways": [
+    "Activation functions introduce non-linearity; without them, any deep network collapses to a single linear transformation. [1]",
+    "ReLU (max(0,x)) avoids vanishing gradients in the positive regime but causes dead neurons for consistently negative pre-activations. [1]",
+    "GELU (x·Φ(x)) is the standard for transformers (BERT, GPT); smooth and performs better than ReLU on language tasks. [2]",
+    "Output activation encodes task structure: sigmoid for binary classification, softmax for multi-class, linear for regression. [1]",
+    "Sigmoid/tanh saturate and cause vanishing gradients — reserved for gating (LSTM) and output layers, not deep hidden layers. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "How do you choose between ReLU, Leaky ReLU, ELU, and GELU in practice?",
+      "a": "Default to ReLU for CNNs and MLPs — it is fast, well-understood, and works well with standard weight initialisation (He init). Use Leaky ReLU or ELU if you see dead neuron symptoms (neurons stuck at zero, parts of the network not updating). Use GELU for transformer architectures — it is the empirical default for BERT, GPT, and T5 family models and consistently outperforms ReLU on NLP benchmarks. Swish is similar to GELU and a viable alternative. Avoid sigmoid/tanh in hidden layers of deep networks — they cause vanishing gradients. The activation choice is usually secondary to architecture, learning rate, and regularisation choices."
+    },
+    {
+      "q": "What does 'dying ReLU' mean and how do you detect and fix it?",
+      "a": "A dying ReLU neuron is one whose pre-activation z = Wx + b is consistently negative across all training inputs, causing it to always output 0 and receive 0 gradient. To detect: monitor the fraction of zero activations per layer during training; >50% zeros in a layer is a warning sign. Causes: large negative weight updates (high learning rate), bad weight initialisation, or large negative biases. Fixes: (1) Lower learning rate; (2) He initialisation (weights ~ N(0, 2/fan_in)) which scales variance correctly for ReLU; (3) switch to Leaky ReLU to ensure small but non-zero gradient for negative inputs; (4) Batch Normalisation, which keeps pre-activations centered and reduces the chance of large negative values."
+    }
+  ],
+  "sources": [
+    {
+      "label": "Nair & Hinton (2010) — Rectified Linear Units Improve Restricted Boltzmann Machines, ICML 2010",
+      "url": "https://www.cs.toronto.edu/~fritz/absps/reluICML.pdf"
+    },
+    {
+      "label": "Hendrycks & Gimpel (2016) — Gaussian Error Linear Units (GELUs), arXiv:1606.08415",
+      "url": "https://arxiv.org/abs/1606.08415"
+    }
+  ]
+}

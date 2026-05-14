@@ -34,6 +34,14 @@
     {
       "heading": "Failure Mode Taxonomy for Regression Analysis",
       "body": "When a regression is detected, classify it: (1) Faithfulness regression — the model is generating more claims not supported by retrieved context; cause: new model is more 'creative', or new prompt is less constraining; (2) Retrieval regression — lower hit@k means a chunking or embedding change broke retrieval; (3) Format regression — outputs violate expected format constraints (missing required JSON fields, wrong output length); (4) Safety regression — content filter triggers more often, or harmful content appears in outputs not previously flagged; (5) Latency regression — p95 latency increased by > 20%; (6) Cost regression — average cost per query increased. Different regression types require different fixes. Always check which examples regressed, not just the mean — a small mean drop may hide a catastrophic failure on a specific query type. [1]"
+    },
+    {
+      "heading": "Baseline Management and Score Versioning",
+      "body": "Store baseline scores in a committed JSON file: baselines.json = {\"answer_relevancy\": 0.82, \"faithfulness\": 0.91, \"context_precision\": 0.76, \"dataset_hash\": \"abc123\", \"model\": \"gpt-4o\"}. CI comparison: load baselines.json, run current metrics, raise RegressionError if any metric drops > threshold (5% for primary, 10% for secondary). Re-baselining workflow: after a deliberate quality improvement, run python scripts/update_baseline.py — this re-runs the full eval suite and writes new baselines.json, which you commit. Tag the baseline with dataset hash and model version so it is reproducible. Treat baselines.json as authoritative — never manually edit it. [1]"
+    },
+    {
+      "heading": "Shadow Testing for Safe Model Upgrades",
+      "body": "Shadow testing runs a new model in parallel with production without affecting users: 100% of requests go to production (users see its response), 10-20% are also sent to the shadow model (response discarded, logged). Evaluation: run RAGAS on 1000 shadow pairs daily, track aggregate metrics vs baseline. Graduation: when shadow metrics are statistically equivalent or better (Wilcoxon test, p < 0.05) over 3 consecutive days. Canary rollout after shadow passes: 5% -> 20% -> 50% -> 100% with automatic rollback if production metrics drop > 3% at any stage. This eliminates user exposure to regressions during model upgrades. [2]"
     }
   ],
   "takeaways": [
@@ -54,7 +62,18 @@
     }
   ],
   "sources": [
-    { "label": "DeepEval Documentation — CI/CD integration and regression testing", "url": "https://docs.confident-ai.com/docs/getting-started" },
-    { "label": "Braintrust Documentation — experiment tracking and regression detection", "url": "https://www.braintrust.dev/docs" }
-  ]
+    {
+      "label": "DeepEval Documentation — CI/CD integration and regression testing",
+      "url": "https://docs.confident-ai.com/docs/getting-started"
+    },
+    {
+      "label": "Braintrust Documentation — experiment tracking and regression detection",
+      "url": "https://www.braintrust.dev/docs"
+    }
+  ],
+  "visualizationType": "regression-testing-viz",
+  "codeSnapshot": {
+    "label": "regression_test.py",
+    "code": "import pytest\nfrom deepeval import assert_test\nfrom deepeval.metrics import AnswerRelevancyMetric, HallucinationMetric\nfrom deepeval.test_case import LLMTestCase\n\nGOLDEN_DATASET = [\n    {\n        \"input\": \"What is RLHF?\",\n        \"expected\": \"RLHF trains LLMs using human preference feedback to align outputs.\",\n        \"context\": [\"RLHF = Reinforcement Learning from Human Feedback\", \"Used to align LLMs with human values.\"],\n    },\n    {\n        \"input\": \"What is RAG?\",\n        \"expected\": \"RAG retrieves relevant documents and uses them to ground LLM responses.\",\n        \"context\": [\"RAG combines retrieval with generation.\", \"Reduces hallucination on factual queries.\"],\n    },\n]\n\n@pytest.mark.parametrize(\"case\", GOLDEN_DATASET)\ndef test_rag_quality(case):\n    # Replace with actual RAG pipeline call\n    from your_rag_module import run_rag\n    answer, retrieved_context = run_rag(case[\"input\"])\n\n    test_case = LLMTestCase(\n        input=case[\"input\"],\n        actual_output=answer,\n        expected_output=case[\"expected\"],\n        retrieval_context=retrieved_context,\n    )\n    assert_test(test_case, [\n        AnswerRelevancyMetric(threshold=0.7),\n        HallucinationMetric(threshold=0.5),\n    ])\n\n# Run: pytest tests/test_regression.py -v --tb=short"
+  }
 }

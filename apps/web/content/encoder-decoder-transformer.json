@@ -1,0 +1,75 @@
+{
+  "visualizationType": "encoder-decoder-transformer-viz",
+  "codeSnapshot": {
+    "label": "transformer_seq2seq.py",
+    "code": "import torch\nimport torch.nn as nn\nimport math\n\nclass TransformerSeq2Seq(nn.Module):\n    \"\"\"Encoder-Decoder Transformer for sequence-to-sequence tasks.\"\"\"\n    def __init__(self, src_vocab: int, tgt_vocab: int,\n                 d_model: int = 512, nhead: int = 8,\n                 num_encoder_layers: int = 6, num_decoder_layers: int = 6,\n                 dim_feedforward: int = 2048, dropout: float = 0.1):\n        super().__init__()\n        self.d_model = d_model\n        self.src_embed = nn.Embedding(src_vocab, d_model)\n        self.tgt_embed = nn.Embedding(tgt_vocab, d_model)\n        self.transformer = nn.Transformer(\n            d_model=d_model, nhead=nhead,\n            num_encoder_layers=num_encoder_layers,\n            num_decoder_layers=num_decoder_layers,\n            dim_feedforward=dim_feedforward,\n            dropout=dropout, batch_first=True\n        )\n        self.fc_out = nn.Linear(d_model, tgt_vocab)\n\n    def make_causal_mask(self, sz: int) -> torch.Tensor:\n        \"\"\"Upper-triangular mask for decoder (prevents attending to future tokens).\"\"\"\n        return torch.triu(torch.ones(sz, sz), diagonal=1).bool()\n\n    def forward(self, src, tgt, src_key_padding_mask=None):\n        # Scale embeddings by sqrt(d_model) as in the paper\n        src_emb = self.src_embed(src) * math.sqrt(self.d_model)\n        tgt_emb = self.tgt_embed(tgt) * math.sqrt(self.d_model)\n        tgt_mask = self.make_causal_mask(tgt.size(1)).to(src.device)\n        out = self.transformer(src_emb, tgt_emb,\n                               tgt_mask=tgt_mask,\n                               src_key_padding_mask=src_key_padding_mask)\n        return self.fc_out(out)  # [B, tgt_len, tgt_vocab]\n\nmodel = TransformerSeq2Seq(src_vocab=8000, tgt_vocab=8000)\nsrc = torch.randint(1, 8000, (2, 20))   # [B=2, src_len=20]\ntgt = torch.randint(1, 8000, (2, 15))   # [B=2, tgt_len=15]\nlogits = model(src, tgt)\nprint(f\"Output: {logits.shape}\")  # [2, 15, 8000]"
+  },
+  "eli3": [
+    "The Transformer encoder-decoder is the architecture behind machine translation, summarisation, and any task that reads one sequence and writes another. The encoder reads the full input at once and turns each token into a rich representation that captures its meaning in context. The decoder then generates the output one token at a time, using both its own history and the encoder's representations.",
+    "The encoder uses self-attention: every token looks at every other token in the source to understand context. The decoder uses two types of attention: first, masked self-attention (to look at already-generated output tokens without peeking at future ones), and then cross-attention (to look at the encoder's representations to decide what to say next).",
+    "There are three architectural variants: encoder-only (BERT — good for understanding, like classification), decoder-only (GPT — good for generation), and encoder-decoder (T5, original Transformer — good for input-to-output tasks like translation). The variant choice depends entirely on the task."
+  ],
+  "whenWhy": [
+    {
+      "title": "Machine translation and conditional text generation",
+      "body": "The encoder-decoder Transformer is the natural architecture for tasks with a clear input-to-output structure: translation, summarisation, question answering with evidence, code generation from docstrings. The encoder processes the full source context with bidirectional attention (every token sees every other token), producing rich contextual representations. The decoder generates the output autoregressively, with cross-attention allowing it to selectively focus on relevant source positions at each generation step."
+    },
+    {
+      "title": "T5-style text-to-text framing",
+      "body": "T5 (Raffel et al., 2020) demonstrated that any NLP task can be framed as text-to-text: 'translate English to French: <sentence>' → '<translation>'; 'summarize: <article>' → '<summary>'; 'cola sentence: <text>' → 'acceptable/unacceptable'. Using a single encoder-decoder architecture for all tasks enables multitask learning, cross-task transfer, and zero-shot generalisation to new task formats. This framing is a key reason encoder-decoder models are preferred for multi-task fine-tuning pipelines."
+    },
+    {
+      "title": "Understanding why encoder-only and decoder-only also exist",
+      "body": "Encoder-only (BERT): removes the decoder entirely; uses bidirectional self-attention for the whole input. Cannot generate text autoregressively. Best for discriminative tasks (classification, NER, reading comprehension with extractive answer). Decoder-only (GPT): removes the encoder; uses causal (unidirectional) self-attention. Best for generative tasks (language modelling, open-ended generation, instruction following). Encoder-decoder (T5, BART): best for tasks with clear input-output distinction where bidirectional input encoding is valuable. The architectural choice is driven by task requirements, not arbitrary — BERT fails at open-ended generation; GPT underperforms BERT on sentence classification without fine-tuning."
+    }
+  ],
+  "deepDiveIntro": [
+    "The original Transformer (Vaswani et al., 2017) consists of N=6 encoder layers and N=6 decoder layers. Each encoder layer has two sublayers: (1) multi-head self-attention; (2) position-wise FFN (two linear layers with ReLU: FFN(x) = max(0, xW_1 + b_1)W_2 + b_2). Each sublayer uses residual connection + layer normalisation: output = LayerNorm(x + Sublayer(x)). Each decoder layer has three sublayers: (1) masked multi-head self-attention (causal mask prevents attending to future positions); (2) multi-head cross-attention (queries from decoder, keys and values from encoder output); (3) position-wise FFN. Same Add+Norm structure. [1]",
+    "The pre-norm vs post-norm distinction matters for deep Transformers. The original Transformer uses post-norm (Add then Norm): output = LayerNorm(x + Sublayer(x)). Gradient analysis shows that in post-norm, the gradient through the residual path must pass through LayerNorm, which can scale gradients inconsistently. Pre-norm (Norm then Add): output = x + Sublayer(LayerNorm(x)) keeps the residual path free of normalisation, providing cleaner gradient flow. Modern LLMs (GPT-3, LLaMA, PaLM) use pre-norm. The difference: post-norm typically requires learning rate warm-up for training stability; pre-norm is more stable from the start. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Encoder Stack: Bidirectional Self-Attention",
+      "body": "The encoder processes the source sequence with full bidirectional self-attention: each token attends to all other tokens in the source, including those after it. This is appropriate when the full source is available before generating any output. The 6 encoder layers progressively build richer contextual representations: lower layers focus on local syntactic structure; higher layers encode long-range semantic relationships. The encoder output — a sequence of d_model-dimensional vectors, one per source token — is passed to each decoder layer's cross-attention sublayer. Padding masks are applied in the encoder to prevent attention to padding tokens (which fill short sequences in a batch to the same length). [1]"
+    },
+    {
+      "heading": "Decoder Stack: Masked Self-Attention + Cross-Attention",
+      "body": "The decoder has two attention sublayers per layer. Masked self-attention: uses causal mask (upper triangular with -∞) so position i can only attend to positions 0,...,i. This ensures that during training (where all target tokens are present via teacher forcing), each position's output depends only on previous positions — matching the autoregressive generation at inference. Cross-attention: queries come from the decoder's current representation; keys and values come from the encoder output (same encoder output used at every decoder layer). This is where the decoder 'looks up' source information. The key/value cache in cross-attention is computed once (encoder output is fixed) — in production, this is pre-computed and reused across all generated tokens. [2]"
+    },
+    {
+      "heading": "Position-wise FFN: The Transformer's Memory",
+      "body": "Each attention sublayer is followed by a position-wise FFN: FFN(x) = max(0, xW_1 + b_1)W_2 + b_2, where W_1 ∈ ℝ^{d_model×d_ff} (expand), W_2 ∈ ℝ^{d_ff×d_model} (contract), with d_ff = 4·d_model typically. For d_model=512, d_ff=2048: each FFN has 2×512×2048 ≈ 2M parameters — more than the multi-head attention (4×512²=1M). The FFN is applied identically to each position (position-wise). Geva et al. (2021) showed that FFN layers act as key-value memories: the first layer's rows identify input patterns (keys); the second layer's columns store information to output (values). This gives an intuition for why FFNs store factual knowledge in LLMs — the 'knowledge neurons' in LLMs are primarily in FFN layers. [1]"
+    },
+    {
+      "heading": "BART vs T5: Encoder-Decoder Design Choices",
+      "body": "BART (Lewis et al., 2020) pretrains an encoder-decoder by corrupting text (masking, shuffling, insertion) and training the decoder to reconstruct the original. BART-large achieves strong performance on abstractive summarisation (CNN/DM) and translation. T5 (Raffel et al., 2020) uses a modified encoder-decoder with relative position biases (instead of absolute PE), SentencePiece tokenisation, and a text-to-text pretraining objective on a cleaned web corpus (C4, 745GB). Key architectural difference: T5 uses relative attention bias (adds a learned scalar to attention logits based on key-query distance), while BART uses absolute learned PE. T5's relative bias gives better length generalisation. Both use 12 encoder and 12 decoder layers at the large scale. [2]"
+    }
+  ],
+  "takeaways": [
+    "Encoder: N=6 layers of (masked self-attention + FFN) with Add+Norm; bidirectional attention over full source. [1]",
+    "Decoder: N=6 layers of (causal self-attention + cross-attention + FFN); cross-attention queries=decoder, K/V=encoder output. [1]",
+    "Pre-norm (LLaMA, GPT-3): LayerNorm before sublayer — cleaner gradient flow than original post-norm. [2]",
+    "FFN(x) = W_2·ReLU(W_1·x + b_1) + b_2; d_ff = 4·d_model; FFN layers store factual knowledge in LLMs. [1]",
+    "Encoder-decoder: for translation/summarisation; encoder-only: for understanding; decoder-only: for generation. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why does the decoder use both self-attention and cross-attention — what happens if you remove cross-attention?",
+      "a": "Cross-attention is what connects the decoder to the encoder — it provides the decoder with access to the source sequence representations. Without cross-attention, the decoder has no way to condition on the input: it can only use its own history (self-attention) and the initial encoder output fed as input. For translation without cross-attention, the model cannot know which source words to translate at each step — it degenerates to unconditioned language generation. The result is catastrophically bad translation. In T5, removing cross-attention and converting to a decoder-only architecture loses the bidirectional encoder representation, which is valuable for input understanding. Cross-attention is the architectural mechanism that implements the seq2seq conditioning; it is non-negotiable for encoder-decoder models."
+    },
+    {
+      "q": "What is the difference between encoder-decoder and decoder-only at scale (BART/T5 vs GPT)?",
+      "a": "For the same parameter count, decoder-only models have more parameters in generation-relevant layers (all layers are decoder layers, no parameters 'wasted' on a separate encoder). Encoder-decoder models allocate roughly half their parameters to the encoder — useful when the task benefits from bidirectional input encoding. Empirically: (1) for summarisation, BART (encoder-decoder) outperforms same-size GPT-style models because the encoder's bidirectional attention better captures long document structure; (2) for open-ended generation and language modelling, decoder-only models scale better (GPT-3, LLaMA, PaLM are all decoder-only); (3) for zero-shot tasks with complex instructions, decoder-only models trained with instruction tuning (InstructGPT, LLaMA-Instruct) are more flexible. The trend in LLMs since GPT-3 has been toward decoder-only architectures due to simpler training and better scaling behaviour."
+    }
+  ],
+  "sources": [
+    {
+      "label": "Vaswani et al. (2017) — Attention Is All You Need, NeurIPS 2017 arXiv:1706.03762",
+      "url": "https://arxiv.org/abs/1706.03762"
+    },
+    {
+      "label": "Raffel et al. (2020) — Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer (T5), JMLR arXiv:1910.10683",
+      "url": "https://arxiv.org/abs/1910.10683"
+    }
+  ]
+}

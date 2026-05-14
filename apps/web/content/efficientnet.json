@@ -1,0 +1,75 @@
+{
+  "visualizationType": "efficientnet-viz",
+  "codeSnapshot": {
+    "label": "efficientnet.py",
+    "code": "import torchvision.models as models\nimport torch\n\n# Load EfficientNet variants\nfor name, model_fn in [\n    (\"EfficientNet-B0\", models.efficientnet_b0),\n    (\"EfficientNet-B3\", models.efficientnet_b3),\n    (\"EfficientNet-B7\", models.efficientnet_b7),\n]:\n    model = model_fn(weights=None)\n    params = sum(p.numel() for p in model.parameters()) / 1e6\n    # Input resolution: B0=224, B3=300, B7=600\n    print(f\"{name}: {params:.1f}M parameters\")\n# EfficientNet-B0:  5.3M\n# EfficientNet-B3:  12.2M\n# EfficientNet-B7:  66.3M\n\n# --- Transfer learning with EfficientNet-B0 ---\nfrom torchvision.models import EfficientNet_B0_Weights\nimport torch.nn as nn\n\nmodel = models.efficientnet_b0(weights=EfficientNet_B0_Weights.DEFAULT)\n\n# Freeze all backbone layers\nfor param in model.features.parameters():\n    param.requires_grad = False\n\n# Replace classifier head for 10-class task\nnum_features = model.classifier[1].in_features  # 1280\nmodel.classifier = nn.Sequential(\n    nn.Dropout(p=0.2, inplace=True),\n    nn.Linear(num_features, 10)\n)\n\n# Only classifier parameters are trainable\ntrained_params = sum(p.numel() for p in model.parameters() if p.requires_grad)\nprint(f\"Trainable params (head only): {trained_params:,}\")"
+  },
+  "eli3": [
+    "Previous networks got better by adding more layers (deeper), adding more filters (wider), or using higher resolution images. EfficientNet asked: what if you do all three at the same time in the right proportions? Instead of guessing, they used a mathematical formula to find the best balance.",
+    "They found that if you have a budget to double computational cost, you should scale depth by 1.2×, width by 1.1×, and resolution by 1.15× simultaneously. Doing just one of these wastes your budget; doing all three in harmony gives you much better accuracy per FLOP.",
+    "The result was a family of 8 models (B0 through B7), where each is about 2× the compute of the previous but significantly more accurate. EfficientNet-B7 achieved state-of-the-art ImageNet accuracy with 8.4× fewer parameters and 6.1× fewer FLOPs than the previous best (GPipe)."
+  ],
+  "whenWhy": [
+    {
+      "title": "Resource-constrained deployment (mobile, edge)",
+      "body": "EfficientNet-B0 achieves ~77.1% top-1 ImageNet accuracy with only 5.3M parameters and ~0.39 GFLOPs — comparable to ResNet-50 (~76.0% accuracy) at 8× fewer FLOPs. EfficientNet-Lite variants remove squeeze-and-excitation and use ReLU6 to maximise hardware efficiency on fixed-point inference. For mobile deployment (phones, embedded devices with INT8 accelerators), EfficientNet models offer the best accuracy-per-FLOP tradeoff in the CNN family as of 2024."
+    },
+    {
+      "title": "Transfer learning baseline for new visual tasks",
+      "body": "EfficientNet-B0 to B3 pretrained on ImageNet are standard transfer learning starting points for tasks with limited labeled data (medical imaging, satellite imagery, industrial defect detection). The compound scaling ensures these models are not over-engineered for ImageNet and generalise well. Fine-tuning the full network (lower LR for earlier layers) typically outperforms feature extraction, but even linear probing with frozen EfficientNet-B0 features gives competitive results."
+    },
+    {
+      "title": "NAS-designed MBConv blocks",
+      "body": "EfficientNet's baseline (B0) was found by Neural Architecture Search (NAS) using a multi-objective reward based on accuracy and FLOPs. The search discovered MBConv (Mobile Inverted Bottleneck Convolution) blocks: expand channels with 1×1, apply 3×3 or 5×5 depthwise conv, squeeze with 1×1, add Squeeze-and-Excitation. This block design, originally from MobileNetV2, proved to be the most FLOP-efficient building block. Understanding MBConv blocks explains why EfficientNet achieves better accuracy per FLOP than ResNet's standard bottleneck blocks."
+    }
+  ],
+  "deepDiveIntro": [
+    "Tan & Le (2019) proposed compound scaling: instead of scaling one dimension (depth d, width w, resolution r) independently, scale all three uniformly with a compound coefficient φ: d = α^φ, w = β^φ, r = γ^φ, subject to α·β²·γ² ≈ 2 (so total FLOPs scale as ~2^φ). The coefficients α=1.2, β=1.1, γ=1.15 were found by a small-scale grid search on the baseline (B0). B0 is the NAS-designed baseline; B1 through B7 apply increasing φ. The constraint α·β²·γ² ≈ 2 ensures that doubling φ approximately doubles FLOPs, giving a predictable scaling curve. The width coefficient is squared because FLOPs scale as O(w²) (both input and output channels of a layer increase). [1]",
+    "The baseline architecture B0 uses MBConv blocks (inverted residuals with linear bottlenecks, from MobileNetV2) with Squeeze-and-Excitation (SE) modules and Swish activation. SE modules — a small 2-layer MLP that reweights channel activations — add ~1% top-1 accuracy at minimal FLOP cost. The inverted residual structure: expand channels (1×1, expand ratio 6×), apply depthwise conv, apply SE, project back (1×1, no activation). The 'inverted' refers to the fact that the residual connection is between the narrow (non-expanded) ends, opposite to ResNet bottlenecks where the residual connects wide ends. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Compound Scaling Formula",
+      "body": "The compound coefficient φ controls scaling uniformly: depth d = α^φ, width w = β^φ, resolution r = γ^φ. FLOPs ∝ d · w² · r² (depth scales FLOPs linearly; width squared because both input and output channels scale; resolution squared because spatial dimensions scale). With α=1.2, β=1.1, γ=1.15: FLOP scaling ≈ 1.2 · 1.1² · 1.15² = 1.2 · 1.21 · 1.3225 ≈ 2.0. So each unit increase in φ doubles FLOPs. B1 has φ=1, B2 has φ≈1.4, ..., B7 has φ=6 (~12× more FLOPs than B0). The key insight: previous ad hoc scaling (e.g., doubling depth only) wastes compute — the same FLOP budget spent on balanced scaling yields better accuracy. [1]"
+    },
+    {
+      "heading": "MBConv Block: Inverted Residual + SE",
+      "body": "MBConv (Mobile Inverted Bottleneck Convolution) has 4 steps: (1) Expansion 1×1 conv: expand channels from C to k·C (expand ratio k, typically 6); (2) Depthwise 3×3 (or 5×5) conv on expanded channels: spatial feature extraction; (3) Squeeze-and-Excitation: Global Average Pool → FC(C/r) → ReLU → FC(k·C) → Sigmoid → channel-wise multiply (r=4); (4) Projection 1×1 conv: reduce k·C back to output channels C. A skip connection adds input to output when input/output shapes match. Total parameters for one MBConv with k=6: 1×1 (C·kC) + 3×3 depthwise (kC·9) + SE (kC·C/r + C/r·kC) + 1×1 (kC·C) ≈ 14C² — far fewer than a standard conv (9C²·k² for equivalent depth). [2]"
+    },
+    {
+      "heading": "EfficientNet vs ResNet: Accuracy-Efficiency Tradeoff",
+      "body": "ImageNet top-1 accuracy comparison: EfficientNet-B0 (5.3M, 0.39G) ≈ 77.1%; ResNet-50 (25M, 4.1G) ≈ 76.1%; ResNet-152 (60M, 11.6G) ≈ 78.3%; EfficientNet-B3 (12M, 1.8G) ≈ 81.6%; EfficientNet-B7 (66M, 37G) ≈ 84.3%. EfficientNet-B3 achieves 5.4 percentage points higher accuracy than ResNet-152 with 5× fewer parameters and 6.4× fewer FLOPs. The gains come from: (1) better base architecture (MBConv + SE vs plain bottleneck), (2) Swish activation (vs ReLU), (3) principled compound scaling. Note: ViT and ConvNeXt have since surpassed EfficientNet at scale, but EfficientNet remains among the best CNNs for the mid-range compute regime. [1]"
+    },
+    {
+      "heading": "EfficientNetV2 and Improved Training",
+      "body": "Tan & Le (2021) introduced EfficientNetV2, which addresses two issues with the original: (1) training with large resolutions (B7: 600×600 input) is very slow; (2) depthwise convolutions are underutilised on modern accelerators (TPUs, GPUs) due to poor hardware efficiency. EfficientNetV2 uses Fused-MBConv (replace expand 1×1 + depthwise 3×3 with a standard 3×3) for early stages and standard MBConv for later stages. It also uses progressive learning: train with small resolution and weak augmentation early, increase both during training (analogous to curriculum learning). EfficientNetV2-M achieves 85.1% on ImageNet at 55M parameters, training 11× faster than EfficientNet-B7. [2]"
+    }
+  ],
+  "takeaways": [
+    "Compound scaling: d=α^φ, w=β^φ, r=γ^φ with α·β²·γ²≈2; balanced scaling outperforms scaling any single dimension. [1]",
+    "MBConv block: 1×1 expand → depthwise conv → Squeeze-and-Excitation → 1×1 project; FLOP-efficient building block. [2]",
+    "EfficientNet-B0 matches ResNet-50 accuracy with 8× fewer parameters and 10× fewer FLOPs. [1]",
+    "SE modules reweight channels via a learned attention vector — ~1% top-1 accuracy gain at negligible FLOP cost. [2]",
+    "EfficientNetV2 uses Fused-MBConv for early stages and progressive training, achieving 11× faster training than B7. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why doesn't compound scaling guarantee optimal performance — what are its limitations?",
+      "a": "Compound scaling has several limitations: (1) It scales a fixed baseline architecture — the scaling coefficients are optimal for MBConv blocks but not necessarily for other architectures (ResNets, ViTs). (2) The constraint α·β²·γ²≈2 is an approximation; actual FLOP scaling deviates at extreme φ due to fixed-cost components (stem, head). (3) The grid search for α,β,γ is done at φ=1, assuming the optimal coefficients are constant across all scales — this may not hold at very large scales. (4) Resolution scaling becomes expensive: B7 at 600×600 uses 7.2× more spatial pixels than B0 at 224×224, requiring very large batches or gradient checkpointing. EfficientNetV2 addressed the resolution bottleneck with progressive training and Fused-MBConv."
+    },
+    {
+      "q": "How does Squeeze-and-Excitation (SE) work and why does it help?",
+      "a": "SE adds a channel attention mechanism: (1) Squeeze — Global Average Pool each of the C feature maps to a single number, producing a C-dimensional descriptor of 'what is in this image'. (2) Excitation — pass through a small FC(C/r) → ReLU → FC(C) → Sigmoid network, producing a C-dimensional vector of channel importance weights in (0,1). (3) Scale — multiply each feature map channel by its importance weight. This allows the network to adaptively recalibrate channel responses: focus on informative channels (e.g., the 'wheel detector' channel when the input contains a car) and suppress less informative ones. SE adds 2×C×C/r+1 parameters per block (r=4 typically), negligible relative to the conv parameters, but provides consistent +0.5–1.5% ImageNet top-1 accuracy."
+    }
+  ],
+  "sources": [
+    {
+      "label": "Tan & Le (2019) — EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks, ICML 2019 arXiv:1905.11946",
+      "url": "https://arxiv.org/abs/1905.11946"
+    },
+    {
+      "label": "Tan & Le (2021) — EfficientNetV2: Smaller Models and Faster Training, ICML 2021 arXiv:2104.00298",
+      "url": "https://arxiv.org/abs/2104.00298"
+    }
+  ]
+}

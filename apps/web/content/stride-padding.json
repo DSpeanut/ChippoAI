@@ -1,0 +1,75 @@
+{
+  "visualizationType": "stride-padding-viz",
+  "codeSnapshot": {
+    "label": "stride_padding.py",
+    "code": "import torch\nimport torch.nn as nn\n\ndef out_size(H, K, S, P):\n    return (H + 2*P - K) // S + 1\n\n# --- Effect of stride and padding on output size ---\nconfigs = [\n    {\"name\": \"valid (no padding)\",  \"K\": 3, \"S\": 1, \"P\": 0},\n    {\"name\": \"same (same padding)\",  \"K\": 3, \"S\": 1, \"P\": 1},\n    {\"name\": \"strided (halve size)\", \"K\": 3, \"S\": 2, \"P\": 1},\n    {\"name\": \"large stride\",         \"K\": 5, \"S\": 2, \"P\": 2},\n]\nH = 28\nfor c in configs:\n    H_out = out_size(H, c[\"K\"], c[\"S\"], c[\"P\"])\n    print(f\"{c['name']:30s}  K={c['K']} S={c['S']} P={c['P']}  {H}x{H} -> {H_out}x{H_out}\")\n\n# --- Dilated convolution ---\ndilated_conv = nn.Conv2d(1, 1, kernel_size=3, dilation=2, padding=2)\nx = torch.randn(1, 1, 8, 8)\nout = dilated_conv(x)\nprint(f\"\\nDilated conv (d=2): input {x.shape} -> output {out.shape}\")\n# Effective kernel size = d*(K-1)+1 = 2*(3-1)+1 = 5\n# H_out = floor((8 + 2*2 - 5) / 1) + 1 = floor(7/1)+1 = 8  (same size)"
+  },
+  "eli3": [
+    "Stride controls how far the filter moves each step. A stride of 1 means move one pixel at a time; stride 2 means skip every other pixel and make the output half the size. Larger strides act like a fast-forward button — you get a smaller output image but you might miss fine details.",
+    "Padding adds a border of zeros around the image before convolving. Without padding, the filter can't hang off the edge, so the output shrinks. With 'same' padding, you add just enough zeros so the output is the same size as the input. This is important so that deep networks don't shrink the feature maps too quickly.",
+    "Dilated (atrous) convolutions are a clever variant: instead of using adjacent filter positions (0,1,2), you use positions with gaps (0,2,4 for dilation=2). The filter covers a larger area without using more parameters — you get a bigger 'view' of the image for free."
+  ],
+  "whenWhy": [
+    {
+      "title": "Spatial downsampling with strided convolutions",
+      "body": "Strided convolutions (S=2) are increasingly preferred over max pooling for downsampling. They reduce H and W by approximately S× while simultaneously learning a feature transformation, giving the network more flexibility than a fixed max/average pooling operation. ResNet uses stride-2 convolutions at the start of each residual stage to halve spatial dimensions. The output size formula H_out = floor((H + 2P − K)/S) + 1 must be verified when designing network architectures to ensure consistent tensor dimensions."
+    },
+    {
+      "title": "Preserving spatial dimensions with same padding",
+      "body": "Same padding (P = (K−1)/2 for odd K) ensures the output has the same H×W as the input. This is the default in most architectures: it allows stacking many convolutional layers without shrinking the feature map until an explicit downsampling step. In PyTorch, padding='same' computes the required padding automatically. Without same padding in a 10-layer network with K=3, input of 32×32 would shrink to 32−10×2 = 12×12 — losing nearly 90% of spatial resolution before any pooling."
+    },
+    {
+      "title": "Dilated convolutions for large receptive fields",
+      "body": "Dilated (atrous) convolutions increase the receptive field without increasing parameters or reducing resolution. Essential in semantic segmentation (DeepLab) and time-series models (WaveNet). A dilation rate d inserts d−1 zeros between kernel positions; the effective kernel size becomes d(K−1)+1. A 3×3 kernel with d=2 has effective size 5×5 — covering a 5×5 area with 9 parameters. Stacking dilated convolutions with exponentially increasing dilation rates (d=1,2,4,8,...) gives an exponentially growing receptive field with only linearly growing parameters."
+    }
+  ],
+  "deepDiveIntro": [
+    "The output size formula for a convolutional (or pooling) layer is: H_out = floor((H_in + 2P − K) / S) + 1, W_out = floor((W_in + 2P − K) / S) + 1, where H_in is input height, P is padding (same on both sides), K is kernel size, and S is stride. For K=3 (the most common case): S=1,P=0 → H_out = H_in−2 (shrinks by 2); S=1,P=1 → H_out = H_in (same size); S=2,P=1 → H_out = ⌊H_in/2⌋ (halves). For even-sized inputs, floor ensures the formula handles non-integer cases. Transposed convolutions (used in decoders and GANs) invert this: H_out = (H_in−1)·S − 2P + K, approximately multiplying size by S. [1]",
+    "Dilated (atrous) convolutions, introduced for semantic segmentation (Chen et al., 2015; DeepLab), modify the convolution to sample input values at regular intervals. For dilation rate d, input position (i,j) samples at offset (m·d, n·d) for kernel indices (m,n). The effective receptive field size is d(K−1)+1, but only K² parameter values are used. This allows exponentially growing receptive fields without downsampling (and therefore no resolution loss), which is critical for segmentation models that need both large context and fine-grained spatial predictions. WaveNet uses exponentially increasing dilation rates (1,2,4,...,512,1,2,4,...,512) to model very long audio sequences. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Output Size Formula — Detailed Derivation",
+      "body": "Consider a 1D convolution for clarity. With input size H_in, kernel K, stride S, padding P: the input (padded) has size H_in + 2P. The filter can start at positions 0, S, 2S, ..., up to the last valid position H_in+2P−K. The number of valid positions is floor((H_in+2P−K)/S) + 1 = H_out. Special cases: valid convolution (P=0): H_out = floor((H_in−K)/S)+1 — always smaller than input unless K=1; same convolution (P=(K−1)/2, S=1): H_out = H_in — requires odd K for integer P; full convolution (P=K−1, S=1): H_out = H_in+K−1 — larger than input, used in signal processing. For building architectures: always compute the expected output size at each layer to catch dimension mismatches before training. [1]"
+    },
+    {
+      "heading": "Strided Convolutions vs Pooling",
+      "body": "Both stride-2 convolutions and 2×2 max pooling halve spatial dimensions. Key differences: (1) Learnable vs fixed — strided conv has parameters W, b that are learned; max pool is a fixed max operation. (2) Information preservation — strided conv learns the optimal aggregation kernel; max pool only keeps the maximum. (3) Gradient flow — strided conv has full gradients; max pool has sparse gradients (only through the argmax). (4) Computation — for equal output size, strided conv (K=3, S=2) performs 9 multiply-adds per output location; max pool (K=2, S=2) performs 4 comparisons, no multiplications — max pool is faster. Modern architectures (ResNet, EfficientNet) use stride-2 conv at residual stage boundaries (more expressive); architectures prioritising speed (MobileNet) use depth-wise stride-2 conv. [2]"
+    },
+    {
+      "heading": "Dilated Convolution and WaveNet",
+      "body": "WaveNet (van den Oord et al., 2016) uses causal dilated convolutions for audio generation. Causal means no future context: only past samples contribute to the current output (achieved by masking the kernel to use only positions m ≤ 0). Dilation rates cycle through 1,2,4,8,16,...,512 in each 'stack'; with 10 dilation rates and 3 stacks, the receptive field covers 3×(1+2+...+512)+1 = 3069 time steps — covering ~190ms at 16kHz audio. This allows WaveNet to model long-range dependencies in audio (e.g., an instrument's sustain envelope) that would require thousands of sequential RNN steps to capture. The exponential dilation schedule achieves logarithmic depth growth of the receptive field. [2]"
+    },
+    {
+      "heading": "Transposed Convolutions and Upsampling",
+      "body": "Transposed convolutions (erroneously called 'deconvolutions') upsample feature maps, commonly used in generative models (GANs, VAEs) and segmentation decoders (U-Net). For input size H_in, the output is H_out = (H_in−1)·S − 2P + K. A transposed conv with K=4, S=2, P=1 doubles spatial size: H_out = (H_in−1)·2 − 2 + 4 = 2H_in. Transposed convolutions can produce checkerboard artefacts when the kernel size is not divisible by the stride (stride=2, kernel=3 causes overlapping coverage patterns). The fix: use K=4 with S=2 (divisible), or replace transposed conv with bilinear/nearest-neighbour upsampling followed by a standard conv (Odena et al., 2016). [1]"
+    }
+  ],
+  "takeaways": [
+    "Output size: H_out = floor((H_in + 2P − K)/S) + 1; for K=3,S=1,P=1 (same padding): H_out = H_in. [1]",
+    "Same padding (P=(K-1)/2 for odd K) preserves spatial dimensions — standard for feature extraction layers. [1]",
+    "Stride-2 convolutions halve spatial size and are preferred over max pooling in modern architectures (learnable). [2]",
+    "Dilated convolutions expand receptive field as d(K-1)+1 with no extra parameters — used in DeepLab, WaveNet. [2]",
+    "Transposed convolutions upsample; use K divisible by S or bilinear upsampling + conv to avoid checkerboard artefacts. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "How do you compute 'same' padding for even kernel sizes in PyTorch?",
+      "a": "For odd kernel sizes K, same padding is P = (K−1)/2, which is always an integer and can be set with padding=(K-1)//2. For even kernel sizes (K=2,4), same padding requires fractional padding — padding by (K−1)/2 and (K−1)/2 asymmetrically. PyTorch's padding='same' mode handles this automatically by padding unequally on each side. However, padding='same' is only supported when stride=1; for stride>1, you must compute padding manually and accept that the output size may differ by 1 pixel depending on the input size. This is why most architectures use odd-sized kernels (3×3, 5×5, 7×7) exclusively."
+    },
+    {
+      "q": "What is the checkerboard artefact in transposed convolutions and how do you fix it?",
+      "a": "When the transposed convolution kernel size is not divisible by the stride, different output pixels receive contributions from different numbers of input pixels — some pixels are computed from 4 input positions, others from fewer. This uneven coverage creates a regular grid pattern (checkerboard) in the output, visible in GAN-generated images. Fix 1: use kernel sizes divisible by stride (K=4 with S=2 is standard in DCGANs). Fix 2 (Odena et al., 2016): replace transposed conv with bilinear or nearest-neighbour upsampling followed by a standard convolution — the conv learns the upsampling pattern without the overlap artefact. Most modern image generation models (StyleGAN, Diffusion Models) use bilinear upsampling + conv rather than transposed convolutions."
+    }
+  ],
+  "sources": [
+    {
+      "label": "Dumoulin & Visin (2016) — A Guide to Convolution Arithmetic for Deep Learning, arXiv:1603.07285",
+      "url": "https://arxiv.org/abs/1603.07285"
+    },
+    {
+      "label": "Chen et al. (2017) — DeepLab: Semantic Image Segmentation with Deep CNNs and Dilated Convolutions, IEEE TPAMI",
+      "url": "https://arxiv.org/abs/1606.00915"
+    }
+  ]
+}

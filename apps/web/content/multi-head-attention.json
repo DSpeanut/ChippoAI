@@ -1,0 +1,75 @@
+{
+  "visualizationType": "multi-head-attention-viz",
+  "codeSnapshot": {
+    "label": "multi_head_attention.py",
+    "code": "import torch\nimport torch.nn as nn\nimport math\n\nclass MultiHeadAttention(nn.Module):\n    \"\"\"\n    Multi-Head Attention from scratch (Vaswani et al., 2017).\n    MultiHead(Q,K,V) = Concat(head_1,...,head_h) W^O\n    where head_i = Attention(Q W_i^Q, K W_i^K, V W_i^V)\n    \"\"\"\n    def __init__(self, d_model: int, n_heads: int, dropout: float = 0.1):\n        super().__init__()\n        assert d_model % n_heads == 0\n        self.d_model  = d_model\n        self.n_heads  = n_heads\n        self.d_k      = d_model // n_heads  # dimension per head\n\n        self.W_q = nn.Linear(d_model, d_model, bias=False)\n        self.W_k = nn.Linear(d_model, d_model, bias=False)\n        self.W_v = nn.Linear(d_model, d_model, bias=False)\n        self.W_o = nn.Linear(d_model, d_model)\n        self.drop = nn.Dropout(dropout)\n\n    def split_heads(self, x: torch.Tensor) -> torch.Tensor:\n        \"\"\"[B, T, d_model] -> [B, h, T, d_k]\"\"\"\n        B, T, _ = x.shape\n        return x.view(B, T, self.n_heads, self.d_k).transpose(1, 2)\n\n    def forward(self, Q, K, V, mask=None):\n        # Project queries, keys, values\n        q = self.split_heads(self.W_q(Q))  # [B, h, T_q, d_k]\n        k = self.split_heads(self.W_k(K))  # [B, h, T_k, d_k]\n        v = self.split_heads(self.W_v(V))  # [B, h, T_v, d_k]\n\n        # Scaled dot-product attention per head\n        scores = torch.matmul(q, k.transpose(-2, -1)) / math.sqrt(self.d_k)  # [B,h,T_q,T_k]\n        if mask is not None:\n            scores = scores.masked_fill(mask == 0, float('-inf'))\n        attn = self.drop(torch.softmax(scores, dim=-1))\n        out  = torch.matmul(attn, v)                 # [B, h, T_q, d_k]\n\n        # Concat heads and project\n        B, h, T, d_k = out.shape\n        out = out.transpose(1, 2).contiguous().view(B, T, self.d_model)  # [B, T_q, d_model]\n        return self.W_o(out), attn\n\nmha = MultiHeadAttention(d_model=512, n_heads=8)\nQ = K = V = torch.randn(2, 10, 512)  # batch=2, seq=10, d_model=512\nout, attn = mha(Q, K, V)\nprint(f\"Output: {out.shape}\")   # [2, 10, 512]\nprint(f\"Attn:   {attn.shape}\")  # [2, 8, 10, 10]  (8 heads)"
+  },
+  "eli3": [
+    "Single attention is like looking at a document through one lens — you focus on one type of relationship at a time. Multi-head attention runs several attention mechanisms in parallel, each through its own independent lens. One head might look for syntactic relationships (verb-object), another for coreference (pronoun-noun), another for topic relevance.",
+    "Each head gets its own set of learned projection weights and operates on a smaller dimensional subspace. An 8-head attention with d=512 has each head working in a 64-dimensional space. The heads run independently in parallel, then their outputs are concatenated and projected back to the original dimension.",
+    "The benefit: different heads can specialise. In practice, researchers have found that in translation models, some heads learn to track positional information, others focus on syntactic roles, and others on semantic similarity. Multi-head attention gives the model the flexibility to jointly attend to information from different representation subspaces."
+  ],
+  "whenWhy": [
+    {
+      "title": "All Transformer-based models (BERT, GPT, T5, LLaMA)",
+      "body": "Multi-head attention is the core building block of every Transformer-based model. BERT uses 12 heads with d_model=768 (d_k=64 per head); GPT-3 uses 96 heads with d_model=12288 (d_k=128); LLaMA-2-70B uses 64 heads. Removing the multi-head structure (using single-head attention with the same d_model) consistently underperforms — multiple heads are necessary for the model to capture diverse relationship types simultaneously. The number of heads h is a key hyperparameter: too few (h=1–2) reduces diversity; too many (h>d_k=16 when d_k<4) creates sub-spaces too small to carry useful information."
+    },
+    {
+      "title": "Capturing multiple types of long-range dependencies",
+      "body": "In language, a single sentence requires tracking multiple distinct relationship types simultaneously: syntactic structure (verb-argument relationships), coreference (pronoun → antecedent), semantic similarity (synonym/antonym), positional patterns (adjacent words). A single attention head optimises one linear combination of these signals. Multiple heads can specialise: Michel et al. (2019) found that after training BERT, removing all but 8 of 144 attention heads causes < 1% accuracy drop on most tasks — suggesting most heads specialise for specific relationship types and few are redundant."
+    },
+    {
+      "title": "Efficient multi-scale feature learning in vision",
+      "body": "In Vision Transformers (ViT) and hybrid architectures, multi-head attention captures both local patch relationships (some heads focus on neighbouring patches) and global structure (some heads focus on the [CLS] token or distant patches). This multi-scale behaviour emerges from training without explicit architectural constraints — the same multi-head design used for text works for images with different learned head specialisations."
+    }
+  ],
+  "deepDiveIntro": [
+    "Multi-head attention (Vaswani et al., 2017) projects queries Q, keys K, and values V into h independent subspaces, computes scaled dot-product attention within each subspace, and concatenates the results: MultiHead(Q,K,V) = Concat(head_1,...,head_h)W^O, where head_i = Attention(QW_i^Q, KW_i^K, VW_i^V), and W_i^Q, W_i^K ∈ ℝ^{d_model×d_k}, W_i^V ∈ ℝ^{d_model×d_v}, W^O ∈ ℝ^{hd_v×d_model} are learned projection matrices, with d_k = d_v = d_model/h. For d_model=512, h=8: d_k=64. The scaled dot-product attention within each head: Attention(Q_i, K_i, V_i) = softmax(Q_i K_i^T / √d_k) V_i. [1]",
+    "The multi-head design adds four projection matrices per attention layer (W^Q, W^K, W^V, W^O), each of size d_model×d_model. Total parameters per attention layer: 4·d_model² (regardless of h). Splitting into h heads does not add parameters — it rearranges the computation. The key motivation: using h attention functions in parallel allows the model to jointly attend to information from different representation subspaces at different positions. A single attention head must average over all useful signals; multiple heads can specialise and capture different types of dependencies simultaneously. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Computation: Split, Attend, Concat, Project",
+      "body": "Implementation for a batch: (1) Project: Q̂ = QW^Q, K̂ = KW^K, V̂ = VW^V — three matrix multiplications, each [B×T×d_model] → [B×T×d_model]. (2) Split: reshape [B, T, d_model] → [B, h, T, d_k] by splitting the last dimension into h heads. (3) Attend: compute [B, h, T, T] attention scores and apply softmax; multiply by V̂ to get [B, h, T, d_k] context vectors. (4) Concat: reshape [B, h, T, d_k] → [B, T, d_model] by merging the head dimension. (5) Project: multiply by W^O: [B, T, d_model] → [B, T, d_model]. Total FLOPs ≈ 4·B·T·d_model² (projections) + B·h·T²·d_k (attention scores) — for long sequences (T >> d_model/h), the T² term dominates. [1]"
+    },
+    {
+      "heading": "Head Specialisation: Empirical Findings",
+      "body": "Vaswani et al. (2017) visualised two heads from the encoder: Head 1 shows long-distance dependencies focused on the verb; Head 2 shows anaphora resolution (attending to pronouns' antecedents). Michel, Levy & Neubig (2019) systematically measured head importance by ablating individual heads and measuring accuracy drop. Key findings: (1) Most heads are not individually important — ablating 80% of heads in BERT causes < 1% drop on GLUE tasks; (2) A small number of 'important' heads are specialised for specific linguistic phenomena; (3) Heads prune themselves differently across layers — earlier layers keep more heads post-pruning. These findings motivated attention head pruning (reducing computation) and structured pruning for inference efficiency. [2]"
+    },
+    {
+      "heading": "Grouped Query Attention (GQA) and Multi-Query Attention (MQA)",
+      "body": "Standard MHA has h query heads and h key-value heads — each head has its own K and V projections. Multi-Query Attention (Shazeer, 2019) uses h query heads but only 1 shared key-value head: W^K, W^V ∈ ℝ^{d_model×d_k} (shared across all queries). This reduces the KV cache size by h× — critical for fast autoregressive inference where the KV cache is stored in memory. Grouped Query Attention (GQA, Ainslie et al., 2023) is a compromise: group queries into g groups sharing one KV head each. LLaMA-2-70B uses GQA with g=8 groups, reducing KV cache by 8× vs MHA. MQA slightly reduces quality vs MHA; GQA matches MHA quality while providing significant inference speedup. [2]"
+    },
+    {
+      "heading": "Flash Attention and Computational Efficiency",
+      "body": "Standard attention materialises the full [B, h, T, T] attention matrix in GPU HBM (high-bandwidth memory) — for T=2048, h=8, B=32, this is 32×8×2048×2048×4 bytes ≈ 4GB, exceeding GPU memory for long contexts. FlashAttention (Dao et al., 2022) tiles the computation to process the attention matrix in SRAM-sized blocks, never materialising the full [T, T] matrix in HBM. This reduces memory from O(T²) to O(T) and achieves 2–4× wall-clock speedup by reducing HBM reads/writes. FlashAttention-2 further optimises work partitioning. All modern Transformers use FlashAttention in production; it is the primary reason training on 32k+ token contexts is feasible. [1]"
+    }
+  ],
+  "takeaways": [
+    "MultiHead(Q,K,V) = Concat(head_1,...,head_h)W^O; each head_i = Attention(QW_i^Q, KW_i^K, VW_i^V). [1]",
+    "h=8 heads with d_model=512: each head works in d_k=64-dimensional space; total params per layer = 4·d_model². [1]",
+    "Multiple heads allow joint attendance to different relationship types (syntax, coreference, semantics). [1]",
+    "GQA (grouped query attention) reduces KV cache by grouping queries to share K,V heads — used in LLaMA-2. [2]",
+    "FlashAttention tiles the [T,T] attention computation in SRAM, reducing memory O(T²)→O(T) and enabling long contexts. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why does multi-head attention not increase parameter count compared to single-head attention of the same dimension?",
+      "a": "With h=8 heads and d_model=512 (d_k=64): the four projection matrices W^Q, W^K, W^V, W^O each have size 512×512 regardless of h. The splitting into heads happens after the projection — you project to [B, T, 512] and then reshape to [B, h, T, 64]. Total parameters: 4×512×512 = 1,048,576 ≈ 1M per attention layer. This is the same as single-head attention with d_k=d_model=512 (which also has four 512×512 matrices). The multi-head design provides more representational diversity by operating in h subspaces without adding parameters — the expressiveness gain is 'free'."
+    },
+    {
+      "q": "What is the causal mask in decoder self-attention and why is it necessary?",
+      "a": "In autoregressive generation, the decoder must not attend to future tokens — it generates left-to-right and can only see previously generated tokens. The causal mask is an upper-triangular mask applied to the attention scores before softmax: scores[i, j] = -∞ for j > i (future positions). After softmax, -∞ becomes 0, so future positions receive zero attention weight. At training time with teacher forcing, all positions process in parallel but the causal mask ensures each position only sees past positions — equivalently to the sequential left-to-right generation at inference. Without the causal mask, the decoder would 'cheat' by looking at future tokens during training, but at inference no future tokens would be available — causing a training/inference mismatch."
+    }
+  ],
+  "sources": [
+    {
+      "label": "Vaswani et al. (2017) — Attention Is All You Need, NeurIPS 2017 arXiv:1706.03762",
+      "url": "https://arxiv.org/abs/1706.03762"
+    },
+    {
+      "label": "Michel, Levy & Neubig (2019) — Are Sixteen Heads Really Better than One? NeurIPS 2019 arXiv:1905.10650",
+      "url": "https://arxiv.org/abs/1905.10650"
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "visualizationType": "graphsage-viz",
+  "codeSnapshot": {
+    "label": "graphsage_node_classification.py",
+    "code": "import torch\nimport torch.nn.functional as F\nfrom torch_geometric.nn import SAGEConv\nfrom torch_geometric.datasets import Planetoid\nfrom torch_geometric.loader import NeighborLoader\n\ndataset = Planetoid(root='/tmp/Cora', name='Cora')\ndata    = dataset[0]\n\nclass GraphSAGE(torch.nn.Module):\n    def __init__(self, in_channels, hidden, out_channels):\n        super().__init__()\n        self.conv1 = SAGEConv(in_channels, hidden, aggr='mean')\n        self.conv2 = SAGEConv(hidden, out_channels, aggr='mean')\n\n    def forward(self, x, edge_index):\n        x = F.relu(self.conv1(x, edge_index))\n        x = F.dropout(x, p=0.5, training=self.training)\n        return self.conv2(x, edge_index)\n\n# Mini-batch training with neighbourhood sampling\ntrain_loader = NeighborLoader(\n    data,\n    num_neighbors=[10, 10],   # sample 10 neighbours per layer\n    batch_size=64,\n    input_nodes=data.train_mask,\n)\n\ndevice = torch.device('cuda' if torch.cuda.is_available() else 'cpu')\nmodel  = GraphSAGE(dataset.num_features, 64, dataset.num_classes).to(device)\noptimizer = torch.optim.Adam(model.parameters(), lr=0.005)\n\nfor epoch in range(10):\n    model.train()\n    for batch in train_loader:\n        batch = batch.to(device)\n        optimizer.zero_grad()\n        out  = model(batch.x, batch.edge_index)\n        loss = F.cross_entropy(out[:batch.batch_size], batch.y[:batch.batch_size])\n        loss.backward(); optimizer.step()\n\n# Inductive test: evaluate on full graph (including unseen nodes)\nmodel.eval()\nwith torch.no_grad():\n    out  = model(data.x.to(device), data.edge_index.to(device))\n    pred = out.argmax(dim=1)\n    acc  = (pred[data.test_mask.to(device)] == data.y.to(device)[data.test_mask]).float().mean()\nprint(f\"Test accuracy: {acc.item():.4f}\")  # ~0.81"
+  },
+  "eli3": [
+    "GCN and GAT require the full graph to be in memory during training — they can't handle new nodes that weren't there during training. GraphSAGE (Graph SAmple and aggreGatE) fixes this by learning how to aggregate information from a sampled neighbourhood rather than from all neighbours at once.",
+    "The 'sample' part: instead of using all of a node's neighbours, GraphSAGE randomly picks a fixed number (e.g., 10 per layer). This makes training scalable — you never need the entire graph, just small subgraphs. The 'aggregate' part: take the sampled neighbour features, aggregate them (mean, max, LSTM), then concatenate with the node's own features.",
+    "The key insight: the aggregation function is what's learned, not the embeddings. This means GraphSAGE can generate embeddings for nodes it has never seen before — as long as the node has features and neighbours, you just run the aggregation. This is called inductive learning, and it's what makes GraphSAGE work in real-world systems like Pinterest where new users join every day."
+  ],
+  "whenWhy": [
+    {
+      "title": "Inductive node classification on evolving graphs",
+      "body": "GCN and GAT are transductive — they require all nodes to be present during training and cannot generalise to new nodes. GraphSAGE is inductive: it learns an aggregation function applicable to any node with features, including nodes added after training. Hamilton et al. demonstrated this on protein interaction networks (PPI): train on 20 protein graphs, test on 2 unseen graphs. GraphSAGE achieves 0.768 F1 on unseen graphs; node2vec (transductive) achieves 0.151. This inductive capability is essential for dynamic graphs (social networks, web graphs) where new nodes appear continuously."
+    },
+    {
+      "title": "Large-scale industrial recommendation systems",
+      "body": "Pinterest deployed PinSage, a GraphSAGE variant, on a bipartite graph of 3B pins and 18B edges — orders of magnitude larger than any transductive GNN can handle. PinSage uses importance sampling (weighted neighbourhood sampling based on random walk visit frequencies) rather than uniform sampling, and runs multi-GPU distributed training. GraphSAGE's mini-batch training allows operating on subgraphs, making it the standard approach for industrial-scale GNNs. Uber ATG and LinkedIn also deploy GraphSAGE-based models for recommendation and fraud detection."
+    },
+    {
+      "title": "Heterogeneous graphs with node attributes",
+      "body": "GraphSAGE's aggregators (mean, pooling, LSTM) naturally handle rich node attributes without requiring a spectral graph decomposition. Unlike GCN which requires a fixed graph Laplacian, GraphSAGE can operate on heterogeneous graphs (different node/edge types) by using type-specific aggregators. HAN (Heterogeneous Attention Networks) and HetGNN extend GraphSAGE-style neighbourhood sampling to knowledge graphs and e-commerce graphs where node types (user, item, category) require different aggregation strategies."
+    }
+  ],
+  "deepDiveIntro": [
+    "Hamilton, Ying & Leskovec (2017) introduced GraphSAGE with a two-step aggregation framework. For each node v at layer k: (1) aggregate neighbourhood: h_{N(v)}^k = AGGREGATE_k({h_u^{k-1}, ∀u ∈ S_{N(v)}}), where S_{N(v)} is a fixed-size sample of v's neighbours; (2) concatenate and transform: h_v^k = σ(W^k · [h_v^{k-1} || h_{N(v)}^k]). The concatenation [h_v || h_N(v)] preserves the node's own representation alongside aggregated neighbourhood information — unlike GCN where the node's features are averaged with neighbours. The representations are L2-normalised after each layer. [1]",
+    "GraphSAGE proposes four aggregators: (1) Mean aggregator: h_{N(v)} = mean({h_u, u ∈ S_{N(v)}}). Equivalent to inductive GCN (without symmetric normalisation). (2) GCN aggregator: h_v^k = σ(W^k · mean({h_u, u ∈ S_{N(v)} ∪ {v}})) — merges self and neighbour mean (no concatenation). (3) Max-pooling aggregator: h_{N(v)} = max(σ(W_pool h_u + b), ∀u ∈ S_{N(v)}) — captures extreme values in the neighbourhood. (4) LSTM aggregator: apply an LSTM over a random permutation of neighbours (LSTMs are order-sensitive, so permutation is used to remove order bias). Experiments showed max-pooling and LSTM aggregators outperform the mean aggregator on most benchmarks. [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Neighbourhood Sampling Strategy",
+      "body": "GraphSAGE samples K-hop neighbourhoods: for a 2-layer model, sample S_1 first-hop neighbours, then S_2 second-hop neighbours for each first-hop neighbour. Total nodes per batch: B × S_1 × S_2. Hamilton et al. use S_1=25, S_2=10 for PPI (total: B×250). Uniform sampling ignores edge importance — all neighbours equally likely regardless of edge weight or relationship strength. PinSage improves on this with importance-based sampling: run a short random walk from target node v, use visit frequencies as sampling probabilities, so closely-related nodes are sampled more often. This biased sampling improved recommendation quality over uniform GraphSAGE. PyTorch Geometric's NeighborLoader implements uniform sampling; custom importance sampling requires overriding the sampler. [1]"
+    },
+    {
+      "heading": "Inductive vs Transductive Learning",
+      "body": "Transductive methods (GCN, DeepWalk, node2vec) learn an embedding for each node in the training graph — the embedding is a fixed lookup table that cannot generalise to new nodes. Inductive methods (GraphSAGE) learn a function that maps a node's features and neighbourhood structure to an embedding — applicable to any node. The distinction matters when: (1) new nodes join after training (social networks: new users); (2) the test graph is entirely unseen (protein function prediction on new organisms); (3) the graph is too large to train on all nodes (industrial-scale recommendation). The price: inductive methods require node features; purely structural graphs (adjacency only, no features) require hand-crafted features or degree-based features as input. GraphSAGE with degree features can recover some structural information but is less powerful than node2vec on feature-free graphs. [2]"
+    },
+    {
+      "heading": "GraphSAGE vs GCN vs GAT",
+      "body": "Aggregation comparison: GCN — fixed symmetric normalisation 1/√(d_i·d_j), no concatenation; GraphSAGE — learnable aggregator (mean/pool/LSTM), concatenation with self; GAT — attention-weighted sum, no concatenation by default. Scalability: GCN requires full graph in memory (full-batch); GAT requires full graph for attention computation; GraphSAGE supports mini-batch via neighbourhood sampling. Inductiveness: GCN and GAT are transductive (standard implementations); GraphSAGE is inductive by design. For large graphs: GraphSAGE is the baseline. For small graphs with heterogeneous neighbourhoods: GAT may be preferred. For graphs with very regular structure: GCN is computationally cheaper and competitive. On the Cora benchmark: GCN 81.5%, GAT 83.0%, GraphSAGE mean 79.8% — but comparisons are not directly informative since GraphSAGE uses mini-batch subgraph training. [2]"
+    },
+    {
+      "heading": "PinSage: Industrial-Scale GraphSAGE",
+      "body": "Ying et al. (2018) deployed PinSage at Pinterest on a graph with 3B nodes (pins and boards) and 18B edges. Key engineering innovations over vanilla GraphSAGE: (1) Importance sampling: uses random walk visit counts to estimate neighbourhood importance, downweighting spurious edges; (2) Curriculum training: starts with 'easy' negatives (random pins), then adds 'hard' negatives (visually similar but semantically different pins) — crucial for learning fine-grained visual distinctions; (3) Feature processing: uses VGG-16 image features for visual pins; (4) Map-reduce inference: computes node embeddings bottom-up across graph layers using distributed Hadoop, enabling inference on the 3B-node graph without loading it into memory. PinSage achieves 150% improvement in recommendations over previous collaborative filtering approach. [2]"
+    }
+  ],
+  "takeaways": [
+    "GraphSAGE: h_v^k = σ(W^k·[h_v^{k-1}||AGGREGATE({h_u^{k-1}, u∈S_N(v)})]); concat self + aggregated neighbours. [1]",
+    "Four aggregators: mean (GCN-like), GCN (merged mean), max-pooling (extremes), LSTM (sequential); max-pool and LSTM outperform mean on most tasks. [1]",
+    "Inductive learning: learns aggregation function, not node embeddings — generalises to unseen nodes at test time. [1]",
+    "Mini-batch via neighbourhood sampling: sample S_1 × S_2 nodes per batch; scales to billion-node graphs unlike full-batch GCN/GAT. [1]",
+    "PinSage (Pinterest): 3B nodes, 18B edges; importance sampling + curriculum training → 150% recommendation improvement. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "How does GraphSAGE handle nodes with no features (feature-free graphs)?",
+      "a": "GraphSAGE requires node input features — without them, the aggregation has no meaningful signal to propagate. For feature-free graphs, common approaches: (1) Degree features: use one-hot degree encoding or scalar degree as input. Provides structural information (high-degree hubs) but limited expressiveness. (2) Random features: initialise each node with a fixed random vector, consistent across runs. This provides a unique identity without carrying semantic meaning. (3) Structural features: compute graph statistics per node (clustering coefficient, centrality, local structure counts) as input features. (4) Position encoding: spectral position encodings based on the graph Laplacian (GRIT, GraphGPS). For purely structural tasks (graph isomorphism, counting substructures), standard GraphSAGE with mean aggregation is not more expressive than the Weisfeiler-Leman (1-WL) graph isomorphism test — deeper expressiveness requires more powerful aggregators (GIN) or structural encodings."
+    },
+    {
+      "q": "What is the expressiveness limit of GraphSAGE and how does GIN address it?",
+      "a": "Xu et al. (2019) proved that all GNNs with standard aggregators (mean, max, sum) are at most as expressive as the 1-Weisfeiler-Leman (1-WL) graph isomorphism test — meaning they cannot distinguish certain non-isomorphic graphs. Specifically: mean aggregation cannot distinguish nodes with the same mean neighbourhood feature distribution (even if the multisets differ); max pooling loses count information. The Graph Isomorphism Network (GIN) achieves the maximum possible 1-WL expressiveness by using a sum aggregator: h_v^{k} = MLP^k((1+ε)·h_v^{k-1} + Σ_{u∈N(v)} h_u^{k-1}). Sum preserves the full multiset information (unlike mean which normalises out count). GraphSAGE with mean aggregation is strictly less expressive than GIN on tasks requiring graph-level distinctions (counting triangles, bipartite detection). For node-level tasks, the practical difference is smaller."
+    }
+  ],
+  "sources": [
+    {
+      "label": "Hamilton, Ying & Leskovec (2017) — Inductive Representation Learning on Large Graphs (GraphSAGE), NeurIPS 2017 arXiv:1706.02216",
+      "url": "https://arxiv.org/abs/1706.02216"
+    },
+    {
+      "label": "Ying et al. (2018) — Graph Convolutional Neural Networks for Web-Scale Recommender Systems (PinSage), KDD 2018 arXiv:1806.01973",
+      "url": "https://arxiv.org/abs/1806.01973"
+    }
+  ]
+}

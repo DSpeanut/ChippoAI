@@ -1,0 +1,75 @@
+{
+  "visualizationType": "seq2seq-viz",
+  "codeSnapshot": {
+    "label": "seq2seq.py",
+    "code": "import torch\nimport torch.nn as nn\nimport random\n\nclass Encoder(nn.Module):\n    def __init__(self, vocab_size, embed_dim, hidden_dim, n_layers, dropout):\n        super().__init__()\n        self.embed = nn.Embedding(vocab_size, embed_dim)\n        self.rnn   = nn.LSTM(embed_dim, hidden_dim, n_layers, dropout=dropout, batch_first=True)\n        self.drop  = nn.Dropout(dropout)\n\n    def forward(self, src):                   # src: [B, src_len]\n        embedded = self.drop(self.embed(src)) # [B, src_len, embed]\n        outputs, (hidden, cell) = self.rnn(embedded)\n        return hidden, cell                   # [n_layers, B, hidden]\n\nclass Decoder(nn.Module):\n    def __init__(self, vocab_size, embed_dim, hidden_dim, n_layers, dropout):\n        super().__init__()\n        self.embed  = nn.Embedding(vocab_size, embed_dim)\n        self.rnn    = nn.LSTM(embed_dim, hidden_dim, n_layers, dropout=dropout, batch_first=True)\n        self.fc_out = nn.Linear(hidden_dim, vocab_size)\n        self.drop   = nn.Dropout(dropout)\n\n    def forward(self, trg, hidden, cell):     # trg: [B, 1]\n        embedded = self.drop(self.embed(trg)) # [B, 1, embed]\n        output, (hidden, cell) = self.rnn(embedded, (hidden, cell))\n        prediction = self.fc_out(output.squeeze(1))  # [B, vocab_size]\n        return prediction, hidden, cell\n\nclass Seq2Seq(nn.Module):\n    def __init__(self, encoder, decoder, trg_vocab_size):\n        super().__init__()\n        self.encoder = encoder\n        self.decoder = decoder\n        self.trg_vocab_size = trg_vocab_size\n\n    def forward(self, src, trg, teacher_forcing_ratio=0.5):\n        B, trg_len = trg.shape\n        outputs = torch.zeros(B, trg_len, self.trg_vocab_size)\n        hidden, cell = self.encoder(src)\n        input_ = trg[:, 0].unsqueeze(1)      # <SOS> token\n        for t in range(1, trg_len):\n            pred, hidden, cell = self.decoder(input_, hidden, cell)\n            outputs[:, t] = pred\n            # Teacher forcing: feed ground truth or predicted token\n            input_ = trg[:, t].unsqueeze(1) if random.random() < teacher_forcing_ratio \\\n                     else pred.argmax(1).unsqueeze(1)\n        return outputs"
+  },
+  "eli3": [
+    "Seq2Seq (sequence-to-sequence) models translate one sequence into another — think machine translation (English → French) or text summarisation (long article → short summary). The key challenge: the input and output have different lengths, so you can't just map each input token to an output token directly.",
+    "The solution uses two networks: an encoder that reads the entire input sequence and squeezes its meaning into a fixed-size vector (the context vector), and a decoder that takes that vector and generates the output sequence one token at a time. The context vector is the message passed between encoder and decoder.",
+    "The weakness: all information about the input must fit into one fixed-size vector. A 100-word sentence becomes a single vector of 256 numbers. For long inputs, this bottleneck loses details. The attention mechanism (Bahdanau, 2015) was invented to solve exactly this — instead of one context vector, the decoder can look at all encoder states at each decoding step."
+  ],
+  "whenWhy": [
+    {
+      "title": "Machine translation and text transduction",
+      "body": "Seq2Seq was the dominant neural machine translation architecture from 2014–2017, replacing phrase-based statistical MT with a fully neural end-to-end system. LSTM encoder-decoder achieved large BLEU score improvements over statistical baselines on WMT translation tasks. The architecture generalises to any text transduction: text normalisation (spoken form → written form), grammatical error correction, code generation from natural language, and chemical formula to IUPAC name conversion."
+    },
+    {
+      "title": "Abstractive summarisation",
+      "body": "Extractive summarisation selects sentences from the input; abstractive summarisation generates new sentences, requiring a generative model. Seq2Seq with copy mechanism enables abstractive summarisation: the decoder can either generate a new token from its vocabulary or copy a token from the input (important for names, numbers, and domain-specific terms). Rush et al. (2015) applied seq2seq to headline generation; See et al. (2017) added the copy mechanism (Pointer-Generator) for abstractive document summarisation."
+    },
+    {
+      "title": "Speech recognition and synthesis",
+      "body": "Seq2Seq maps sequences of audio frames to sequences of text tokens (ASR) or text tokens to audio features (TTS). The Listen, Attend and Spell (Chan et al., 2016) model used a pyramidal BiLSTM encoder (to handle the frame-to-phoneme compression ratio) and an attention-based decoder. Tacotron (Wang et al., 2017) used seq2seq for text-to-spectrogram synthesis. These architectures preceded Transformer-based models (Whisper, Tacotron 2) but established the seq2seq paradigm for speech."
+    }
+  ],
+  "deepDiveIntro": [
+    "The seq2seq framework (Sutskever et al., 2014; Cho et al., 2014) uses an encoder-decoder architecture: encoder maps input sequence (x_1,...,x_T) to a context vector c (typically the final hidden state h_T of the encoder); decoder autoregressively generates the output (y_1,...,y_{T'}) conditioned on c and previously generated tokens: p(y_t | y_{t-1},...,y_1, c). The encoder and decoder are usually multi-layer LSTMs. At training time, teacher forcing is used: the decoder input at each step is the ground-truth previous output token y_{t-1} (not the predicted token ŷ_{t-1}). Teacher forcing accelerates training but causes exposure bias at inference time, since the model is trained with ground-truth inputs but tested with predicted inputs. [1]",
+    "The context vector bottleneck is the fundamental limitation of basic seq2seq. For a seq2seq model with encoder hidden size n=512, the entire input sequence is compressed to a single 512-dimensional vector. For short sequences (< 20 tokens) this works well; for long sequences, the encoder's final hidden state cannot retain enough information about early tokens. Bahdanau et al. (2015) solved this with attention: instead of a single c, the decoder computes a dynamic context vector c_t at each decoding step as a weighted sum of all encoder hidden states, with weights (alignment scores) learned to focus on relevant input positions. This is the precursor to the multi-head attention in Transformers. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Teacher Forcing and Exposure Bias",
+      "body": "Teacher forcing (Williams & Zipser, 1989): during training, feed the ground-truth token y_{t-1} as the decoder input at step t, regardless of what the model predicted at t-1. This provides clean, error-free inputs to the decoder at every training step, giving faster and more stable training. Exposure bias: at inference, the decoder must use its own predictions ŷ_{t-1} as inputs — if it makes an error early, subsequent inputs are corrupted and errors compound. The training/inference mismatch is exposure bias. Mitigations: scheduled sampling (Bengio et al., 2015) — randomly replace ground-truth inputs with model predictions during training, with increasing probability over training; Professor Forcing — match training and inference distributions using adversarial training. In practice, exposure bias is a real but manageable issue; beam search at inference partially compensates by considering multiple hypotheses. [1]"
+    },
+    {
+      "heading": "Beam Search vs Greedy Decoding",
+      "body": "Greedy decoding: at each step, select the token with the highest probability. Fast (O(T·V) where V is vocab size) but suboptimal — a token that looks best locally may lead to a poor sequence globally. Beam search: maintain k hypotheses (beams) at each step, expand each with V possible tokens (O(T·k·V)), keep the top-k by cumulative log-probability. k=4 or k=5 is standard for translation. Beam search with length penalty normalises by sequence length: score = log P(y)/|y|^α, with α≈0.6–0.7 to prevent the model from preferring short sequences (short sequences have higher unnormalised probabilities). Diverse beam search (Vijayakumar et al., 2016) adds a diversity penalty to produce beam hypotheses that differ more from each other. [2]"
+    },
+    {
+      "heading": "Fixed Context Vector Bottleneck",
+      "body": "Sutskever et al. (2014) noted that reversing the source sequence (feeding it backwards to the encoder) improved BLEU scores — a workaround for the bottleneck: the most recent input tokens (which tend to align with early output tokens) are closest to the encoder's final hidden state and thus better preserved in the context vector. This trick was superseded by attention, which directly addresses the bottleneck. Quantitative evidence: Cho et al. (2014) showed that seq2seq performance degrades sharply for source sequences longer than ~30 tokens, while seq2seq+attention (Bahdanau, 2015) maintains performance on sequences of 50+ tokens. The attention mechanism is thus not just a quality improvement but a fundamental architectural fix to the bottleneck. [1]"
+    },
+    {
+      "heading": "Modern Seq2Seq with Transformers",
+      "body": "The Transformer (Vaswani et al., 2017) replaces LSTM encoder and decoder with multi-head self-attention stacks, while retaining the encoder-decoder seq2seq structure. The cross-attention layer in each Transformer decoder block performs the equivalent of Bahdanau attention — querying encoder outputs for each decoder position. T5 (Raffel et al., 2020) frames every NLP task as text-to-text seq2seq: classification, summarisation, translation, Q&A all become 'input text → output text'. The LSTM seq2seq model is now primarily of historical and pedagogical interest, but its architectural concepts (encoder-decoder, attention, beam search, teacher forcing) are directly inherited by modern LLMs. [2]"
+    }
+  ],
+  "takeaways": [
+    "Seq2Seq: encoder reads input into context vector c; decoder generates output autoregressively conditioned on c. [1]",
+    "Teacher forcing: use ground-truth previous token as decoder input during training — faster but causes exposure bias at inference. [1]",
+    "Context vector bottleneck: all encoder information in one fixed vector — degrades for sequences > 30 tokens; solved by attention. [2]",
+    "Beam search (k=4–5) outperforms greedy decoding; length penalty normalises by |y|^α≈0.6 to avoid short-sequence bias. [2]",
+    "Transformer encoder-decoder inherits seq2seq structure; cross-attention = Bahdanau attention generalised to multi-head. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "What is the difference between teacher forcing ratio 0.0, 0.5, and 1.0, and how does it affect training?",
+      "a": "Ratio 1.0 (full teacher forcing): always feed the ground-truth previous token to the decoder. Fastest convergence, cleanest gradients, but maximum exposure bias at inference. Ratio 0.0 (no teacher forcing): always feed the decoder's own predictions. Matches inference conditions (no exposure bias) but causes very noisy training — early in training, the model makes many errors, and compounded errors make the training signal very weak. Ratio 0.5 (scheduled sampling starting point): randomly feed ground truth or model prediction with 50% probability each step. In practice, start with ratio 1.0 for the first few epochs until the model is reasonably good, then anneal toward 0.0 over training. This curriculum (high teacher forcing → low) balances training stability and exposure bias reduction."
+    },
+    {
+      "q": "How does a copy mechanism (Pointer Network) help seq2seq models for summarisation?",
+      "a": "Standard seq2seq can only generate tokens from a fixed vocabulary — it cannot reproduce rare words (names, numbers, technical terms) that appear in the input but not often in training. The Pointer-Generator (See et al., 2017) adds a soft switch p_gen ∈ (0,1) at each decoding step: with probability p_gen, generate from the vocabulary distribution; with probability (1−p_gen), copy a token from the input by sampling from the attention distribution over source tokens. This allows exact reproduction of out-of-vocabulary words from the source. p_gen is computed as σ(linear([decoder hidden, context, input token])) — learned jointly. The copy mechanism is important for summarisation (reproduce names and numbers accurately), dialogue (repeat user-mentioned entities), and QA (copy span from context)."
+    }
+  ],
+  "sources": [
+    {
+      "label": "Sutskever, Vinyals & Le (2014) — Sequence to Sequence Learning with Neural Networks, NeurIPS 2014 arXiv:1409.3215",
+      "url": "https://arxiv.org/abs/1409.3215"
+    },
+    {
+      "label": "Cho et al. (2014) — Learning Phrase Representations using RNN Encoder-Decoder for SMT, EMNLP 2014 arXiv:1406.1078",
+      "url": "https://arxiv.org/abs/1406.1078"
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "visualizationType": "vgg-viz",
+  "codeSnapshot": {
+    "label": "vgg16.py",
+    "code": "import torch\nimport torch.nn as nn\n\ndef make_layers(cfg: list, batch_norm: bool = False) -> nn.Sequential:\n    layers = []\n    in_channels = 3\n    for v in cfg:\n        if v == 'M':\n            layers.append(nn.MaxPool2d(kernel_size=2, stride=2))\n        else:\n            conv = nn.Conv2d(in_channels, v, kernel_size=3, padding=1)\n            if batch_norm:\n                layers += [conv, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]\n            else:\n                layers += [conv, nn.ReLU(inplace=True)]\n            in_channels = v\n    return nn.Sequential(*layers)\n\n# VGG-16 configuration\nVGG16_CFG = [\n    64, 64, 'M',\n    128, 128, 'M',\n    256, 256, 256, 'M',\n    512, 512, 512, 'M',\n    512, 512, 512, 'M'\n]\n\nclass VGG16(nn.Module):\n    def __init__(self, num_classes: int = 1000):\n        super().__init__()\n        self.features    = make_layers(VGG16_CFG)\n        self.avgpool     = nn.AdaptiveAvgPool2d((7, 7))\n        self.classifier  = nn.Sequential(\n            nn.Linear(512 * 7 * 7, 4096), nn.ReLU(True), nn.Dropout(0.5),\n            nn.Linear(4096, 4096),        nn.ReLU(True), nn.Dropout(0.5),\n            nn.Linear(4096, num_classes)\n        )\n\n    def forward(self, x):\n        x = self.features(x)\n        x = self.avgpool(x)\n        x = torch.flatten(x, 1)\n        return self.classifier(x)\n\nmodel = VGG16()\ntotal_params = sum(p.numel() for p in model.parameters())\nprint(f\"VGG-16 parameters: {total_params/1e6:.1f}M\")  # ~138M\n\nx = torch.randn(1, 3, 224, 224)\nprint(f\"Output shape: {model(x).shape}\")  # [1, 1000]"
+  },
+  "eli3": [
+    "VGGNet is like a skyscraper built with only one type of brick: 3×3 convolutional filters. The architects (Simonyan and Zisserman at Oxford's VGG group) wanted to know how much depth alone could improve performance, so they kept everything else the same and just stacked more and more of those small filters.",
+    "Their key insight was that two 3×3 conv layers have the same receptive field as one 5×5 layer, but fewer parameters and more non-linearities. Three 3×3 layers equal one 7×7 layer, with a third the parameters. Depth is more efficient than big kernels.",
+    "VGGNet proved that depth was the key ingredient in image recognition, winning 2nd place in ILSVRC 2014 (just behind GoogLeNet) and achieving much better localisation. Its features became so reliable that VGG-16 and VGG-19 are still widely used as feature extractors for neural style transfer and other tasks."
+  ],
+  "whenWhy": [
+    {
+      "title": "Feature extraction and neural style transfer",
+      "body": "VGG features are particularly popular for perceptual loss functions in style transfer, super-resolution, and image synthesis. The reason: VGG-16's convolutional features encode both content (measured at deeper layers, relu3_3 through relu5_3) and style (measured as Gram matrices of activation maps at multiple layers). Gatys et al. (2015) used VGG-19 features to define both content and style losses for the seminal neural style transfer algorithm. VGG features remain the de-facto standard for perceptual losses even when the downstream task doesn't involve style."
+    },
+    {
+      "title": "Baseline comparison for architecture ablations",
+      "body": "VGGNet's uniform 3×3 filter design makes it the cleanest architecture for ablation studies: all architectural complexity comes from depth alone, without the confound of heterogeneous filter sizes (unlike AlexNet's 11×11 and 5×5 filters, or Inception's parallel branches). Researchers studying the effect of depth, batch normalisation, or residual connections often start from VGG-style baselines for interpretability."
+    },
+    {
+      "title": "Understanding the 3×3 filter design principle",
+      "body": "VGGNet popularised the design principle that small 3×3 filters throughout the network are superior to larger filters. Two stacked 3×3 layers have a 5×5 effective receptive field with 2×(3²)=18 parameters vs 5²=25 for a single 5×5 layer — 28% fewer parameters and an extra non-linearity. This principle was generalised into the 'smaller is better for filters' rule that influenced InceptionNet, ResNet (1×1 bottlenecks + 3×3 spatial), and modern architectures."
+  }
+  ],
+  "deepDiveIntro": [
+    "Simonyan & Zisserman (2014) introduced VGGNet (named after the Oxford Visual Geometry Group) to systematically evaluate the effect of depth on image classification performance. They tested 6 architectures (VGG-A through VGG-E) with 11 to 19 weight layers, all using exclusively 3×3 convolutional filters (stride 1, padding 1) and 2×2 max pooling (stride 2). The key hypothesis: deep networks with small filters can represent the same functions as shallow networks with large filters, with fewer parameters and more non-linearities. VGG-16 (16 weight layers, 2 FC layers) and VGG-19 (19 weight layers) achieved top-5 error rates of 7.3% and 7.1% on ImageNet ILSVRC-2014, compared to AlexNet's 15.3%. [1]",
+    "VGGNet's main architectural property is the uniform channel-doubling structure: channels increase as 64→128→256→512→512 as spatial dimensions halve (224→112→56→28→14→7). This reflects a principle of constant computational budget per layer: halving H and W while doubling channels keeps H×W×C approximately constant. The computational cost of each stage is thus roughly equal. The two large fully-connected layers (4096→4096→1000) contribute ~100M of VGGNet's ~138M total parameters and are the primary source of memory and compute cost — which is why later architectures replaced FC layers with Global Average Pooling. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "3×3 Filter Efficiency Argument",
+      "body": "A 5×5 convolution has 25 parameters per filter. Two stacked 3×3 convolutions achieve the same 5×5 receptive field with 2×9=18 parameters (28% fewer) and two non-linearities instead of one. A 7×7 filter has 49 parameters; three stacked 3×3 filters achieve a 7×7 receptive field with 3×9=27 parameters (45% fewer) and three non-linearities. The non-linearity argument: more activations = more complex decision boundaries per parameter. The empirical result: VGG networks consistently outperform AlexNet-style networks with large filters at equivalent parameter counts. This design choice became a standard principle, replicated in ResNet (all 3×3 spatial filters), MobileNet (3×3 depthwise), and EfficientNet. [1]"
+    },
+    {
+      "heading": "VGG-16 Architecture and Parameter Budget",
+      "body": "VGG-16 has 5 stages separated by MaxPool2d(2,2): Stage 1 (2×Conv64, Pool): 224→112; Stage 2 (2×Conv128, Pool): 112→56; Stage 3 (3×Conv256, Pool): 56→28; Stage 4 (3×Conv512, Pool): 28→14; Stage 5 (3×Conv512, Pool): 14→7. After 5 pooling steps: 224/2^5 = 7. Then Flatten(512×7×7=25088) → FC4096 → FC4096 → FC1000. Parameter breakdown: conv layers ~14.7M; FC layers ~123.6M (~89% of total). This extreme imbalance — most parameters in two FC layers — motivates replacing them with Global Average Pooling, which ResNet, MobileNet, and EfficientNet all do. [2]"
+    },
+    {
+      "heading": "Memory and Compute Cost",
+      "body": "VGG-16 is compute-intensive: ~15.5 GFLOPs for a single 224×224 forward pass, compared to ResNet-50's ~4.1 GFLOPs. Memory during training: ~100MB for activations per image in a batch (activations must be stored for backpropagation). The FC layers require 25088×4096 = 103M float32 values ≈ 412MB just for that weight matrix — making VGGNet impractical on mobile/edge hardware. For inference, VGG-16 requires 528MB for weights. Modern equivalents (MobileNetV3, EfficientNet-B0) achieve comparable ImageNet accuracy in <5MB — a 100× reduction. VGGNet is thus primarily a research and feature-extraction tool rather than a production architecture. [1]"
+    },
+    {
+      "heading": "VGGNet Features for Transfer Learning",
+      "body": "VGG-16 and VGG-19 features are among the most transferred in deep learning, particularly for artistic and perceptual tasks. The VGG feature hierarchy: early layers (relu1_1, relu1_2) → oriented edges; mid layers (relu3_3, relu4_3) → textures, complex shapes; deep layers (relu5_3) → high-level object parts. Gatys et al. (2015) exploited this by defining content loss as the MSE between relu4_2 features of generated and target image, and style loss as the MSE between Gram matrices (G = FFᵀ, where F is the feature map reshaped as channels × spatial) at multiple layers. This Gram matrix captures texture statistics independent of spatial arrangement. VGG features for perceptual loss are used in SRGAN, pix2pix, and many GAN-based image synthesis models. [2]"
+    }
+  ],
+  "takeaways": [
+    "VGGNet proved depth (with exclusively 3×3 filters) is the key driver of performance on ImageNet. [1]",
+    "Two 3×3 layers ≡ one 5×5 receptive field, with 28% fewer parameters and one extra non-linearity. [1]",
+    "VGG-16: 138M parameters; ~90% in two FC layers (25088→4096→4096→1000) — motivation for Global Average Pooling. [2]",
+    "Channel doubles at each pooling step (64→128→256→512→512): constant computational budget per stage. [2]",
+    "VGG features remain the standard for perceptual losses in style transfer and image synthesis (Gram matrix = style). [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why does VGGNet have so many more parameters than ResNet-50 despite similar depth?",
+      "a": "Two reasons: (1) Fully connected layers — VGG's two 4096-unit FC layers contribute ~100M parameters (89% of total). ResNet-50 replaces these with Global Average Pooling, contributing only 2M parameters in the final FC layer. (2) No bottleneck blocks — VGG uses full-width 3×3 convolutions throughout; ResNet-50 uses 1×1 bottleneck convolutions to reduce channels before each 3×3 operation. ResNet-50 has 25M parameters to VGG-16's 138M, while achieving better ImageNet accuracy (~24% top-1 error for VGG-16 vs ~23.5% for ResNet-50 on validation set)."
+    },
+    {
+      "q": "VGGNet takes ~15 GFLOPs per image — is it still useful today?",
+      "a": "For training production models, VGGNet is generally not recommended due to its high compute and memory cost. However it remains useful for: (1) Neural style transfer — VGG features with Gram matrices are the established technique, and retraining is not needed; (2) Feature extraction for small datasets — when the downstream task has <1000 examples, VGG features with a simple linear head often work well because VGG was trained at large scale and its features are well-studied; (3) Interpretability research — VGG's uniform architecture makes it cleaner for activation maximisation and feature visualisation experiments. For new production training, EfficientNet or ConvNeXt should be used instead."
+    }
+  ],
+  "sources": [
+    {
+      "label": "Simonyan & Zisserman (2014) — Very Deep Convolutional Networks for Large-Scale Image Recognition, ICLR 2015 arXiv:1409.1556",
+      "url": "https://arxiv.org/abs/1409.1556"
+    },
+    {
+      "label": "Gatys, Ecker & Bethge (2015) — A Neural Algorithm of Artistic Style, arXiv:1508.06576",
+      "url": "https://arxiv.org/abs/1508.06576"
+    }
+  ]
+}

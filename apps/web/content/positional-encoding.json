@@ -1,0 +1,75 @@
+{
+  "visualizationType": "positional-encoding-viz",
+  "codeSnapshot": {
+    "label": "positional_encoding.py",
+    "code": "import numpy as np\nimport torch\nimport matplotlib.pyplot as plt\n\n# --- Sinusoidal Positional Encoding (Vaswani et al., 2017) ---\ndef sinusoidal_pe(max_len: int, d_model: int) -> np.ndarray:\n    \"\"\"PE(pos, 2i)   = sin(pos / 10000^(2i/d_model))\n       PE(pos, 2i+1) = cos(pos / 10000^(2i/d_model))\"\"\"\n    pe = np.zeros((max_len, d_model))\n    position = np.arange(max_len).reshape(-1, 1)              # [max_len, 1]\n    div_term = np.exp(np.arange(0, d_model, 2) *\n                      (-np.log(10000.0) / d_model))            # [d_model/2]\n    pe[:, 0::2] = np.sin(position * div_term)                  # even dims\n    pe[:, 1::2] = np.cos(position * div_term)                  # odd dims\n    return pe\n\npe = sinusoidal_pe(max_len=100, d_model=128)\nprint(f\"PE shape: {pe.shape}\")  # (100, 128)\n\n# Visualise\nplt.figure(figsize=(12, 4))\nplt.pcolormesh(pe.T, cmap='RdBu')\nplt.colorbar()\nplt.xlabel('Position'); plt.ylabel('Dimension')\nplt.title('Sinusoidal Positional Encoding')\nplt.savefig('positional_encoding.png', dpi=150)\nplt.show()\n\n# Check: relative position can be expressed as a linear transformation of absolute positions\n# (property: PE(pos+k) = M * PE(pos) for some matrix M depending only on k)\npos, k = 10, 5\npe_pos  = pe[pos]\npe_pos_k = pe[pos + k]\nprint(f\"PE[{pos}] · PE[{pos+k}] = {np.dot(pe_pos, pe_pos_k):.2f}\")"
+  },
+  "eli3": [
+    "Transformers process all tokens in a sequence simultaneously (in parallel), unlike RNNs which process them one by one. But this means they lose track of order — 'The dog bit the man' and 'The man bit the dog' would look the same to a Transformer if the words weren't ordered. Positional encoding adds position information back.",
+    "The sinusoidal positional encoding adds a unique pattern of numbers to each token's embedding depending on its position. Position 1 gets one pattern, position 2 gets a different one, and so on. These patterns use different frequencies of sine and cosine waves — like a musical chord that's unique for every position.",
+    "The clever design is that the model can learn to compute relative distances between positions from these patterns. Also, because the same sine/cosine formulas work for any position number, the model can generalise to sequences longer than any it saw during training."
+  ],
+  "whenWhy": [
+    {
+      "title": "Required in all non-recurrent sequence models",
+      "body": "Any architecture that processes sequence tokens in parallel without sequential state (Transformers, non-autoregressive models) needs positional encoding. Without it, the self-attention mechanism is permutation-equivariant: swapping any two tokens produces the same output embeddings, just in a different order. This means the model cannot learn word order, which is essential for language understanding. Positional encoding injects order information into the token representations before attention."
+    },
+    {
+      "title": "Understanding length generalisation",
+      "body": "Sinusoidal positional encodings are defined for any position (by the formula) — a model trained on sequences up to length 512 can theoretically process length 1024 at inference, though performance may degrade. Learned positional embeddings (used in BERT, GPT) are fixed-size lookup tables and cannot generalise beyond training length. Newer position encodings (RoPE, ALiBi) are designed specifically for length generalisation and are used in LLaMA, GPT-NeoX, and Falcon."
+    },
+    {
+      "title": "RoPE and ALiBi for long-context models",
+      "body": "Rotary Position Embedding (RoPE, Su et al., 2021) encodes position by rotating the query and key vectors in complex number space. The rotation ensures that the dot product Q_pos · K_pos' depends only on the relative position (pos − pos'), not absolute positions — enabling better length generalisation. ALiBi (Press et al., 2022) adds a position-dependent bias to attention scores: score(i,j) = Q_i·K_j - m|i−j|, where m is a per-head slope. This simple linear bias enables length extrapolation without any position embedding. Both RoPE and ALiBi are now preferred over sinusoidal encoding for models requiring long-context generalisation."
+    }
+  ],
+  "deepDiveIntro": [
+    "Transformer attention is invariant to input permutations: for any permutation σ of positions, Attention(P_σQ, P_σK, P_σV) = P_σ·Attention(Q,K,V) — permuting inputs permutes outputs consistently. Without additional information, the model has no way to distinguish the ordering of tokens. Vaswani et al. (2017) introduced sinusoidal positional encoding: PE(pos, 2i) = sin(pos/10000^{2i/d}), PE(pos, 2i+1) = cos(pos/10000^{2i/d}), where pos is the token position and i is the dimension index. This is added to the token embedding: x_pos = embed(token) + PE(pos). The choice of sinusoidal functions has two key properties: (1) each position has a unique encoding; (2) the encoding for any relative offset k can be expressed as a linear function of the encoding at the current position. [1]",
+    "Learned positional embeddings (Devlin et al., 2018 for BERT; Brown et al., 2020 for GPT-3) replace the formula with a lookup table: PE ∈ ℝ^{max_len×d_model} is a learned parameter. These typically perform slightly better than sinusoidal on standard benchmarks but cannot extrapolate beyond max_len. Modern architectures increasingly use relative or rotary position encodings that incorporate position information directly into the attention computation rather than as an additive offset to the embedding. RoPE (Su et al., 2021) applies a rotation R(pos) to the query and key vectors before the dot product, ensuring the attention score Q_pos · K_{pos'} depends only on (pos − pos'). [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Sinusoidal Encoding Properties",
+      "body": "The sinusoidal encoding has several desirable mathematical properties. (1) Unique encoding: every position has a distinct PE vector — since the frequencies span from 1 (lowest: i=0, period 2π) to 1/10000 (highest: i=d/2, period 2π/10000), the encoding is unique for any position 0 to ~10000. (2) Linear relative offset: for any fixed offset k, PE(pos+k) = T_k · PE(pos) for some fixed (position-independent) matrix T_k. This means the model can learn to compute PE(pos+k) from PE(pos) using a linear projection. (3) Bounded magnitude: ‖PE(pos)‖₂ = √(d/2) for all positions — the encoding magnitude is constant, preventing position information from dominating the token embedding for large positions. [1]"
+  },
+    {
+      "heading": "Learned vs Sinusoidal vs Relative Positional Encoding",
+      "body": "Absolute learned (BERT, GPT): PE ∈ ℝ^{L×d} is a free parameter optimised via gradient descent. Simple, works well within training length, but cannot extrapolate. Absolute sinusoidal (original Transformer): computed by formula, no parameters. Extrapolates to longer sequences but not as expressive. Relative (Transformer-XL, T5): attention score depends on (pos_q − pos_k) rather than absolute positions. Allows attending to relative distances without encoding absolute positions. RoPE (LLaMA, Falcon, GPT-NeoX): rotates Q and K vectors by angle proportional to position, so dot product Q^T K depends only on relative position. ALiBi (MPT, BLOOM): adds penalty −m|i−j| to attention logits, linearly biasing away from attending to distant tokens. ALiBi requires no change to the embedding layer. [2]"
+    },
+    {
+      "heading": "RoPE — Rotary Position Embedding",
+      "body": "RoPE (Su et al., 2021) encodes position by applying a rotation in complex space. For 2D case: for position pos, rotate the embedding vector (x_1, x_2) by angle θ·pos in the complex plane: [cos(θ·pos)·x_1 − sin(θ·pos)·x_2, sin(θ·pos)·x_1 + cos(θ·pos)·x_2]. For d-dimensional vectors, the embedding is split into d/2 pairs and each pair is rotated by a different frequency θ_i = 10000^{-2i/d}. This ensures that Q^(pos)·K^(pos') = f(pos−pos') — the dot product depends only on relative position. RoPE does not add to the token embedding (unlike sinusoidal) — it modifies Q and K inside each attention layer. This makes it compatible with position-free representations in later layers and enables better length generalisation via YaRN or extended RoPE scaling. [2]"
+    },
+    {
+      "heading": "Position Encoding for Vision Transformers",
+      "body": "In ViT (Dosovitskiy et al., 2020), 2D image patches are flattened to a 1D sequence and learned 1D positional embeddings are added to each patch embedding. Ablations in the ViT paper showed that 1D learned embeddings perform comparably to 2D-aware embeddings (sinusoidal or learned 2D grids), suggesting the Transformer can recover 2D spatial relationships from 1D positional information through attention. For high-resolution images (448×448 with 16×16 patches → 784 tokens), fine-tuning requires interpolating the position embeddings from the pretrained 196-token grid to 784 tokens using 2D bicubic interpolation — standard practice for ViT fine-tuning at higher resolutions. [1]"
+    }
+  ],
+  "takeaways": [
+    "PE(pos, 2i) = sin(pos/10000^{2i/d}), PE(pos, 2i+1) = cos(pos/10000^{2i/d}); added to token embedding. [1]",
+    "Sinusoidal PE: unique per position, bounded magnitude, linear relative offset property — extrapolates beyond training length. [1]",
+    "Learned PE (BERT, GPT): a lookup table — higher quality within training length but no length extrapolation. [2]",
+    "RoPE (LLaMA): rotates Q and K so dot product depends only on relative position — better length generalisation. [2]",
+    "ALiBi: adds linear penalty −m|i−j| to attention logits — no embedding change, enables length extrapolation. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why do Transformer models struggle to generalise to sequences longer than they were trained on?",
+      "a": "For absolute positional encodings (sinusoidal or learned), positions beyond the training maximum receive embeddings the model has never seen during training. Attention scores Q_i · K_j for unseen positions (i > max_train_len) are not calibrated — the softmax may produce extreme values or uniform distributions, degrading attention quality. For learned PE, positions beyond max_len simply don't exist. Mitigations: (1) RoPE with YaRN or PI (position interpolation) — scale the position indices to fit within the training range; (2) ALiBi — the linear position penalty generalises naturally since it's just a slope multiplied by relative distance; (3) Sliding window attention — only attend to local windows, making context length a hyperparameter at inference. LLaMA-2 uses RoPE with extended context fine-tuning to support 4096 tokens, up from 2048."
+    },
+    {
+      "q": "What happens if you remove positional encoding from a Transformer — does it still work?",
+      "a": "Without positional encoding, the Transformer is permutation-equivariant: permuting input tokens permutes output tokens identically. For tasks where word order is irrelevant (e.g., some bag-of-words classification tasks), it may still work. For tasks where order matters (translation, language modelling), removing PE causes significant degradation. Interestingly, for very long sequences, attention patterns may weakly encode order through learned biases in W^Q and W^K, but this is much weaker than explicit PE. Some modern work (e.g., BERT for sentence classification) suggests the [CLS] token's position implicitly encodes some positional information, but explicit PE remains essential for most sequential tasks."
+    }
+  ],
+  "sources": [
+    {
+      "label": "Vaswani et al. (2017) — Attention Is All You Need, NeurIPS 2017 arXiv:1706.03762",
+      "url": "https://arxiv.org/abs/1706.03762"
+    },
+    {
+      "label": "Su et al. (2021) — RoFormer: Enhanced Transformer with Rotary Position Embedding, arXiv:2104.09864",
+      "url": "https://arxiv.org/abs/2104.09864"
+    }
+  ]
+}

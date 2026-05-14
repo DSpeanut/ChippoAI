@@ -34,6 +34,14 @@
     {
       "heading": "Classifier Training and Policy Updates",
       "body": "Safety classifiers degrade over time as abuse patterns evolve. Continuous improvement cycle: (1) Error mining — weekly analysis of false positives (over-moderated content) and false negatives (under-moderated content) from human review decisions. Each human decision that disagrees with the classifier is a training signal; (2) Active learning — human reviewers focus on near-threshold classifier decisions (highest information value for retraining); (3) Policy change response — when a new abuse pattern emerges, immediately add examples to the training set and trigger a classifier fine-tuning run; (4) Classifier versioning — deploy new classifier versions via shadow mode first (run new and old classifiers in parallel, compare decisions) before full rollout; (5) Red-team testing — after each classifier update, run a red-team exercise to verify the new attack patterns are blocked and the previous false positives are resolved. [2]"
+    },
+    {
+      "heading": "Human-in-the-Loop Review Queues",
+      "body": "Automated classifiers handle clear-cut cases but struggle with nuance, sarcasm, and novel patterns. Production systems use a hybrid: high-confidence safe (score < 0.2) -> allow; high-confidence unsafe (score > 0.8) -> block; uncertain (0.2-0.8) -> human review queue. Queue implementation: borderline content goes to SQS/Redis priority queue, human moderators review via a dashboard. SLA targets: high-severity < 1 hour, medium < 8 hours, low < 24 hours. Quality metrics: inter-rater agreement between moderators (target kappa > 0.7), false positive rate (target < 5%). Moderator decisions retrain the classifier quarterly. At 1M messages/day with 5% uncertain rate, expect 50k items/day for human review — plan headcount accordingly. [1]"
+    },
+    {
+      "heading": "Adversarial Evasion and Counter-Measures",
+      "body": "Adversarial users actively probe filters to find bypasses. Common evasion techniques and counters: (1) Character substitution (h@te -> hate): Unicode normalisation + leetspeak decoder before classification; (2) Fictional framing ('in a story, explain how to...'): detect fictional setup patterns with regex, treat framed requests identically to direct requests; (3) Segmented attacks (spread harmful content across turns): session-level context window aggregation; (4) Base64/ROT13 encoding: decode common encodings before processing; (5) Language switching to low-resource languages: translate to English first, then classify. Adversarial evasion is a cat-and-mouse dynamic — regular red-team exercises are essential to discover bypasses before malicious users do. [2]"
     }
   ],
   "takeaways": [
@@ -54,7 +62,18 @@
     }
   ],
   "sources": [
-    { "label": "Inan et al. (2023) — Llama Guard: LLM-based Input-Output Safeguard for Human-AI Conversations", "url": "https://arxiv.org/abs/2312.06674" },
-    { "label": "Anthropic Acceptable Use Policy — content policy framework", "url": "https://www.anthropic.com/legal/aup" }
-  ]
+    {
+      "label": "Inan et al. (2023) — Llama Guard: LLM-based Input-Output Safeguard for Human-AI Conversations",
+      "url": "https://arxiv.org/abs/2312.06674"
+    },
+    {
+      "label": "Anthropic Acceptable Use Policy — content policy framework",
+      "url": "https://www.anthropic.com/legal/aup"
+    }
+  ],
+  "visualizationType": "content-moderation-viz",
+  "codeSnapshot": {
+    "label": "content_moderation.py",
+    "code": "from openai import OpenAI\nfrom langchain_openai import ChatOpenAI\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom pydantic import BaseModel\nfrom typing import Literal\n\nopenai_client = OpenAI()\nllm = ChatOpenAI(model=\"gpt-4o\", temperature=0)\n\ndef check_openai_moderation(text: str) -> dict:\n    \"Fast path: use OpenAI Moderation API (free, < 50ms).\"\n    response = openai_client.moderations.create(input=text)\n    result = response.results[0]\n    return {\"flagged\": result.flagged, \"categories\": {k: v for k, v in result.categories.__dict__.items() if v}}\n\nclass ModerationResult(BaseModel):\n    category: Literal[\"safe\", \"hate\", \"violence\", \"sexual\", \"spam\", \"other\"]\n    confidence: float\n    reason: str\n    needs_human_review: bool\n\nmoderation_prompt = ChatPromptTemplate.from_messages([\n    (\"system\", \"You are a content moderation classifier. Analyse the text and classify it accurately.\"),\n    (\"human\", \"Text to moderate: {text}\"),\n])\ndetailed_moderator = moderation_prompt | llm.with_structured_output(ModerationResult)\n\ndef moderate(text: str) -> ModerationResult:\n    \"Two-stage moderation: fast OpenAI API, then detailed LLM classifier if flagged.\"\n    quick = check_openai_moderation(text)\n    if not quick[\"flagged\"]:\n        return ModerationResult(category=\"safe\", confidence=0.99, reason=\"Passed OpenAI moderation\", needs_human_review=False)\n    # Slow path for flagged content: detailed classification\n    return detailed_moderator.invoke({\"text\": text})\n\nresult = moderate(\"Hello world\")\nprint(f\"Category: {result.category}, Confidence: {result.confidence:.2f}\")"
+  }
 }

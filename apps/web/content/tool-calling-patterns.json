@@ -34,6 +34,14 @@
     {
       "heading": "Tool Caching and Idempotency",
       "body": "Tool calls to external APIs are expensive (latency, cost, rate limits). Caching pattern: before calling a tool, check a cache keyed on (tool_name, parameters_hash). Cache TTL varies by tool: stock prices (1 min), news articles (1 hour), database queries with stable data (5 min), user profile data (1 day). Implementation: wrap each tool in a caching decorator that checks Redis/memcached before the real call. Return the cached result to the LLM transparently — the LLM doesn't know the result was cached. Idempotency: tools with side effects (send_email, create_record) must check whether the action was already performed (use an idempotency key based on the operation's parameters) to prevent duplicate actions when the agent retries a failed step. [2]"
+    },
+    {
+      "heading": "Idempotency and Safe Retry Semantics",
+      "body": "Not all tool calls can be safely retried. Idempotent tools (reads, searches) can be retried freely — calling them twice produces the same result. Non-idempotent tools (send email, charge payment, write to database) must be guarded: (1) Assign a unique operation_id (UUID4) to each invocation before calling; (2) On retry, check if operation_id already succeeded (Redis SET NX with TTL); (3) Only execute if not already completed. For external APIs that don't support idempotency keys natively, implement the check in your tool wrapper. Saga pattern: for multi-tool workflows implement compensating actions (rollback) for each tool so partial failures can be reversed cleanly. [2]"
+    },
+    {
+      "heading": "Tool Call Caching for Cost and Latency",
+      "body": "Many tool calls are expensive (web search: $0.01/call) or slow (external API: 500ms). Caching dramatically reduces both. Cache key: hash of (tool_name, canonicalised_args_json) — sort dict keys before hashing. TTL by tool type: web search -> 5 min; stock prices -> 1 min; static documents -> 24h. For distributed agents use Redis; for single-process use functools.lru_cache. Wrap the tool with a @cached decorator that checks the cache before invoking. Monitoring: track hit rate per tool; target > 40%. A 50% hit rate on a $0.01/call tool reduces costs by 50% at scale — measure this explicitly in your cost attribution dashboard. [1]"
     }
   ],
   "takeaways": [
@@ -54,7 +62,18 @@
     }
   ],
   "sources": [
-    { "label": "Anthropic Tool Use Documentation — parallel tool use and patterns", "url": "https://docs.anthropic.com/en/docs/tool-use" },
-    { "label": "OpenAI Function Calling Documentation — parallel function calling", "url": "https://platform.openai.com/docs/guides/function-calling" }
-  ]
+    {
+      "label": "Anthropic Tool Use Documentation — parallel tool use and patterns",
+      "url": "https://docs.anthropic.com/en/docs/tool-use"
+    },
+    {
+      "label": "OpenAI Function Calling Documentation — parallel function calling",
+      "url": "https://platform.openai.com/docs/guides/function-calling"
+    }
+  ],
+  "visualizationType": "tool-calling-patterns-viz",
+  "codeSnapshot": {
+    "label": "tool_patterns.py",
+    "code": "from langchain_openai import ChatOpenAI\nfrom langchain_core.runnables import RunnableParallel, RunnableLambda\nfrom langchain_core.tools import tool\nfrom openai import RateLimitError\n\nllm = ChatOpenAI(model=\"gpt-4o\", temperature=0)\n\n@tool\ndef get_weather(city: str) -> str:\n    \"Get current weather for a city.\"\n    return f\"Weather in {city}: sunny, 22C\"\n\n@tool\ndef get_news(topic: str) -> str:\n    \"Get latest news for a topic.\"\n    return f\"Latest news on {topic}: ...\"\n\n# Pattern 1: Sequential — output of one tool feeds the next\nllm_with_tools = llm.bind_tools([get_weather, get_news])\nresponse = llm_with_tools.invoke(\"What's the weather in Paris and latest AI news?\")\n\n# Pattern 2: Parallel — independent tools run concurrently via RunnableParallel\nparallel = RunnableParallel({\n    \"weather\": RunnableLambda(lambda x: get_weather.invoke({\"city\": x[\"city\"]})),\n    \"news\":    RunnableLambda(lambda x: get_news.invoke({\"topic\": x[\"topic\"]})),\n})\nresults = parallel.invoke({\"city\": \"Paris\", \"topic\": \"AI\"})\nprint(\"Weather:\", results[\"weather\"], \"| News:\", results[\"news\"])\n\n# Pattern 3: Fallback — try primary model, fall back on RateLimitError\nprimary  = ChatOpenAI(model=\"gpt-4o\")\nfallback = ChatOpenAI(model=\"gpt-4o-mini\")\nrobust_llm = primary.with_fallbacks([fallback], exceptions_to_handle=(RateLimitError,))\nresult = robust_llm.invoke(\"Summarise the news.\")"
+  }
 }

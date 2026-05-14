@@ -1,0 +1,75 @@
+{
+  "visualizationType": "resnet-viz",
+  "codeSnapshot": {
+    "label": "resnet_block.py",
+    "code": "import torch\nimport torch.nn as nn\n\nclass BasicBlock(nn.Module):\n    \"\"\"ResNet BasicBlock (used in ResNet-18/34).\"\"\"\n    expansion = 1\n\n    def __init__(self, in_channels: int, out_channels: int, stride: int = 1):\n        super().__init__()\n        self.conv1 = nn.Conv2d(in_channels, out_channels, 3, stride=stride, padding=1, bias=False)\n        self.bn1   = nn.BatchNorm2d(out_channels)\n        self.relu  = nn.ReLU(inplace=True)\n        self.conv2 = nn.Conv2d(out_channels, out_channels, 3, stride=1, padding=1, bias=False)\n        self.bn2   = nn.BatchNorm2d(out_channels)\n\n        # Projection shortcut: needed when stride>1 or channel dims change\n        self.shortcut = nn.Sequential()\n        if stride != 1 or in_channels != out_channels:\n            self.shortcut = nn.Sequential(\n                nn.Conv2d(in_channels, out_channels, 1, stride=stride, bias=False),\n                nn.BatchNorm2d(out_channels)\n            )\n\n    def forward(self, x: torch.Tensor) -> torch.Tensor:\n        out = self.relu(self.bn1(self.conv1(x)))  # F(x): first transformation\n        out = self.bn2(self.conv2(out))            # F(x): second transformation\n        out += self.shortcut(x)                    # H(x) = F(x) + x\n        return self.relu(out)\n\n# Identity shortcut (no downsampling, same channels)\nblock = BasicBlock(64, 64)\nx = torch.randn(1, 64, 56, 56)\nout = block(x)\nprint(f\"Output shape: {out.shape}\")  # [1, 64, 56, 56]\n\n# Projection shortcut (stride=2, channels: 64->128)\nblock_down = BasicBlock(64, 128, stride=2)\nout_down = block_down(x)\nprint(f\"Downsampled: {out_down.shape}\")  # [1, 128, 28, 28]"
+  },
+  "eli3": [
+    "Training very deep neural networks used to be nearly impossible — adding more layers made them worse, not better. ResNet solved this with a simple idea: let each block learn the difference between its input and output, not the full transformation from scratch. The input is directly added to the output of the block.",
+    "Imagine you're learning to improve a photo. Instead of redrawing the whole photo from scratch, you draw only the changes needed — brightness here, contrast there — and add those changes on top of the original. That's exactly what a residual block does: it learns the 'correction' F(x) and adds it to the original input x to get H(x) = F(x) + x.",
+    "This skip connection, also called a shortcut, lets gradients flow directly from later layers to earlier ones during training without going through the block. This solved the vanishing gradient problem for very deep networks and enabled training networks with hundreds or thousands of layers."
+  ],
+  "whenWhy": [
+    {
+      "title": "Training very deep networks (50+ layers)",
+      "body": "Before ResNet, networks deeper than ~20 layers suffered degradation: accuracy got worse on both training and test sets as depth increased — indicating an optimisation problem, not overfitting. ResNet's residual connections made it possible to train networks with 50, 101, 152, and even 1000+ layers. The residual formulation makes the optimisation landscape more benign: if the optimal function for a block is close to the identity, the network can learn near-zero weights for F(x) and rely on the shortcut, rather than learning the identity mapping directly through stacked non-linearities."
+    },
+    {
+      "title": "Backbone for vision tasks",
+      "body": "ResNet (especially ResNet-50 and ResNet-101) is one of the most widely used backbones in computer vision. It appears as the feature extractor in Faster R-CNN (object detection), Mask R-CNN (instance segmentation), and FPN-based models. Pretrained ResNet weights on ImageNet are the standard initialisation for transfer learning on new visual domains. The architecture's modular residual block structure makes it easy to scale to different depths and widths, and its well-studied training dynamics (batch norm + SGD with momentum + cosine LR schedule) are reliable starting points."
+    },
+    {
+      "title": "Understanding gradient flow in deep networks",
+      "body": "ResNet is the canonical example for studying gradient flow. The shortcut connection provides an additive gradient pathway: ∂L/∂x = ∂L/∂H · (1 + ∂F/∂x). Even if ∂F/∂x ≈ 0 (a block that learned to pass through), the gradient ≈ ∂L/∂H still flows through. This ensures that no matter the depth, early layers receive gradient signal from the loss. Understanding this is fundamental for designing any deep architecture and motivates residual connections in Transformers (each encoder layer has add+norm residual connections) and U-Net (skip connections between encoder and decoder)."
+    }
+  ],
+  "deepDiveIntro": [
+    "He et al. (2016) observed that adding more layers to a plain CNN (no residual connections) degraded training accuracy — an optimisation failure, not overfitting, since training error also increased. Their solution: reformulate each block to learn a residual function F(x) = H(x) − x rather than the full desired mapping H(x). The block output is H(x) = F(x) + x, where x is the shortcut (identity connection). If the optimal mapping for a block is close to the identity, it is easier to learn F(x) ≈ 0 (push residual weights to near zero) than to learn H(x) ≈ x through a stack of non-linear layers. The shortcut requires no parameters when input and output dimensions match (identity shortcut); a 1×1 convolution is used when dimensions differ (projection shortcut). [1]",
+    "The gradient flow through a residual network is fundamentally different from a plain network. For a network with L residual blocks and identity shortcuts, the gradient of the loss with respect to any layer l is: ∂L/∂h_l = ∂L/∂h_L · ∏_{i=l}^{L-1} (1 + ∂F_i/∂h_i). The key insight: the product includes an additive 1, so even if all ∂F_i/∂h_i ≈ 0, the gradient is ∂L/∂h_L — a direct connection from any depth to the loss. He et al. (2016b) showed that pre-activation residual networks (ReLU before convolution, not after) further improve gradient flow by keeping the shortcut path entirely free of non-linearities. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "BasicBlock vs Bottleneck Block",
+      "body": "ResNet-18 and ResNet-34 use BasicBlock: two 3×3 convolutions with the same number of channels. ResNet-50, ResNet-101, and ResNet-152 use a Bottleneck block: three convolutions — 1×1 (reduce channels by 4×), 3×3 (spatial processing), 1×1 (expand channels by 4×). For a block with C output channels, BasicBlock uses 2×(C×C×9) = 18C² FLOPs; Bottleneck uses (C/4)×C×1 + (C/4)×(C/4)×9 + C×(C/4)×1 ≈ 4.5C² FLOPs — 4× cheaper. The bottleneck allows ResNet-50 to be deeper than ResNet-34 with similar computational cost. The channel expansion factor is conventionally 4: input/output C channels, middle C/4 channels. [1]"
+    },
+    {
+      "heading": "Identity vs Projection Shortcuts",
+      "body": "When a residual block does not change the number of channels and stride=1, the shortcut is the identity: output = F(x) + x (no parameters). When channels change (e.g., 64→128) or stride>1 (spatial downsampling), dimensions mismatch and addition is impossible. Two options: (A) zero-pad the shortcut to match dimensions (no parameters, slightly worse accuracy); (B) 1×1 convolution with matching stride (projection shortcut — adds parameters but better gradient flow). He et al. found option B consistently better. In ResNet-50, each stage boundary uses a projection shortcut to double channels and halve spatial dimensions simultaneously. [1]"
+    },
+    {
+      "heading": "ResNet Architecture: Stage Structure",
+      "body": "ResNet-50 has 4 stages (conv2_x through conv5_x) plus an initial stem (7×7 conv, stride 2, MaxPool). Stage 1 (conv2_x): 3 bottleneck blocks, 256 output channels, stride 1. Stage 2 (conv3_x): 4 blocks, 512 channels, stride 2 at first block. Stage 3 (conv4_x): 6 blocks, 1024 channels, stride 2. Stage 4 (conv5_x): 3 blocks, 2048 channels, stride 2. Final: Global Average Pooling → FC(2048, 1000). Total: ~25M parameters. The spatial size evolves: 224×224 → stem → 56×56 → stage1 → 56×56 → stage2 → 28×28 → stage3 → 14×14 → stage4 → 7×7 → GAP → 1×1. [2]"
+    },
+    {
+      "heading": "Why Residual Networks Work — Theoretical Perspectives",
+      "body": "Multiple theoretical explanations have been proposed. Veit et al. (2016) 'Residual Networks Behave Like Ensembles': the skip connections create 2^L implicit paths from input to output (each combination of skipping/not skipping each block); the effective depth is much shallower than L on average. Li et al. (2018) showed residual networks have better-conditioned loss landscapes with fewer sharp minima and wider flat regions, explaining easier optimisation. He et al. (2016b) showed that placing batch normalisation and activation before the convolution (pre-activation ResNet) creates a clean gradient pathway through shortcuts, improving accuracy for ResNet-1001. From a practical standpoint, the simplest justification remains: if the optimal block mapping is near-identity, residuals make learning this easier — and many network blocks in practice do learn near-zero residuals. [1]"
+    }
+  ],
+  "takeaways": [
+    "Residual block: H(x) = F(x) + x; learn the residual F(x) = H(x) − x instead of H(x) directly. [1]",
+    "Skip connections provide an additive gradient pathway ∂L/∂h_l ≈ ∂L/∂h_L, preventing vanishing gradients at any depth. [1]",
+    "BasicBlock (ResNet-18/34): two 3×3 convs; Bottleneck (ResNet-50+): 1×1→3×3→1×1, 4× cheaper for same depth. [1]",
+    "Projection shortcut (1×1 conv) used when channels or stride change; identity shortcut when dimensions match. [1]",
+    "Pre-activation ResNet (He et al. 2016b) places BN+ReLU before convolutions, keeping shortcuts activation-free. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why did deeper plain CNNs (no residuals) perform worse than shallower ones — is this just overfitting?",
+      "a": "No — this is an optimisation failure, not overfitting. In He et al.'s experiments, the 56-layer plain network had higher training error than the 20-layer plain network. Overfitting would show higher test error but lower training error. The deeper network should at worst equal the shallower network (by learning the identity for extra layers), but gradient vanishing prevents it from doing so. Residual connections solve this: a block that adds nothing beneficial to the representation can learn F(x) ≈ 0 (near-zero weights), making the block effectively identity. This 'identity shortcut hypothesis' is the key intuition behind why ResNets outperform plain networks at depth."
+    },
+    {
+      "q": "Can ResNet's residual connections be applied to Transformer architectures?",
+      "a": "Yes — and they are. Every Transformer encoder/decoder layer uses add+norm residual connections: output = LayerNorm(x + Sublayer(x)) for both the self-attention sublayer and the FFN sublayer. This is functionally identical to ResNet's residual block, providing gradient highways across Transformer depth. Pre-norm (LayerNorm applied before the sublayer, not after) is increasingly preferred in modern transformers (GPT-3, LLaMA) because it provides cleaner gradient flow — analogous to He et al.'s pre-activation ResNet. Without residual connections, training deep Transformers (12+ layers) is significantly harder."
+    }
+  ],
+  "sources": [
+    {
+      "label": "He et al. (2016) — Deep Residual Learning for Image Recognition, CVPR 2016 arXiv:1512.03385",
+      "url": "https://arxiv.org/abs/1512.03385"
+    },
+    {
+      "label": "He et al. (2016) — Identity Mappings in Deep Residual Networks (pre-activation ResNet), ECCV 2016 arXiv:1603.05027",
+      "url": "https://arxiv.org/abs/1603.05027"
+    }
+  ]
+}

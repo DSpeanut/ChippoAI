@@ -1,0 +1,75 @@
+{
+  "visualizationType": "normalizing-flows-viz",
+  "codeSnapshot": {
+    "label": "realnvp_layer.py",
+    "code": "import torch\nimport torch.nn as nn\n\nclass AffineCouplingLayer(nn.Module):\n    \"\"\"\n    RealNVP Affine Coupling Layer (Dinh et al., 2016).\n    Split x into [x1, x2]; transform x2 using functions of x1.\n    x1' = x1  (pass through)\n    x2' = x2 * exp(s(x1)) + t(x1)\n    Inverse: x2 = (x2' - t(x1)) * exp(-s(x1))\n    log|det J| = sum(s(x1))\n    \"\"\"\n    def __init__(self, d: int, hidden: int = 64):\n        super().__init__()\n        d1 = d // 2\n        d2 = d - d1\n        self.net = nn.Sequential(\n            nn.Linear(d1, hidden), nn.ReLU(),\n            nn.Linear(hidden, hidden), nn.ReLU(),\n            nn.Linear(hidden, d2 * 2)  # outputs [s, t] concatenated\n        )\n        self.d1 = d1; self.d2 = d2\n\n    def forward(self, x: torch.Tensor):\n        \"\"\"Forward: x -> z, returns (z, log_det_jacobian)\"\"\"\n        x1, x2 = x[:, :self.d1], x[:, self.d1:]\n        st = self.net(x1)                           # [B, d2*2]\n        s, t = st[:, :self.d2], st[:, self.d2:]    # scale, translation\n        z2 = x2 * torch.exp(s) + t                 # affine transform\n        log_det = s.sum(dim=-1)                     # sum of log-scales\n        return torch.cat([x1, z2], dim=1), log_det\n\n    def inverse(self, z: torch.Tensor):\n        \"\"\"Inverse: z -> x\"\"\"\n        x1, z2 = z[:, :self.d1], z[:, self.d1:]\n        st = self.net(x1)\n        s, t = st[:, :self.d2], st[:, self.d2:]\n        x2 = (z2 - t) * torch.exp(-s)\n        return torch.cat([x1, x2], dim=1)\n\n# Test\nlayer = AffineCouplingLayer(d=4)\nx = torch.randn(8, 4)\nz, ldj = layer(x)\nprint(f\"z shape: {z.shape}, log|det J|: {ldj.shape}\")  # [8,4], [8]\nx_rec = layer.inverse(z)\nprint(f\"Reconstruction error: {(x - x_rec).abs().max().item():.2e}\")  # ~0"
+  },
+  "eli3": [
+    "A normalising flow is a generative model that learns to transform simple random noise (like a Gaussian) into complex data (like images) through a chain of invertible transformations. Unlike VAEs (which approximate a distribution) or GANs (which can't compute exact probabilities), flows let you compute the exact probability of any data point.",
+    "Think of squeezing a lump of clay: you start with a simple shape (sphere = Gaussian) and apply a series of smooth, reversible deformations to sculpt it into a complex shape (the data distribution). Because each deformation is invertible, you can go both ways: data → noise (for density estimation) or noise → data (for generation).",
+    "The mathematical trick: the chain rule for probability densities. If z = f(x) and you know the density of z (simple Gaussian), you can compute the density of x using: log p_X(x) = log p_Z(f(x)) + log|det J_f(x)|. The Jacobian determinant adjusts for how much the transformation 'squishes or stretches' space. Flows are constrained to transformations where this Jacobian is cheap to compute."
+  ],
+  "whenWhy": [
+    {
+      "title": "Exact likelihood estimation for density estimation",
+      "body": "Unlike VAEs (lower-bound on log-likelihood) and GANs (no likelihood at all), normalising flows compute exact log-probabilities: log p_θ(x) = log p_Z(f_θ(x)) + log|det J_{f_θ}(x)|. This makes flows the method of choice when exact density evaluation is required: anomaly detection (compute p(x) for test points), compression (arithmetic coding with exact probabilities), and model comparison via exact likelihood on held-out data."
+    },
+    {
+      "title": "Variational inference with expressive posteriors",
+      "body": "Normalising flows can be used to improve VAE posteriors beyond the Gaussian assumption. Flow-based variational inference (Rezende & Mohamed, 2015): apply a chain of L flows to the initial Gaussian sample z_0 = μ + σ·ε: z_L = f_L ∘ ... ∘ f_1(z_0). The final z_L has a much richer, multi-modal posterior distribution while remaining tractable. The ELBO is adjusted to include the log-determinant terms from the flows. This enables the VAE to model posteriors with complex shapes (multi-modal, heavy-tailed) that the Gaussian posterior cannot represent."
+    },
+    {
+      "title": "Physics and scientific simulations",
+      "body": "Normalising flows are used to sample from complex physical distributions in molecular dynamics (Boltzmann generators: normalising flows trained to sample low-energy molecular configurations) and lattice field theory (normalising flows for lattice QCD configurations). The key advantage: flows provide independent samples (unlike MCMC which has autocorrelated chains), enabling efficient estimation of thermodynamic quantities. The exact log-probability is essential for computing free energies and partition functions."
+    }
+  ],
+  "deepDiveIntro": [
+    "A normalising flow is a composition of K invertible, differentiable transformations f = f_K ∘ ... ∘ f_1: x = f^{-1}(z) = f_1^{-1} ∘ ... ∘ f_K^{-1}(z), where z ~ p_Z (a simple base distribution, typically N(0,I)). By the change of variables formula: log p_X(x) = log p_Z(z) + Σ_k log|det J_{f_k}(x_{k-1})|, where x_0 = x and x_k = f_k(x_{k-1}). The Jacobian det J is the key computational challenge — for a d-dimensional transformation, computing the full Jacobian det is O(d³). All flow architectures are designed to make this computation O(d) or O(d log d). [1]",
+    "The design space of flows is defined by the tradeoff between expressiveness (complex transformations → richer distribution) and tractability (cheap Jacobian computation for training and inference). NICE (Dinh et al., 2014) introduced coupling layers for O(d) Jacobian; RealNVP (Dinh et al., 2016) extended to affine coupling layers; Glow (Kingma & Dhariwal, 2018) added invertible 1×1 convolutions for channel mixing; MAF (Masked Autoregressive Flow) achieves expressive autoregressive transformations with O(d) Jacobian. The flow → normalised density direction corresponds to density estimation; the density → flow direction corresponds to generation. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Change of Variables Formula",
+      "body": "For an invertible transformation f: ℝ^d → ℝ^d, the density transforms as: p_X(x) = p_Z(f(x)) · |det J_f(x)|. Taking logarithms: log p_X(x) = log p_Z(f(x)) + log|det J_f(x)|. For a base distribution p_Z = N(0,I): log p_Z(z) = −d/2·log(2π) − ½‖z‖². Training a flow to maximise log p_X(x_i) on training data is equivalent to: (1) computing z_i = f(x_i) (forward pass); (2) computing log|det J_f(x_i)| (Jacobian determinant); (3) maximising log p_Z(z_i) + log|det J_f|. This pushes z to be close to the base distribution (first term) while accounting for volume change (second term). If |det J| > 1, the flow compresses the space (probability increases); if |det J| < 1, it expands (probability decreases). [1]"
+    },
+    {
+      "heading": "RealNVP: Affine Coupling Layers",
+      "body": "RealNVP (Real-valued Non-Volume Preserving transformations, Dinh et al., 2016) achieves tractable Jacobians via coupling layers. Split x into [x_1, x_2]; transform only x_2: x_2' = x_2 · exp(s(x_1)) + t(x_1); x_1' = x_1. The Jacobian J is lower triangular (upper-left identity block, lower-right diagonal of exp(s)), so det J = exp(Σ_j s_j(x_1)) — O(d) computation. The inverse is: x_2 = (x_2' − t(x_1)) · exp(−s(x_1)) — also O(d). The functions s and t can be arbitrary (non-invertible) neural networks — they don't need to be invertible themselves because invertibility is guaranteed by the coupling layer structure. Stacking coupling layers with alternating splits (which dimensions are in x_1 vs x_2) ensures all dimensions are transformed. Glow added invertible 1×1 convolutions (parameterised as LU decomposition) to mix channels between coupling layers. [1]"
+    },
+    {
+      "heading": "MAF and IAF: Autoregressive Flows",
+      "body": "Masked Autoregressive Flow (MAF, Papamakarios et al., 2017) uses autoregressive density estimation as a flow: x_i = z_i · σ_θ(x_{<i}) + μ_θ(x_{<i}). The Jacobian is triangular (each x_i depends only on previous x_j, j<i), so det J = ∏_i σ_i — O(d) computation. MAF generates x one dimension at a time (sequential), but evaluates the density of any x in parallel. Inverse Autoregressive Flow (IAF, Kingma et al., 2016) swaps the autoregressive dependency: x_i = z_i · σ_θ(z_{<i}) + μ_θ(z_{<i}). IAF samples in parallel (given z, all x_i independent given z_{<i}) but evaluates density sequentially. Key insight: MAF (fast density, slow sampling) and IAF (fast sampling, slow density) are inverses of each other — their computational properties are complementary. [2]"
+    },
+    {
+      "heading": "Continuous Normalising Flows (Neural ODEs)",
+      "body": "Continuous Normalising Flows (CNFs, Chen et al., 2018) define a continuous-time transformation via an ODE: dx/dt = f_θ(x, t), with x(0) = z (base sample) and x(1) = data. The log-likelihood change along the ODE path is: d log p/dt = −Tr(∂f/∂x), computable via Hutchinson's trace estimator (unbiased stochastic estimate: Tr(J) ≈ ε^T J ε for random ε ~ N(0,I)). CNFs are more flexible than discrete flows (no coupling layer constraints) and are the basis of Flow Matching (Lipman et al., 2022) and Rectified Flows, which define straight-line ODE paths from noise to data, providing a more stable and efficient continuous flow training paradigm. Stable Diffusion 3 uses a Rectified Flow formulation. [2]"
+    }
+  ],
+  "takeaways": [
+    "Change of variables: log p_X(x) = log p_Z(f(x)) + log|det J_f(x)|; exact likelihood, unlike VAE/GAN. [1]",
+    "RealNVP coupling layer: x_2' = x_2·exp(s(x_1)) + t(x_1); Jacobian = diag(exp(s)) — O(d) computation. [1]",
+    "MAF: fast density evaluation, sequential generation; IAF: parallel generation, sequential density — inverse pair. [2]",
+    "Glow adds invertible 1×1 convolutions (LU parameterisation) for flexible channel permutation between coupling layers. [2]",
+    "Continuous Normalising Flows (Neural ODEs) and Rectified Flows extend to ODE-based transformations — basis of SD3. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why are normalising flows less commonly used than VAEs and GANs for image generation?",
+      "a": "Two main practical limitations: (1) Architectural constraint — every layer must be invertible with a tractable Jacobian determinant. This rules out standard convolutional layers (not generally invertible), pooling (not invertible), and most standard architectures. Flow layers (coupling layers, invertible 1×1 convolutions) are less expressive per parameter than standard architectures, requiring larger models for similar quality. (2) Memory — training a flow requires storing both the forward (data→noise) and inverse (noise→data) passes, which are computationally equivalent. For high-resolution images, this is memory-intensive. VAEs have an implicit regularisation via the KL term; GANs use a discriminator that is not subject to invertibility constraints. In practice, Glow can generate faces at 256×256 but requires much larger models than GANs/diffusion for comparable quality."
+    },
+    {
+      "q": "What is the bits-per-dimension (BPD) metric and how do flows compare to diffusion models?",
+      "a": "Bits per dimension (BPD) = −log₂ p(x) / d, where d is the data dimensionality (d=3×H×W for images). BPD measures how many bits are needed to encode one dimension of the data — lower is better (more efficient compression = better density model). Comparison on CIFAR-10 (32×32 images, d=3072): Glow: 3.35 BPD; Flow++ (Ho et al., 2019): 3.08 BPD; Diffusion models (DDPM, Improved DDPM): ~2.94–3.27 BPD; Autoregressive (PixelCNN++): 2.92 BPD. Diffusion models and autoregressive models achieve better likelihoods than most flow-based models, while being architecturally less constrained. However, flows remain competitive for structured data (tabular, molecular) where the invertibility constraint is less limiting."
+    }
+  ],
+  "sources": [
+    {
+      "label": "Rezende & Mohamed (2015) — Variational Inference with Normalizing Flows, ICML 2015 arXiv:1505.05770",
+      "url": "https://arxiv.org/abs/1505.05770"
+    },
+    {
+      "label": "Dinh, Sohl-Dickstein & Bengio (2016) — Density Estimation using Real-valued Non-Volume Preserving Transformations (RealNVP), ICLR 2017 arXiv:1605.08803",
+      "url": "https://arxiv.org/abs/1605.08803"
+    }
+  ]
+}

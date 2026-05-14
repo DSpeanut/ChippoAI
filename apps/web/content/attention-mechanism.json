@@ -1,0 +1,75 @@
+{
+  "visualizationType": "attention-mechanism-viz",
+  "codeSnapshot": {
+    "label": "bahdanau_attention.py",
+    "code": "import torch\nimport torch.nn as nn\nimport torch.nn.functional as F\n\nclass BahdanauAttention(nn.Module):\n    \"\"\"\n    Additive (Bahdanau) Attention — aligns decoder state with encoder outputs.\n    score(s_{i-1}, h_j) = v_a^T tanh(W_a s_{i-1} + U_a h_j)\n    \"\"\"\n    def __init__(self, hidden_dim: int):\n        super().__init__()\n        self.W_a = nn.Linear(hidden_dim, hidden_dim, bias=False)  # decoder state\n        self.U_a = nn.Linear(hidden_dim, hidden_dim, bias=False)  # encoder outputs\n        self.v_a = nn.Linear(hidden_dim, 1, bias=False)           # score projection\n\n    def forward(self, decoder_state, encoder_outputs):\n        \"\"\"\n        decoder_state:   [B, 1, hidden]  (current decoder hidden state)\n        encoder_outputs: [B, T_src, hidden]  (all encoder hidden states)\n        returns:\n            context:  [B, hidden]          (weighted sum of encoder outputs)\n            weights:  [B, T_src]           (attention distribution)\n        \"\"\"\n        # Broadcast decoder state to [B, T_src, hidden]\n        dec = self.W_a(decoder_state)         # [B, 1, hidden]\n        enc = self.U_a(encoder_outputs)       # [B, T_src, hidden]\n        # Compute alignment scores\n        energy = self.v_a(torch.tanh(dec + enc)).squeeze(-1)  # [B, T_src]\n        weights = F.softmax(energy, dim=-1)                   # [B, T_src]\n        # Compute context vector as weighted sum\n        context = torch.bmm(weights.unsqueeze(1), encoder_outputs).squeeze(1)  # [B, hidden]\n        return context, weights\n\n# Usage\nB, T_src, hidden = 4, 20, 256\nencoder_outputs = torch.randn(B, T_src, hidden)\ndecoder_state   = torch.randn(B, 1, hidden)\n\nattn = BahdanauAttention(hidden)\ncontext, weights = attn(decoder_state, encoder_outputs)\nprint(f\"Context:  {context.shape}\")   # [4, 256]\nprint(f\"Weights:  {weights.shape}\")   # [4, 20] (sum to 1)\nprint(f\"Weight sum: {weights.sum(dim=-1)}\")  # all ~1.0"
+  },
+  "eli3": [
+    "The basic seq2seq model reads an entire sentence into one vector before translating — like reading a whole paragraph, closing your eyes, and then trying to write it in another language from memory. For long sentences, you forget the beginning by the time you reach the end.",
+    "Attention lets the decoder 'look back' at each word in the input while generating each word in the output. When generating the French word for 'bank' in a translation, the model can focus on the English word 'bank' in the original sentence — and the French word for 'river' if that's the context. The model learns where to look.",
+    "This is the pre-Transformer attention mechanism (Bahdanau, 2015). The model computes a score for how relevant each input word is to the current output step, turns those scores into probabilities (attention weights), and uses a weighted average of input representations as the context. The attention weights can even be visualised as a translation alignment matrix."
+  ],
+  "whenWhy": [
+    {
+      "title": "Long-sequence translation and summarisation",
+      "body": "Bahdanau attention was specifically designed to fix the degradation of seq2seq performance on long sequences. Without attention, BLEU scores drop sharply for source sentences with 30+ tokens. With attention, performance degrades much more gracefully because the decoder has direct access to all encoder states at each step — it no longer needs to compress everything into a single context vector. This is fundamental for document summarisation, where the source may be hundreds of tokens long."
+    },
+    {
+      "title": "Alignment and interpretability",
+      "body": "Attention weights produce an alignment matrix: a T_src × T_tgt matrix where each cell α_{ij} indicates how much attention the decoder paid to encoder position j when generating output position i. For translation, this matrix is interpretable as a word alignment and can be visualised as a heatmap. Systems that use attention can explain which input tokens drove each output token — valuable in regulated domains (medical, legal translation) where auditors need to understand model reasoning."
+    },
+    {
+      "title": "Precursor to self-attention and Transformers",
+      "body": "Bahdanau attention is the direct ancestor of the scaled dot-product attention in Transformers. The core operation — compute alignment scores, apply softmax, compute weighted sum of value vectors — is identical. Transformers generalised this by: (1) allowing queries, keys, and values to come from the same sequence (self-attention); (2) using dot product instead of additive scoring (faster); (3) scaling by √d_k (to stabilise softmax); (4) applying multiple heads in parallel. Understanding Bahdanau attention makes Transformer attention much clearer."
+    }
+  ],
+  "deepDiveIntro": [
+    "Bahdanau et al. (2015) introduced the additive attention mechanism for neural machine translation. The encoder produces a sequence of annotations h_j (encoder hidden states at each position j). At decoder step i, the context vector c_i is computed as a weighted sum of all encoder annotations: c_i = Σ_j α_{ij} h_j. The alignment weights α_{ij} = softmax(e_{ij}) are normalised scores: e_{ij} = a(s_{i-1}, h_j), where a is a small feedforward network (alignment model): a(s, h) = v_a^T tanh(W_a s + U_a h). Here s_{i-1} is the decoder's previous hidden state, and v_a, W_a, U_a are learned parameters of the alignment model. The attention mechanism adds a relatively small number of parameters (W_a, U_a ∈ ℝ^{n×n}, v_a ∈ ℝ^n) but dramatically improves long-sequence performance. [1]",
+    "Luong et al. (2015) introduced two alternative scoring functions: dot-product attention score(s, h) = s^T h (no parameters, requires same dimension for s and h); general attention score(s, h) = s^T W_a h (W_a ∈ ℝ^{n×n} — one matrix). These multiplicative (Luong) attention variants are computationally cheaper than additive (Bahdanau) attention and achieved comparable or better performance on translation tasks. Dot-product attention is the basis for Transformer scaled dot-product attention (divided by √d_k to prevent small gradients at large dimensions): Attention(Q, K, V) = softmax(QK^T/√d_k) V. The evolution from Bahdanau's additive scoring → Luong's dot-product → Vaswani's scaled dot-product is a direct lineage. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Alignment Score Functions",
+      "body": "Three main alignment score functions: (1) Additive (Bahdanau): e_{ij} = v_a^T tanh(W_a s_{i-1} + U_a h_j). Computationally heavier (requires tanh and projection), but works for s and h with different dimensions. No constraint on the relationship between s and h. (2) Dot-product (Luong): e_{ij} = s_{i-1}^T h_j. Requires equal dimensions. Computationally cheap but can produce very large/small values for large dimensions. (3) General (Luong): e_{ij} = s_{i-1}^T W_a h_j. Requires learnable W_a but no dimension constraint. (4) Scaled dot-product (Vaswani et al.): e_{ij} = (s^T h)/√d. Division by √d_k prevents large dot products from pushing softmax into saturated regions where gradients are near zero. For high-dimensional vectors (d=512), dot products can have magnitude O(√d) even with unit-variance random vectors, so scaling is critical. [1]"
+    },
+    {
+      "heading": "Context Vector and Decoder Integration",
+      "body": "The context vector c_i is fed to the decoder in two ways: (1) Concat approach (Bahdanau): concatenate c_i with the decoder input before the RNN step — c_i is part of the input at each step. (2) Input-feeding approach (Luong): concatenate c_i with the decoder output h_i after the RNN step, then project to vocabulary. The input-feeding approach allows the decoder to be aware of previous alignment decisions when making new ones (c_i depends on s_{i-1} which saw c_{i-1}). In both cases, the final output distribution is: p(y_i | y_{<i}, x) = softmax(W_o [h_i; c_i]) (Luong input-feeding) or softmax(W_o s_i) where s_i was computed with c_i as input (Bahdanau). [1]"
+    },
+    {
+      "heading": "Attention Weight Visualisation and Monotonic Attention",
+      "body": "The attention weight matrix α ∈ ℝ^{T_tgt × T_src} can be visualised as a heatmap. For translation between related languages (English-French), the matrix is approximately diagonal — source and target words align in roughly the same order. For distant language pairs (English-Japanese), the matrix shows long-range non-monotonic alignments (e.g., SOV word order in Japanese vs SVO in English). Monotonic attention (Raffel et al., 2017) enforces strictly left-to-right alignment for tasks where the output is naturally aligned with the input in order (speech recognition, text normalisation). Online and linear-time attention: traditional softmax attention over all encoder positions is O(T_src) per decoder step. Monotonic attention reduces this to O(1) amortised, enabling streaming inference. [2]"
+    },
+    {
+      "heading": "From Bahdanau Attention to Self-Attention",
+      "body": "In cross-attention (encoder-decoder attention), queries come from the decoder and keys/values come from the encoder. Self-attention is the case where queries, keys, and values all come from the same sequence — each position attends to all other positions in the same sequence. Self-attention was implicit in the memory-augmented neural network literature (Neural Turing Machines, 2014) and was formalised in the Transformer (Vaswani et al., 2017). The key insight: if the encoder-decoder attention allows the decoder to focus on relevant input positions, self-attention allows each position in any sequence to focus on relevant positions within the same sequence — enabling global dependency modelling without recurrence. This replaces the O(T) path length of RNNs with O(1) direct connections between any pair of positions. [2]"
+    }
+  ],
+  "takeaways": [
+    "Bahdanau attention: c_i = Σ_j α_{ij}h_j where α_{ij} = softmax(v_a^T tanh(W_a s_{i-1} + U_a h_j)). [1]",
+    "Attention solves the fixed-context-vector bottleneck: decoder attends to all encoder states, performance holds for long inputs. [1]",
+    "Alignment weights α are interpretable as a translation alignment matrix — visualisable as a heatmap. [1]",
+    "Luong scaled dot-product: score = s^T h/√d_k — computationally cheaper; basis for Transformer self-attention. [2]",
+    "Self-attention generalises cross-attention by attending within the same sequence — replaces RNN sequential processing. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why is the attention weight vector scaled by √d_k in scaled dot-product attention?",
+      "a": "For query q ∈ ℝ^d and key k ∈ ℝ^d with components drawn from N(0,1), the dot product q·k = Σ_i q_i k_i has variance d (sum of d products, each with variance 1). The standard deviation is √d, so dot products have magnitude O(√d). For large d (e.g., d=512, √d≈22), softmax receives inputs with magnitude ~22, pushing it into saturation regions where the gradient is near zero — the softmax output is concentrated near one-hot (e.g., [0.99, 0.005, 0.005,...]) with gradients ≈0. Dividing by √d keeps the dot products at unit variance, preserving non-saturated softmax gradients regardless of dimension. This is why scaled dot-product (÷√d_k) works better than plain dot-product for high-dimensional keys."
+    },
+    {
+      "q": "What is the difference between cross-attention and self-attention?",
+      "a": "In cross-attention (used in seq2seq decoder): queries Q come from the decoder (current sequence being generated), keys K and values V come from the encoder (source sequence). Each decoder position asks 'which source positions are relevant to me?'. In self-attention (used in both encoder and decoder): Q, K, V all come from the same sequence. Each position in the sequence asks 'which other positions in my own sequence are relevant to me?'. Self-attention enables modelling of intra-sequence dependencies — e.g., resolving pronoun coreference, understanding that 'bank' refers to a river or a financial institution based on other words in the same sentence. Transformer encoders use only self-attention; decoders use both masked self-attention (attend only to past positions) and cross-attention (attend to encoder outputs)."
+    }
+  ],
+  "sources": [
+    {
+      "label": "Bahdanau, Cho & Bengio (2015) — Neural Machine Translation by Jointly Learning to Align and Translate, ICLR 2015 arXiv:1409.0473",
+      "url": "https://arxiv.org/abs/1409.0473"
+    },
+    {
+      "label": "Luong, Pham & Manning (2015) — Effective Approaches to Attention-based Neural Machine Translation, EMNLP 2015 arXiv:1508.04025",
+      "url": "https://arxiv.org/abs/1508.04025"
+    }
+  ]
+}

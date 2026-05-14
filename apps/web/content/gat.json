@@ -1,0 +1,75 @@
+{
+  "visualizationType": "gat-viz",
+  "codeSnapshot": {
+    "label": "gat_node_classification.py",
+    "code": "import torch\nimport torch.nn.functional as F\nfrom torch_geometric.nn import GATConv\nfrom torch_geometric.datasets import Planetoid\n\ndataset = Planetoid(root='/tmp/Cora', name='Cora')\ndata    = dataset[0]\n\nclass GAT(torch.nn.Module):\n    def __init__(self, in_channels, out_channels):\n        super().__init__()\n        # Layer 1: 8 heads, each of dimension 8 => output 64\n        self.conv1 = GATConv(in_channels, 8, heads=8, dropout=0.6)\n        # Layer 2: 1 head (multi-head average) for classification\n        self.conv2 = GATConv(8 * 8, out_channels, heads=1, concat=False, dropout=0.6)\n\n    def forward(self, x, edge_index):\n        x = F.dropout(x, p=0.6, training=self.training)\n        x = F.elu(self.conv1(x, edge_index))        # [N, 64]\n        x = F.dropout(x, p=0.6, training=self.training)\n        return self.conv2(x, edge_index)            # [N, num_classes]\n\ndevice = torch.device('cuda' if torch.cuda.is_available() else 'cpu')\nmodel  = GAT(dataset.num_features, dataset.num_classes).to(device)\ndata   = data.to(device)\noptimizer = torch.optim.Adam(model.parameters(), lr=0.005, weight_decay=5e-4)\n\nfor epoch in range(200):\n    model.train(); optimizer.zero_grad()\n    out  = model(data.x, data.edge_index)\n    loss = F.cross_entropy(out[data.train_mask], data.y[data.train_mask])\n    loss.backward(); optimizer.step()\n\nmodel.eval()\nwith torch.no_grad():\n    pred = model(data.x, data.edge_index).argmax(dim=1)\n    acc  = (pred[data.test_mask] == data.y[data.test_mask]).float().mean()\nprint(f\"Test accuracy: {acc.item():.4f}\")  # ~0.83"
+  },
+  "eli3": [
+    "GCN treats all neighbours equally — it just averages their features. But not all neighbours are equally important. Your best friend's recommendation is more valuable than a stranger's. GAT (Graph Attention Network) learns to assign different importance weights to different neighbours, depending on the features of both the node and its neighbour.",
+    "The attention mechanism: for each pair of connected nodes, compute a score measuring how compatible their features are. Turn these scores into probabilities using softmax (so they sum to 1 across neighbours). Then take a weighted sum of neighbour features using these probabilities. The model learns what makes a neighbour more or less important for the task.",
+    "This attention is content-based: two nodes with similar features will attend to each other strongly, while dissimilar nodes attend weakly. Unlike GCN where the aggregation weights are fixed by graph degree, GAT's weights are dynamic and input-dependent — different inputs produce different attention patterns."
+  ],
+  "whenWhy": [
+    {
+      "title": "Node classification with heterogeneous neighbourhoods",
+      "body": "When a node's neighbours vary in relevance (e.g., in a citation network, a paper has citations from closely related work and from tangentially related work), fixed-weight aggregation (GCN, GraphSAGE mean) blurs these distinctions. GAT's learned attention assigns higher weights to the most relevant neighbours. This is especially valuable in heterogeneous graphs where different edge types carry different information and must be weighted differently."
+    },
+    {
+      "title": "Inductive learning with attention interpretability",
+      "body": "GAT's attention weights α_{ij} can be inspected to understand which neighbours influenced a node's representation. In molecular graphs, high-attention edges often correspond to chemically important bonds; in citation networks, they correspond to the most relevant citations. This interpretability is valuable in regulated domains (drug discovery, finance) where model reasoning must be explainable."
+    },
+    {
+      "title": "Knowledge graph completion and link prediction",
+      "body": "Relational GAT models (R-GAT) assign separate attention heads to different edge types in knowledge graphs (Person → worksAt → Company). This allows the model to weight relationships by type: a 'worksAt' edge contributes differently to the representation of a company node than a 'locatedIn' edge. GAT-based link prediction models achieve state-of-the-art on KBC benchmarks (FB15k-237, WN18RR) by combining relation-specific transformations with attention-weighted aggregation."
+    }
+  ],
+  "deepDiveIntro": [
+    "Veličković et al. (2018) introduced Graph Attention Networks with learnable, edge-wise attention coefficients. For edge (i,j), the un-normalised attention score is: e_{ij} = LeakyReLU(a^T [Wh_i || Wh_j]), where W ∈ ℝ^{F'×F} projects features, a ∈ ℝ^{2F'} is the attention weight vector, and || denotes concatenation. The normalised coefficient: α_{ij} = softmax_j(e_{ij}) = exp(e_{ij}) / Σ_{k ∈ N(i)} exp(e_{ik}). The updated node representation: h_i' = σ(Σ_{j ∈ N(i)} α_{ij} W h_j). Multi-head attention: compute K independent attention heads and concatenate (or average for the final layer): h_i' = ||_{k=1}^K σ(Σ_{j ∈ N(i)} α_{ij}^k W^k h_j). GAT adds no assumption about the graph structure — all nodes and their neighbourhoods are processed the same way, enabling inductive generalisation to unseen nodes. [1]",
+    "GATv2 (Brody, Alon & Yahav, 2021) identified a fundamental limitation in the original GAT: the static attention problem. In GAT, e_{ij} = a^T [Wh_i || Wh_j] = a_1^T Wh_i + a_2^T Wh_j — the i and j contributions are fully separable, meaning the attention score can be factored into a term depending only on i and a term depending only on j. This means the attention ranking of j's neighbours is the same regardless of j's own features — a 'static' attention. GATv2 fixes this by computing: e_{ij} = a^T LeakyReLU(W[h_i || h_j]), which is non-separable (dynamic attention). On benchmarks requiring flexible attention, GATv2 consistently outperforms GAT while using the same number of parameters. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Attention Score Computation",
+      "body": "The attention score e_{ij} measures the importance of node j's features to node i. Three components: (1) Feature projection Wh_j: project j's features to a shared space (same W is used for all source nodes). (2) Concatenation [Wh_i || Wh_j]: form a 2F'-dimensional vector capturing both the query (i) and key (j) features. (3) LeakyReLU(a^T [·]): scalar scoring via a learnable vector a ∈ ℝ^{2F'} with a negative slope activation (α=0.2 in the original paper). LeakyReLU is used instead of ReLU to ensure non-zero gradients for negative attention scores. The softmax normalisation is over all neighbours j ∈ N(i) ∪ {i} (self-loop included): α_{ij} = exp(e_{ij})/Σ_{k ∈ N(i)∪{i}} exp(e_{ik}). [1]"
+    },
+    {
+      "heading": "Multi-Head Attention in GAT",
+      "body": "Similar to Transformer multi-head attention, GAT uses K independent attention mechanisms, each with separate weight matrices W^k and attention vector a^k. For intermediate layers, concatenate: h_i' = ||_{k=1}^K σ(Σ_j α_{ij}^k W^k h_j) — output dimension K×F'. For the final prediction layer, average: h_i' = σ(1/K Σ_{k=1}^K Σ_j α_{ij}^k W^k h_j) — averages the heads to produce final representation. Veličković et al. use K=8 heads with F'=8 features per head (total 64) in layer 1, and K=1 (or K=6 averaged) in layer 2. Multi-head attention in GAT is cheaper than in Transformers (attention only over actual neighbours, not all-to-all) but more expensive than GCN (requires computing K×|E| attention scores). [1]"
+    },
+    {
+      "heading": "GAT vs GCN: When Does Attention Help?",
+      "body": "GAT outperforms GCN when: (1) node neighbourhoods are heterogeneous — different neighbours have different levels of relevance; (2) the graph is noisy — edges may connect dissimilar nodes (noise edges in social networks, false citations); attention down-weights noisy neighbours. GAT is comparable to or slightly below GCN when: (1) all neighbours are equally relevant — attention converges to uniform, adding overhead without benefit; (2) the graph is regular (all nodes have the same degree) — no benefit from degree-normalisation differences. Empirical results: GAT outperforms GCN on Cora (83% vs 81.5%) and Citeseer (72.5% vs 70.3%), but the difference is small and task-dependent. For large-scale graphs with heterogeneous edge types, attention provides more substantial improvements. [2]"
+    },
+    {
+      "heading": "Sparse Attention and Computational Cost",
+      "body": "In a graph with N nodes and E edges, GAT computes 2K×E attention scores (K per edge, 2 for i→j and j→i), compared to GCN's E normalisation constants. For sparse graphs (E ≪ N²), attention is much cheaper than all-to-all Transformer attention O(N²). For dense graphs (social networks with millions of edges per node), GAT becomes expensive. Graph transformers (e.g., Graphormer, GRIT) add structural encodings to standard attention, enabling sparse attention that combines the expressiveness of attention with the efficiency of graph sparsity. Graph transformers with virtual nodes and shortest-path distance encodings achieve state-of-the-art on molecular benchmarks while maintaining O(N+E) complexity for sparse graphs. [2]"
+    }
+  ],
+  "takeaways": [
+    "GAT: α_{ij} = softmax(LeakyReLU(a^T[Wh_i||Wh_j])); attention weight replaces GCN's fixed degree normalisation. [1]",
+    "Multi-head GAT: K independent attention heads, concatenated in hidden layers and averaged in the final layer. [1]",
+    "GATv2 fixes static attention via e_{ij} = a^T LeakyReLU(W[h_i||h_j]) — dynamic, non-separable scoring. [2]",
+    "GAT outperforms GCN when neighbours are heterogeneous; comparable when all neighbours are equally relevant. [2]",
+    "Attention adds K×|E| overhead over GCN; efficient for sparse graphs but expensive for high-degree nodes. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "What is the static attention problem in GAT and how does GATv2 fix it?",
+      "a": "In original GAT, e_{ij} = a^T[Wh_i || Wh_j] = a_left^T Wh_i + a_right^T Wh_j. This is a sum of a term depending only on i and a term depending only on j — fully separable. Consequence: for any fixed query node i, the ranking of neighbours by attention score is always the same regardless of what h_i is — it's determined solely by a_right^T Wh_j. The attention is 'static' in the sense that the same neighbours always receive the same relative attention for any choice of i. GATv2 introduces a non-separable score: e_{ij} = a^T LeakyReLU(W[h_i || h_j]). The non-linearity (LeakyReLU applied before the dot product with a) prevents separability — the ranking of j's neighbours now depends jointly on both h_i and h_j. This makes GAT expressive enough to implement any ranking function over neighbours."
+    },
+    {
+      "q": "How does GAT handle nodes with very large or very small degree?",
+      "a": "For high-degree nodes (hubs): GAT computes softmax over all K neighbours — each neighbour gets weight 1/K on average, reducing to near-uniform attention for very large neighbourhoods (the same limitation as mean aggregation). This can be problematic if only a few neighbours are truly relevant. Mitigation: graph sampling — sample a fixed maximum number of neighbours before computing attention. For low-degree nodes (1–2 neighbours): softmax over 1–2 candidates concentrates all attention on the single most similar neighbour, potentially over-fitting to one edge. GCN's degree normalisation handles this gracefully (1/√d_i is larger for low-degree nodes, emphasising self-features). For graphs with extreme degree distributions (power-law), pre-processing with degree normalisation before GAT is often beneficial."
+    }
+  ],
+  "sources": [
+    {
+      "label": "Veličković et al. (2018) — Graph Attention Networks, ICLR 2018 arXiv:1710.10903",
+      "url": "https://arxiv.org/abs/1710.10903"
+    },
+    {
+      "label": "Brody, Alon & Yahav (2021) — How Attentive are Graph Attention Networks? (GATv2) ICLR 2022 arXiv:2105.14491",
+      "url": "https://arxiv.org/abs/2105.14491"
+    }
+  ]
+}

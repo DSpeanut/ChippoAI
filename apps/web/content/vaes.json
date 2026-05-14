@@ -1,0 +1,75 @@
+{
+  "visualizationType": "vaes-viz",
+  "codeSnapshot": {
+    "label": "vae_mnist.py",
+    "code": "import torch\nimport torch.nn as nn\nimport torch.nn.functional as F\n\nclass VAE(nn.Module):\n    \"\"\"Variational Autoencoder on MNIST (Kingma & Welling, 2013).\"\"\"\n    def __init__(self, input_dim=784, hidden_dim=400, latent_dim=20):\n        super().__init__()\n        # Encoder: q_phi(z|x) -> mu, log_var\n        self.fc1     = nn.Linear(input_dim, hidden_dim)\n        self.fc_mu   = nn.Linear(hidden_dim, latent_dim)\n        self.fc_logv = nn.Linear(hidden_dim, latent_dim)\n        # Decoder: p_theta(x|z)\n        self.fc3     = nn.Linear(latent_dim, hidden_dim)\n        self.fc4     = nn.Linear(hidden_dim, input_dim)\n\n    def encode(self, x):\n        h = F.relu(self.fc1(x))\n        return self.fc_mu(h), self.fc_logv(h)  # mu, log_sigma^2\n\n    def reparameterise(self, mu, log_var):\n        \"\"\"z = mu + eps * sigma,  eps ~ N(0, I).\"\"\"\n        std = torch.exp(0.5 * log_var)\n        eps = torch.randn_like(std)         # sample from N(0,I)\n        return mu + eps * std               # differentiable\n\n    def decode(self, z):\n        h = F.relu(self.fc3(z))\n        return torch.sigmoid(self.fc4(h))   # pixel probabilities\n\n    def forward(self, x):\n        mu, log_var = self.encode(x.view(-1, 784))\n        z = self.reparameterise(mu, log_var)\n        x_hat = self.decode(z)\n        return x_hat, mu, log_var\n\ndef elbo_loss(x_hat, x, mu, log_var):\n    # Reconstruction: binary cross-entropy\n    recon = F.binary_cross_entropy(x_hat, x.view(-1, 784), reduction='sum')\n    # KL divergence: KL(N(mu, sigma^2) || N(0,1))\n    kl = -0.5 * torch.sum(1 + log_var - mu.pow(2) - log_var.exp())\n    return recon + kl\n\nvae = VAE()\nx   = torch.rand(32, 1, 28, 28)  # fake MNIST batch\nx_hat, mu, log_var = vae(x)\nloss = elbo_loss(x_hat, x, mu, log_var)\nprint(f\"Loss: {loss.item():.2f}, mu shape: {mu.shape}\")  # mu: [32, 20]"
+  },
+  "eli3": [
+    "A VAE is like a smart compression algorithm that also generates new data. The encoder squishes an image down into a small 'code' (the latent space). The decoder expands the code back into an image. Unlike a regular autoencoder, the VAE's codes aren't just single points — they're fuzzy regions (distributions), like saying 'somewhere around here' rather than 'exactly here'.",
+    "The fuzziness is the key. By forcing each code to be a blob in the latent space (a Gaussian distribution, with a mean and uncertainty), nearby codes in latent space produce similar images. You can then sample a random point from this space and decode it into a brand new image that looks like the training data.",
+    "Training uses two competing objectives: the reconstruction loss (how well does the decoder recreate the original?) and the KL divergence (how much does the encoder's distribution deviate from a simple Gaussian?). The KL term is a regulariser that keeps the latent space smooth and well-organised, making generation possible."
+  ],
+  "whenWhy": [
+    {
+      "title": "Latent space interpolation and structured generation",
+      "body": "VAE's structured latent space enables smooth interpolation between data points: encode two images to (z_1, μ_1) and (z_2, μ_2), linearly interpolate μ_t = (1−t)μ_1 + tμ_2 for t ∈ [0,1], decode each μ_t. The resulting image sequence smoothly transitions between the two inputs — possible only because the KL term regularises the space to be continuous. This is valuable for creative generation, morphing, and understanding data manifold structure."
+    },
+    {
+      "title": "Anomaly detection via reconstruction error",
+      "body": "VAEs learn to reconstruct in-distribution data with low reconstruction error. Novel or anomalous inputs (e.g., fraudulent transactions, defective products) lie outside the learned distribution and produce high reconstruction error and/or high KL divergence. This enables unsupervised anomaly detection: train on normal data only, flag inputs where ELBO = reconstruction + KL is significantly below the training distribution. VAE anomaly detection is used in fraud detection, medical imaging (detect pathologies as out-of-distribution), and industrial inspection."
+    },
+    {
+      "title": "Semi-supervised learning (VAE+classifier)",
+      "body": "The CVAE (Conditional VAE) conditions the encoder and decoder on class labels: q_φ(z|x,y) and p_θ(x|z,y). For unlabeled examples, the label y is treated as a latent variable and marginalised out. This enables semi-supervised training: use labeled examples to learn class-conditional representations and unlabeled examples to improve the encoder's density estimation. Kingma et al. (2014) demonstrated competitive semi-supervised classification with only 100 labeled MNIST examples."
+    }
+  ],
+  "deepDiveIntro": [
+    "Kingma & Welling (2013) introduced the VAE as a latent variable generative model with tractable training via the Evidence Lower BOund (ELBO). The model: prior p(z) = N(0, I); likelihood p_θ(x|z) parameterised by a neural network decoder; approximate posterior q_φ(z|x) = N(μ_φ(x), diag(σ²_φ(x))) parameterised by a neural network encoder. Direct maximisation of log p_θ(x) = log ∫ p_θ(x|z)p(z)dz is intractable. Instead, maximise the ELBO: L(θ,φ;x) = E_{q_φ(z|x)}[log p_θ(x|z)] − KL(q_φ(z|x) || p(z)) ≤ log p_θ(x). The ELBO is the reconstruction term minus the KL regulariser. [1]",
+    "The reparameterisation trick is essential for backpropagating through the sampling step. Sampling z ~ q_φ(z|x) = N(μ, σ²I) is a non-differentiable operation — gradients cannot flow through the sample. Solution: z = μ_φ(x) + σ_φ(x) ⊙ ε, where ε ~ N(0,I) is an independent random variable. Now μ and σ are deterministic functions of x with parameters φ, so ∂z/∂φ = ∂μ/∂φ + ε·∂σ/∂φ is well-defined. The ε sampling is pushed outside the gradient computation. This trick makes the VAE trainable by standard backpropagation. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "ELBO Derivation",
+      "body": "Starting from log p_θ(x): log p_θ(x) = log ∫ p_θ(x,z)dz. Introduce q_φ(z|x): = log E_{q_φ(z|x)}[p_θ(x,z)/q_φ(z|x)]. By Jensen's inequality (log is concave): ≥ E_{q_φ(z|x)}[log p_θ(x,z)/q_φ(z|x)] = E_{q_φ}[log p_θ(x|z)] + E_{q_φ}[log p(z)/q_φ(z|x)] = E_{q_φ}[log p_θ(x|z)] − KL(q_φ(z|x)||p(z)). The gap is KL(q_φ(z|x)||p_θ(z|x)) ≥ 0 (KL of approximate vs true posterior). For a Gaussian posterior q_φ = N(μ, σ²I) and standard normal prior p(z) = N(0,I), KL has a closed form: KL = −1/2 Σ_j (1 + log σ_j² − μ_j² − σ_j²). The reconstruction term E[log p_θ(x|z)] is approximated by one sample of z per x (using the reparameterisation trick). [1]"
+    },
+    {
+      "heading": "KL Collapse and Posterior Collapse",
+      "body": "Posterior collapse (also called KL vanishing) is a critical failure mode: during training, the encoder learns to output the prior (μ≈0, σ≈1 for all inputs), making the KL term ≈ 0 and the latent code uninformative. The decoder then learns to ignore z entirely, modelling p_θ(x) independently of the latent code. Causes: for powerful decoders (e.g., autoregressive decoders), it's easier to ignore z and model p(x) directly than to coordinate with the encoder. Mitigations: (1) KL annealing — gradually increase the KL weight from 0 to 1 during training (β-VAE annealing schedule); (2) free bits — allow each latent dimension a 'free' KL budget of λ bits; (3) weaker decoder (remove autoregressive connections); (4) δ-VAE — maintain a minimum KL per latent dimension. [2]"
+    },
+    {
+      "heading": "β-VAE and Disentanglement",
+      "body": "Higgins et al. (2017) introduced β-VAE: scale the KL term by β > 1 in the ELBO: L_β = E[log p_θ(x|z)] − β·KL(q_φ(z|x)||p(z)). Higher β forces stronger independence between latent dimensions, promoting disentanglement: each dimension of z captures an independent factor of variation (e.g., one dimension controls lighting, another controls pose, another controls object colour). β=1 is the standard VAE; β=4–10 improves disentanglement at the cost of reconstruction quality. Measuring disentanglement: β-VAE score (Higgins et al.), DCI framework (Eastwood & Williams, 2018). Disentangled representations are valuable for downstream tasks requiring compositional generalisation (style transfer, data augmentation, causal reasoning). [2]"
+    },
+    {
+      "heading": "VAE vs GAN: Comparison",
+      "body": "VAEs: explicit density (maximise ELBO), stable training, smooth latent space, good latent structure for downstream tasks. Weakness: blurry reconstructions — the reconstruction loss averages over the posterior, producing a mean appearance. GANs: no explicit density, adversarial training (unstable), crisp high-quality images but unstructured latent space, mode collapse risk. Hybrid models (VAE-GAN) use the VAE's encoder to learn a structured latent space and the GAN's discriminator to sharpen reconstructions. VQ-VAE (van den Oord et al., 2017) uses a discrete codebook instead of Gaussian posterior, avoiding posterior collapse and enabling autoregressive modelling of the latent codes — the basis of DALL-E 1 and MusicLM. [1]"
+    }
+  ],
+  "takeaways": [
+    "ELBO = E[log p_θ(x|z)] − KL(q_φ(z|x)||p(z)); reconstruction + KL regulariser; lower bound on log p_θ(x). [1]",
+    "Reparameterisation trick: z = μ + σ⊙ε, ε~N(0,I); makes sampling differentiable so gradients flow to encoder. [1]",
+    "KL closed form for Gaussian: −1/2 Σ_j(1 + log σ_j² − μ_j² − σ_j²); encourages posterior to be close to N(0,I). [1]",
+    "Posterior collapse: encoder learns prior (z uninformative); fix with KL annealing or free bits. [2]",
+    "β-VAE (β>1): stronger KL penalty promotes disentanglement of latent dimensions at the cost of reconstruction quality. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why do VAEs produce blurry images compared to GANs?",
+      "a": "VAE blurriness arises from the reconstruction loss and posterior averaging. (1) Reconstruction loss (typically MSE or BCE per pixel) minimises the expected reconstruction under the posterior: L_recon = E_{z~q(z|x)}[‖x − G(z)‖²]. The expectation averages over multiple possible reconstructions (from the uncertainty in z), producing a blurred average. This is the well-known limitation of L2/L1 reconstruction losses — they optimise for expected pixel values, not perceptual sharpness. (2) The decoder must output a single image given z, but z carries uncertainty — the decoder blurs its output to cover the variance. Fix: replace pixel-wise reconstruction loss with a perceptual loss (VGG features) or an adversarial loss (VAE-GAN). The underlying issue is that pixel-wise losses are poor proxies for human perceptual quality."
+    },
+    {
+      "q": "What is VQ-VAE and how does it address VAE limitations?",
+      "a": "VQ-VAE (van den Oord et al., 2017) replaces the continuous Gaussian posterior with a discrete codebook: the encoder maps x to a code e_k from a learned set of K embedding vectors (codebook). The nearest codebook entry is selected (argmin ‖z_e − e_k‖), so the latent z is a sequence of discrete indices. Advantages over standard VAE: (1) no posterior collapse — the discrete bottleneck forces meaningful latent representations; (2) discrete codes enable powerful autoregressive priors (PixelCNN over the code sequence), giving sharper, more controllable generation; (3) compact representation — DALL-E 1 compressed 256×256 images to 32×32 grids of 8192-class discrete tokens. Training trick: since argmin is non-differentiable, gradients pass straight through (straight-through estimator) plus a commitment loss ‖sg[z_e] − e_k‖² + β‖z_e − sg[e_k]‖²."
+    }
+  ],
+  "sources": [
+    {
+      "label": "Kingma & Welling (2013) — Auto-Encoding Variational Bayes, ICLR 2014 arXiv:1312.6114",
+      "url": "https://arxiv.org/abs/1312.6114"
+    },
+    {
+      "label": "Higgins et al. (2017) — beta-VAE: Learning Basic Visual Concepts with a Constrained Variational Framework, ICLR 2017",
+      "url": "https://openreview.net/forum?id=Sy2fchegx"
+    }
+  ]
+}

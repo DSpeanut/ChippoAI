@@ -34,6 +34,14 @@
     {
       "heading": "Post-Processing and Validation",
       "body": "Even with JSON mode, validate the output: (1) json.loads() — catches invalid JSON (shouldn't happen with JSON mode but is a safety net); (2) Pydantic parsing — validate field presence and types: MyModel.model_validate(data). If validation fails, retry the LLM call with an error message: 'Your previous response was missing the required field: revenue_usd. Please regenerate.'; (3) Type coercion — JSON mode may return '2024' (string) where you need 2024 (integer); Pydantic's model_config = ConfigDict(coerce_numbers_to_str=False) helps; or use field validators for explicit coercion; (4) Handling code fences — if the model wraps JSON in ```json ... ```, strip with regex: re.search(r'```json\\s*(.*?)\\s*```', response, re.DOTALL). [1]"
+    },
+    {
+      "heading": "JSON Mode Failure Modes and Mitigations",
+      "body": "JSON mode guarantees syntactically valid JSON but not semantic correctness: (1) Hallucinated keys — model produces {\"fullName\"} instead of {\"name\"}; counter: list required fields explicitly in the system prompt; (2) Wrong value types — '\"age\": \"29\"' instead of '\"age\": 29'; counter: validate with Pydantic model_validate() after parsing; (3) Truncated JSON — if max_tokens is too low the response is cut mid-JSON; set max_tokens = estimated_length * 1.5; (4) Deeply nested failures — models struggle with 4+ nesting levels; flatten schemas where possible. Production pattern: always wrap JSON mode responses in try/except, retry with stricter prompt on failure, log all parse failures. Prefer with_structured_output whenever schema is known — eliminates all four failure modes. [1]"
+    },
+    {
+      "heading": "Streaming with JSON Output",
+      "body": "Structured outputs require complete JSON before parsing — streaming emits tokens one by one. LangChain's JsonOutputParser handles this: it buffers the token stream and emits partial dicts as top-level keys complete. Usage: chain = llm | JsonOutputParser(); for partial in chain.stream(messages): print(partial). The partial output grows: {} -> {\"name\": \"Ana\"} -> {\"name\": \"Ana\", \"age\": 29}. Useful for dashboards showing live results. Trade-off: if you need the entire object as a unit (e.g. database insert), wait for stream completion — the last emitted value is always the complete object. For deeply nested schemas, incremental parsing may lag until a full subtree is complete. [2]"
     }
   ],
   "takeaways": [
@@ -54,7 +62,18 @@
     }
   ],
   "sources": [
-    { "label": "OpenAI JSON Mode Documentation — response_format reference", "url": "https://platform.openai.com/docs/guides/structured-outputs#json-mode" },
-    { "label": "Willard & Louf (2023) — Efficient Guided Generation for Large Language Models (Outlines)", "url": "https://arxiv.org/abs/2307.09702" }
-  ]
+    {
+      "label": "OpenAI JSON Mode Documentation — response_format reference",
+      "url": "https://platform.openai.com/docs/guides/structured-outputs#json-mode"
+    },
+    {
+      "label": "Willard & Louf (2023) — Efficient Guided Generation for Large Language Models (Outlines)",
+      "url": "https://arxiv.org/abs/2307.09702"
+    }
+  ],
+  "visualizationType": "json-mode-viz",
+  "codeSnapshot": {
+    "label": "json_mode.py",
+    "code": "from langchain_openai import ChatOpenAI\nfrom langchain_core.messages import SystemMessage, HumanMessage\nfrom pydantic import BaseModel\nimport json\n\nllm = ChatOpenAI(model=\"gpt-4o\", temperature=0)\n\n# Approach 1: JSON mode — valid JSON but no schema enforcement\njson_llm = ChatOpenAI(model=\"gpt-4o\", temperature=0,\n    model_kwargs={\"response_format\": {\"type\": \"json_object\"}})\nresult = json_llm.invoke([\n    SystemMessage(\"Respond only with valid JSON.\"),\n    HumanMessage(\"Give me a user object with name and age.\"),\n])\n# No guarantee on field names or types — must validate manually\ntry:\n    data = json.loads(result.content)\n    print(\"JSON mode output:\", data)\nexcept json.JSONDecodeError as e:\n    print(\"Parse error:\", e)\n\n# Approach 2: Structured outputs (preferred — schema enforced, typed result)\nclass User(BaseModel):\n    name: str\n    age: int\n    role: str\n\nstructured_llm = llm.with_structured_output(User)\nuser = structured_llm.invoke(\"Extract: Ana is a 29-year-old engineer.\")\nprint(user.name, user.age, user.role)  # fully typed — no manual parsing needed"
+  }
 }

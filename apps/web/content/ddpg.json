@@ -1,0 +1,75 @@
+{
+  "visualizationType": "ddpg-viz",
+  "codeSnapshot": {
+    "label": "ddpg_pendulum.py",
+    "code": "import torch\nimport torch.nn as nn\nimport torch.nn.functional as F\nimport numpy as np\nfrom collections import deque\nimport random\n\nclass Actor(nn.Module):\n    \"\"\"Deterministic policy: s -> a (bounded by tanh)\"\"\"\n    def __init__(self, state_dim, action_dim, max_action):\n        super().__init__()\n        self.net = nn.Sequential(\n            nn.Linear(state_dim, 256), nn.ReLU(),\n            nn.Linear(256, 256),       nn.ReLU(),\n            nn.Linear(256, action_dim), nn.Tanh()\n        )\n        self.max_action = max_action\n\n    def forward(self, s):\n        return self.max_action * self.net(s)\n\nclass Critic(nn.Module):\n    \"\"\"Q-function: (s, a) -> Q-value\"\"\"\n    def __init__(self, state_dim, action_dim):\n        super().__init__()\n        self.net = nn.Sequential(\n            nn.Linear(state_dim + action_dim, 256), nn.ReLU(),\n            nn.Linear(256, 256),                    nn.ReLU(),\n            nn.Linear(256, 1)\n        )\n    def forward(self, s, a):\n        return self.net(torch.cat([s, a], dim=-1))\n\ndef ddpg_update(actor, critic, target_actor, target_critic,\n                actor_opt, critic_opt, batch, gamma=0.99, tau=0.005):\n    s, a, r, ns, d = batch\n\n    # Critic update: TD target with target networks\n    with torch.no_grad():\n        a_next   = target_actor(ns)\n        Q_next   = target_critic(ns, a_next).squeeze()\n        td_target = r + gamma * Q_next * (1 - d)\n    Q_pred   = critic(s, a).squeeze()\n    critic_loss = F.mse_loss(Q_pred, td_target)\n    critic_opt.zero_grad(); critic_loss.backward(); critic_opt.step()\n\n    # Actor update: maximise Q(s, mu(s))\n    actor_loss = -critic(s, actor(s)).mean()\n    actor_opt.zero_grad(); actor_loss.backward(); actor_opt.step()\n\n    # Soft update target networks: θ' ← τθ + (1-τ)θ'\n    for p, tp in zip(actor.parameters(), target_actor.parameters()):\n        tp.data.copy_(tau * p.data + (1 - tau) * tp.data)\n    for p, tp in zip(critic.parameters(), target_critic.parameters()):\n        tp.data.copy_(tau * p.data + (1 - tau) * tp.data)"
+  },
+  "eli3": [
+    "DQN works by learning Q-values and picking the best action via argmax — but argmax is only tractable when there are a small number of discrete actions. For continuous control (robot arms, driving, fluid simulation), the action space is infinite. DDPG (Deep Deterministic Policy Gradient) solves this by learning a deterministic policy μ_θ(s) → a that directly outputs the action, plus a Q-function Q(s,a) that evaluates it.",
+    "The trick: since the policy is differentiable and the Q-function takes (s,a) as input, you can compute the gradient of Q with respect to the action, and then backpropagate through the policy. The policy is trained to maximise Q(s, μ_θ(s)) — gradient ascent on the critic's evaluation of the actor's output. This is the 'policy gradient through the Q-function' idea, making DDPG an off-policy, deterministic actor-critic method.",
+    "DDPG inherits DQN's two stabilisation tricks: a replay buffer (sample efficiency, break correlations) and target networks for both the actor and critic (stable TD targets). To explore in a deterministic policy, Gaussian or Ornstein-Uhlenbeck noise is added to the actions during training. DDPG is the foundation for TD3 (Twin Delayed DDPG) and SAC, which address its overestimation and instability problems."
+  ],
+  "whenWhy": [
+    {
+      "title": "Continuous action robotics and locomotion",
+      "body": "DDPG was introduced on continuous MuJoCo control tasks (HalfCheetah, Ant, Reacher) where actions are joint torques ∈ [−1, 1]^n. The deterministic policy μ_θ(s) outputs a single action vector — cheaper than a stochastic policy (no sampling, no log-probability computation). DDPG achieves competitive performance on locomotion benchmarks and is the standard baseline for continuous control in robotics simulation. On Pendulum-v1, DDPG typically converges in ~50,000 environment steps vs PPO's ~200,000, demonstrating the sample efficiency of off-policy learning."
+    },
+    {
+      "title": "Sample-efficient off-policy continuous control",
+      "body": "DDPG is off-policy: it stores transitions in a replay buffer and trains on randomly sampled mini-batches, reusing each transition many times. This makes DDPG dramatically more sample-efficient than on-policy methods (PPO, TRPO) for continuous control. In robotics applications with expensive real-world data collection, off-policy methods are preferred: SAC (which builds on DDPG) has been used for real-robot learning tasks (dexterous manipulation, quadruped locomotion) where physical interactions are limited."
+    },
+    {
+      "title": "Autonomous driving and control systems",
+      "body": "DDPG-based controllers are used in autonomous driving simulators (steering ∈ [−1,1], throttle/brake ∈ [−1,1]) and control of continuous dynamical systems (HVAC control, power grid management, chemical process control). The deterministic policy provides a consistent, reproducible control signal — desirable in safety-critical applications where the stochasticity of a PPO policy may be unacceptable. Combining DDPG with model-based planning (Dyna-DDPG, PETS) improves sample efficiency by learning a dynamics model alongside the policy."
+    }
+  ],
+  "deepDiveIntro": [
+    "Lillicrap et al. (2016) extended DPG (Deterministic Policy Gradient, Silver et al., 2014) to deep networks. The deterministic policy gradient theorem: ∇_θ J(μ_θ) = E_{s~ρ^μ}[∇_θ μ_θ(s) · ∇_a Q^μ(s,a)|_{a=μ_θ(s)}], where ρ^μ is the state distribution under policy μ. The update says: to improve the policy, compute how Q changes with a at the current action, then backpropagate this gradient through the deterministic policy. The actor gradient: ∇_θ J ≈ 1/N Σ_i ∇_a Q(s_i, a)|_{a=μ_θ(s_i)} · ∇_θ μ_θ(s_i). This is computed via automatic differentiation: actor_loss = −critic(s, actor(s)).mean() and then backward(). [1]",
+    "DDPG uses four networks: (1) Actor μ_θ(s): current deterministic policy; (2) Target actor μ_{θ'}(s): soft-updated copy for stable TD targets; (3) Critic Q_φ(s,a): Q-function; (4) Target critic Q_{φ'}(s,a): soft-updated copy for TD targets. Soft target updates (Polyak averaging): θ' ← τθ + (1−τ)θ' with τ=0.005, applied after every gradient step. Soft updates are more stable than hard updates (copy every C steps, as in DQN) because they change targets slowly, preventing abrupt shifts in the training signal. [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Actor-Critic Architecture and Gradient Flow",
+      "body": "DDPG's critic Q_φ(s,a) takes both state and action as inputs (unlike DQN which takes state only and outputs Q-values for all actions). This allows computing ∇_a Q_φ(s,a) — the gradient of Q with respect to the action — necessary for training the deterministic policy. Actor training: actor_loss = −Q_φ(s, μ_θ(s)).mean(). Gradients flow: actor_loss → ∂Q/∂a → ∂a/∂θ (chain rule through the critic). The critic gradient is blocked during actor updates (detach or use requires_grad=False for critic parameters). The actor and critic are updated alternately on each mini-batch: first critic (TD target → MSE loss), then actor (policy gradient through critic). Batch normalisation is applied to the state inputs in both actor and critic to normalise across the large range of state dimensions. [1]"
+    },
+    {
+      "heading": "Exploration with Ornstein-Uhlenbeck Noise",
+      "body": "A deterministic policy μ_θ(s) → a provides no exploration — it always outputs the same action for the same state. DDPG adds noise during training: a = μ_θ(s) + N, where N is Ornstein-Uhlenbeck (OU) noise or Gaussian noise. Ornstein-Uhlenbeck process: dN_t = −θ_OU·N_t·dt + σ·dW_t — a mean-reverting stochastic process that produces temporally correlated noise (useful for physical systems where temporally smooth actions are physically realistic, e.g., robot motors). Gaussian noise: N ~ N(0, σ²) per timestep — simpler, no correlation. In practice, Gaussian noise performs comparably to OU noise on most MuJoCo benchmarks (Fujimoto et al., 2018 found no significant difference). The exploration noise standard deviation σ is typically decayed over training. [2]"
+    },
+    {
+      "heading": "TD3: Addressing DDPG's Overestimation",
+      "body": "Fujimoto, van Hoof & Meger (2018) identified that DDPG suffers from systematic overestimation of Q-values (same problem as DQN, but worse because the actor directly maximises the overestimated Q). TD3 (Twin Delayed DDPG) introduces three fixes: (1) Clipped double Q-learning: train two critics Q_1, Q_2 and use min(Q_1, Q_2) as the TD target — reduces overestimation. (2) Delayed policy updates: update the actor every 2 critic updates — stabilises the policy when the Q-function is still noisy. (3) Target policy smoothing: add noise to the target action ã = μ_{θ'}(s') + ε, ε ~ N(0, σ²), clipped to [-c, c] — smooths the Q-function, preventing the actor from exploiting sharp Q-value peaks. TD3 outperforms DDPG on all standard MuJoCo benchmarks and is more stable. [2]"
+    },
+    {
+      "heading": "SAC: Maximum Entropy Formulation",
+      "body": "Haarnoja et al. (2018) further improved on TD3 with Soft Actor-Critic (SAC): replace the deterministic policy with a stochastic policy π_θ(a|s) = N(μ_θ(s), σ²_θ(s)) and add an entropy term to the objective: J(π) = E[Σ_t r_t + α·H(π(·|s_t))], where H is policy entropy and α is the temperature (learnable). The entropy term: (1) encourages exploration (high entropy = try many actions); (2) prevents premature convergence; (3) makes the algorithm more robust to hyperparameters. SAC also uses clipped double Q-learning and soft target updates. SAC achieves state-of-the-art on MuJoCo with fewer hyperparameters than TD3 and better sample efficiency than PPO. For RLHF, both PPO and SAC have been applied; PPO is more common due to its simpler implementation in the discrete/language setting. [2]"
+    }
+  ],
+  "takeaways": [
+    "DPG theorem: ∇_θ J = E[∇_θ μ_θ(s) · ∇_a Q(s,a)|_{a=μ(s)}]; train deterministic policy via gradient through critic. [1]",
+    "Off-policy + replay buffer: sample efficiency advantage over PPO; each transition reused many times. [1]",
+    "Four networks: actor + target actor + critic + target critic; soft updates θ' ← τθ + (1-τ)θ' with τ=0.005. [1]",
+    "TD3 fixes DDPG: clipped double-Q (min of two critics) + delayed actor updates + target smoothing. [2]",
+    "SAC extends to stochastic policy + entropy bonus: best sample efficiency on MuJoCo; state-of-the-art off-policy. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why does DDPG struggle with sparse rewards, and how is this addressed?",
+      "a": "DDPG and other TD-based methods struggle with sparse rewards (e.g., a robot that only receives reward=1 when it achieves a goal and 0 otherwise) because the Q-function receives no learning signal until a goal is reached. With a random initial policy, the agent may never reach the goal, leaving the Q-function permanently at 0. Approaches: (1) Hindsight Experience Replay (HER, Andrychowicz et al., 2017): replay failed trajectories as if the actual final state was the goal. If the robot was trying to reach position A but ended at B, re-label the transition with goal=B and reward=1. HER dramatically improves DDPG on sparse-reward manipulation tasks (OpenAI Gym robotics: FetchReach, FetchPush). (2) Reward shaping: add auxiliary dense rewards (distance to goal) to guide the policy — requires domain knowledge. (3) Intrinsic motivation: add curiosity-based or count-based exploration bonuses to the sparse extrinsic reward. HER+DDPG achieves near-100% success on FetchPush (4-DOF arm pushing block to target) compared to <5% for DDPG alone."
+    },
+    {
+      "q": "What is the 'double Q-learning' trick and why does it reduce overestimation in DDPG/TD3?",
+      "a": "DQN's TD target max_{a'} Q(s',a';θ⁻) uses the max over Q-estimates. Due to estimation noise in Q, max of noisy values is biased upward — the same overestimation problem as in tabular Q-learning but amplified by function approximation. In actor-critic methods like DDPG, the overestimation is worse: the actor is explicitly trained to maximise Q, so it gravitates toward overestimated states. Over training, Q-values diverge upward. TD3's fix: train two independent critics Q_1 and Q_2 with independent parameters (and independent target networks) using the same transitions. The TD target uses the minimum: y = r + γ·min(Q_1(s', ã), Q_2(s', ã)), where ã is the target actor's action. Why does min help? The minimum of two independent overestimates is a less biased estimator than either alone — specifically, E[min(Q_1, Q_2)] < E[max(Q_1, Q_2)], so the minimum underestimates on average rather than overestimates. Empirically, TD3's clipped double-Q reduces Q-value error by ~3× compared to DDPG on HalfCheetah."
+    }
+  ],
+  "sources": [
+    {
+      "label": "Lillicrap et al. (2016) — Continuous control with deep reinforcement learning (DDPG), ICLR 2016 arXiv:1509.02971",
+      "url": "https://arxiv.org/abs/1509.02971"
+    },
+    {
+      "label": "Fujimoto, van Hoof & Meger (2018) — Addressing Function Approximation Error in Actor-Critic Methods (TD3), ICML 2018 arXiv:1802.09477",
+      "url": "https://arxiv.org/abs/1802.09477"
+    }
+  ]
+}

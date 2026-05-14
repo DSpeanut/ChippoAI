@@ -34,6 +34,14 @@
     {
       "heading": "Evaluation Dataset Construction and Management",
       "body": "A quality evaluation dataset is the foundation of reliable evaluation. Construction: (1) Golden examples — manually curated (question, expected_answer, relevant_chunk_ids); minimum 100 examples, covering edge cases; (2) Synthetic generation — LLM generates Q&A pairs from documents (RAGAS TestsetGenerator: generates simple, reasoning, and multi-context questions); (3) Production sampling — sample real user queries with known-good answers from production logs; validates against actual usage distribution. Dataset management: version the dataset (evaluation dataset v1 was last updated Jan 2025), track metrics per dataset version to separate dataset changes from model changes, maintain a held-out test set (never used for prompt development) for final model benchmarking. [1]"
+    },
+    {
+      "heading": "G-Eval and Custom Metric Design",
+      "body": "G-Eval (Liu et al. 2023) enables arbitrary quality dimensions: provide evaluation criteria in natural language and chain-of-thought evaluation steps; the judge LLM reasons step-by-step and outputs a score. Specific, measurable criteria outperform vague ones by 20-30% in human-LLM agreement — 'Does the response cite specific evidence from the context?' beats 'Is the response good?'. Domain customisation example: a Financial Accuracy metric might specify 'Verify all numerical figures match the provided context, check date accuracy, flag unsupported claims'. Calibration: measure judge agreement with human labels on 50 examples before deploying — target Spearman rho > 0.7. [2]"
+    },
+    {
+      "heading": "Evaluation Speed, Cost, and Coverage Tradeoffs",
+      "body": "The evaluation trilemma — fast, cheap, accurate — requires a tiered strategy: (1) Rule-based (exact match, ROUGE): < 1ms, ~$0, poor for open-ended outputs — use for structured outputs and classification; (2) Embedding similarity (BERTScore): ~50ms, ~$0.0001/query, moderate accuracy — good for paraphrase detection at scale; (3) LLM-as-judge (RAGAS, DeepEval): 2-5s, $0.01-0.05/query, high accuracy for open-ended quality. Recommended tiered strategy: rule checks in pre-commit (instant), LLM judge in CI on N=100 golden dataset (~$5/run), human review before major releases. Cost tip: use gpt-4o-mini as judge for routine checks (80% cheaper, ~90% agreement on most metrics). [1]"
     }
   ],
   "takeaways": [
@@ -54,7 +62,18 @@
     }
   ],
   "sources": [
-    { "label": "Es et al. (2023) — RAGAS: Automated Evaluation of Retrieval Augmented Generation", "url": "https://arxiv.org/abs/2309.15217" },
-    { "label": "DeepEval Documentation — LLM evaluation framework", "url": "https://docs.confident-ai.com/" }
-  ]
+    {
+      "label": "Es et al. (2023) — RAGAS: Automated Evaluation of Retrieval Augmented Generation",
+      "url": "https://arxiv.org/abs/2309.15217"
+    },
+    {
+      "label": "DeepEval Documentation — LLM evaluation framework",
+      "url": "https://docs.confident-ai.com/"
+    }
+  ],
+  "visualizationType": "llm-eval-viz",
+  "codeSnapshot": {
+    "label": "llm_eval.py",
+    "code": "from deepeval import evaluate\nfrom deepeval.metrics import GEval, HallucinationMetric, AnswerRelevancyMetric\nfrom deepeval.test_case import LLMTestCase\n\n# Define a test case\ntest_case = LLMTestCase(\n    input=\"What is RAG?\",\n    actual_output=\"RAG combines retrieval with LLM generation for grounded answers.\",\n    expected_output=\"RAG augments LLM responses with retrieved documents.\",\n    retrieval_context=[\"RAG = Retrieval-Augmented Generation\", \"RAG retrieves context before generating.\"],\n)\n\n# Standard OOTB metrics\nhallucination = HallucinationMetric(threshold=0.5)\nrelevancy     = AnswerRelevancyMetric(threshold=0.7)\n\n# Custom G-Eval metric for domain-specific quality\ncoherence = GEval(\n    name=\"Coherence\",\n    criteria=\"Is the response logically coherent and technically accurate?\",\n    evaluation_steps=[\n        \"Check if the response flows logically from start to finish.\",\n        \"Verify there are no contradictions or non-sequiturs.\",\n        \"Confirm technical terms are used correctly.\",\n    ],\n    threshold=0.7,\n)\n\nresults = evaluate(test_cases=[test_case], metrics=[hallucination, relevancy, coherence])\nfor m in results[0].metrics_data:\n    print(f\"{m.name}: {m.score:.2f} ({'PASS' if m.success else 'FAIL'})\")"
+  }
 }

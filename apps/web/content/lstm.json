@@ -1,0 +1,75 @@
+{
+  "visualizationType": "lstm-viz",
+  "codeSnapshot": {
+    "label": "lstm_sentiment.py",
+    "code": "import torch\nimport torch.nn as nn\n\nclass LSTMClassifier(nn.Module):\n    def __init__(self, vocab_size: int, embed_dim: int, hidden_dim: int, n_classes: int):\n        super().__init__()\n        self.embed  = nn.Embedding(vocab_size, embed_dim, padding_idx=0)\n        self.lstm   = nn.LSTM(embed_dim, hidden_dim, num_layers=2,\n                              batch_first=True, dropout=0.3, bidirectional=True)\n        self.drop   = nn.Dropout(0.5)\n        self.fc     = nn.Linear(hidden_dim * 2, n_classes)  # *2 for bidirectional\n\n    def forward(self, x):                        # x: [B, seq_len]\n        emb = self.drop(self.embed(x))           # [B, seq_len, embed_dim]\n        out, (h_n, c_n) = self.lstm(emb)         # out: [B, seq_len, hidden*2]\n        # Use final hidden state from both directions\n        h_forward  = h_n[-2, :, :]              # last forward layer: [B, hidden]\n        h_backward = h_n[-1, :, :]              # last backward layer: [B, hidden]\n        h_cat = torch.cat([h_forward, h_backward], dim=1)  # [B, hidden*2]\n        return self.fc(self.drop(h_cat))         # [B, n_classes]\n\nmodel = LSTMClassifier(vocab_size=10000, embed_dim=128, hidden_dim=256, n_classes=2)\n\n# Fake batch: 32 sequences of length 50\nx = torch.randint(1, 10000, (32, 50))\nlogits = model(x)\nprint(f\"Output shape: {logits.shape}\")  # [32, 2]\n\nparams = sum(p.numel() for p in model.parameters())\nprint(f\"Total parameters: {params:,}\")"
+  },
+  "eli3": [
+    "An LSTM (Long Short-Term Memory) is an improved RNN that solves the 'telephone game' problem: vanilla RNNs forget information from early in the sequence. LSTMs add a special 'conveyor belt' called the cell state that can carry information across many steps without it being changed or forgotten.",
+    "Three gates control what happens to this cell state: the forget gate decides what to erase from memory, the input gate decides what new information to write in, and the output gate decides what to read out for the current prediction. These gates are learned by the network, so it can decide which information is important enough to remember over long distances.",
+    "The result: LSTMs can capture dependencies that span hundreds of timesteps — like knowing that a pronoun refers to a subject mentioned many sentences earlier — where vanilla RNNs would have completely forgotten the connection."
+  ],
+  "whenWhy": [
+    {
+      "title": "Sequence labelling and structured prediction",
+      "body": "Bidirectional LSTMs (BiLSTM) were the state-of-the-art for NER, POS tagging, chunking, and dependency parsing before Transformers. The BiLSTM reads the sequence in both directions, giving each token access to full left and right context. Adding a CRF (Conditional Random Field) output layer enforces structural constraints on tag sequences (e.g., a B-tag cannot follow an I-tag of a different type), improving structured prediction accuracy. The BiLSTM+CRF model (Lample et al., 2016) was the dominant NER architecture for several years."
+    },
+    {
+      "title": "Machine translation (seq2seq encoder-decoder)",
+      "body": "Multi-layer BiLSTM encoders + LSTM decoder with attention was the dominant neural machine translation architecture from 2015–2017, achieving large improvements over phrase-based statistical MT. The LSTM encoder reads the source sentence and produces a sequence of context vectors; the LSTM decoder generates the target sentence one token at a time. Bahdanau attention (2015) allowed the decoder to selectively attend to different encoder states, solving the fixed-context-vector bottleneck and enabling accurate translation of long sentences."
+    },
+    {
+      "title": "Time series forecasting and anomaly detection",
+      "body": "LSTMs remain widely used for multivariate time series forecasting (demand forecasting, financial time series, IoT sensor data) where variable-length dependencies across many timesteps are important. For anomaly detection, an LSTM autoencoder is trained on normal sequences; high reconstruction error signals anomalous patterns. LSTMs outperform standard RNNs and simple Transformers on short-to-medium time series (< 500 steps) because the inductive bias of recurrence fits the local temporal structure well."
+    }
+  ],
+  "deepDiveIntro": [
+    "The LSTM (Hochreiter & Schmidhuber, 1997) introduces a cell state C_t alongside the hidden state h_t. The cell state is a linear highway that information can flow through with only multiplicative (gating) interactions — minimising gradient vanishing. Three sigmoid gates control information flow: forget gate f_t ∈ (0,1), input gate i_t ∈ (0,1), and output gate o_t ∈ (0,1). The equations are: f_t = σ(W_f[h_{t-1}, x_t] + b_f); i_t = σ(W_i[h_{t-1}, x_t] + b_i); C̃_t = tanh(W_C[h_{t-1}, x_t] + b_C); C_t = f_t ⊙ C_{t-1} + i_t ⊙ C̃_t; o_t = σ(W_o[h_{t-1}, x_t] + b_o); h_t = o_t ⊙ tanh(C_t). Notation: [h_{t-1}, x_t] denotes concatenation; ⊙ element-wise product. [1]",
+    "The cell state update C_t = f_t ⊙ C_{t-1} + i_t ⊙ C̃_t is the key to LSTM's long-range memory. If f_t ≈ 1 and i_t ≈ 0 (forget gate open, input gate closed), C_t ≈ C_{t-1} — the cell state is preserved unchanged. The gradient of the loss with respect to C_{t-1} through this operation is simply f_t (a scalar in (0,1)) — not a product of weight matrices, as in the vanilla RNN. Over T steps, the gradient decays as ∏_t f_t, which can remain close to 1 if the forget gate stays open. This is the constant error carousel mechanism (Hochreiter & Schmidhuber, 1997): the LSTM maintains an approximately constant gradient through the cell state, enabling learning over hundreds of timesteps. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Gate Equations and Intuitions",
+      "body": "Forget gate f_t: learned to decide 'what to clear from the cell state'. Example: in language modelling, when the RNN reads a new sentence, f_t should reset cell state values encoding the previous sentence's subject. If f_t ≈ 1 for a particular cell dimension, that information persists; f_t ≈ 0 erases it. Input gate i_t and candidate C̃_t: learned to decide 'what new information to write to cell state'. i_t gates which dimensions to update; C̃_t is the candidate update value (tanh-bounded). This two-step write is more selective than the vanilla RNN, which updates all dimensions at every step. Output gate o_t: learned to decide 'what to expose as the hidden state h_t for the current step'. Not all cell state information is relevant for the current output — o_t masks the cell state exposure. [1]"
+    },
+    {
+      "heading": "Gradient Flow Through the Cell State",
+      "body": "The gradient of the loss at time T with respect to the cell state at time t is: ∂L/∂C_t = ∂L/∂C_T · ∏_{k=t+1}^{T} f_k. This is just a product of forget gate values — no weight matrices, no tanh derivatives. If f_k ≈ 1 for all k (forget gate open), the gradient passes unchanged from T to t. This is why LSTMs learn much longer dependencies than vanilla RNNs. Compare to the RNN gradient ∂L/∂h_t ∝ ∏ W_h · tanh'(z), which vanishes exponentially. The LSTM does not completely eliminate vanishing gradients (the gradient through h_t still involves W matrices), but the cell state provides an alternative high-quality pathway for long-range gradient flow. [1]"
+    },
+    {
+      "heading": "Parameter Count and LSTM vs GRU",
+      "body": "An LSTM has 4 gates (f, i, C̃, o), each with weight matrices W ∈ ℝ^{n×(n+d)} (concatenation of hidden and input): 4·n·(n+d) weight parameters, plus 4n biases. Total: 4n(n+d+1). For n=256, d=128: 4·256·(256+128+1) = 4·256·385 ≈ 394k parameters per layer. A GRU has only 3 gates: ∼3n(n+d+1) ≈ 295k — 25% fewer parameters for the same hidden size. Empirically, LSTM and GRU achieve similar accuracy on most tasks; GRU is faster to train and preferred when compute is limited. The choice is largely empirical — try both with similar parameter counts and compare validation performance. [2]"
+    },
+    {
+      "heading": "Practical LSTM Training Tips",
+      "body": "Key hyperparameters: hidden_dim (128–1024, typical 256–512), num_layers (1–4, with dropout between layers), dropout (0.2–0.5 between layers), bidirectional (doubles hidden dim, use for encoders not decoders). Initialisation: default PyTorch initialisation (uniform ±1/√n) works well; bias initialisation for forget gate to 1.0 (Jozefowicz et al., 2015) encourages remembering by default, useful for long sequences. Gradient clipping: max_norm=5.0 is standard for LSTM training. Learning rate: Adam 1e-3 to 1e-4, or SGD with careful tuning. Sequence length management: use pack_padded_sequence to handle variable-length batches efficiently and avoid computing over padding tokens. [1]"
+    }
+  ],
+  "takeaways": [
+    "LSTM adds cell state C_t: f_t⊙C_{t-1} + i_t⊙C̃_t; gradient through C is ∏f_k, avoiding the W matrix product vanishing. [1]",
+    "Forget gate erases, input gate writes, output gate reads — learned gating enables selective long-term memory. [1]",
+    "LSTM gradient through cell state: ∏f_k (product of forget gates) vs RNN: ∏W_h·tanh'(z) — much less vanishing. [1]",
+    "GRU (Cho et al., 2014) has 25% fewer parameters with comparable accuracy — preferred when compute is limited. [2]",
+    "Initialise forget gate bias to 1.0 to encourage memory retention by default; use gradient clipping (max_norm=5). [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "What is the difference between h_t (hidden state) and C_t (cell state) in LSTM?",
+      "a": "C_t is the LSTM's long-term memory: a linear highway that can carry information over many timesteps with only multiplicative (gating) interactions, preserving gradients. It is not directly exposed to the outside — h_t is. h_t is the LSTM's short-term working memory: filtered through o_t⊙tanh(C_t), it is the value actually passed to downstream layers (next LSTM layer, output projection). h_t is bounded by tanh (∈(-1,1)); C_t is unbounded. Think of C_t as a conveyor belt that can hold many pieces of information simultaneously, and h_t as what the network chooses to show at the current step. At inference, only h_t is passed to the output layer; C_t is internal memory."
+    },
+    {
+      "q": "When should you use a bidirectional LSTM vs unidirectional?",
+      "a": "Use bidirectional LSTM (BiLSTM) when: (1) the full sequence is available at prediction time (offline processing) — NER, sentiment classification, translation encoders, BERT-style encoders; (2) right context is informative — understanding whether 'bank' means river bank or financial bank requires seeing words after it. Use unidirectional LSTM when: (1) strict causality is required — language modelling (predict next token, cannot see future), online/real-time processing, speech synthesis, autoregressive generation; (2) the decoder in seq2seq models (decoder must generate tokens left-to-right without future context). Bidirectional approximately doubles the parameter count and compute — worth it for encoders, but not applicable for decoders."
+    }
+  ],
+  "sources": [
+    {
+      "label": "Hochreiter & Schmidhuber (1997) — Long Short-Term Memory, Neural Computation 9(8)",
+      "url": "https://doi.org/10.1162/neco.1997.9.8.1735"
+    },
+    {
+      "label": "Gers, Schmidhuber & Cummins (2000) — Learning to Forget: Continual Prediction with LSTM, Neural Computation 12(10)",
+      "url": "https://doi.org/10.1162/089976600300015015"
+    }
+  ]
+}
