@@ -1,0 +1,71 @@
+{
+  "visualizationType": "training-curve",
+  "codeSnapshot": {
+    "label": "sft.py",
+    "code": "import torch\nimport torch.nn as nn\nfrom datasets import Dataset\nfrom transformers import AutoTokenizer, AutoModelForCausalLM, TrainingArguments\nfrom trl import SFTTrainer, DataCollatorForCompletionOnlyLM\n\n# SFT with HuggingFace TRL (most common approach)\nmodel_name = 'meta-llama/Llama-2-7b-hf'\ntokenizer = AutoTokenizer.from_pretrained(model_name)\nmodel = AutoModelForCausalLM.from_pretrained(\n    model_name,\n    torch_dtype=torch.bfloat16,\n    device_map='auto'\n)\n\n# Training data format (chat template)\ndata = [\n    {'instruction': 'Explain backpropagation in simple terms.',\n     'response': 'Backpropagation is...'}\n]\n\n# Format as instruction-following pairs\ndef format_prompt(example):\n    return f\"### Instruction:\\n{example['instruction']}\\n\\n### Response:\\n{example['response']}\"\n\ndataset = Dataset.from_list([\n    {'text': format_prompt(d)} for d in data\n])\n\n# Loss on completion tokens only (not the instruction)\n# DataCollatorForCompletionOnlyLM masks out instruction tokens\ncollator = DataCollatorForCompletionOnlyLM(\n    response_template='### Response:',\n    tokenizer=tokenizer\n)\n\ntraining_args = TrainingArguments(\n    output_dir='./sft_output',\n    per_device_train_batch_size=4,\n    gradient_accumulation_steps=4,  # effective batch=16\n    num_train_epochs=3,\n    learning_rate=2e-5,             # low LR for fine-tuning\n    lr_scheduler_type='cosine',\n    warmup_ratio=0.1,\n    bf16=True,\n    weight_decay=0.01,\n    max_seq_length=2048,\n    logging_steps=10,\n)\n\ntrainer = SFTTrainer(\n    model=model, tokenizer=tokenizer,\n    train_dataset=dataset,\n    data_collator=collator,\n    args=training_args,\n)"
+  },
+  "eli3": [
+    "After pre-training, a language model knows a lot about the world but it's not helpful — it just completes text. Supervised Fine-tuning (SFT) teaches it to be a helpful assistant. You show it thousands of examples of (question, good answer) pairs, and it learns to produce answers in that helpful format.",
+    "Think of pre-training as giving someone all the knowledge in the world (by reading everything), and SFT as teaching them how to behave in a conversation — answer questions clearly, follow instructions, be polite. The knowledge was already there; SFT teaches the format and style.",
+    "SFT uses the same cross-entropy loss as pre-training, but only on the response tokens — not the instruction. You don't want the model to 'learn' to predict the questions; you want it to learn to produce good answers given a question."
+  ],
+  "whenWhy": [
+    {
+      "title": "Converting a base model into an instruction-following assistant",
+      "body": "Every chat LLM (ChatGPT, LLaMA-Chat, Claude, Gemma-IT) uses SFT as the first post-pre-training step. A base model (LLaMA-7B) trained only via SFT on high-quality instruction data (Alpaca, WizardLM, ShareGPT) becomes significantly more useful for chat and task completion, without any RL-based alignment. SFT is the minimum viable transformation from base to assistant."
+    },
+    {
+      "title": "Domain-specific fine-tuning",
+      "body": "SFT on domain data adapts a general model to specialised tasks: medical QA, legal document analysis, code generation, financial analysis. Only 1K–100K high-quality (instruction, response) pairs are needed for significant improvement in a new domain. The key: instruction diversity matters more than volume — diverse tasks prevent catastrophic forgetting and produce general domain experts."
+    },
+    {
+      "title": "LoRA SFT: fine-tuning without full model updates",
+      "body": "Full SFT of a 7B model requires ~80GB GPU memory. LoRA SFT adds small adapter matrices (rank 8–64) and trains only those: ~10M trainable params instead of 7B. Memory: ~20GB for 7B LoRA SFT with QLoRA (4-bit quantised base + bf16 adapters). QLoRA (Dettmers et al., 2023) makes 7B SFT feasible on a single 24GB GPU."
+    }
+  ],
+  "deepDiveIntro": [
+    "SFT loss: L = −(1/|R|) Σₜ∈R log p_θ(wₜ|w₁,...,wₜ₋₁) where R = response token positions (not instruction tokens). This is the same causal LM objective, but the loss is masked (set to 0) for instruction tokens. The model learns to predict responses conditioned on the instruction prefix. Trained with teacher forcing: ground-truth response tokens are given as input at each position, not model-generated tokens. [1]",
+    "Data quality is the dominant factor in SFT performance. LIMA (Zhou et al., 2023) showed that 1000 carefully curated (instruction, response) pairs yields a model competitive with models trained on 50K+ examples of lower quality. The authors argued that alignment knowledge is 'shallow' — the model already has the knowledge from pre-training; SFT just teaches the format and style. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Instruction Masking",
+      "body": "SFT loss masks out instruction token positions. Full sequence: [INST] What is backpropagation? [/INST] Backpropagation is... [EOS]. Loss computed only on response tokens: 'Backpropagation is... [EOS]'. Masking: set label = -100 for instruction tokens (PyTorch CE loss ignores -100 targets). Without masking: the model learns to predict instruction text, which is wasteful and can degrade performance. DataCollatorForCompletionOnlyLM (TRL library) handles this automatically by finding the response template delimiter. [1]"
+    },
+    {
+      "heading": "Hyperparameters",
+      "body": "LR: 1e-5 to 2e-4 (much lower than pre-training 1e-4 to 3e-4). Epochs: 1–5 (more epochs → catastrophic forgetting of pre-training knowledge). Batch size: 32–128 (gradient accumulation to achieve if VRAM limited). Weight decay: 0.01–0.1. Warmup: 1–10% of steps. Max sequence length: 2048–8192 depending on task. The main risk: too many epochs → model overfits to SFT format and loses pre-training knowledge (lower-quality outputs for tasks not in SFT data). [1]"
+    },
+    {
+      "heading": "Data Format and Quantity",
+      "body": "Common SFT datasets: Alpaca (52K synthetic GPT-3.5 instructions), ShareGPT (90K human ChatGPT conversations), OpenHermes (1M GPT-4 instructions), WizardLM (diverse instruction evolution). Data format: instruction + input + response (Alpaca format) or multi-turn conversation (ShareGPT format). LIMA (1000 examples): 30% factual QA, 20% reasoning, 20% code, 20% instruction, 10% brainstorming. Key: response quality > response quantity. Filter by: response length (too short = lazy), format correctness, factual accuracy if possible. [2]"
+    },
+    {
+      "heading": "Chat Templates",
+      "body": "Each model family uses a specific chat template to format multi-turn conversations. LLaMA-2: [INST] instruction [/INST] response [EOS] <<SYS>> system [/SYS]. Mistral: [INST] instruction [/INST] response [EOS]. ChatML (OpenAI format): <|im_start|>user\\ninstruction<|im_end|>\\n<|im_start|>assistant\\nresponse. Mixing templates during SFT causes lower quality — the model sees inconsistent formatting. Always use the base model's native template when fine-tuning. [1]"
+    }
+  ],
+  "youtubeLabel": "Supervised Fine-Tuning of LLMs — RLHF Explained",
+  "youtubeUrl": "https://www.youtube.com/embed/bZQun8Y4L2A",
+  "takeaways": [
+    "Loss only on response tokens (instruction tokens masked to -100): L = −Σₜ∈R log p_θ(wₜ|context). [1]",
+    "LR: 1e-5 to 2e-4; 1–5 epochs; warmup 1–10% of steps. [1]",
+    "LIMA: 1000 high-quality examples often beats 52K low-quality — data quality > quantity. [2]",
+    "LoRA/QLoRA: fine-tune adapters only (~10M params) instead of 7B — 24GB GPU feasible. [1]",
+    "Chat template consistency is critical — mixing formats degrades output quality. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "How much catastrophic forgetting happens during SFT?",
+      "a": "Catastrophic forgetting (loss of pre-training knowledge) is the primary risk of SFT. Measured by performance on standard benchmarks (MMLU, HellaSwag) before and after SFT. Factors: (1) Learning rate: higher LR → more forgetting. (2) Number of epochs: more epochs → more forgetting. (3) Data diversity: SFT on only one narrow domain causes forgetting of other domains. Mitigations: replay (mix a small fraction of pre-training data into SFT), low LR (1e-5), LoRA (adapters only, base unchanged), elastic weight consolidation (EWC, penalises drift from pre-training weights). In practice, 1–3 epochs with lr≤2e-5 causes minimal forgetting on standard benchmarks."
+    },
+    {
+      "q": "Is teacher forcing a limitation during SFT?",
+      "a": "Teacher forcing (using ground-truth tokens as input during training) creates a train-test discrepancy: at inference, the model generates its own tokens and any early error propagates (error accumulation). During training, teacher forcing prevents this by providing correct context even after a mistake. Solutions: scheduled sampling (with probability p, use model prediction instead of ground truth during training; start p=0, increase over training); DPO (RLHF without RL) implicitly addresses this by training on the difference between preferred and rejected trajectories. In practice, teacher forcing works well for short responses but error accumulation can be noticeable for very long (10K+ token) generation."
+    }
+  ],
+  "sources": [
+    { "label": "Ouyang et al. (2022) — Training language models to follow instructions with human feedback (InstructGPT) arXiv:2203.02155", "url": "https://arxiv.org/abs/2203.02155" },
+    { "label": "Zhou et al. (2023) — LIMA: Less Is More for Alignment arXiv:2305.11206", "url": "https://arxiv.org/abs/2305.11206" }
+  ]
+}

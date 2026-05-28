@@ -1,0 +1,66 @@
+{
+  "visualizationType": "architecture-diagram",
+  "codeSnapshot": {
+    "label": "llm_as_judge.py",
+    "code": "from openai import OpenAI\n\n# LLM-as-Judge pattern (Zheng et al., 2023 — MT-Bench)\n# Use a strong LLM (GPT-4, Claude) to evaluate another LLM's outputs\n\nclient = OpenAI()\n\n# ---- Pointwise scoring ----\nPOINTWISE_PROMPT = \"\"\"\nYou are an expert evaluator. Rate the following response on a scale of 1-10.\n\n[Question]\n{question}\n\n[Response]\n{response}\n\nCriteria:\n- Accuracy (is the information correct?)\n- Helpfulness (does it address the question?)\n- Clarity (is it well-written and easy to understand?)\n\nProvide your score as a JSON object: {{\"score\": <1-10>, \"reasoning\": \"<brief explanation>\"}}\n\"\"\"\n\ndef pointwise_score(question: str, response: str, judge_model: str = 'gpt-4') -> dict:\n    prompt = POINTWISE_PROMPT.format(question=question, response=response)\n    result = client.chat.completions.create(\n        model=judge_model,\n        messages=[{'role': 'user', 'content': prompt}],\n        response_format={'type': 'json_object'}\n    )\n    return eval(result.choices[0].message.content)\n\n# ---- Pairwise comparison ----\nPAIRWISE_PROMPT = \"\"\"\nCompare these two responses to the same question.\n\n[Question]\n{question}\n\n[Response A]\n{response_a}\n\n[Response B]\n{response_b}\n\nWhich response is better? Answer with JSON:\n{{\"winner\": \"A\" or \"B\" or \"tie\", \"reasoning\": \"<explanation>\"}}\n\"\"\"\n\ndef pairwise_compare(question, response_a, response_b, judge_model='gpt-4'):\n    \"\"\"Compare two responses — randomise order to mitigate position bias.\"\"\"\n    import random\n    if random.random() < 0.5:  # swap A and B to detect position bias\n        prompt = PAIRWISE_PROMPT.format(\n            question=question, response_a=response_b, response_b=response_a)\n        swap = True\n    else:\n        prompt = PAIRWISE_PROMPT.format(\n            question=question, response_a=response_a, response_b=response_b)\n        swap = False\n    result = client.chat.completions.create(\n        model=judge_model,\n        messages=[{'role': 'user', 'content': prompt}]\n    )\n    winner = result.choices[0].message.content\n    if swap and winner == 'A': return 'B'\n    if swap and winner == 'B': return 'A'\n    return winner  # 'A', 'B', or 'tie'"
+  },
+  "eli3": [
+    "LLM-as-Judge uses a powerful AI (like GPT-4) to evaluate the outputs of another AI. Instead of asking humans 'which answer is better?', you ask GPT-4 to decide. This is faster and cheaper than human evaluation while correlating highly with human judgments.",
+    "There are two main approaches: pointwise scoring (rate a single response 1-10) and pairwise comparison (which of two responses is better, A or B?). Pairwise comparison tends to be more reliable because it's easier to compare than to score in isolation.",
+    "The big caveat: AI judges have biases. They prefer longer responses, often prefer their own outputs (self-enhancement bias), and tend to favour whatever is presented first (position bias). Good evaluation design randomises response order and uses multiple judge calls to reduce these biases."
+  ],
+  "whenWhy": [
+    {
+      "title": "Scalable evaluation where human eval is too slow",
+      "body": "Human evaluation of LLM outputs requires recruiting annotators, running annotation interfaces, and waiting days-to-weeks for results. LLM-as-Judge scales to thousands of evaluations in minutes. MT-Bench (Zheng et al., 2023) showed GPT-4-as-judge achieves >80% agreement with human expert judgments — comparable to human inter-annotator agreement (~83%). This makes LLM-as-judge viable as a proxy for human evaluation in iterative development, model selection, and prompt engineering."
+    },
+    {
+      "title": "Chatbot Arena and ELO ranking",
+      "body": "Chatbot Arena (LMSYS, 2023) uses pairwise LLM-as-judge and human evaluation to produce ELO rankings of LLMs. Users interact with two anonymous models and vote for the better response — producing crowdsourced pairwise comparisons that rank models by a Bradley-Terry ELO rating. This is now the leading real-world benchmark: GPT-4o, Claude 3.5 Sonnet, and Gemini Ultra are ranked by ELO from millions of pairwise comparisons. ELO rating: Δ_ELO = K·(actual_result - expected_result) where expected = 1/(1+10^((ELO_B-ELO_A)/400))."
+    },
+    {
+      "title": "Automated reward model for alignment training",
+      "body": "LLM-as-Judge is used in RLAIF (Constitutional AI, Google's RLAIF paper) as the preference labeler for reward model training. Instead of human annotators choosing between pairs, a constitutional model judges which response better follows the principles. This scales preference data collection from thousands (human) to millions (AI) of labeled pairs, enabling larger-scale RLHF. Quality concern: AI labels are noisier than expert human labels but much cheaper — the tradeoff is usually worthwhile for alignment training."
+    }
+  ],
+  "deepDiveIntro": [
+    "MT-Bench (Zheng et al., 2023): 80 multi-turn questions across 8 categories (writing, roleplay, reasoning, math, coding, extraction, STEM, humanities). GPT-4 scores responses 1-10 per category. Evaluation: compare GPT-4 judge scores to human expert judgments on 3K+ response evaluations. Result: GPT-4 judge agreement with human experts ≈ 0.81 Spearman correlation — significantly higher than GPT-3.5 judge (0.74) and comparable to human-human agreement (0.83). Key finding: GPT-4-as-judge is reliable for multi-turn instruction following evaluation. [1]",
+    "Pairwise comparison with swap: evaluate (A,B) and (B,A) order — if judge says B wins when presented first but A wins when presented second, the result is inconsistent (position bias). With swapping: a verdict is only accepted if consistent in both orderings, otherwise marked as 'inconsistent.' This reduces position bias at the cost of 2× judge calls. Zheng et al. found GPT-4 position bias rate of ~6% for adjacent quality differences — low but non-negligible. [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "MT-Bench Evaluation Framework",
+      "body": "MT-Bench structure: 80 questions × 2 turns = 160 total questions. Turn 1: initial question. Turn 2: follow-up that requires memory and coherence. Scoring: GPT-4 scores each response 1-10 with chain-of-thought reasoning before the score. Final MT-Bench score: mean over all 80 questions × 2 turns. Published MT-Bench scores (as of 2023): GPT-4: 8.99, Claude-v1: 7.90, GPT-3.5: 7.94, LLaMA-65B: 5.58. Multi-turn capability gap: most open-source models score 1-2 points lower on turn 2 than turn 1, indicating weak coherence across turns. [1]"
+    },
+    {
+      "heading": "Biases in LLM-as-Judge",
+      "body": "Documented biases in LLM judges: (1) Position bias: judges prefer the first presented response (~60% win rate for position A in some models). Fix: swap A/B order and aggregate. (2) Length bias: longer responses get higher scores even when content is similar. (3) Self-enhancement bias: models rate their own outputs higher (~1-2 points on a 1-10 scale). Fix: use a different judge model. (4) Verbosity vs quality: GPT-4 sometimes rates verbose mediocre responses above concise good responses. (5) Style over substance: well-formatted markdown responses may score higher than plain-text equivalents of equal quality. Mitigation: explicit scoring criteria in the judge prompt, few-shot examples of good/bad ratings. [1]"
+    },
+    {
+      "heading": "ELO Rating for Model Comparison",
+      "body": "ELO (Elo) system: each model has a rating. After each pairwise comparison: winner gains points, loser loses points proportional to the upset. E(A wins) = 1/(1 + 10^((R_B - R_A)/400)). Update: R_A ← R_A + K·(1 - E(A wins)) if A wins; R_A ← R_A + K·(0 - E(A wins)) if A loses. K=32 is standard. ELO converges after ~1000 comparisons per model. Chatbot Arena uses ELO to rank 50+ models from 1M+ human pairwise comparisons. Limitation: ELO assumes a total order (transitivity) — if A>B and B>C then A>C — which may not hold across different task types. [1]"
+    }
+  ],
+  "youtubeLabel": "LLM-as-Judge: Automating LLM Evaluation with GPT-4",
+  "youtubeUrl": "https://www.youtube.com/embed/HjgMJZhFTlY",
+  "takeaways": [
+    "GPT-4-as-judge achieves ~81% agreement with human experts on MT-Bench — comparable to human-human agreement. [1]",
+    "Pairwise comparison more reliable than pointwise scoring — easier to judge relative quality. [1]",
+    "Key biases: position bias, length bias, self-enhancement — mitigate by swapping order and explicit criteria. [1]",
+    "ELO rating aggregates pairwise comparisons into a ranking: E(A)=1/(1+10^{(R_B−R_A)/400}). [1]",
+    "Used in RLAIF: AI-labeled preference pairs replace human labelers for reward model training. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "When does LLM-as-Judge fail to correlate with human judgment?",
+      "a": "LLM-as-Judge fails when: (1) Domain expertise required — GPT-4 cannot reliably judge highly technical content (advanced mathematics, rare domain knowledge, medical diagnosis) where human expert judgment is needed. (2) Safety/harmlessness evaluation — judges may rate harmful-but-helpful responses highly. (3) Factuality with hallucinations — GPT-4 can't always detect subtle factual errors (hallucinations in the evaluated response may not be caught). (4) Long-form creative evaluation — aesthetic judgments about prose style, narrative structure, and originality are inconsistent across judge calls. (5) Evaluating outputs from the judge model itself — self-enhancement bias is substantial. Best practice: LLM-as-judge for helpfulness/coherence; human eval for factuality, safety, and specialized domains."
+    },
+    {
+      "q": "How do you calibrate LLM-as-Judge scores across different tasks?",
+      "a": "LLM-as-judge scores are not well-calibrated across tasks: a score of 7/10 on coding may indicate different absolute quality than 7/10 on writing. Calibration approaches: (1) Anchor examples — include reference responses at specific quality levels (1=unusable, 5=adequate, 10=excellent) with explanation in the judge prompt. (2) Relative scoring — always do pairwise comparison against a known baseline (e.g., GPT-3.5) rather than absolute scores. (3) Category-specific rubrics — different criteria for each task category (math: is the answer correct? writing: is it engaging and grammatically correct?). (4) Score normalisation — z-score judge outputs within each category. MT-Bench uses category-specific scoring with example anchors to improve calibration."
+    }
+  ],
+  "sources": [
+    { "label": "Zheng et al. (2023) — Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena arXiv:2306.05685", "url": "https://arxiv.org/abs/2306.05685" }
+  ]
+}

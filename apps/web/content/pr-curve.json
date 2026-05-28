@@ -1,0 +1,67 @@
+{
+  "visualizationType": "architecture-diagram",
+  "codeSnapshot": {
+    "label": "pr_curve.py",
+    "code": "import numpy as np\nfrom sklearn.metrics import (\n    precision_recall_curve, average_precision_score,\n    PrecisionRecallDisplay\n)\nfrom sklearn.datasets import make_classification\nfrom sklearn.linear_model import LogisticRegression\n\n# PR curve for imbalanced binary classification\nX, y = make_classification(n_samples=5000, n_features=20,\n                            weights=[0.95, 0.05],  # 5% positive (imbalanced)\n                            random_state=42)\nclf = LogisticRegression()\nclf.fit(X[:4000], y[:4000])\nscores = clf.predict_proba(X[4000:])[:, 1]  # positive class prob\ny_test = y[4000:]\n\n# PR curve\nprecision, recall, thresholds = precision_recall_curve(y_test, scores)\n# precision[i] = precision at threshold thresholds[i]\n# recall[i] = recall at threshold thresholds[i]\n# Note: precision_recall_curve sorts by decreasing threshold\n# Last point: precision=1.0, recall=0.0 (always: sklearn appends this)\n\n# Average Precision (AP) = area under the PR curve\n# AP = Σₙ (Rₙ - Rₙ₋₁) · Pₙ  (interpolated trapezoid estimate)\nap = average_precision_score(y_test, scores)\nprint(f'Average Precision (PR-AUC): {ap:.4f}')\nprint(f'ROC-AUC: {__import__(\"sklearn.metrics\", fromlist=[\"roc_auc_score\"]).roc_auc_score(y_test, scores):.4f}')\n# For imbalanced data: PR-AUC is typically lower and more informative\n# A random classifier's baseline PR-AUC = positive prevalence (5% here = 0.05)\n# while ROC-AUC baseline is always 0.5\n\n# F1 at each threshold (choosing optimal threshold by F1)\nf1_scores = 2 * precision[:-1] * recall[:-1] / (precision[:-1] + recall[:-1] + 1e-9)\nbest_threshold_idx = np.argmax(f1_scores)\nbest_threshold = thresholds[best_threshold_idx]\nbest_f1 = f1_scores[best_threshold_idx]\nprint(f'Best F1: {best_f1:.4f} at threshold: {best_threshold:.3f}')\n\n# mAP (mean Average Precision) — used in object detection\n# For multi-class: average AP across classes\n# For detection: average AP across IoU thresholds (COCO: IoU=0.5:0.95)\n# mAP@0.5 is the most common detection benchmark metric"
+  },
+  "eli3": [
+    "The Precision-Recall curve shows how precision (accuracy of your positive predictions) trades off against recall (how many of the true positives you find) as you adjust your decision threshold. Every point on the curve is a different threshold.",
+    "The area under this curve (Average Precision) is a single number summarising classifier quality. Unlike ROC-AUC which has a baseline of 0.5, the PR baseline is equal to the positive class rate — so for a 5% positive rate, random performance gives AP≈0.05. This makes AP much more informative for rare events.",
+    "PR curves are particularly useful when you care about finding a rare positive class (fraud, disease, defects) and the number of true negatives is huge and irrelevant. ROC curves can look deceptively good in this setting, while PR curves honestly show how hard it is to find the positives."
+  ],
+  "whenWhy": [
+    {
+      "title": "Imbalanced classification with rare positives",
+      "body": "For imbalanced datasets (positive rate <10%), ROC-AUC can be misleadingly optimistic: many true negatives inflate the FPR denominator, keeping FPR low even with many false positives. Davis & Goadrich (2006) showed that in imbalanced settings, PR curves provide more informative evaluation — a model with AUC-ROC=0.98 can still have very poor precision at any useful recall level. Use PR-AUC (average precision) when: fraud detection, rare disease diagnosis, defect detection, information retrieval."
+    },
+    {
+      "title": "mAP for object detection benchmarks",
+      "body": "Mean Average Precision (mAP) is the standard metric for object detection (COCO, Pascal VOC). For each object class, the PR curve is computed by varying the detection confidence threshold, with a positive counted as TP only if IoU (intersection over union) with a ground-truth box ≥ threshold. COCO: mAP = mean of AP at IoU thresholds 0.5, 0.55, ..., 0.95 across all classes. This jointly evaluates classification confidence and localisation accuracy. A model with mAP@0.5:0.95=0.55 on COCO is considered strong (YOLOv8-x achieves ~0.53)."
+    },
+    {
+      "title": "Threshold selection using the PR curve",
+      "body": "The PR curve is a practical tool for threshold selection: find the threshold that maximises F1 (or Fβ for asymmetric costs). From precision_recall_curve: compute F1 at each threshold, pick the max. Alternatively: find the threshold that achieves a minimum precision (e.g., ≥80%) at the highest possible recall — the 'recall at precision≥P' operating point. This is more business-interpretable than optimizing AUC directly."
+    }
+  ],
+  "deepDiveIntro": [
+    "Precision-Recall curve: for classifier f(x) with threshold τ, Precision(τ) = TP(τ)/(TP(τ)+FP(τ)) and Recall(τ) = TP(τ)/(TP(τ)+FN(τ)). As τ decreases from +∞ to -∞: more examples predicted positive → recall increases → precision generally decreases. Average Precision (AP) = Σₙ(Rₙ-Rₙ₋₁)·Pₙ — the area under the PR curve using the trapezoidal rule on the discretised curve. AP = AUC-PR with interpolated precision. Davis & Goadrich (2006): the ROC and PR curves contain equivalent information — there is a pointwise one-to-one mapping — but PR reveals performance differences for rare classes that ROC conceals. [1]",
+    "Baseline comparison: ROC random classifier baseline is always AUC=0.5 regardless of class imbalance. PR random classifier baseline = class prevalence π₊ = n₊/n. For 5% positive rate: AP_baseline=0.05. This means AP=0.20 on a 5% positive rate dataset is 4× better than random, not 4/5 of perfect — more meaningful than the absolute value suggests. A useful benchmark: compare AP against AP_baseline (prevalence) and against AP of a model that always predicts the majority class (AP=π₊). [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Computing Average Precision",
+      "body": "AP = Σₙ(Rₙ-Rₙ₋₁)·Pₙ where (Pₙ,Rₙ) are the precision and recall at the n-th threshold point. This is an interpolated area under the stepwise PR curve. sklearn uses this formula directly in average_precision_score. An alternative interpolation: AP_interp = ∫₀¹ P_interp(r) dr where P_interp(r) = max_{r'≥r} P(r') (the interpolated precision at recall r is the maximum precision at any recall ≥r). COCO uses this interpolated version. The difference matters for sawtooth PR curves: sklearn's version may be slightly higher. [1]",
+      "formula": "AP = Σₙ(Rₙ−Rₙ₋₁)·Pₙ"
+    },
+    {
+      "heading": "mAP for Object Detection",
+      "body": "In object detection: a detected box is a TP if (1) predicted class = true class AND (2) IoU(predicted box, ground truth box) ≥ τ_IoU. AP@τ: AP computed at IoU threshold τ. mAP@0.5: mean AP at IoU=0.5 across all classes (Pascal VOC metric). mAP@0.5:0.95: mean of AP at IoU thresholds {0.5, 0.55, ..., 0.95} (COCO metric, more stringent). mAP across classes: for each class, sort detections by confidence, compute PR curve, then AP; average over classes. Each class's AP uses all test images. [1]"
+    },
+    {
+      "heading": "PR vs ROC for Imbalanced Classes",
+      "body": "One-to-one mapping: each point (FPR,TPR) on the ROC curve maps to a unique (Recall,Precision) point. But PR compresses the x-axis (recall = TPR) and changes the y-axis from TPR to Precision. Precision = TP/(TP+FP) = TPR·π₊ / (TPR·π₊ + FPR·π₋) depends on class priors. This means: small changes in FPR (large TN count, small effect on ROC) correspond to large changes in Precision (small FP count, large effect on PR). ROC hides performance differences where FPR changes are small (common in imbalanced settings). PR exposes them. [1]"
+    }
+  ],
+  "youtubeLabel": "Precision-Recall Curves and Average Precision Explained",
+  "youtubeUrl": "https://www.youtube.com/embed/8d3JbbSj-I8",
+  "takeaways": [
+    "AP = Σₙ(Rₙ−Rₙ₋₁)·Pₙ — area under PR curve; random baseline = class prevalence π₊. [1]",
+    "PR-AUC preferred over ROC-AUC for imbalanced datasets (positive rate <10%). [1]",
+    "mAP: mean AP across classes/IoU thresholds — standard for object detection (COCO). [1]",
+    "Use PR curve for threshold selection: find threshold maximising F1 or satisfying min-precision constraint. [1]",
+    "ROC and PR contain equivalent information but PR exposes rare-class performance differences. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "How do you handle the 'last point problem' in PR curves (precision at zero recall)?",
+      "a": "The PR curve always ends at Recall=0, Precision=1.0 (at infinite threshold, the model predicts nothing, so precision is trivially 1 and recall is 0). sklearn appends this point explicitly. The 'first point problem': at the very first detection (lowest threshold), precision and recall are 1 prediction against all positives. If this prediction is wrong, precision drops immediately. This causes the sawtooth pattern in uninterpolated PR curves. The interpolated version (COCO-style) takes the maximum precision at recall ≥ r for each r, smoothing the sawtooth. Always report which AP formulation you use (sklearn-style vs COCO-style) when comparing across papers."
+    },
+    {
+      "q": "Can you compute AP for multi-label classification (each example can have multiple labels)?",
+      "a": "Yes. For multi-label classification: compute AP per label (treating each as binary), then average across labels (mAP). But the standard sklearn average_precision_score(y_true, y_score, average='macro') handles this directly. For multi-label, the PR curve for each label is computed independently — predicting multiple labels simultaneously is treated as a set of binary problems. In information retrieval: AP for a query = Σₖ (P@k · rel(k)) / |relevant docs|, where P@k is precision at rank k and rel(k)=1 if the k-th retrieved document is relevant. This is the same formula, applied to a ranked list rather than a probability threshold."
+    }
+  ],
+  "sources": [
+    { "label": "Davis & Goadrich (2006) — The Relationship Between Precision-Recall and ROC Curves, ICML 2006", "url": "https://dl.acm.org/doi/10.1145/1143844.1143874" }
+  ]
+}

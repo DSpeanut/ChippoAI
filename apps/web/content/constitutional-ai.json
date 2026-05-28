@@ -1,0 +1,70 @@
+{
+  "visualizationType": "training-curve",
+  "codeSnapshot": {
+    "label": "constitutional_ai.py",
+    "code": "# Constitutional AI (CAI) — Bai et al., 2022\n# Phase 1: SL-CAI (supervised learning from AI feedback)\n# Phase 2: RL-CAI (RLAIF — reinforcement learning from AI feedback)\n\n# Phase 1: Critique-Revision Loop\nconstitution = [\n    \"Choose the response that is least likely to contain harmful content.\",\n    \"Choose the response that is most helpful and honest.\",\n    \"Choose the response that a thoughtful senior Anthropic employee would prefer.\",\n]\n\ndef sl_cai_step(model, red_team_prompt):\n    \"\"\"\n    1. Generate initial response (potentially harmful).\n    2. Ask model to critique the response against the constitution.\n    3. Ask model to revise the response.\n    4. Collect (prompt, revised_response) as SFT training data.\n    \"\"\"\n    # Step 1: Initial response\n    initial_response = model.generate(red_team_prompt)\n\n    # Step 2: Critique\n    critique_prompt = (\n        f\"{red_team_prompt}\\n\\nResponse: {initial_response}\\n\\n\"\n        \"Identify specific ways in which the assistant's response is \"\n        \"harmful, unethical, or socially biased.\"\n    )\n    critique = model.generate(critique_prompt)\n\n    # Step 3: Revision\n    revision_prompt = (\n        f\"{critique_prompt}\\n\\nCritique: {critique}\\n\\n\"\n        \"Please rewrite the response to remove harmful content.\"\n    )\n    revised_response = model.generate(revision_prompt)\n\n    return {\"prompt\": red_team_prompt, \"response\": revised_response}\n\n# Phase 2: RLAIF — AI-labeled preference pairs\ndef rlaif_preference_label(model, prompt, response_a, response_b, principle):\n    \"\"\"\n    Use the model itself (or a stronger model) to label which response\n    better follows the constitutional principle.\n    \"\"\"\n    comparison_prompt = (\n        f\"Human: {prompt}\\n\\n\"\n        f\"Response A: {response_a}\\n\\nResponse B: {response_b}\\n\\n\"\n        f\"{principle}\\n\\nWhich response is better, A or B? Answer A or B.\"\n    )\n    label = model.generate(comparison_prompt)  # \"A\" or \"B\"\n    return label  # Used to train the reward model for PPO\n\n# Phase 2 continues: train reward model on AI labels, then PPO (same as RLHF)\n# The key difference: no human labels needed for harmlessness training."
+  },
+  "eli3": [
+    "Constitutional AI is a technique where an AI is trained to follow a set of written principles (a 'constitution') rather than requiring humans to label millions of examples of harmful content. Instead, the AI critiques and revises its own outputs using the constitution as a guide.",
+    "It has two phases: (1) The AI generates responses, then critiques them against the constitution, then rewrites them. These improved responses are used as training data. (2) The AI uses its own constitution to label which of two responses is safer, and this labeling trains a reward model for reinforcement learning — no humans needed.",
+    "Constitutional AI is the alignment method behind Claude. The key insight: instead of needing human labels for harmful content (which is expensive and psychologically taxing for labelers), you describe your principles in natural language and let the AI apply them. The AI can self-improve its own harmlessness."
+  ],
+  "whenWhy": [
+    {
+      "title": "Alignment without human labels for harmful content",
+      "body": "RLHF requires humans to label preference pairs including potentially harmful responses — psychologically taxing and expensive at scale. Constitutional AI (Bai et al., 2022) replaces human harmlessness labels with AI-generated labels from a constitutional model. Human labelers only need to provide helpful/quality labels (not harmlessness labels). This separates helpfulness and harmlessness training, reducing labeler harm and cost."
+    },
+    {
+      "title": "Self-improvement through critique and revision",
+      "body": "SL-CAI generates training data through a critique-revision loop: model generates a potentially harmful response → critiques it against constitutional principles → revises it. The revised responses are cleaner training data than raw model outputs. This creates a self-improvement loop that doesn't require external labeled data for harmlessness — the model's constitutional knowledge acts as the teacher."
+    },
+    {
+      "title": "Scalable alignment via RLAIF",
+      "body": "RLAIF (Reinforcement Learning from AI Feedback) replaces the human preference labeling step with AI labeling. A constitutional model (often the same or stronger model) labels which response better follows each principle. This preference data trains a reward model for PPO. Google's RLAIF paper (Lee et al., 2023) showed AI-labeled preferences match human-labeled RLHF quality at a fraction of the cost. Claude's training pipeline uses CAI as its primary alignment method."
+    }
+  ],
+  "deepDiveIntro": [
+    "Constitutional AI (Bai et al., 2022) formalises a two-phase training pipeline. Phase 1 (SL-CAI): generate response to red-team prompt → critique response against a constitutional principle → revise response. Repeat with multiple principles from the constitution. Collect (prompt, final_revision) pairs for SFT. Phase 2 (RL-CAI): for each prompt, sample two model responses → prompt the constitutional model to choose which better follows a randomly selected principle → use these AI-generated labels to train a preference model → use PPO with this preference model as the reward. [1]",
+    "The constitution is a list of natural-language principles, e.g.: 'Choose the response that is least likely to contain harmful content,' 'Choose the response that is most honest and caring,' 'Choose the response that a thoughtful senior Anthropic employee would prefer.' At each RL-CAI step, a random principle is sampled and used to generate the AI preference label. This prevents overfitting to any single principle while covering the full constitutional space. [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Phase 1: SL-CAI Critique-Revision",
+      "body": "Red-team prompts are used to elicit harmful initial responses. Each response goes through multiple critique-revision cycles (typically 1–4): Critique prompt: 'Identify specific ways in which the response is harmful, dishonest, or unethical.' Revision prompt: 'Rewrite the response to remove harmful content while still addressing the question.' The final revised response (after N cycles) is collected as SFT training data. Multiple revision cycles improve harmlessness iteratively. The critiques themselves train the model to detect harmful content — a secondary benefit. [1]"
+    },
+    {
+      "heading": "Phase 2: RLAIF Preference Labeling",
+      "body": "For each prompt, two responses are sampled from the SL-CAI model. A constitutional principle is randomly selected from the constitution. The constitutional model is prompted with both responses and asked which follows the principle better. This generates (response_A, response_B, preferred=A or B) triples without human labeling. These triples train a reward model (same Bradley-Terry pairwise loss as RLHF). PPO optimises the policy using this reward model. Key advantage: the constitutional model provides a consistent, scalable preference signal without labeler fatigue or harm exposure. [1]"
+    },
+    {
+      "heading": "Helpfulness-Harmlessness Tradeoff",
+      "body": "Standard RLHF creates a tradeoff: harmlessness-focused models often become evasive and unhelpful (refuse even benign requests). Constitutional AI mitigates this by separating helpfulness labels (human-labeled, Phase 2) from harmlessness labels (AI-labeled using constitution). The constitution includes helpfulness principles alongside harmlessness principles ('choose the response that is most helpful and responsive to the human's request'). Bai et al. (2022) showed CAI models are simultaneously more helpful and more harmless than RLHF baselines on Anthropic's evaluations — the first clear mitigation of the helpfulness-harmlessness tradeoff. [1]"
+    },
+    {
+      "heading": "Chain-of-Thought Constitutional Reasoning",
+      "body": "An extension of CAI uses chain-of-thought (CoT) reasoning in the critique step: before choosing which response is better, the model reasons step-by-step about each principle. 'Thinking through which is better: Response A says X, which could cause Y harm. Response B says Z, which avoids this.' CoT-augmented labeling produces higher-quality preference labels and is correlated with better final model quality. This connects CAI to RLAIF with reasoning — the constitutional model acts as a deliberate judge rather than a simple classifier. [1]"
+    }
+  ],
+  "youtubeLabel": "Constitutional AI — Claude's Alignment Method Explained",
+  "youtubeUrl": "https://www.youtube.com/embed/bZQun8Y4L2A",
+  "takeaways": [
+    "Two phases: SL-CAI (critique+revise own outputs) → RL-CAI (AI labels preferences using constitution). [1]",
+    "No human harmlessness labels needed — the model self-evaluates against written principles. [1]",
+    "Constitution = list of natural-language principles; random principle sampled per RL step. [1]",
+    "RLAIF (AI-labeled preferences) matches human-labeled RLHF quality at much lower cost. [1]",
+    "Mitigates helpfulness-harmlessness tradeoff: CAI models are more helpful AND more harmless than RLHF baselines. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "How is the constitution designed, and what makes a good constitutional principle?",
+      "a": "Anthropic's published constitution (2023) contains ~58 principles across categories: harm avoidance ('avoid producing content that could be used to harm people'), honesty ('do not deceive or mislead'), values ('support human autonomy and agency'), and meta-principles ('when in doubt about whether an action is appropriate, ask yourself how a thoughtful senior Anthropic employee would react'). Good principles are: (1) specific enough to distinguish good from bad responses; (2) general enough to apply across topics; (3) written in natural language that the LLM can follow (not formal logic). Iterative refinement: Anthropic tests principles on a held-out set of red-team prompts and removes or revises principles that don't discriminate well."
+    },
+    {
+      "q": "What are the failure modes of Constitutional AI?",
+      "a": "Key failure modes: (1) Constitutional confabulation: the model may claim to follow the constitution while generating responses that violate it (particularly for subtle harms). (2) Principle conflicts: some principles conflict (helpfulness vs harmlessness), and the model must adjudicate without guidance on priority. (3) Distribution shift: the constitution is written for known harm categories — novel harmful use cases not covered by existing principles may slip through. (4) Self-improvement ceiling: SL-CAI can't produce revisions better than the base model's knowledge; if the model doesn't know what a safe response looks like, revision loops don't help. Anthropic addresses this through human red-teaming, supplementary human feedback, and regular constitutional updates."
+    }
+  ],
+  "sources": [
+    { "label": "Bai et al. (2022) — Constitutional AI: Harmlessness from AI Feedback arXiv:2212.06721", "url": "https://arxiv.org/abs/2212.06721" }
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "visualizationType": "embedding-space",
+  "codeSnapshot": {
+    "label": "triplet_loss.py",
+    "code": "import torch\nimport torch.nn as nn\nimport torch.nn.functional as F\n\n# PyTorch built-in TripletMarginLoss\ncriterion = nn.TripletMarginLoss(margin=1.0, p=2)  # Euclidean distance\n\ntorch.manual_seed(42)\nanchor   = torch.randn(8, 128)  # batch of 8 anchors\npositive = anchor + 0.1 * torch.randn(8, 128)  # close to anchor\nnegative = torch.randn(8, 128)                  # random (far)\n\nloss = criterion(anchor, positive, negative)\nprint(f\"Triplet Loss: {loss.item():.4f}\")\n\n# Manual implementation\ndef triplet_loss(a, p, n, margin=1.0):\n    d_pos = F.pairwise_distance(a, p)  # d(a, p)\n    d_neg = F.pairwise_distance(a, n)  # d(a, n)\n    return torch.clamp(d_pos - d_neg + margin, min=0).mean()\n\nloss_manual = triplet_loss(anchor, positive, negative, margin=1.0)\nprint(f\"Manual Triplet: {loss_manual.item():.4f}\")\n\n# Hard negative mining: select hardest triplets in a batch\ndef batch_hard_triplet_loss(embeddings, labels, margin=1.0):\n    # pairwise distance matrix\n    dist = torch.cdist(embeddings, embeddings, p=2)  # N×N\n    N = embeddings.size(0)\n    loss = torch.tensor(0.0)\n    for i in range(N):\n        pos_mask = labels == labels[i]\n        pos_mask[i] = False\n        neg_mask = labels != labels[i]\n        if not pos_mask.any() or not neg_mask.any():\n            continue\n        d_pos = dist[i][pos_mask].max()    # hardest positive\n        d_neg = dist[i][neg_mask].min()    # hardest negative\n        loss = loss + torch.clamp(d_pos - d_neg + margin, min=0)\n    return loss / N\n\nembs = torch.randn(16, 64)\nlbls = torch.tensor([0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3])\nprint(f\"Hard Triplet Loss: {batch_hard_triplet_loss(embs, lbls):.4f}\")"
+  },
+  "eli3": [
+    "Triplet loss trains a network using three examples at once: an Anchor (any example), a Positive (same class as anchor), and a Negative (different class). The goal: make the anchor closer to the positive than to the negative, by at least a margin.",
+    "Imagine you're learning to recognise handwriting. Given a reference sample of your handwriting (anchor), a second sample of your handwriting (positive), and a sample from someone else (negative) — triplet loss says: your distance to yourself must be at least 'margin' smaller than your distance to the stranger.",
+    "Google used triplet loss in FaceNet to train a face recognition system that works across billions of identities by embedding faces onto a unit sphere where Euclidean distance equals facial similarity."
+  ],
+  "whenWhy": [
+    {
+      "title": "Face recognition: FaceNet, DeepFace",
+      "body": "FaceNet (Schroff et al., 2015) embeds faces into 128-d L2-normalised space. Triplet loss ensures d(anchor, same person) + margin < d(anchor, different person). At inference, compare embeddings with a distance threshold — no re-training for new identities. Trained on 200M face images with hard negative mining, achieving 99.63% on LFW benchmark."
+    },
+    {
+      "title": "Person re-identification (ReID) in surveillance",
+      "body": "Person ReID matches the same person across different cameras or time points. Triplet loss with batch hard mining trains the embedding to be identity-discriminative despite appearance changes (lighting, pose, clothing). Market-1501 and DukeMTMC benchmarks are typically evaluated with triplet-trained networks, often combined with cross-entropy on the same batch."
+    },
+    {
+      "title": "Word embedding fine-tuning and sentence similarity",
+      "body": "Fine-tune sentence encoders (e.g., Sentence-BERT, E5) with triplet loss on NLI datasets: (premise, entailment, contradiction). The network learns that semantically similar sentences are closer in embedding space. Triplet loss + hard negative mining on STS benchmarks significantly outperforms pairwise contrastive loss because each update simultaneously pulls a positive and pushes a hard negative."
+    }
+  ],
+  "deepDiveIntro": [
+    "Triplet loss: L = Σᵢ max(0, d(aᵢ, pᵢ) − d(aᵢ, nᵢ) + m) where d is Euclidean distance (or cosine distance when embeddings are L2-normalised), m > 0 is the margin. A triplet is 'active' (nonzero loss) when d(a,p) − d(a,n) + m > 0, i.e., the negative is not yet further from the anchor than the positive by at least m. The gradient pulls anchor toward positive and away from negative simultaneously within each active triplet. [1]",
+    "The number of possible triplets is O(N³) — most are trivially easy (inactive) after a few epochs. Selecting informative triplets (hard negative mining) is critical. FaceNet introduced online hard mining: within each mini-batch, select the hardest positive (d(a,p) is largest) and hardest negative (d(a,n) is smallest but still satisfying d(a,n) > d(a,p) — semi-hard). [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Definition and Gradient",
+      "body": "L = max(0, d(a,p) − d(a,n) + m). For an active triplet (d(a,p) − d(a,n) + m > 0): ∂L/∂a = 2(a−p)/d(a,p) − 2(a−n)/d(a,n) (for Euclidean d); ∂L/∂p = −2(a−p)/d(a,p); ∂L/∂n = 2(a−n)/d(a,n). The gradient pulls anchor closer to positive, pulls positive closer to anchor, and pushes anchor away from negative. For inactive triplets (d(a,n) ≥ d(a,p)+m): all gradients are 0, no update. [1]",
+      "formula": "L = max(0, d(a, p) − d(a, n) + margin)"
+    },
+    {
+      "heading": "Hard Negative Mining: Easy, Hard, Semi-hard",
+      "body": "Three types of negatives relative to anchor a and positive p: (1) Easy negatives: d(a,n) > d(a,p) + m — already beyond margin, loss=0, no gradient. (2) Hard negatives: d(a,n) < d(a,p) — negative is closer than positive; loss = d(a,p)−d(a,n)+m > m. (3) Semi-hard negatives: d(a,p) < d(a,n) < d(a,p)+m — further than positive but inside margin; loss ∈ (0,m). FaceNet recommends semi-hard: hard negatives cause collapsed embeddings early in training. [1]"
+    },
+    {
+      "heading": "Batch-Hard Strategy (Hermans et al., 2017)",
+      "body": "Sample P identities, K images each (batch size B=P·K). For each anchor, the hardest positive is max d(a,p) within the same identity. The hardest negative is min d(a,n) across all other identities. Loss = (1/B) Σₐ max(0, max_{p∈P(a)} d(a,p) − min_{n∈N(a)} d(a,n) + m). Hermans et al. showed batch-hard mining outperforms offline mining and random triplets by 5–10% on ReID benchmarks. [2]",
+      "formula": "L = (1/B) Σₐ max(0, max_p d(a,p) − min_n d(a,n) + m)"
+    },
+    {
+      "heading": "Triplet vs Contrastive vs InfoNCE",
+      "body": "Triplet loss conditions on relative ordering (anchor closer to positive than negative). Contrastive loss conditions on absolute distances (similar pairs close, dissimilar beyond margin). InfoNCE treats one positive against N−1 negatives as N-way classification — effectively an N-way triplet. InfoNCE is strictly more informative per batch because all N−1 negatives contribute simultaneously, while a triplet uses only one positive and one negative per anchor. In practice, InfoNCE has superseded triplet loss in large-scale self-supervised learning. [3]"
+    }
+  ],
+  "youtubeLabel": "Triplet Loss — Siamese Networks Explained",
+  "youtubeUrl": "https://www.youtube.com/embed/d2XB5-tuCWU",
+  "takeaways": [
+    "L = max(0, d(a,p) − d(a,n) + m) — pull positive closer, push negative beyond margin. [1]",
+    "Active triplets: d(a,p) − d(a,n) + m > 0; inactive triplets give zero gradient. [1]",
+    "Semi-hard negatives: d(a,p) < d(a,n) < d(a,p)+m — safest choice to avoid collapse. [1]",
+    "Batch-hard mining: hardest positive + hardest negative per batch; best empirical results. [2]",
+    "InfoNCE uses all N−1 negatives per anchor simultaneously; has mostly replaced triplet loss. [3]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why do hard negatives cause collapsed embeddings early in training?",
+      "a": "Early in training, the embedding space is random. True hard negatives (d(a,n) < d(a,p)) generate very large gradient signals that push the negative far from the anchor — but in a random direction, often collapsing nearby positives too. This creates a cycle: collapse → all embeddings similar → all pairs hard → explosive gradients. Semi-hard negatives (within margin but outside positive distance) provide stable gradient signals: the loss is bounded by m and the gradient pushes the negative just enough to separate it, without triggering the collapse cycle."
+    },
+    {
+      "q": "What happens when margin m is too large or too small?",
+      "a": "Too small m (e.g., m=0.01): almost all triplets are inactive after a few epochs — no learning signal. The embedding space may not be well-structured because small perturbations collapse the margin. Too large m (e.g., m=10): almost all triplets are always active — constant gradient signal regardless of how good the embedding is. This forces the network to spread all embeddings as far as possible, which may conflict with intra-class variation (same identity can have very different appearances). FaceNet used m=0.2 on L2-normalised embeddings (cosine distance in [0,2])."
+    }
+  ],
+  "sources": [
+    { "label": "Schroff, Kalenichenko & Philbin (2015) — FaceNet: A Unified Embedding for Face Recognition arXiv:1503.03832", "url": "https://arxiv.org/abs/1503.03832" },
+    { "label": "Hermans, Beyer & Leibe (2017) — In Defense of the Triplet Loss for Person Re-Identification arXiv:1703.07737", "url": "https://arxiv.org/abs/1703.07737" },
+    { "label": "Chen et al. (2020) — A Simple Framework for Contrastive Learning of Visual Representations arXiv:2002.05709", "url": "https://arxiv.org/abs/2002.05709" }
+  ]
+}

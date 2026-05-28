@@ -1,0 +1,68 @@
+{
+  "visualizationType": "architecture-diagram",
+  "codeSnapshot": {
+    "label": "human_eval.py",
+    "code": "import numpy as np\nfrom typing import List\n\n# HumanEval (Chen et al., 2021) — 164 Python programming problems\n# Evaluation metric: pass@k — probability that at least 1 of k generated solutions passes all unit tests\n\n# Unbiased estimator of pass@k (Chen et al., Eq. 1)\ndef pass_at_k(n: int, c: int, k: int) -> float:\n    \"\"\"\n    Unbiased estimate of pass@k.\n    n: total samples generated per problem\n    c: number of correct samples (passing all tests) among n\n    k: number of samples allowed to submit\n    Returns: probability that at least one of k random samples passes\n    \"\"\"\n    if n - c < k:\n        return 1.0  # impossible to pick k failing samples from n-c failures\n    # 1 - P(all k samples fail) = 1 - C(n-c, k) / C(n, k)\n    # Use logs to avoid overflow\n    def log_comb(a, b):\n        from math import lgamma\n        return lgamma(a + 1) - lgamma(b + 1) - lgamma(a - b + 1)\n    prob_all_fail = np.exp(log_comb(n - c, k) - log_comb(n, k))\n    return 1.0 - prob_all_fail\n\n# Example: 10 samples generated, 3 pass tests, estimate pass@1 and pass@10\nn, c = 10, 3\nprint(f'pass@1  = {pass_at_k(n, c, 1):.3f}')   # 0.300 (= c/n)\nprint(f'pass@5  = {pass_at_k(n, c, 5):.3f}')   # 0.833\nprint(f'pass@10 = {pass_at_k(n, c, 10):.3f}')  # 1.000 (trivially, c>0)\n\n# Compute pass@k over all HumanEval problems\ndef evaluate_pass_at_k(problem_results: List[dict], k: int = 1) -> float:\n    \"\"\"\n    problem_results: list of {'n': total_samples, 'c': correct_samples}\n    Returns: mean pass@k across all problems\n    \"\"\"\n    return np.mean([\n        pass_at_k(r['n'], r['c'], k)\n        for r in problem_results\n    ])\n\n# HumanEval pass@1 scores (from papers):\n# GPT-4:        ~90%\n# GPT-3.5-turbo: ~73%\n# Claude 3 Opus: ~85%\n# LLaMA-2-70B:  ~30%\n# GPT-3 175B:   ~11.4%\n\n# MBPP (Mostly Basic Python Problems — Austin et al., 2021)\n# 374 problems, 3-shot prompting\n# Google's complementary benchmark to HumanEval\n# MBPP pass@1: GPT-4 ~84.4%, LLaMA-2-70B ~51.0%"
+  },
+  "eli3": [
+    "HumanEval is a benchmark that tests if an AI can write correct Python code. It gives the model 164 programming problems (like 'write a function that returns the sum of all even numbers in a list') and checks if the code the model writes actually passes all the unit tests.",
+    "The key metric is pass@k: if you let the model generate k attempts at each problem, what fraction of problems does it solve with at least one correct attempt? pass@1 (one try) is the standard; pass@10 is more lenient.",
+    "pass@k = 30% means the model correctly solves 30% of problems on the first try. GPT-4 achieves ~90% pass@1 on HumanEval. This is a much harder test than just checking if the code looks reasonable — the code actually has to run and produce the right answers."
+  ],
+  "whenWhy": [
+    {
+      "title": "Rigorous code generation evaluation with execution",
+      "body": "Unlike text generation metrics (BLEU, ROUGE) that measure lexical similarity to a reference, HumanEval actually executes the generated code and checks the output against unit tests. This is the only reliable way to evaluate code generation: two syntactically different programs can be functionally equivalent (many valid solutions), and syntactically similar programs can be functionally different (off-by-one errors). HumanEval is the standard benchmark for code LLMs: Codex, CodeLlama, WizardCoder, StarCoder all report pass@1 on HumanEval."
+    },
+    {
+      "title": "Unbiased pass@k estimation",
+      "body": "A naive pass@k estimate (sample k solutions, check if any pass) has high variance: you might get lucky or unlucky with k specific samples. Chen et al. (2021) derive an unbiased estimator: sample n≥k solutions (n=200 is standard), count c correct ones, compute 1-C(n-c,k)/C(n,k). This uses all n samples to estimate the probability for k. Standard practice: n=200 samples, estimate pass@1, pass@10, pass@100. This avoids the variance of a single k-sample evaluation."
+    },
+    {
+      "title": "Code evaluation ecosystem",
+      "body": "HumanEval evaluates single-function Python problems. Related benchmarks: MBPP (374 basic Python problems, 3-shot), HumanEval+ (enhanced with more unit tests), DS-1000 (data science tasks with pandas/numpy), SWE-bench (real GitHub issues requiring code changes). Code generation evaluation has unique requirements: sandboxed execution (safety), timeout handling (infinite loops), language-specific tests. The BigCode Evaluation Harness standardises all these across languages."
+    }
+  ],
+  "deepDiveIntro": [
+    "HumanEval (Chen et al., 2021): 164 handwritten Python programming problems, each with: (1) a function signature and docstring (the prompt); (2) a set of unit tests for evaluation. The model is given the prompt and must generate the function body. pass@k = E_{problems}[P(at least 1 of k samples passes)] = E[1 - C(n-c,k)/C(n,k)]. The unbiased estimator avoids the bias of naive top-k selection: sampling n=200 per problem and using the combinatorial formula gives a stable estimate across temperature settings. [1]",
+    "Temperature and sampling: code LLMs use temperature>0 during evaluation to generate diverse samples (temperature=0 gives greedy decoding, always the same solution). pass@1 uses low temperature (0.2) for high-confidence single guesses; pass@10/100 uses higher temperature (0.8) for diversity. This temperature-dependent behavior is an important design choice: the same model can have very different pass@1 vs pass@10 depending on sampling temperature. Chen et al. recommend temperature=0.2 for pass@1 and temperature=0.8 for pass@100. [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Unbiased pass@k Estimator",
+      "body": "Naive pass@k: sample exactly k solutions, check if any pass. Problem: high variance (depends on which k you got). Unbiased estimator: sample n solutions (n >> k), count c passing. pass@k = 1 - C(n-c, k)/C(n, k). Derivation: P(all k fail) = (ways to choose k from n-c failing) / (ways to choose k from n total). This uses the hypergeometric distribution. For n=200, c=100, k=1: pass@1 = 1 - C(100,1)/C(200,1) = 1 - 100/200 = 0.5 (exactly c/n for k=1). For k=10: pass@10 = 1 - C(100,10)/C(200,10) ≈ 0.9999. [1]",
+      "formula": "pass@k = 1 − C(n−c, k) / C(n, k)"
+    },
+    {
+      "heading": "HumanEval Problem Design",
+      "body": "Each HumanEval problem has: a docstring describing the task (natural language spec), a function signature, and (hidden) unit tests. The model only sees the docstring + signature — the unit tests are not shown. Problems are designed to be unambiguous: the docstring fully specifies the expected behavior. Difficulty distribution: roughly uniform from easy (check if number is prime) to medium (string manipulation, list operations) to harder (algorithmic problems). Chen et al. report that most errors on hard problems are logical errors or misunderstood edge cases, not syntax errors — suggesting the model understands Python but struggles with algorithm design. [1]"
+    },
+    {
+      "heading": "Evaluation Pipeline and Security",
+      "body": "Executing untrusted generated code is a security concern: code might contain file system operations, network calls, or infinite loops. HumanEval evaluation uses: (1) Sandboxing — execute in a subprocess with restricted permissions (no network, limited filesystem). (2) Timeout — each solution has a time limit (typically 3-10 seconds). (3) Memory limits — prevent OOM from adversarial code. The evalplus library (Liu et al., 2023) extends HumanEval with: (a) 80× more unit tests (HumanEval+ covers more edge cases); (b) structured code sanitization. Models that pass HumanEval with synthetic tests sometimes fail HumanEval+ when tested on edge cases — inflated pass@1 on the original benchmark. [1]"
+    }
+  ],
+  "youtubeLabel": "HumanEval and pass@k — Code LLM Evaluation",
+  "youtubeUrl": "https://www.youtube.com/embed/D9bMC-VXYFU",
+  "takeaways": [
+    "pass@k = 1 − C(n−c,k)/C(n,k) — unbiased estimator using n samples, c correct. [1]",
+    "Evaluation by execution: code must pass unit tests — not just look correct. [1]",
+    "Temperature: 0.2 for pass@1 (precision), 0.8 for pass@100 (diversity). [1]",
+    "164 Python problems (HumanEval); GPT-4 ~90%, GPT-3.5 ~73%, LLaMA-2-70B ~30%. [1]",
+    "HumanEval+ (evalplus): 80× more unit tests — catches edge case failures missed by original. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why does pass@k not saturate at 100% for large k on state-of-the-art models?",
+      "a": "Even very capable models have systematic blind spots: some problems are structurally hard to solve reliably regardless of sampling budget. Failure modes: (1) Ambiguous specifications — some docstrings have edge cases that even humans misinterpret. (2) Algorithmic problems — a model that doesn't know a specific algorithm (e.g., Dijkstra's, dynamic programming) will fail consistently regardless of temperature or samples. (3) Off-by-one errors — the model may consistently generate solutions that are systematically wrong in the same way. For GPT-4 (~90% pass@1 on HumanEval), the remaining ~10% are usually problems where the model makes consistent structural errors — more samples don't help. HumanEval+ with more unit tests reveals this systematic failure pattern."
+    },
+    {
+      "q": "How should you design unit tests for fair code evaluation?",
+      "a": "Good unit tests for code evaluation should: (1) Cover edge cases: empty inputs, boundary values, largest valid inputs. (2) Be exhaustive but not redundant: test the logical cases, not just the ones shown in the docstring. (3) Not leak information: the test names and test inputs shouldn't reveal the algorithm. (4) Be deterministic: random tests break reproducibility. HumanEval's original tests have 7-8 unit tests per problem on average — enough for basic validation but missing many edge cases. evalplus (Liu et al., 2023) used GPT-4 to generate additional tests and human validation, finding that 15-20% of HumanEval 'passes' fail on additional edge case tests. For rigorous evaluation: use ≥15 unit tests covering full input space coverage."
+    }
+  ],
+  "sources": [
+    { "label": "Chen et al. (2021) — Evaluating Large Language Models Trained on Code (HumanEval) arXiv:2107.03374", "url": "https://arxiv.org/abs/2107.03374" },
+    { "label": "Austin et al. (2021) — Program Synthesis with Large Language Models (MBPP) arXiv:2108.07732", "url": "https://arxiv.org/abs/2108.07732" }
+  ]
+}

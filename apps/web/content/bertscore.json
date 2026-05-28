@@ -1,0 +1,67 @@
+{
+  "visualizationType": "architecture-diagram",
+  "codeSnapshot": {
+    "label": "bertscore.py",
+    "code": "import torch\nfrom bert_score import score as bertscore\nfrom transformers import AutoTokenizer, AutoModel\n\n# BERTScore (Zhang et al., 2020)\n# Token-level semantic similarity using contextual BERT embeddings\n# P = (1/|ŷ|) Σ_{x̂∈ŷ} max_{x∈y} cos(x̂, x)\n# R = (1/|y|) Σ_{x∈y} max_{x̂∈ŷ} cos(x̂, x)\n# F1 = 2PR/(P+R)\n\n# Quick usage with bert_score library\ncandidates = [\n    'The cat is on the mat.',\n    'A dog ran quickly through the park.',\n]\nreferences = [\n    'There is a cat on the mat.',\n    'The dog sprinted across the park.',\n]\n\n# Returns precision, recall, F1 tensors (one value per example)\nP, R, F1 = bertscore(candidates, references, lang='en', verbose=False,\n                      model_type='microsoft/deberta-xlarge-mnli')  # best model\nfor i, (p, r, f) in enumerate(zip(P, R, F1)):\n    print(f'Example {i}: P={p:.3f} R={r:.3f} F1={f:.3f}')\n\n# Manual computation for understanding\ndef bertscore_manual(candidate_tokens, reference_tokens, model, tokenizer):\n    \"\"\"Compute BERTScore F1 between one candidate and one reference.\"\"\"\n    def get_embeddings(tokens):\n        encoded = tokenizer(tokens, return_tensors='pt', is_split_into_words=True,\n                           add_special_tokens=False, padding=True, truncation=True)\n        with torch.no_grad():\n            output = model(**encoded).last_hidden_state[0]  # (T, H)\n        # Normalize to unit vectors (for cosine similarity)\n        return output / output.norm(dim=-1, keepdim=True)\n\n    c_embs = get_embeddings(candidate_tokens)  # (|c|, H)\n    r_embs = get_embeddings(reference_tokens)   # (|r|, H)\n    # Cosine similarity matrix: sim[i,j] = cos(c_embs[i], r_embs[j])\n    sim = c_embs @ r_embs.T  # (|c|, |r|)\n    # Precision: for each candidate token, max similarity to any reference token\n    precision = sim.max(dim=1).values.mean().item()\n    # Recall: for each reference token, max similarity to any candidate token\n    recall = sim.max(dim=0).values.mean().item()\n    f1 = 2 * precision * recall / (precision + recall + 1e-9)\n    return {'precision': precision, 'recall': recall, 'f1': f1}"
+  },
+  "eli3": [
+    "BERTScore measures how semantically similar two texts are using BERT's deep language understanding. Instead of checking if exact words match (like BLEU/ROUGE), it converts each word into a meaning vector and compares those vectors. Synonyms and paraphrases that mean the same thing score highly.",
+    "For each word in the candidate, BERTScore finds the most similar word in the reference (by cosine similarity of their BERT embeddings). Precision averages these best matches for candidate words; recall averages them for reference words. This handles paraphrasing that pure n-gram metrics miss.",
+    "BERTScore correlates much better with human judgments than BLEU and ROUGE, especially for abstractive generation where the model rewrites content in new words. It's now the preferred automatic metric for text summarisation and generation quality assessment."
+  ],
+  "whenWhy": [
+    {
+      "title": "Evaluating abstractive text generation",
+      "body": "Abstractive summarisation and paraphrase generation produce outputs that are semantically equivalent to references but use different words — BLEU and ROUGE penalise this unfairly. BERTScore gives credit for semantic similarity: 'automobile' and 'car' are embedded near each other in BERT space (cosine similarity ~0.95). Zhang et al. (2020) showed BERTScore correlates significantly better with human judgments on WMT MT, CNN/DailyMail summarisation, and dialogue evaluation tasks."
+    },
+    {
+      "title": "LLM output quality assessment",
+      "body": "BERTScore is commonly used to evaluate LLM outputs for tasks with reference answers: instruction following, question answering, dialogue. It captures semantic adequacy — does the candidate express the same meaning as the reference? — better than lexical metrics. In multi-reference settings, BERTScore is computed between the candidate and each reference, then the maximum F1 is taken. Many recent LLM evaluation papers (HELM, LMSYS Arena) report BERTScore alongside ROUGE and human eval."
+    },
+    {
+      "title": "Model selection for BERTScore computation",
+      "body": "The choice of BERT backbone matters significantly for BERTScore quality. Zhang et al. (2020) benchmark: DeBERTa-xlarge-mnli achieves the highest human correlation for English. Multilingual evaluation: mBERT or XLM-RoBERTa. The bert_score library provides a built-in model recommendation per language and task. Larger models generally give better scores but are slower — DeBERTa-xlarge requires 2GB GPU memory. For fast evaluation: bert-base-uncased is sufficient; for publication: use deberta-xlarge-mnli."
+    }
+  ],
+  "deepDiveIntro": [
+    "BERTScore (Zhang et al., 2020): given candidate tokens x̂₁,...,x̂ₙ and reference tokens x₁,...,xₘ, compute contextual embeddings using a pre-trained model. Precision P = (1/n)·Σᵢ max_j cos(x̂ᵢ, xⱼ); Recall R = (1/m)·Σⱼ max_i cos(x̂ᵢ, xⱼ). F1 = 2PR/(P+R). Each word's embedding is contextual (depends on surrounding words), capturing polysemy. IDF weighting: rare words are weighted higher in the average — common words like 'the' contribute less. [1]",
+    "Contextual embeddings make BERTScore sensitive to syntactic structure: 'the dog bit the man' and 'the man bit the dog' have the same unigrams but different contextual embeddings for 'dog' and 'man' (positioned differently in context). This catches meaning differences that BLEU/ROUGE miss entirely. Layer selection: intermediate BERT layers (8-9 of 12) typically give better scores than the final layer, which is too task-specific. bert_score defaults to layer 9 for bert-base. [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Precision, Recall, and F1 Computation",
+      "body": "For each candidate token x̂ᵢ: find the reference token xⱼ with maximum cosine similarity max_j cos(x̂ᵢ,xⱼ). Average over all candidate tokens → Precision. For each reference token xⱼ: find the candidate token x̂ᵢ with maximum cosine similarity max_i cos(x̂ᵢ,xⱼ). Average over reference tokens → Recall. The greedy matching (max over pairwise similarities) is the key design choice — it doesn't require bipartite matching, runs in O(n·m) per example. F1 = 2PR/(P+R) combines both. IDF-weighted: P_idf = (1/Σw(x̂ᵢ))·Σ w(x̂ᵢ)·max_j cos(x̂ᵢ,xⱼ) where w(t) = IDF(t) computed from a reference corpus. [1]",
+      "formula": "P = (1/|ŷ|)·Σ max_{x∈y} cos(x̂,x),  R = (1/|y|)·Σ max_{x̂∈ŷ} cos(x̂,x)"
+    },
+    {
+      "heading": "Human Correlation Comparison",
+      "body": "Zhang et al. (2020) compare against BLEU, ROUGE-L, and METEOR on WMT17-19 MT segment-level evaluations and summarisation. Results: BERTScore with DeBERTa-xlarge achieves Pearson r=0.73 with human DA (Direct Assessment) scores — significantly higher than BLEU (r=0.57) and ROUGE-L (r=0.60) on the same test sets. For abstractive summarisation (XSum): BERTScore F1 correlates at r=0.50 vs ROUGE-1 at r=0.32. On dialogue: BERTScore outperforms all n-gram metrics. Caveat: learned metrics like COMET (for MT) and GPT-4-as-judge achieve even higher human correlation but require model inference. [1]"
+    },
+    {
+      "heading": "Limitations and When ROUGE Is Still Preferred",
+      "body": "BERTScore limitations: (1) Slow — requires BERT forward pass on all candidates and references. (2) Model-dependent — scores change with backbone choice (not reproducible without specifying model + layer). (3) No calibration — BERTScore ∈ [0,1] but the meaning of 0.9 vs 0.95 is not intuitive (unlike BLEU where 0.4=good). (4) Not designed for extractive metrics — ROUGE-2 still preferred for extractive summarisation where lexical fidelity matters. When to use ROUGE: fast evaluation, extractive systems, historical benchmark comparability. When to use BERTScore: abstractive generation, paraphrase evaluation, final paper evaluation, tasks with semantic equivalence. [1]"
+    }
+  ],
+  "youtubeLabel": "BERTScore: Evaluating Text Generation with BERT",
+  "youtubeUrl": "https://www.youtube.com/embed/bvX0OevLhyE",
+  "takeaways": [
+    "P=(1/|ŷ|)Σmax cos(x̂,x), R=(1/|y|)Σmax cos(x̂,x) — greedy token-level cosine matching. [1]",
+    "Contextual embeddings handle synonyms and paraphrases that BLEU/ROUGE penalise. [1]",
+    "DeBERTa-xlarge-mnli gives best human correlation for English evaluation. [1]",
+    "BERTScore F1 correlates significantly better with human judgments than BLEU/ROUGE. [1]",
+    "IDF weighting: rare tokens weighted higher — reduces effect of stopwords. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "How does BERTScore handle multilingual evaluation?",
+      "a": "For multilingual evaluation: use mBERT (multilingual BERT) or XLM-RoBERTa as the backbone. The bert_score library supports a language parameter that selects the recommended model for that language. Cross-lingual BERTScore: computing BERTScore between an English candidate and a German reference using a multilingual model — directly evaluating semantic equivalence across languages. This is used for zero-shot MT evaluation (no reference in the target language needed). Limitation: BERTScore quality degrades for low-resource languages if the backbone model was not well pre-trained on that language — check the backbone model's language coverage before using for rare languages."
+    },
+    {
+      "q": "Should BERTScore's F1 be treated as an absolute quality score?",
+      "a": "No. BERTScore F1 values are typically in a narrow range (0.80–0.95 for English text with BERT-base) because all English sentences share common BERT subspace structure. The absolute values are not intuitive: F1=0.85 does not mean '85% quality.' BERTScore is most useful as a relative metric for comparing systems on the same task and test set. When reporting: always specify the backbone model, layer, IDF weighting, and language — different configurations give different absolute ranges. For interpretability: report the relative improvement in BERTScore F1 between systems (e.g., '+0.03 F1') rather than absolute values, alongside the range on the benchmark."
+    }
+  ],
+  "sources": [
+    { "label": "Zhang et al. (2020) — BERTScore: Evaluating Text Generation with BERT, ICLR 2020 arXiv:1904.09675", "url": "https://arxiv.org/abs/1904.09675" }
+  ]
+}

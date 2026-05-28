@@ -1,0 +1,74 @@
+{
+  "visualizationType": "embedding-space",
+  "codeSnapshot": {
+    "label": "contrastive_loss.py",
+    "code": "import torch\nimport torch.nn.functional as F\n\n# Contrastive Loss (Hadsell et al., 2006)\n# L = (1-y)*D² + y*max(0, margin - D)²\n# y=0: similar pair, y=1: dissimilar pair\n\ndef contrastive_loss(emb1, emb2, label, margin=1.0):\n    \"\"\"label: 0=similar, 1=dissimilar\"\"\"\n    D = F.pairwise_distance(emb1, emb2)\n    loss_similar = (1 - label) * D**2\n    loss_dissimilar = label * torch.clamp(margin - D, min=0)**2\n    return (loss_similar + loss_dissimilar).mean()\n\n# Example: batch of 4 pairs\ntorch.manual_seed(42)\nemb_a = torch.randn(4, 128)\nemb_b = torch.randn(4, 128)\nlabels = torch.tensor([0, 1, 0, 1])  # 0=similar, 1=dissimilar\n\nloss = contrastive_loss(emb_a, emb_b, labels, margin=2.0)\nprint(f\"Contrastive Loss: {loss.item():.4f}\")\n\n# NT-Xent (Normalized Temperature-scaled Cross Entropy)\n# Used in SimCLR — a modern contrastive loss variant\ndef nt_xent_loss(z1, z2, temperature=0.5):\n    z1 = F.normalize(z1, dim=1)\n    z2 = F.normalize(z2, dim=1)\n    N = z1.size(0)\n    z = torch.cat([z1, z2], dim=0)  # 2N × d\n    sim = z @ z.T / temperature      # 2N × 2N cosine similarity\n    # Mask out diagonal (self-similarity)\n    mask = torch.eye(2*N, dtype=bool)\n    sim = sim.masked_fill(mask, -9e15)\n    labels = torch.cat([torch.arange(N, 2*N), torch.arange(N)])\n    return F.cross_entropy(sim, labels)\n\nloss_nt = nt_xent_loss(emb_a[:4], emb_b[:4], temperature=0.5)\nprint(f\"NT-Xent Loss: {loss_nt.item():.4f}\")"
+  },
+  "eli3": [
+    "Contrastive loss teaches a neural network to group similar things together and push different things apart in an embedding space. Give the network two images of the same person: the embeddings should end up close. Two different people: their embeddings should be far apart.",
+    "The loss has two terms: a penalty for similar pairs being far apart (we want distance ≈ 0), and a penalty for dissimilar pairs being too close (we want distance ≥ margin). Once dissimilar pairs are already beyond the margin, no penalty — we only care about hard negatives.",
+    "This is the foundation of modern self-supervised learning (SimCLR, CLIP, MoCo). Instead of needing labels, you create positive pairs by augmenting the same image twice and treat all other images as negatives."
+  ],
+  "whenWhy": [
+    {
+      "title": "Metric learning: face verification and re-identification",
+      "body": "Siamese networks trained with contrastive loss (Hadsell et al., 2006) learn an embedding space where L2 distance corresponds to semantic similarity. FaceNet and similar systems embed faces such that same-person pairs cluster tightly (D < threshold) and different-person pairs are separated. At inference, no re-training needed — just compare embeddings with a threshold."
+    },
+    {
+      "title": "Self-supervised representation learning (SimCLR, MoCo)",
+      "body": "NT-Xent (Normalised Temperature-scaled Cross Entropy) — the SimCLR loss — treats augmented views of the same image as positives and all other images in the batch as negatives. With large batch sizes (4096), many negatives per anchor drive learning of rich, general features. This has become the dominant pretraining strategy when labels are scarce."
+    },
+    {
+      "title": "CLIP: cross-modal contrastive learning",
+      "body": "CLIP (Radford et al., 2021) applies InfoNCE (a contrastive loss) across image-text pairs from 400M internet examples. Images and text are encoded separately; the loss maximises cosine similarity between matched pairs and minimises it for all other pairs in the batch. This produces powerful zero-shot classifiers by comparing image embeddings to text embeddings of class names."
+    }
+  ],
+  "deepDiveIntro": [
+    "Original contrastive loss (Hadsell et al., 2006): L = (1−y)·D(aᵢ,bᵢ)² + y·max(0, m − D(aᵢ,bᵢ))², where y=0 for similar pairs, y=1 for dissimilar, D is Euclidean distance, m is margin. For similar pairs, loss is the squared distance (pull together). For dissimilar pairs, loss is (margin − D)² if D < m (push apart until separated by margin), else 0. [1]",
+    "InfoNCE (Oord et al., 2018), used in CPC, SimCLR, and MoCo, is a more powerful variant: L = −log[exp(z·z⁺/τ) / Σⱼ exp(z·zⱼ/τ)] where z⁺ is the positive embedding and the denominator sums over all 2N−1 other embeddings in the batch. This is a softmax cross-entropy over one positive vs many negatives, similar to N-way classification. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Original Contrastive Loss",
+      "body": "L(a, b, y) = (1−y)/2 · D² + y/2 · max(0, m−D)². For similar pair (y=0): ∂L/∂D = (1−y)·D. Gradient pulls embeddings together proportionally to distance. For dissimilar pair (y=1) with D < m: ∂L/∂D = −y·(m−D). Gradient pushes embeddings apart proportionally to how close they are relative to margin. For D ≥ m: gradient = 0, no update needed. Requires hand-crafted positive/negative pair sampling — quality of pairs matters enormously. [1]",
+      "formula": "L = (1−y)D² + y·max(0, m−D)²"
+    },
+    {
+      "heading": "InfoNCE / NT-Xent",
+      "body": "For anchor z and positive z⁺ from N augmented pairs (batch size 2N): L = −log[exp(sim(z,z⁺)/τ) / (Σⱼ≠z exp(sim(z,zⱼ)/τ))]. sim is cosine similarity: z·z' = ‖z‖‖z'‖ cos θ (so z should be L2-normalised first). Temperature τ controls hardness: low τ sharpens the distribution, emphasising hard negatives. Chen et al. (SimCLR) found τ=0.07 optimal with large batch. Gradient pushes z toward z⁺ and away from all 2N−2 negatives simultaneously. [2]",
+      "formula": "L = −log[exp(sim(z,z⁺)/τ) / Σⱼ≠z exp(sim(z,zⱼ)/τ)]"
+    },
+    {
+      "heading": "Hard Negative Mining",
+      "body": "Random negatives become easy as training progresses — embeddings from different classes are already well-separated. Hard negatives (near the anchor in embedding space but from different classes) provide more informative gradient signal. Strategies: (1) Online hard negative mining — in each batch, select the hardest negatives; (2) Queue-based memory (MoCo) — maintain a large queue of recent embeddings as a negative bank; (3) Semi-hard negatives (FaceNet): negatives farther than the positive but within the margin, avoiding collapsed gradients. [3]"
+    },
+    {
+      "heading": "Collapse Problem and Solutions",
+      "body": "Contrastive methods can collapse to a trivial solution where all embeddings are identical (loss=0 for all dissimilar pairs if D=0... no: if D=0, the dissimilar loss is max(0,m)² = m² ≠ 0). For InfoNCE: collapse to a constant means all cosine similarities are equal — CE loss would be log(2N−1) (uniform). Practical collapse prevention: L2 normalisation of embeddings (keeps them on the unit sphere), large batch size or memory bank for diverse negatives, careful augmentation policies. [2]"
+    }
+  ],
+  "youtubeLabel": "Contrastive Learning & SimCLR — Yannic Kilcher",
+  "youtubeUrl": "https://www.youtube.com/embed/APki8LmdJwY",
+  "takeaways": [
+    "L = (1−y)D² + y·max(0,m−D)² — pull similar pairs, push dissimilar beyond margin. [1]",
+    "InfoNCE: −log[exp(sim(z,z⁺)/τ)/Σexp(sim(z,zⱼ)/τ)] — N-way classification over negatives. [2]",
+    "Temperature τ: low → focus on hard negatives; high → treat all negatives equally. [2]",
+    "Hard negative mining is critical — random negatives become uninformative as training progresses. [3]",
+    "Foundation of CLIP, SimCLR, MoCo: contrastive pretraining on large unlabelled datasets. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why does temperature τ matter so much in InfoNCE?",
+      "a": "At low τ, the softmax distribution over negatives becomes peaked on the hardest negative (smallest distance). The gradient pushes strongly against just the nearest negative. At high τ, the distribution is uniform and gradients are spread evenly across all negatives — less discriminative but more stable. Too low τ causes gradient explosion and poor training (one hard negative dominates). Chen et al. (SimCLR) found τ=0.07 optimal for image representations. DINOv2 uses τ=0.04 for teacher and τ=0.1 for student in self-distillation."
+    },
+    {
+      "q": "What is the difference between contrastive loss and triplet loss?",
+      "a": "Contrastive loss operates on pairs (anchor, positive/negative) independently. Triplet loss operates on triplets (anchor, positive, negative) jointly: L = max(0, d(a,p) − d(a,n) + margin). Triplet loss directly encodes the relative constraint 'd(a,p) < d(a,n) − margin' in a single loss term, which is more efficient than separate contrastive pairs. However, triplet mining (selecting hard triplets) is more complex. In practice, InfoNCE/NT-Xent has largely replaced both because it implicitly mines many hard negatives from the batch simultaneously."
+    }
+  ],
+  "sources": [
+    { "label": "Hadsell, Chopra & LeCun (2006) — Dimensionality Reduction by Learning an Invariant Mapping, CVPR 2006", "url": "https://yann.lecun.com/exdb/publis/pdf/hadsell-chopra-lecun-06.pdf" },
+    { "label": "Chen et al. (2020) — A Simple Framework for Contrastive Learning of Visual Representations (SimCLR) arXiv:2002.05709", "url": "https://arxiv.org/abs/2002.05709" },
+    { "label": "Schroff, Kalenichenko & Philbin (2015) — FaceNet: A Unified Embedding for Face Recognition arXiv:1503.03832", "url": "https://arxiv.org/abs/1503.03832" }
+  ]
+}

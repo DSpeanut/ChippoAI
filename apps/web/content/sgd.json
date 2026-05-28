@@ -1,0 +1,71 @@
+{
+  "visualizationType": "optimizer-trace",
+  "codeSnapshot": {
+    "label": "sgd.py",
+    "code": "import torch\nimport torch.nn as nn\n\n# Basic SGD\nmodel = nn.Linear(10, 1)\noptimizer = torch.optim.SGD(model.parameters(), lr=0.01)\n\n# Training loop\nfor epoch in range(100):\n    optimizer.zero_grad()\n    x = torch.randn(32, 10)\n    y = torch.randn(32, 1)\n    loss = nn.MSELoss()(model(x), y)\n    loss.backward()  # compute gradients\n    optimizer.step() # w = w - lr * grad\n\n# SGD update rule:\n# w_{t+1} = w_t - η * ∇L(w_t; x_i, y_i)  [single sample]\n# w_{t+1} = w_t - η * (1/B) Σ ∇L(w_t; x_i, y_i)  [mini-batch]\n\n# Full batch gradient descent (batch_size = N)\nx_all = torch.randn(1000, 10)\ny_all = torch.randn(1000, 1)\n\noptimizer_full = torch.optim.SGD(model.parameters(), lr=0.001)\noptimizer_full.zero_grad()\nloss_full = nn.MSELoss()(model(x_all), y_all)\nloss_full.backward()\noptimizer_full.step()\n\n# Mini-batch SGD with momentum and weight decay\noptimizer_sgd = torch.optim.SGD(\n    model.parameters(),\n    lr=0.01,\n    momentum=0.9,\n    weight_decay=1e-4,\n    nesterov=True\n)"
+  },
+  "eli3": [
+    "Imagine you're trying to find the lowest point in a hilly landscape while blindfolded. Gradient descent is: look at the slope under your feet and take one step downhill. Full gradient descent uses the average slope across the entire dataset — accurate but slow. Stochastic Gradient Descent (SGD) uses just one (or a few) examples to estimate the slope — noisy but fast.",
+    "The 'stochastic' part means random. Instead of computing the exact slope over all your data (expensive), you pick a random mini-batch and use its gradient as an approximation. With enough steps, the noise averages out and you still find a good minimum.",
+    "SGD with mini-batches (what everyone calls 'SGD' in practice) is the engine of virtually all deep learning. Adam and other optimizers build on top of this idea by adding adaptive learning rates or momentum."
+  ],
+  "whenWhy": [
+    {
+      "title": "Large-scale deep learning training",
+      "body": "Mini-batch SGD processes B samples per step (typically B=32–2048). This is massively more efficient than full-batch GD: each step takes O(B) time instead of O(N), and you get N/B gradient updates per epoch. GPU parallelism is fully utilised within the mini-batch. Vision models (ResNet, ViT) are routinely trained with SGD + momentum and achieve SOTA with the right learning rate schedule."
+    },
+    {
+      "title": "Better generalisation than adaptive optimizers",
+      "body": "Empirically, SGD with momentum often generalises better than Adam on vision tasks. The implicit regularisation from gradient noise (stochasticity) and consistent per-parameter learning rates prevents the 'sharp minima' that Adam tends to find. Wilson et al. (2017) showed adaptive methods converge to different solutions than SGD, often with worse test accuracy for image classification."
+    },
+    {
+      "title": "When to prefer Adam over SGD",
+      "body": "Adam adapts per-parameter learning rates — it handles sparse gradients, different gradient scales across layers, and noisy problems much better than vanilla SGD. Adam is preferred for NLP/LLM training, reinforcement learning, and any task with very sparse updates (embeddings, attention heads). SGD is preferred for CV tasks where extensive tuning of learning rate and schedule is feasible."
+    }
+  ],
+  "deepDiveIntro": [
+    "The gradient descent update rule: w_{t+1} = w_t − η ∇L(w_t). For full-batch GD, ∇L is exact; for SGD, ∇L is estimated from a random mini-batch: ĝ_t = (1/B) Σ_{i∈B_t} ∇lᵢ(w_t). Under mild conditions (bounded gradient variance, decreasing step size), SGD converges to a stationary point. For convex functions: convergence rate O(1/√T). For non-convex: convergence to a stationary point (∇L ≈ 0) at rate O(1/T) with step size η = O(1/√T). [1]",
+    "The noise from mini-batching is a form of implicit regularisation. SGD explores parameter space stochastically, finding flat minima that generalise well (Keskar et al., 2016). Full-batch GD finds sharp minima that fit training data exactly but generalise poorly. This is why batch size matters: larger batches produce less noise and behave more like full-batch GD. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Full Batch vs Mini-batch vs Stochastic",
+      "body": "Three variants: (1) Gradient Descent (B=N): exact gradient, O(N) per step, guaranteed descent, slow for large N. (2) Mini-batch SGD (1 < B < N): unbiased gradient estimate, O(B) per step, best GPU utilisation, standard choice. (3) Online SGD (B=1): maximally noisy gradient, cheapest per step but high variance, used in online learning. Mini-batch SGD has O(σ/√B) gradient noise (σ² = variance of individual gradients). Doubling batch size halves noise, requiring roughly half the number of steps — but computation per step doubles. [1]",
+      "formula": "w_{t+1} = w_t − η · (1/B) Σ_{i∈B_t} ∇ℓᵢ(w_t)"
+    },
+    {
+      "heading": "Convergence Analysis",
+      "body": "For L-smooth (‖∇f(x)−∇f(y)‖ ≤ L‖x−y‖) non-convex functions: SGD with constant step size η ≤ 1/L converges to E[‖∇f(w_T)‖²] ≤ (f(w_0)−f*) / (ηT) + Lσ²η. The noise floor (Lσ²η) is irreducible unless η decreases. With η_t = c/√t: converges at O(1/√T) rate to a stationary point. In practice, learning rate schedules (cosine annealing, step decay) achieve this empirically. [1]"
+    },
+    {
+      "heading": "Effect of Learning Rate and Batch Size",
+      "body": "Linear scaling rule (Goyal et al., 2017): when multiplying batch size by k, multiply learning rate by k. Intuition: with k times more samples per step, each step takes k times as long in 'clock time' of training — increase η to compensate. Works up to B ≈ 8192 for ResNet-50; beyond that, warmup and lower η are needed. The effective noise level ∝ η·σ²/B (η linear, σ² constant, B in denominator), so large batches need large η to maintain equivalent noise level. [2]"
+    },
+    {
+      "heading": "Nesterov Accelerated SGD",
+      "body": "Nesterov (1983) proposed a modification: compute gradient at a look-ahead position (w − β·v) rather than current w. Update: v_{t+1} = β·vₜ + η·∇L(w_t − β·vₜ); w_{t+1} = w_t − v_{t+1}. For convex functions, Nesterov achieves O(1/T²) convergence vs O(1/T) for GD — provably optimal for first-order methods. In deep learning, Nesterov often gives slightly better results than standard momentum because it 'corrects' the momentum step using a more accurate gradient. [1]"
+  ],
+  "youtubeLabel": "Gradient Descent — 3Blue1Brown (Neural Networks Ch. 2)",
+  "youtubeUrl": "https://www.youtube.com/embed/IHZwWFHWa-w",
+  "takeaways": [
+    "w_{t+1} = w_t − η·ĝ_t where ĝ_t = (1/B)Σ∇ℓᵢ is the mini-batch gradient estimate. [1]",
+    "Mini-batch SGD has gradient noise O(σ/√B) — larger batch, less noise, less regularisation. [2]",
+    "Convergence (non-convex): O(1/√T) to stationary point with decreasing η_t = c/√t. [1]",
+    "Linear scaling rule: scale η proportionally to batch size B up to B ≈ 8192. [2]",
+    "SGD + momentum often generalises better than Adam on vision; Adam preferred for NLP. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why does mini-batch SGD find flatter minima than full-batch gradient descent?",
+      "a": "The gradient noise in mini-batch SGD acts as implicit regularisation. Sharp minima (high curvature, sensitive to small perturbations) have large nearby regions with high loss. A noisy gradient step has a chance to escape sharp minima. Flat minima (low curvature) are stable — a small perturbation doesn't increase loss much. Hochreiter & Schmidhuber (1997) showed flat minima generalise better because they remain in a low-loss region even when test data distribution shifts slightly from training. Large batch training converges to sharper minima (less noise) with worse test accuracy — this is the 'generalization gap' of large-batch training."
+    },
+    {
+      "q": "When does gradient descent fail to converge?",
+      "a": "Three main failure modes: (1) Learning rate too high: gradient descent diverges (loss increases). Rule of thumb: η < 2/L for L-smooth functions. (2) Saddle points: SGD noise helps escape saddle points that trap deterministic GD. In high dimensions, saddle points (positive Hessian in some directions, negative in others) are far more common than local minima. (3) Vanishing/exploding gradients in deep networks: gradients become too small or too large for useful updates before reaching early layers. Solutions: gradient clipping, careful initialisation, normalisation layers."
+    }
+  ],
+  "sources": [
+    { "label": "Goodfellow, Bengio & Courville — Deep Learning, Ch. 8 (Optimisation)", "url": "https://www.deeplearningbook.org/" },
+    { "label": "Goyal et al. (2017) — Accurate, Large Minibatch SGD: Training ImageNet in 1 Hour arXiv:1706.02677", "url": "https://arxiv.org/abs/1706.02677" }
+  ]
+}

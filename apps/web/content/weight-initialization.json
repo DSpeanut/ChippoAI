@@ -1,0 +1,69 @@
+{
+  "visualizationType": "network-diagram",
+  "codeSnapshot": {
+    "label": "weight_init.py",
+    "code": "import torch\nimport torch.nn as nn\n\n# Xavier / Glorot initialisation (for tanh, sigmoid)\n# Var(w) = 2 / (n_in + n_out)\nlayer = nn.Linear(256, 512)\nnn.init.xavier_uniform_(layer.weight)     # U[-a, a], a = sqrt(6/(n_in+n_out))\nnn.init.xavier_normal_(layer.weight)      # N(0, 2/(n_in+n_out))\nprint(f\"Xavier std: {layer.weight.std():.4f}\")  # ≈ sqrt(2/(256+512)) ≈ 0.051\n\n# He / Kaiming initialisation (for ReLU)\n# Var(w) = 2 / n_in\nnn.init.kaiming_uniform_(layer.weight, mode='fan_in',\n                          nonlinearity='relu')\n# a = sqrt(6/n_in)\nnn.init.kaiming_normal_(layer.weight, mode='fan_in',\n                         nonlinearity='relu')\nprint(f\"He std: {layer.weight.std():.4f}\")  # ≈ sqrt(2/256) ≈ 0.088\n\n# Verify signal propagation through deep network\nimport numpy as np\nL, d = 50, 256\n\n# Xavier: track std through layers\nstd_xavier = [1.0]\nfor _ in range(L):\n    W_std = np.sqrt(2 / (d + d))  # Xavier for square layers\n    # std(output) ≈ std(input) * std(W) * sqrt(d)  [linear layer]\n    std_xavier.append(std_xavier[-1] * W_std * np.sqrt(d))\nprint(f\"Xavier: final std={std_xavier[-1]:.4f}\")  # should ≈ 1.0\n\n# He init: designed for ReLU (halved effective fan_in)\nstd_he = [1.0]\nfor _ in range(L):\n    W_std = np.sqrt(2 / d)  # He for fan_in=d\n    # ReLU zeroes half the units on average: effective d/2 active\n    std_he.append(std_he[-1] * W_std * np.sqrt(d / 2))\nprint(f\"He:     final std={std_he[-1]:.4f}\")  # should ≈ 1.0"
+  },
+  "eli3": [
+    "If you start a neural network with weights that are all zeros, all neurons learn the same thing (symmetry breaking failure). If weights are too large, activations explode. If too small, they vanish. Weight initialisation is the careful choice of starting weight values to avoid these problems.",
+    "The key insight: you want the variance of activations to stay approximately constant as information flows forward through the network, and you want the variance of gradients to stay constant as they flow backward. This is achieved by making the initial weight variance proportional to 1/n_in.",
+    "Xavier initialisation is for sigmoid/tanh activations: Var(w) = 2/(n_in + n_out). He initialisation is for ReLU: Var(w) = 2/n_in (the factor of 2 compensates for ReLU zeroing out half the neurons). These are the defaults in PyTorch."
+  ],
+  "whenWhy": [
+    {
+      "title": "Preventing signal collapse or explosion at initialisation",
+      "body": "With d=512 and L=50 layers, using N(0,1) initialisation: std(activations) = (1·√512)^50 = 512^25 ≈ 10^70 — infinite. With N(0, 1/512): std = 1/√512·√512 = 1 — stable. The correct initialisation ensures the signal flows through all layers without vanishing or exploding before a single gradient step, giving the optimizer a viable starting point."
+    },
+    {
+      "title": "Transformer initialisation (GPT-2 style)",
+      "body": "GPT-2 (Radford et al., 2019) uses a special scaled initialisation for residual connections: residual weights W ~ N(0, 0.02/√(2L)) where L = number of residual layers. The 1/√(2L) factor prevents the variance of the residual stream from growing as L increases — each residual block adds a small perturbation, not a full replacement. This is important for training deep transformers (48+ layers)."
+    },
+    {
+      "title": "Choosing between Xavier and He",
+      "body": "Rule: Xavier for tanh/sigmoid activations, He for ReLU/leaky ReLU. PyTorch default for nn.Linear is Kaiming uniform (He) with mode='fan_in' and nonlinearity='leaky_relu' — appropriate for most use cases. For custom activations, derive the 'gain' factor: gain = std_after_activation / std_before = √(E[f'(z)²]) and scale init variance by gain²."
+    }
+  ],
+  "deepDiveIntro": [
+    "Glorot & Bengio (2010) derived the Xavier initialisation by requiring the variance of activations to be the same in every layer (forward condition) AND the variance of gradients to be the same (backward condition). For a linear layer with n_in inputs and n_out outputs: Var(aₗ) = n_in · Var(wₗ) · Var(aₗ₋₁). Setting Var(aₗ) = Var(aₗ₋₁) requires Var(wₗ) = 1/n_in (forward). Setting gradient variance constant requires Var(wₗ) = 1/n_out (backward). The compromise: Var(w) = 2/(n_in + n_out). [1]",
+    "He et al. (2015) extended this to ReLU: f(z) = max(0,z) has E[f(z)²] = E[z²|z>0]·P(z>0) = Var(z)·(1/2) (for zero-mean symmetric z). This halving of the variance requires Var(w) = 2/n_in to maintain unit activation variance. The 'gain' for ReLU is √2 relative to linear. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Xavier / Glorot Initialisation",
+      "body": "For a linear layer mapping n_in → n_out: Var(w) = 2/(n_in + n_out). Implemented as: uniform U[−a, a] where a = √(6/(n_in+n_out)), or normal N(0, 2/(n_in+n_out)). This is the harmonic mean of 1/n_in (forward condition) and 1/n_out (backward condition). Use when activation function's derivative has unit expectation (tanh at init ≈ 1, sigmoid < 0.25 so Xavier is suboptimal). [1]",
+      "formula": "Xavier: Var(w) = 2/(n_in + n_out)"
+    },
+    {
+      "heading": "He / Kaiming Initialisation",
+      "body": "For ReLU activations: Var(w) = 2/n_in. PyTorch: kaiming_normal_(tensor, mode='fan_in', nonlinearity='relu') → std = √(2/n_in). This accounts for ReLU zero-ing: only half the inputs survive, so you need double the variance in the weights to maintain signal strength. For leaky ReLU with slope a: Var(w) = 2/((1+a²)·n_in). For SELU: specific initialisation with std = 1/√n_in (LeCun init). [2]",
+      "formula": "He: Var(w) = 2/n_in  (for ReLU)"
+    },
+    {
+      "heading": "GPT-2 Scaled Residual Initialisation",
+      "body": "In a transformer with L residual blocks, each block adds a residual: x ← x + F(x). If F(x) has std σ_F, after L blocks: Var(x_L) ≈ Var(x_0) + L·σ_F² (variance grows with L). To keep Var(x_L) ≈ Var(x_0): σ_F = Var(x_0)/√L. In GPT-2: the weight matrices in residual paths (the second linear in MLP, and output projection in attention) are scaled by 1/√(2L). The factor 2 comes from 2 residual additions per transformer block (attention + FFN). [1]"
+    }
+  ],
+  "youtubeLabel": "Weight Initialization in Neural Networks",
+  "youtubeUrl": "https://www.youtube.com/embed/8krd5qKVw-Q",
+  "takeaways": [
+    "Xavier: Var(w) = 2/(n_in+n_out) — for tanh/sigmoid, balances forward and backward variance. [1]",
+    "He: Var(w) = 2/n_in — for ReLU, accounts for zero-ing of negative units. [2]",
+    "Zero init fails: all neurons learn identically (symmetry); breaks learning. [1]",
+    "GPT-2: residual weights scaled by 1/√(2L) to prevent variance growth with depth. [1]",
+    "PyTorch default: Kaiming uniform (He) for nn.Linear; use kaiming_normal_ for clean Gaussian. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why does zero initialisation fail, and is it ever valid?",
+      "a": "Zero initialisation (all weights = 0) causes the symmetry problem: all neurons in each layer receive the same gradient and learn identically — the layer is equivalent to a single neuron. This persists throughout training: if layer l weights are all equal at init, all neurons compute the same function. Exception: biases CAN and often SHOULD be initialised to zero (for linear layers, zero bias is fine). For output layers with special outputs (e.g., sigmoid for binary classification, softmax for multiclass), zero bias initialisation produces uniform output probability — a reasonable starting point."
+    },
+    {
+      "q": "What initialisation is appropriate for BatchNorm and LayerNorm parameters?",
+      "a": "Both BatchNorm and LayerNorm have learnable parameters γ (scale) and β (shift). Standard initialisation: γ=1, β=0. This makes the normalisation initially an identity transformation (scaled activations with unit variance, zero mean). Initialising γ≠1 at the start disrupts the normalisation and can cause training instability. In ResNets, there's a variation called 'zero-init' for the γ in the last BatchNorm of each residual block (set γ=0): this initialises the residual branches to zero output, making the network initially equivalent to a linear network — improving gradient flow early in training (Zhang et al., 2019)."
+    }
+  ],
+  "sources": [
+    { "label": "Glorot & Bengio (2010) — Understanding the difficulty of training deep feedforward neural networks, AISTATS 2010", "url": "http://proceedings.mlr.press/v9/glorot10a.html" },
+    { "label": "He et al. (2015) — Delving Deep into Rectifiers: Surpassing Human-Level Performance on ImageNet Classification arXiv:1502.01852", "url": "https://arxiv.org/abs/1502.01852" }
+  ]
+}

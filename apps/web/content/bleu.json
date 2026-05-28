@@ -1,0 +1,67 @@
+{
+  "visualizationType": "architecture-diagram",
+  "codeSnapshot": {
+    "label": "bleu.py",
+    "code": "import numpy as np\nfrom collections import Counter\nfrom nltk.translate.bleu_score import corpus_bleu, sentence_bleu, SmoothingFunction\n\n# BLEU (Bilingual Evaluation Understudy) — Papineni et al., 2002\n# BLEU = BP · exp(Σₙ₌₁ᴺ wₙ · log pₙ)\n# pₙ = clipped n-gram precision\n# BP = brevity penalty = min(1, exp(1 - r/c))\n\ndef clipped_ngram_precision(hypothesis: list, references: list, n: int) -> float:\n    \"\"\"\n    Clipped n-gram precision: count matches, clipped to max reference count.\n    hypothesis: list of tokens\n    references: list of list of tokens (multiple references allowed)\n    \"\"\"\n    hyp_ngrams = Counter([tuple(hypothesis[i:i+n]) for i in range(len(hypothesis)-n+1)])\n    ref_ngrams_max = Counter()  # max count of each n-gram across all references\n    for ref in references:\n        ref_ng = Counter([tuple(ref[i:i+n]) for i in range(len(ref)-n+1)])\n        for ng, count in ref_ng.items():\n            ref_ngrams_max[ng] = max(ref_ngrams_max[ng], count)\n    # Clipped count: min(hypothesis count, max reference count)\n    clipped = sum(min(count, ref_ngrams_max[ng]) for ng, count in hyp_ngrams.items())\n    total = max(1, sum(hyp_ngrams.values()))  # avoid division by zero\n    return clipped / total\n\ndef bleu_score(hypothesis: list, references: list, N: int = 4) -> float:\n    \"\"\"Compute BLEU-N with uniform weights (standard BLEU-4).\"\"\"\n    # Brevity penalty\n    c = len(hypothesis)  # candidate length\n    r = min((len(ref) for ref in references), key=lambda l: abs(l - c))  # closest ref length\n    BP = min(1.0, np.exp(1 - r / max(c, 1)))\n    # Geometric mean of clipped n-gram precisions\n    log_avg = 0.0\n    for n in range(1, N + 1):\n        pn = clipped_ngram_precision(hypothesis, references, n)\n        log_avg += (1.0 / N) * np.log(max(pn, 1e-9))  # clip for log stability\n    return BP * np.exp(log_avg)\n\n# Example\nhyp = ['the', 'cat', 'is', 'on', 'the', 'mat']\nref1 = ['the', 'cat', 'sits', 'on', 'the', 'mat']\nref2 = ['there', 'is', 'a', 'cat', 'on', 'the', 'mat']\nprint(f'BLEU-4: {bleu_score(hyp, [ref1, ref2]):.4f}')\n\n# NLTK corpus BLEU (recommended for MT evaluation)\nhypotheses = [['the', 'cat', 'is', 'on', 'the', 'mat']]\nreferences  = [[['the', 'cat', 'sits', 'on', 'the', 'mat']]]\nprint(f'NLTK BLEU-4: {corpus_bleu(references, hypotheses):.4f}')\n\n# SacreBLEU: standardised BLEU (detokenises + standardised tokenisation)\n# from sacrebleu import corpus_bleu as sacre_bleu"
+  },
+  "eli3": [
+    "BLEU measures how similar a machine-translated sentence is to human reference translations, by counting how many n-grams (short word sequences) in the machine output also appear in the reference. A higher BLEU score means more overlap with human translations.",
+    "BLEU-4 is the standard: it counts overlaps for 1-grams (words), 2-grams, 3-grams, and 4-grams, and takes their geometric average. A brevity penalty is applied if the translation is too short (to prevent cheating by translating just 'the').",
+    "BLEU scores range from 0 to 1 (often shown as 0–100). A BLEU-4 of 0.40 is considered good for MT; 0.60 is excellent. The key limitation: BLEU only measures n-gram overlap — it doesn't understand meaning, doesn't give credit for synonyms, and doesn't check fluency."
+  ],
+  "whenWhy": [
+    {
+      "title": "Standard machine translation benchmark metric",
+      "body": "BLEU (Papineni et al., 2002) is the de facto standard metric for machine translation evaluation and remains the most widely reported metric in MT papers despite its limitations. It correlates well with human judgment at the corpus level (not at the sentence level). WMT shared tasks (English-German, English-French, etc.) use BLEU as the primary metric, with SacreBLEU (Post, 2018) as the standardised reproducible variant. MT systems are typically compared by case-insensitive BLEU-4 on standardised test sets."
+    },
+    {
+      "title": "Quick evaluation for text generation tasks",
+      "body": "BLEU is used beyond MT for any text generation task with reference outputs: image captioning (COCO uses BLEU-1 to BLEU-4), code generation (pass rate is preferred but BLEU used for partial credit), dialogue response generation (BLEU-4 on reference responses). Quick to compute (no model inference needed) — suitable for development-time evaluation during training. Use as a rapid proxy metric; always pair with human evaluation for final reporting."
+    },
+    {
+      "title": "SacreBLEU: reproducible BLEU",
+      "body": "Original BLEU implementation details (tokenization, case sensitivity) vary across papers, making scores incomparable. SacreBLEU (Post, 2018) standardizes: built-in tokenization, case sensitivity (cased/uncased), and a version hash so exact computation is reproducible. sacrebleu is now the recommended implementation. Always report the SacreBLEU signature (e.g., nrefs:1|case:mixed|eff:no|tok:13a) so others can reproduce the exact score. Typical BLEU-4 values: news MT ~25-40, summarization ~10-20, dialogue ~1-10."
+    }
+  ],
+  "deepDiveIntro": [
+    "BLEU (Papineni et al., 2002): BLEU = BP · exp(Σₙ₌₁ᴺ wₙ · log pₙ). Modified n-gram precision pₙ = (Σ clipped count of n-grams in hypothesis) / (Σ total n-grams in hypothesis). Clipping: each n-gram in the hypothesis is counted at most as many times as it appears in any single reference. This prevents a degenerate hypothesis like 'the the the the the' (5 unigram matches) from scoring high. Brevity penalty BP = min(1, exp(1 - r/c)) where c = candidate length and r = effective reference length (the reference length closest to c). BP = 1 if c ≥ r (no penalty for longer translations). [1]",
+    "BLEU-4 uses N=4, uniform weights wₙ = 1/4. The geometric mean (via log-sum of log pₙ) gives zero if any precision is zero (p₁=p₂=p₃=0, p₄=0 → BLEU=0). This is problematic at the sentence level: a single 4-gram match in a long sentence can give BLEU-4=0 due to zero 3-gram or 4-gram precision. Smoothing (Chen & Cherry, 2014) is used for sentence-level BLEU to avoid the zero-precision problem: add 1 to numerator and denominator for n-gram orders with zero count. NLTK provides SmoothingFunction.method1 for this. [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Modified n-gram Precision and Clipping",
+      "body": "Without clipping, a hypothesis 'the the the the' against reference 'the cat is on the mat' would score unigram precision = 4/4 = 1.0 (4 'the' matches, 4 total). With clipping: 'the' appears 2 times in reference → clipped count = min(4, 2) = 2. Clipped precision = 2/4 = 0.5. Clipping prevents gaming the metric by repeating high-frequency words. Multiple references: the maximum count of an n-gram across all references is used as the clip. This rewards translations that partially match any human reference. [1]",
+      "formula": "BLEU = BP · exp(Σₙ₌₁ᴺ wₙ·log pₙ),  BP = min(1, exp(1−r/c))"
+    },
+    {
+      "heading": "Limitations of BLEU",
+      "body": "BLEU limitations: (1) No recall — BLEU only measures n-gram precision, not recall. A translation that covers only easy parts of the sentence can have high BLEU. (2) No synonyms — 'automobile' and 'car' count as non-matching even if semantically equivalent. (3) No fluency — measures n-gram overlap but not grammatical coherence at the sentence level. (4) Sentence-level BLEU is unreliable — only corpus-level BLEU correlates well with human judgment. (5) Language-specific — assumes space-delimited tokens (problematic for Chinese, Japanese). Alternative metrics: METEOR (recall + synonyms), BERTScore (semantic), COMET (trained on human judgments). [1]"
+    },
+    {
+      "heading": "METEOR, ROUGE, and Beyond BLEU",
+      "body": "METEOR (Banerjee & Lavie, 2005): precision + recall with synonym matching (WordNet) and stemming. Correlates better with human judgment than BLEU at sentence level. ROUGE (Lin, 2004): recall-oriented BLEU for summarization — measures recall of n-grams from reference in the candidate. TER (Translation Edit Rate): number of edits needed to convert hypothesis to reference / reference length. COMET (Rei et al., 2020): fine-tuned cross-lingual model trained to predict human DA scores — highest human correlation among automatic metrics. For submission to major MT conferences (ACL, EMNLP), reporting both BLEU and COMET is now standard. [1]"
+    }
+  ],
+  "youtubeLabel": "BLEU Score Explained — Machine Translation Evaluation",
+  "youtubeUrl": "https://www.youtube.com/embed/M05L1DhFqcw",
+  "takeaways": [
+    "BLEU = BP·exp(Σwₙ·log pₙ) — geometric mean of clipped n-gram precisions × brevity penalty. [1]",
+    "Clipping prevents gaming: n-gram count capped at max count in any single reference. [1]",
+    "BP = min(1, exp(1−r/c)) — penalises translations shorter than the reference. [1]",
+    "BLEU-4 (N=4, uniform weights) is the standard MT metric; only meaningful at corpus level. [1]",
+    "Use SacreBLEU for reproducible, comparable scores across papers. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why does BLEU fail for low-resource languages and short sentences?",
+      "a": "BLEU-4 requires 4-gram matches. Short sentences (≤5 words) often have zero 4-gram matches, giving BLEU-4=0 even for good translations (one-word difference prevents any 4-gram overlap). Fix: use lower-order BLEU (BLEU-1 or BLEU-2) for short-sentence evaluation, or apply smoothing. For low-resource languages: fewer human reference translations → n-gram matches are harder to obtain by chance, making BLEU scores lower even for equivalent quality. BLEU also struggles for morphologically rich languages (Turkish, Finnish) where the same meaning can be expressed with many different inflected forms — inflection variants don't match exactly. METEOR's stemming and WordNet synonyms partially address this."
+    },
+    {
+      "q": "Why is BLEU still used despite better metrics like COMET existing?",
+      "a": "BLEU remains dominant for several practical reasons: (1) Simplicity and speed — no model inference required, computable in milliseconds even on large test sets. (2) Historical comparability — decades of MT papers report BLEU, allowing direct comparison with prior work. (3) Reference-only evaluation — BLEU needs only reference translations, while COMET also needs source sentences and produces results that depend on the specific checkpoint version. (4) No training data required — BLEU is unsupervised (no need for human DA training data). The field is shifting toward COMET for final evaluations in major conferences (WMT 2022 primary metric = COMET), but BLEU is still reported alongside for comparability."
+    }
+  ],
+  "sources": [
+    { "label": "Papineni et al. (2002) — BLEU: A Method for Automatic Evaluation of Machine Translation, ACL 2002", "url": "https://aclanthology.org/P02-1040/" }
+  ]
+}

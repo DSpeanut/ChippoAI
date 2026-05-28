@@ -1,0 +1,73 @@
+{
+  "visualizationType": "training-curve",
+  "codeSnapshot": {
+    "label": "rlhf.py",
+    "code": "# RLHF Pipeline: 3 phases\n# Phase 1: SFT (already covered in sft.py)\n# Phase 2: Reward Model Training\n# Phase 3: PPO fine-tuning\n\nimport torch\nimport torch.nn as nn\nfrom transformers import AutoModelForSequenceClassification, AutoModelForCausalLM\n\n# Phase 2: Reward Model\n# Input: (prompt, response) pair → scalar reward\n# Trained on human preference data: (prompt, chosen, rejected)\n\nclass RewardModel(nn.Module):\n    def __init__(self, base_model_name):\n        super().__init__()\n        # Use a classification model with 1 output (the reward)\n        self.model = AutoModelForSequenceClassification.from_pretrained(\n            base_model_name, num_labels=1)\n\n    def forward(self, input_ids, attention_mask):\n        return self.model(input_ids, attention_mask).logits.squeeze(-1)  # (B,)\n\n# Reward model loss: Bradley-Terry preference model\n# P(chosen > rejected) = σ(r_chosen - r_rejected)\n# Loss: -log P(chosen > rejected) = -log σ(r_chosen - r_rejected)\ndef reward_model_loss(r_chosen, r_rejected):\n    return -nn.functional.logsigmoid(r_chosen - r_rejected).mean()\n\n# Phase 3: PPO with reward model\n# Key hyperparameters (from TRL's PPOTrainer)\nrlhf_config = {\n    'learning_rate': 1.41e-5,\n    'batch_size': 128,\n    'mini_batch_size': 16,\n    'ppo_epochs': 4,\n    'init_kl_coef': 0.2,     # KL penalty coefficient (β)\n    'target_kl': 6.0,        # target KL divergence from SFT policy\n    'cliprange': 0.2,        # PPO clip ratio (ε)\n    'vf_coef': 0.1,          # value function loss coefficient\n    'max_grad_norm': 1.0,\n}\n\n# RLHF objective (full):\n# max E[r(x, y)] - β · KL(π_θ(y|x) || π_ref(y|x))\n# = max E[r(x, y) - β · log(π_θ(y|x) / π_ref(y|x))]\n# where π_ref is the SFT policy (frozen reference)\nprint(\"RLHF optimises: reward - β*KL_from_SFT_policy\")"
+  },
+  "eli3": [
+    "RLHF (Reinforcement Learning from Human Feedback) teaches an AI to produce outputs that humans actually prefer, not just grammatically correct text. Humans compare pairs of responses and say 'this one is better' — the AI learns from these preferences.",
+    "The process has three steps: (1) Start with a language model fine-tuned on examples (SFT model). (2) Train a 'reward model' that predicts which responses humans would prefer. (3) Use reinforcement learning (PPO) to make the language model generate responses that get high scores from the reward model.",
+    "ChatGPT's dramatic improvement over GPT-3 came from RLHF — the same model architecture became vastly more helpful and harmless by learning from human preference signals. InstructGPT (Ouyang et al., 2022) first demonstrated this at scale."
+  ],
+  "whenWhy": [
+    {
+      "title": "Aligning LLMs with human values and preferences",
+      "body": "RLHF is the primary technique behind ChatGPT, Claude, and Gemini's instruction-following quality. Raw SFT models follow instructions but can produce harmful, evasive, or unhelpful responses. RLHF trains the model to score high on human preference — producing responses humans rate as helpful, harmless, and honest. The KL penalty prevents the model from diverging too far from the SFT baseline (distribution shift)."
+    },
+    {
+      "title": "Learning complex preferences beyond simple metrics",
+      "body": "RLHF can capture nuanced preferences: 'explain this clearly at a 5th grade level' or 'be concise but complete.' These are hard to capture with exact string matching or automated metrics. Human comparisons provide a rich, holistic preference signal. The reward model learns to proxy for this preference signal, enabling scalable automated training."
+    },
+    {
+      "title": "Reducing reward hacking",
+      "body": "PPO with KL penalty prevents the policy from exploiting the reward model (reward hacking: finding adversarial inputs that score high on the reward model but are nonsensical to humans). The KL constraint: E[KL(π_θ||π_ref)] ≤ δ. The β coefficient controls the tradeoff: large β → stays close to SFT (safe but less optimised); small β → maximises reward (risky, reward hacking)."
+    }
+  ],
+  "deepDiveIntro": [
+    "RLHF objective (Ziegler et al., 2019): max_{π_θ} E_{x~D, y~π_θ(·|x)}[r_φ(x,y)] − β·KL(π_θ(y|x) || π_ref(y|x)). The reward r_φ is the reward model; π_ref is the SFT reference policy (frozen). The KL term penalises deviation from the SFT policy. The optimal policy has a closed form: π*_θ(y|x) ∝ π_ref(y|x)·exp(r_φ(x,y)/β). This is a tilted distribution that assigns higher probability to responses the reward model prefers. [1]",
+    "The reward model is trained on a comparison dataset: (prompt x, chosen y_w, rejected y_l). Bradley-Terry preference model: P(y_w > y_l | x) = σ(r(x,y_w) − r(x,y_l)). Loss: L = −E[log σ(r(x,y_w) − r(x,y_l))]. This is a pairwise ranking loss — the model learns a scalar reward that ranks chosen > rejected. [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Three-Phase Pipeline",
+      "body": "Phase 1 — SFT: fine-tune base LLM on (instruction, response) pairs. Get π_SFT. Phase 2 — Reward Model: fine-tune a second LLM (often same architecture) as a scalar reward model using Bradley-Terry loss on human comparison data. Get r_φ(x,y). Phase 3 — PPO: use π_SFT as initialisation and reference. For each prompt x, generate y ~ π_θ, compute reward r_φ(x,y) and KL penalty log π_θ(y|x) − log π_ref(y|x). Update π_θ with PPO to maximise r_φ − β·KL. KL coefficient β is adaptively tuned via adaptive KL penalty. [1]"
+    },
+    {
+      "heading": "Bradley-Terry Reward Model Loss",
+      "body": "Given comparison data (x, y_w, y_l): L_RM = −E[log σ(r_φ(x,y_w) − r_φ(x,y_l))]. This is equivalent to learning a logistic regression model on the difference of rewards. At convergence: r_φ(x,y_w) > r_φ(x,y_l) for all training pairs (with margin proportional to confidence). The reward model is a language model with a linear head outputting a scalar — same architecture as a classifier. Often the same base model as the policy is used for reward modeling, with the LM head replaced by a regression head. [1]",
+      "formula": "L_RM = −E[log σ(r_φ(x,y_w) − r_φ(x,y_l))]"
+    },
+    {
+      "heading": "PPO in RLHF",
+      "body": "PPO (Proximal Policy Optimisation) with clipped objective: L_CLIP(θ) = E[min(r_t(θ)·Aₜ, clip(r_t(θ), 1−ε, 1+ε)·Aₜ)] where r_t = π_θ(aₜ|sₜ)/π_old(aₜ|sₜ) and Aₜ is the advantage. In RLHF: action = next token, state = prompt + generated tokens so far, reward = sparse (reward model applied at [EOS] token). Additional KL reward: rₜ' = rₜ − β·(log π_θ(aₜ|sₜ) − log π_ref(aₜ|sₜ)) (dense per-token KL). [1]",
+      "formula": "r_RLHF(x,y) = r_φ(x,y) − β Σₜ log(π_θ(yₜ|y<t,x)/π_ref(yₜ|y<t,x))"
+    },
+    {
+      "heading": "KL Penalty and Reward Hacking",
+      "body": "Without KL penalty: PPO maximises the reward model, not true human preference. The reward model is an imperfect proxy — optimising it too aggressively produces responses that score high on the reward model but are low-quality to humans (reward hacking). Example: repetitive high-reward text, or responses that trigger known reward model biases. KL penalty limits how far the policy can deviate from π_SFT per episode. Adaptive KL coefficient: if KL > target KL (e.g., 6.0), increase β; if KL < target/2, decrease β. [2]"
+    }
+  ],
+  "youtubeLabel": "RLHF Explained — InstructGPT & ChatGPT",
+  "youtubeUrl": "https://www.youtube.com/embed/bZQun8Y4L2A",
+  "takeaways": [
+    "3 phases: SFT → reward model (Bradley-Terry) → PPO with KL penalty. [1]",
+    "L_RM = −E[log σ(r(x,y_w)−r(x,y_l))] — pairwise ranking of human preferences. [1]",
+    "RLHF objective: max E[r(x,y)] − β·KL(π_θ||π_ref). [1]",
+    "KL penalty prevents reward hacking: policy stays close to SFT baseline. [2]",
+    "Optimal policy: π*(y|x) ∝ π_ref(y|x)·exp(r(x,y)/β) — Boltzmann-tilted distribution. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why is PPO computationally expensive for RLHF and what are the alternatives?",
+      "a": "PPO RLHF requires: (1) the policy model (π_θ) — 7B params; (2) the reference model (π_ref) — frozen copy, same size; (3) the reward model (r_φ) — another model, often 7B; (4) a value model (critic) — another copy, often initialised from π_ref. Total: 3–4× model memory on GPU. For a 7B model in bf16: ~14GB × 4 = 56GB minimum (requiring multi-GPU setup). Alternative: DPO (Direct Preference Optimisation, Rafailov et al., 2023) bypasses the reward model and PPO entirely, training the policy directly on preference data with a simpler loss — 2× less memory and much simpler implementation."
+    },
+    {
+      "q": "How do you collect quality human preference data at scale?",
+      "a": "Human preference labelling: show two responses to the same prompt, ask 'which is better and why?'. Key design decisions: (1) Labeller selection: domain experts for technical content, general contractors for broad QA. (2) Annotation guidelines: 'helpful, harmless, and honest' criteria. (3) Consistency: inter-annotator agreement; controversial samples need multiple labels. (4) Adversarial prompts: red-teaming to find failure modes. Scale: InstructGPT used ~13K comparison data pairs. Modern datasets (Anthropic HH-RLHF: 161K; OpenAI WebGPT: 20K). Synthetic alternatives: use a stronger AI model to generate preference labels (RLAIF, Lee et al., 2023) — cheaper and scalable, but risks propagating AI biases."
+    }
+  ],
+  "sources": [
+    { "label": "Ouyang et al. (2022) — Training language models to follow instructions with human feedback arXiv:2203.02155", "url": "https://arxiv.org/abs/2203.02155" },
+    { "label": "Ziegler et al. (2019) — Fine-Tuning Language Models from Human Preferences arXiv:1909.08593", "url": "https://arxiv.org/abs/1909.08593" }
+  ]
+}

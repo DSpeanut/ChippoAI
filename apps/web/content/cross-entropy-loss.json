@@ -1,0 +1,75 @@
+{
+  "visualizationType": "cross-entropy",
+  "codeSnapshot": {
+    "label": "cross_entropy_loss.py",
+    "code": "import torch\nimport torch.nn as nn\nimport torch.nn.functional as F\n\n# Multi-class cross-entropy (PyTorch)\n# Input: raw logits (no softmax applied)\ncriterion = nn.CrossEntropyLoss()\nlogits = torch.tensor([[2.0, 1.0, 0.1],   # sample 1\n                       [0.5, 2.5, 0.3]])   # sample 2\nlabels = torch.tensor([0, 1])              # true classes\nloss = criterion(logits, labels)\nprint(f\"CE Loss: {loss.item():.4f}\")  # ~0.4971\n\n# Manual: -log(softmax(logit)[true_class])\nprobs = F.softmax(logits, dim=1)\nce_manual = -torch.log(probs[torch.arange(2), labels]).mean()\nprint(f\"Manual CE: {ce_manual.item():.4f}\")  # same\n\n# Binary cross-entropy\nbce = nn.BCEWithLogitsLoss()\ny_logit = torch.tensor([1.5, -0.5, 2.0])\ny_true = torch.tensor([1.0, 0.0, 1.0])\nprint(f\"BCE Loss: {bce(y_logit, y_true).item():.4f}\")\n\n# Label smoothing built in to CrossEntropyLoss\nsmoothed = nn.CrossEntropyLoss(label_smoothing=0.1)\nprint(f\"Smoothed CE: {smoothed(logits, labels).item():.4f}\")"
+  },
+  "eli3": [
+    "Cross-entropy loss asks: 'How surprised is my model when it sees the true answer?' If the model said class A had 90% probability and class A was indeed correct, it's not surprised — low loss. If it gave class A 1% probability and class A was correct, it's very surprised — high loss.",
+    "Mathematically it's −log(predicted probability of the true class). Log makes surprises compound: being 10× less confident costs you not twice but log(10) ≈ 2.3 times more loss.",
+    "It's the standard loss for classification because it perfectly aligns with maximum likelihood estimation and produces strong, non-vanishing gradients — unlike MSE on probabilities, which causes the model to learn slowly when predictions are very wrong."
+  ],
+  "whenWhy": [
+    {
+      "title": "Multi-class classification (softmax output)",
+      "body": "For K classes, apply softmax to logits to get probabilities p̂, then L = −log p̂_{true_class}. Cross-entropy with softmax is numerically stable when computed jointly (log-sum-exp trick). PyTorch's nn.CrossEntropyLoss takes raw logits and handles this internally. Every image classifier (ResNet, ViT, EfficientNet) uses this loss."
+    },
+    {
+      "title": "Binary classification (sigmoid output)",
+      "body": "Binary CE: L = −[y log(p) + (1−y) log(1−p)]. Use BCEWithLogitsLoss (applies sigmoid + CE in one numerically stable step). Used in multi-label classification where each label is independent — not softmax but independent sigmoid per label."
+    },
+    {
+      "title": "Language model training (next-token prediction)",
+      "body": "GPT and other causal LMs minimise the average cross-entropy over all token positions: L = −(1/T) Σₜ log p_θ(wₜ|w₁,...,wₜ₋₁). This is the standard pre-training objective for all autoregressive LLMs. Perplexity = exp(CE) is the standard reporting metric."
+    }
+  ],
+  "deepDiveIntro": [
+    "For a K-class classification problem with one-hot label y ∈ {0,1}^K and predicted probabilities p̂ = softmax(z): CE = −Σₖ yₖ log p̂ₖ = −log p̂_{true}. Since only the true class has yₖ=1, only one term survives. The gradient of CE + softmax with respect to logit zⱼ is (p̂ⱼ − yⱼ) — clean, linear, and non-vanishing even when the model is confident and wrong. [1]",
+    "Cross-entropy equals KL divergence plus the entropy of the true distribution: H(y, p̂) = H(y) + D_KL(y||p̂). Since H(y) = 0 for one-hot labels, minimising CE is equivalent to minimising KL(y||p̂). This is also equivalent to maximising the log-likelihood of the data under a categorical model: L_CE = −Σᵢ log p̂(yᵢ|xᵢ). [1][2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Gradient of CE + Softmax",
+      "body": "For logit vector z with softmax p̂ₖ = exp(zₖ)/Σⱼ exp(zⱼ), the gradient of L = −log p̂_c (true class c) with respect to zⱼ is: ∂L/∂zⱼ = p̂ⱼ − 1{j=c}. This is simply (prediction − label). This clean gradient avoids the vanishing gradient problem that plagues MSE + sigmoid. It is the primary reason cross-entropy is preferred over MSE for classification. [1]",
+      "formula": "∂L/∂zⱼ = p̂ⱼ − 1{j = true class}"
+    },
+    {
+      "heading": "Numerical Stability: Log-Sum-Exp Trick",
+      "body": "Computing log(softmax(z)) naively: exp(z) can overflow for large logits. The numerically stable version subtracts max(z) first: log p̂ₖ = zₖ − log(Σⱼ exp(zⱼ − max(z))) − max(z). This doesn't change the result but prevents overflow. PyTorch's F.cross_entropy and nn.LogSoftmax implement this. Never apply softmax then log separately — precision loss compounds. [1]"
+    },
+    {
+      "heading": "Label Smoothing",
+      "body": "Hard one-hot targets push the model to predict extreme probabilities, causing overconfidence. Label smoothing replaces target y_c = 1 with y_c = 1 − ε, distributing ε/(K−1) to other classes. Smoothed CE = −[(1−ε) log p̂_c + (ε/(K−1)) Σ_{k≠c} log p̂_k]. Used in training transformers (Vaswani et al., 2017: ε=0.1) and image classifiers (EfficientNet). Reduces calibration error and improves generalisation. [2]",
+      "formula": "ỹₖ = 1−ε if k=true, ε/(K−1) otherwise"
+    },
+    {
+      "heading": "Focal Loss: Addressing Class Imbalance",
+      "body": "RetinaNet (Lin et al., 2017) introduced focal loss to handle extreme foreground/background imbalance in object detection: FL = −(1−p̂_c)^γ log p̂_c, γ ≥ 0. The modulating factor (1−p̂_c)^γ down-weights easy examples (high p̂_c → small factor) so the model focuses on hard, misclassified examples. At γ=0 it reduces to CE; typical γ=2 works well. Reduces the effective loss from the 99.9% easy negatives by ~100×. [3]",
+      "formula": "FL = −(1 − p̂_c)^γ log p̂_c"
+    }
+  ],
+  "youtubeLabel": "Cross Entropy Loss — StatQuest",
+  "youtubeUrl": "https://www.youtube.com/embed/6ArSyxRG63I",
+  "takeaways": [
+    "L = −log p̂_{true class} — penalises low probability assigned to the correct class. [1]",
+    "Gradient ∂L/∂zⱼ = p̂ⱼ − 1{j=true}: clean, linear, non-vanishing. [1]",
+    "CE = KL(y||p̂) for one-hot labels — minimising CE ≡ maximising log-likelihood. [1]",
+    "Label smoothing (ε=0.1) reduces overconfidence and improves calibration. [2]",
+    "Focal loss = CE weighted by (1−p̂)^γ — targets hard examples in imbalanced datasets. [3]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why does CE produce better gradients than MSE for classification?",
+      "a": "With MSE and sigmoid: ∂L/∂z = (ŷ−y)·σ'(z) = (ŷ−y)·ŷ(1−ŷ). When a confident wrong prediction saturates the sigmoid (ŷ≈0 or 1), σ'(z)≈0 and the gradient vanishes — learning stalls. With CE and softmax: ∂L/∂z = ŷ−y, no saturation term. Even if the model is confidently wrong (e.g., class 0 gets 99% but true class is 1), the gradient is large, enabling rapid correction."
+    },
+    {
+      "q": "What is temperature scaling in the context of cross-entropy?",
+      "a": "Temperature T divides logits before softmax: p̂ₖ = exp(zₖ/T)/Σⱼ exp(zⱼ/T). High T (>1) makes the distribution more uniform (lower confidence); low T (<1) makes it more peaked (higher confidence). In knowledge distillation, teacher's soft labels at high T carry more information about similarities between classes than hard one-hot labels. In inference, temperature controls exploration vs exploitation (used in LLM sampling). Temperature does not change the argmax at T=1 but affects cross-entropy loss value."
+    }
+  ],
+  "sources": [
+    { "label": "Goodfellow, Bengio & Courville — Deep Learning, Ch. 6", "url": "https://www.deeplearningbook.org/" },
+    { "label": "Vaswani et al. (2017) — Attention Is All You Need arXiv:1706.03762", "url": "https://arxiv.org/abs/1706.03762" },
+    { "label": "Lin et al. (2017) — Focal Loss for Dense Object Detection arXiv:1708.02002", "url": "https://arxiv.org/abs/1708.02002" }
+  ]
+}

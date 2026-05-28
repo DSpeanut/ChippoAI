@@ -1,0 +1,74 @@
+{
+  "visualizationType": "optimizer-trace",
+  "codeSnapshot": {
+    "label": "adam.py",
+    "code": "import torch\nimport torch.nn as nn\nimport math\n\nmodel = nn.Linear(10, 1)\n\n# PyTorch Adam\noptimizer = torch.optim.Adam(\n    model.parameters(),\n    lr=1e-3,      # η (step size)\n    betas=(0.9, 0.999),  # (β1, β2) for 1st and 2nd moment decay\n    eps=1e-8,     # ε for numerical stability\n    weight_decay=0  # use AdamW for L2 regularisation\n)\n\n# Manual Adam implementation\nclass AdamManual:\n    def __init__(self, params, lr=1e-3, betas=(0.9, 0.999), eps=1e-8):\n        self.params = list(params)\n        self.lr = lr\n        self.b1, self.b2 = betas\n        self.eps = eps\n        self.m = [torch.zeros_like(p) for p in self.params]  # 1st moment\n        self.v = [torch.zeros_like(p) for p in self.params]  # 2nd moment\n        self.t = 0  # step counter\n\n    def step(self):\n        self.t += 1\n        for p, m, v in zip(self.params, self.m, self.v):\n            if p.grad is None: continue\n            g = p.grad\n            m.mul_(self.b1).add_(g, alpha=1-self.b1)       # m = β1*m + (1-β1)*g\n            v.mul_(self.b2).addcmul_(g, g, value=1-self.b2) # v = β2*v + (1-β2)*g²\n            m_hat = m / (1 - self.b1**self.t)   # bias correction\n            v_hat = v / (1 - self.b2**self.t)\n            p.data.sub_(self.lr * m_hat / (v_hat.sqrt() + self.eps))\n\noptimizer_manual = AdamManual(model.parameters(), lr=1e-3)\nfor _ in range(10):\n    x, y = torch.randn(32, 10), torch.randn(32, 1)\n    loss = nn.MSELoss()(model(x), y)\n    model.zero_grad(); loss.backward(); optimizer_manual.step()"
+  },
+  "eli3": [
+    "Adam (Adaptive Moment Estimation) is an optimizer that gives each parameter its own individually tuned learning rate. Parameters that consistently get large gradients get a smaller effective learning rate (so they don't overshoot). Parameters that rarely get updated get a larger effective learning rate (so they can learn faster when they do).",
+    "It does this by tracking two running statistics per parameter: the average gradient (first moment, like momentum) and the average squared gradient (second moment, like AdaGrad). The step size is the first moment divided by the square root of the second — this normalises the update by recent gradient magnitude.",
+    "Adam is the default optimizer for most NLP, LLM, and RL tasks because it's robust to bad hyperparameter choices and works well out-of-the-box. The learning rate 1e-3 with default betas (0.9, 0.999) is a reliable starting point for almost any architecture."
+  ],
+  "whenWhy": [
+    {
+      "title": "Default choice for transformer and LLM training",
+      "body": "Every major LLM (GPT-4, LLaMA, Mistral) is trained with AdamW (Adam + decoupled weight decay). Attention layers have very different gradient scales across heads and layers — Adam's per-parameter adaptive learning rate handles this naturally. β₁=0.9, β₂=0.999, ε=1e-8 are nearly universal hyperparameters. Learning rate typically 1e-4 to 3e-4 with warmup + cosine decay."
+    },
+    {
+      "title": "Sparse gradient problems (embedding tables, NLP)",
+      "body": "Word embeddings only receive gradients for the words actually present in the current batch — most embedding rows get zero gradient. Adam's second moment accumulates only the gradients seen so far; unused embeddings get very small second moment, so their effective learning rate stays high. SGD with global learning rate would make tiny updates to rarely-seen words; Adam gives them proportionally larger steps."
+    },
+    {
+      "title": "Faster convergence with less tuning",
+      "body": "Adam is robust: it works across learning rates spanning several orders of magnitude, handles noisy gradients well, and rarely diverges catastrophically. SGD requires careful tuning of both learning rate and momentum and can be very sensitive to conditioning. For prototyping and research, Adam is preferred because it reaches good solutions fast without extensive hyperparameter searches."
+    }
+  ],
+  "deepDiveIntro": [
+    "Adam (Kingma & Ba, 2014): mₜ = β₁mₜ₋₁ + (1−β₁)gₜ; vₜ = β₂vₜ₋₁ + (1−β₂)gₜ²; m̂ₜ = mₜ/(1−β₁ᵗ); v̂ₜ = vₜ/(1−β₂ᵗ); wₜ = wₜ₋₁ − η·m̂ₜ/(√v̂ₜ + ε). The bias correction (1−β^t) fixes initialisation bias: at t=1, m₁ = (1−β₁)g₁ which underestimates the true gradient; dividing by (1−β₁) corrects this. Defaults: β₁=0.9, β₂=0.999, ε=1e-8. The effective step size is approximately η — unlike SGD where the step is η·‖gₜ‖. [1]",
+    "The denominator √v̂ₜ is approximately the RMS of recent gradients, so the update η·m̂ₜ/(√v̂ₜ+ε) is a signal-to-noise ratio: the average gradient direction (m̂) divided by gradient magnitude (√v̂). This makes Adam approximately scale-invariant: multiplying all gradients by a constant doesn't change the direction or magnitude of the update (it cancels out in m/√v). [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Full Algorithm",
+      "body": "At step t: g = ∇L(w). First moment: m = β₁·m + (1−β₁)·g. Second moment: v = β₂·v + (1−β₂)·g². Bias correction: m̂ = m/(1−β₁ᵗ), v̂ = v/(1−β₂ᵗ). Update: w = w − η·m̂/(√v̂ + ε). Intuition for each component: β₁=0.9 gives a 10-step EMA of gradients (momentum). β₂=0.999 gives a 1000-step EMA of squared gradients (slow-moving estimate of gradient variance). The ratio m̂/√v̂ is like a normalised gradient — approximately unit variance in each direction when training is stable. [1]",
+      "formula": "wₜ = wₜ₋₁ − η · m̂ₜ / (√v̂ₜ + ε)"
+    },
+    {
+      "heading": "Bias Correction: Why It Matters Early",
+      "body": "At t=1 with m₀=v₀=0: m₁ = (1−β₁)g₁ ≈ 0.1g₁. Without bias correction, the first step would be 10× too small. Dividing by (1−β₁¹) = 0.1 corrects this to g₁. By t=10: (1−β₁¹⁰) ≈ 0.65, still significant. By t=100: ≈ 0.99999 — correction is negligible. The bias correction is critical in the first ~1/(1−β) steps (10 for β₁=0.9, 1000 for β₂=0.999). It prevents the slow start that uncorrected Adam exhibits. [1]"
+    },
+    {
+      "heading": "Adam vs AdaGrad vs RMSProp",
+      "body": "AdaGrad: accumulates all squared gradients G_t = G_{t-1} + gₜ². Step: η/√G_t — shrinks monotonically, eventually → 0. Fails for non-convex problems with long training. RMSProp (Hinton, unpublished): vₜ = γvₜ₋₁ + (1−γ)gₜ². Exponential decay of G_t fixes AdaGrad's monotone shrinkage. No bias correction, no first moment. Adam = RMSProp + momentum (first moment) + bias correction. Adam is strictly more capable: it uses both gradient direction (momentum) and gradient scale (RMSProp), each with independent decay rates. [1][2]"
+    },
+    {
+      "heading": "Adam's Generalisation Gap and AdamW",
+      "body": "L2 regularisation in Adam (weight_decay in PyTorch Adam) adds λw to the gradient: w ← w − η·(m̂ + λw)/√(v̂ + ε). This couples regularisation with the adaptive scaling — parameter directions with small gradients get larger λ relative to the update, inconsistent regularisation. AdamW (Loshchilov & Hutter, 2019) decouples: w ← w − η·m̂/√(v̂+ε) − η·λ·w. Decoupled weight decay provides consistent regularisation independent of gradient history. AdamW almost always outperforms Adam on LLM training. [3]",
+      "formula": "AdamW: w ← w − η·m̂/(√v̂+ε) − η·λ·w"
+    }
+  ],
+  "youtubeLabel": "Adam Optimizer — Kingma & Ba Explained",
+  "youtubeUrl": "https://www.youtube.com/embed/JXQT_vxqwIs",
+  "takeaways": [
+    "mₜ = β₁mₜ₋₁+(1−β₁)gₜ; vₜ = β₂vₜ₋₁+(1−β₂)gₜ²; w ← w − η·m̂/(√v̂+ε). [1]",
+    "Bias correction (1−βᵗ) is critical in first ~1/(1−β) steps to prevent slow start. [1]",
+    "Per-parameter adaptive learning rate: large gradient history → smaller effective step. [1]",
+    "AdamW decouples weight decay from gradient scaling — use AdamW not Adam for regularised training. [3]",
+    "β₁=0.9, β₂=0.999, ε=1e-8, lr=1e-3: reliable defaults for most tasks. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why does Adam sometimes generalise worse than SGD on image classification?",
+      "a": "Adam's adaptive scaling can find sharp minima — regions with low training loss but high test loss. The per-parameter normalisation makes Adam's effective learning rate roughly uniform across directions, regardless of curvature. In sharp minima, the Hessian has large curvature — a small perturbation causes large loss increase. SGD's noise and consistent per-parameter learning rate tend to drift toward flatter minima that generalise better. Wilson et al. (2017) showed this systematically: SGD trained models have better test accuracy on CIFAR and ImageNet despite higher training loss than Adam-trained models."
+    },
+    {
+      "q": "What is the role of ε in Adam and how should it be tuned?",
+      "a": "ε = 1e-8 prevents division by zero when v̂ ≈ 0 (rarely updated parameters). For most tasks, ε doesn't matter after the first few steps — v̂ quickly becomes large compared to 1e-8. However, for very sparse problems (NLP with rare tokens) or low-precision training (fp16), ε=1e-8 may be too small: v̂ underflows to 0 in fp16 (minimum ≈ 6e-5), causing NaN. Fix: use ε=1e-7 or 1e-6 for fp16 training, or use AMP with loss scaling. Also: large ε (e.g., 0.1) acts like AdaGrad with slow adaptation — sometimes used for transformers to improve stability."
+    }
+  ],
+  "sources": [
+    { "label": "Kingma & Ba (2014) — Adam: A Method for Stochastic Optimization arXiv:1412.6980", "url": "https://arxiv.org/abs/1412.6980" },
+    { "label": "Goodfellow, Bengio & Courville — Deep Learning, Ch. 8", "url": "https://www.deeplearningbook.org/" },
+    { "label": "Loshchilov & Hutter (2019) — Decoupled Weight Decay Regularization arXiv:1711.05101", "url": "https://arxiv.org/abs/1711.05101" }
+  ]
+}

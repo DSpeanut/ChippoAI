@@ -1,0 +1,71 @@
+{
+  "visualizationType": "training-curve",
+  "codeSnapshot": {
+    "label": "mixed_precision.py",
+    "code": "import torch\nimport torch.nn as nn\nfrom torch.cuda.amp import GradScaler, autocast\n\nmodel = nn.Linear(1024, 1024).cuda()\noptimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)\nscaler = GradScaler()  # for loss scaling (fp16 only)\n\n# FP16 training with AMP (Automatic Mixed Precision)\nfor step in range(100):\n    x = torch.randn(64, 1024, device='cuda')\n    y = torch.randn(64, 1024, device='cuda')\n    optimizer.zero_grad()\n\n    # Forward pass in fp16\n    with autocast(dtype=torch.float16):\n        out = model(x)\n        loss = nn.MSELoss()(out, y)\n\n    # Backward pass: scale loss to prevent fp16 underflow\n    scaler.scale(loss).backward()\n\n    # Unscale gradients, clip, then step\n    scaler.unscale_(optimizer)\n    torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)\n    scaler.step(optimizer)   # skips step if nan/inf detected\n    scaler.update()          # adjust loss scale dynamically\n\n# BF16 training (no loss scaling needed — wider exponent range)\nfor step in range(100):\n    x = torch.randn(64, 1024, device='cuda', dtype=torch.bfloat16)\n    y = torch.randn(64, 1024, device='cuda', dtype=torch.bfloat16)\n    optimizer.zero_grad()\n\n    with autocast(dtype=torch.bfloat16):\n        out = model(x)\n        loss = nn.MSELoss()(out, y)\n\n    loss.backward()  # no scaler needed for bf16\n    torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)\n    optimizer.step()\n\n# Memory comparison\nprint(f\"fp32 param memory: {model.weight.element_size() * model.weight.numel() / 1e6:.1f} MB\")\nfp16_model = model.half()\nprint(f\"fp16 param memory: {fp16_model.weight.element_size() * fp16_model.weight.numel() / 1e6:.1f} MB\")"
+  },
+  "eli3": [
+    "Neural networks normally use 32-bit floating point numbers (FP32) for all computations. Mixed precision training uses 16-bit floats (FP16 or BF16) for the forward and backward passes, and 32-bit floats only for weight updates. This uses half the memory and runs 2–4× faster on modern GPUs that have optimised 16-bit hardware.",
+    "The challenge with 16-bit: the range of representable numbers is much smaller than 32-bit. Very small gradient values underflow to zero and are lost. Loss scaling fixes this: multiply the loss by a large number (like 8192) before backprop, so gradients are also scaled up (they stay representable), then divide back before the weight update.",
+    "BF16 (Brain Float 16) has a wider exponent range than FP16, so it doesn't need loss scaling. LLaMA, GPT-4, and most modern LLMs are trained in BF16 — it provides the speed of FP16 without the underflow risk."
+  ],
+  "whenWhy": [
+    {
+      "title": "Training large models on GPU (standard for LLMs)",
+      "body": "A 7B parameter model in FP32 uses 28GB GPU memory just for weights. In BF16: 14GB. With optimizer states (AdamW needs 2× weights in FP32): FP32 = 28+56=84GB; BF16 (BF16 weights + FP32 optimizer) = 14+56=70GB. All major LLM training pipelines (Megatron-LM, DeepSpeed, HuggingFace Accelerate) default to BF16 or FP16 mixed precision for 2× memory and 2–4× throughput improvement."
+    },
+    {
+      "title": "NVIDIA Tensor Cores acceleration",
+      "body": "Modern NVIDIA GPUs (A100, H100, RTX 30/40 series) have Tensor Core units that perform FP16/BF16 matrix multiplications at 2–8× the throughput of FP32. A100: 77.6 TFLOPS FP16 vs 19.5 TFLOPS FP32. Mixed precision training uses Tensor Cores for the expensive matrix multiplications (attention, FFN) while keeping accumulation in FP32."
+    },
+    {
+      "title": "FP8 training (cutting edge)",
+      "body": "H100 and H800 GPUs support FP8 (8-bit float) computation at 2× FP16 speed. NVIDIA's Transformer Engine (used in Megatron-LM) automatically selects FP8 for matrix multiplications and FP16/BF16 for other operations. FP8 training requires per-tensor scaling factors and careful numerical handling — currently only supported in specialised training frameworks."
+    }
+  ],
+  "deepDiveIntro": [
+    "Mixed precision training (Micikevicius et al., 2018): maintain FP32 'master weights'; perform forward and backward passes in FP16; compute weight updates in FP32; copy FP32 weights to FP16 for next iteration. FP16 has 5-bit exponent (range ≈ 6×10⁻⁵ to 65504) and 10-bit mantissa (≈ 3 significant decimal digits). FP32 has 8-bit exponent and 23-bit mantissa. Small gradient values below 6×10⁻⁵ underflow to 0 in FP16. Loss scaling multiplies the loss by scale_factor (typically 128–65536) so gradients are shifted up and representable. [1]",
+    "BF16 (Google Brain Float): 8-bit exponent (same as FP32), 7-bit mantissa. Same numerical range as FP32 but reduced precision. Eliminates overflow/underflow risk entirely — no loss scaling needed. A100 supports BF16 Tensor Cores at the same throughput as FP16. BF16 has become the preferred format for LLM training since its introduction in TPUs and subsequent support in A100/H100. [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Floating Point Formats",
+      "body": "| Format | Exponent bits | Mantissa bits | Max value | Min positive |\n|---|---|---|---|---|\n| FP32 | 8 | 23 | ≈3.4×10³⁸ | ≈1.2×10⁻³⁸ |\n| FP16 | 5 | 10 | 65504 | ≈6.1×10⁻⁵ |\n| BF16 | 8 | 7 | ≈3.4×10³⁸ | ≈1.2×10⁻³⁸ |\nFP16: wide precision but narrow range → overflow/underflow. BF16: FP32 range but 3× less precision in mantissa → no overflow/underflow, but less precise intermediate computations. For neural network weights (typically in ±10) and gradients (±1 or smaller), BF16 range is more than sufficient. [1]"
+    },
+    {
+      "heading": "Loss Scaling for FP16",
+      "body": "Problem: gradient underflow — small gradients (‖g‖ < 6×10⁻⁵) become 0 in FP16. Solution: multiply loss by S before backward pass. Gradients are scaled by S and remain representable. Before optimizer step: divide gradients by S (unscale_). If any gradient is inf/nan (overflow), skip the update and halve S. If no inf/nan for K steps, double S. PyTorch's GradScaler implements this dynamic loss scaling automatically. Typical S: starts at 2^16=65536, adapts throughout training. [1]",
+      "formula": "scaled_loss = loss × S;  gradient = ∂(scaled_loss)/∂w = S · ∂loss/∂w"
+    },
+    {
+      "heading": "Memory Breakdown for Mixed Precision",
+      "body": "For a model with P parameters: FP32 full precision: weights(4P) + grads(4P) + Adam m(4P) + Adam v(4P) = 16P bytes. Mixed precision (FP16 + FP32 master weights): weights_fp16(2P) + weights_fp32(4P) + grads_fp16(2P) + Adam m_fp32(4P) + Adam v_fp32(4P) = 16P bytes — same! The memory savings come from activations stored for backprop, which are in FP16: for transformers with gradient checkpointing, activation memory is the bottleneck and FP16 halves it. [1]"
+    },
+    {
+      "heading": "Flash Attention and FP16",
+      "body": "Flash Attention (Dao et al., 2022) computes attention in FP16/BF16 using tiling to fit into SRAM (on-chip cache), avoiding the O(N²) memory allocation of standard attention. Flash Attention 2 achieves 2–4× speedup over standard attention in BF16. The precision of softmax in BF16 is sufficient for attention — the 7-bit mantissa is enough given the subsequent LayerNorm and residual connection. The combination of BF16 + Flash Attention is the standard for training modern LLMs efficiently."
+    }
+  ],
+  "youtubeLabel": "Mixed Precision Training — FP16 vs BF16 Explained",
+  "youtubeUrl": "https://www.youtube.com/embed/2V3Uduw1zwQ",
+  "takeaways": [
+    "FP16/BF16 forward+backward; FP32 weight updates — 2× memory, 2–4× throughput. [1]",
+    "FP16 needs loss scaling (GradScaler) to prevent gradient underflow; BF16 does not. [1]",
+    "BF16 = FP32 exponent range + 7-bit mantissa — preferred for LLM training on A100/H100. [1]",
+    "Tensor Cores (NVIDIA A100): 77.6 FP16 TFLOPS vs 19.5 FP32 TFLOPS — 4× speed. [1]",
+    "FP8 (H100) provides 2× FP16 speed but requires per-tensor scaling — specialised frameworks only. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "When does loss scaling fail and cause NaN training?",
+      "a": "Two causes of NaN in mixed precision: (1) Gradient overflow: gradient values > 65504 in FP16 become inf. GradScaler detects this and skips the update, halving the loss scale. If overflow is frequent (scale keeps halving), the final scale may be too small → underflow. Fix: reduce learning rate or use BF16. (2) Forward pass overflow: activations > 65504. This is harder to detect — GradScaler doesn't help here. Use autocast carefully: layernorm softmax must be computed in FP32. PyTorch's autocast does this automatically for standard layers, but custom kernels may not."
+    },
+    {
+      "q": "Should optimizer states be stored in FP32 or BF16?",
+      "a": "AdamW's momentum (m) and second moment (v) are typically stored in FP32 even with BF16 training. The second moment v accumulates squared gradients over thousands of steps — precision errors compound. A BF16 v that accumulates 1000 steps of small gradients will have significant rounding error compared to FP32. Some frameworks (bitsandbytes) use 8-bit quantised optimizer states (LOMO, GALORE) to reduce memory further, with quantisation noise managed carefully. The hybrid: FP32 optimizer states + BF16 model weights is the standard for most LLM training."
+    }
+  ],
+  "sources": [
+    { "label": "Micikevicius et al. (2018) — Mixed Precision Training, ICLR 2018 arXiv:1710.03740", "url": "https://arxiv.org/abs/1710.03740" }
+  ]
+}

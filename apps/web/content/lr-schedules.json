@@ -1,0 +1,70 @@
+{
+  "visualizationType": "lr-schedule",
+  "codeSnapshot": {
+    "label": "lr_schedules.py",
+    "code": "import torch\nimport torch.nn as nn\nimport torch.optim as optim\n\nmodel = nn.Linear(10, 1)\noptimizer = optim.AdamW(model.parameters(), lr=1e-3)\n\n# 1. Step Decay: multiply lr by γ every step_size epochs\nscheduler_step = optim.lr_scheduler.StepLR(\n    optimizer, step_size=30, gamma=0.1)\n# lr: 1e-3 → 1e-4 at epoch 30 → 1e-5 at epoch 60\n\n# 2. Cosine Annealing\nscheduler_cos = optim.lr_scheduler.CosineAnnealingLR(\n    optimizer, T_max=100, eta_min=1e-6)\n\n# 3. Linear warmup + cosine decay (common for transformers)\nfrom torch.optim.lr_scheduler import LinearLR, CosineAnnealingLR, SequentialLR\n\nwarmup = LinearLR(optimizer, start_factor=0.01, end_factor=1.0, total_iters=500)\ncosine = CosineAnnealingLR(optimizer, T_max=4500, eta_min=1e-6)\nscheduler = SequentialLR(optimizer, schedulers=[warmup, cosine], milestones=[500])\n\n# 4. Polynomial decay\nscheduler_poly = optim.lr_scheduler.PolynomialLR(\n    optimizer, total_iters=1000, power=1.0)  # linear decay\n\n# Training loop with scheduler\nfor epoch in range(100):\n    for x, y in [(torch.randn(32, 10), torch.randn(32, 1))]:\n        optimizer.zero_grad()\n        nn.MSELoss()(model(x), y).backward()\n        optimizer.step()\n    scheduler_cos.step()  # call after each epoch (or each step for step-based)\n    current_lr = optimizer.param_groups[0]['lr']\n    if epoch % 10 == 0:\n        print(f\"Epoch {epoch}: lr={current_lr:.2e}\")"
+  },
+  "eli3": [
+    "Learning rate schedules control how quickly the model learns throughout training. Start with a high learning rate to explore the loss landscape quickly, then decrease it to make precise adjustments near a good solution — like approaching a parking spot: first you drive fast, then you slow down to park precisely.",
+    "Different schedules exist: step decay (cut the learning rate by 10× every N epochs), cosine annealing (smooth curve from high to low following a cosine), or linear warmup (start very small, ramp up, then decay). Each suits different training regimes.",
+    "Almost no modern model is trained with a constant learning rate. A well-chosen schedule often gives 1-3% accuracy improvement without changing anything else. The combination of warmup + cosine decay has become the default for transformers."
+  ],
+  "whenWhy": [
+    {
+      "title": "Warmup: prevent early training instability",
+      "body": "In the first few hundred steps, model parameters are random and gradients are large and noisy. A large initial learning rate causes divergence or unstable loss. Linear warmup ramps η from η_min (e.g., 0) to η_max over 500–2000 steps. This is mandatory for transformers (AdamW: warmup 1000–4000 steps) and beneficial for any model with adaptive optimizers."
+    },
+    {
+      "title": "Cosine annealing: smooth exploration to exploitation",
+      "body": "η_t = η_min + 0.5(η_max − η_min)(1 + cos(πt/T)). Decreases smoothly from η_max to η_min, allowing the optimizer to settle into a precise minimum in the second half of training. Cosine annealing outperforms step decay on ImageNet (He et al., 2019) and is the standard for language models, including GPT, LLaMA, and BERT fine-tuning."
+    },
+    {
+      "title": "Step decay: simple and widely used for CNNs",
+      "body": "Multiply lr by γ=0.1 every N epochs. Simple, interpretable, and well-validated for ResNet training: start lr=0.1, divide by 10 at epochs 30, 60, 90. This 3-step decay is the standard recipe for ImageNet from scratch. Works poorly without specific tuning, but when tuned correctly matches cosine annealing performance."
+    }
+  ],
+  "deepDiveIntro": [
+    "The theoretical justification for decreasing learning rates comes from stochastic approximation theory (Robbins-Monro, 1951): SGD converges almost surely if Σₜ ηₜ = ∞ and Σₜ ηₜ² < ∞. A standard choice satisfying both: ηₜ = c/t (1/t decay). In practice, this decays too quickly — cosine annealing and step decay are empirical approximations that work better. [1]",
+    "Cyclical learning rates (Smith, 2017) challenged the monotone decrease paradigm: oscillating between η_min and η_max can escape saddle points and find flat minima. SGDR (Loshchilov & Hutter, 2016) adds cosine warm restarts: cosine decay to η_min, then reset to η_max and repeat. The restart allows re-exploration and ensemble-like effects — model snapshots at each restart are diverse and can be averaged. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Cosine Annealing Formula",
+      "body": "η_t = η_min + 0.5(η_max − η_min)(1 + cos(πt/T_max)). At t=0: η = η_max. At t=T_max/2: η = (η_max+η_min)/2. At t=T_max: η = η_min. The cosine shape keeps the learning rate high for most of training (first half) and then rapidly reduces it. SGDR (Stochastic Gradient Descent with Warm Restarts): after each cycle of T_max steps, reset t=0 and optionally increase T_max (T_mult > 1). [2]",
+      "formula": "η_t = η_min + 0.5(η_max − η_min)(1 + cos(πt/T_max))"
+    },
+    {
+      "heading": "Linear Warmup",
+      "body": "η_t = η_max · t/T_warmup for t ≤ T_warmup, then follow main schedule. Prevents divergence at initialisation when gradients are large and the second moment estimate v in Adam is near zero (so m̂/(√v̂+ε) is very large). Typical T_warmup: 500–2000 steps (or 1–5% of total steps). The 'warm start' is especially critical for AdamW: a cold start with lr=1e-3 can produce NaN in the first 100 steps. T_warmup ≈ 2000 steps is standard for LLMs. [1]"
+    },
+    {
+      "heading": "Polynomial and Inverse Square Root",
+      "body": "Polynomial decay: η_t = η_max · (1 − t/T)^p. p=1: linear decay. p=2: quadratic. Used in BERT fine-tuning and T5. Inverse square root: η_t = η_max / √max(t, T_warmup) — the schedule from Vaswani et al. (2017) in 'Attention is All You Need'. Combines warmup (t < T_warmup) with slow decay (t > T_warmup). For d_model=512: η = (1/√d_model) · min(t^(−0.5), t·T_warmup^(−1.5)). [3]",
+      "formula": "Transformer: η_t = d_model^(−0.5) · min(t^(−0.5), t·T_warmup^(−1.5))"
+    }
+  ],
+  "youtubeLabel": "Learning Rate Scheduling — PyTorch Tutorial",
+  "youtubeUrl": "https://www.youtube.com/embed/vc16-1oLqtM",
+  "takeaways": [
+    "Cosine annealing: η_t = η_min + 0.5(η_max−η_min)(1+cos(πt/T)) — smooth standard. [2]",
+    "Warmup: ramp η from ~0 to η_max over T_warmup steps — prevents early Adam instability. [1]",
+    "Step decay: multiply lr by 0.1 every N epochs — simple, requires tuning, works for CNNs. [1]",
+    "SGDR: cosine annealing with warm restarts — produces diverse model snapshots for ensembling. [2]",
+    "Convergence requires Σηₜ=∞ and Ση²ₜ<∞ (Robbins-Monro) — decreasing schedule mandatory. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Can you train without a learning rate schedule?",
+      "a": "In theory yes — Adam with constant lr will converge to a neighbourhood of the solution with radius O(η·σ) where σ² is gradient variance. The noise floor prevents convergence to the exact minimum. In practice, constant lr often gives reasonable results on small datasets but loses 1–3% accuracy vs cosine annealing on large-scale training. For research prototyping, constant lr with early stopping is common. For production training, always use a schedule."
+    },
+    {
+      "q": "How do you choose T_max for cosine annealing when you don't know the total training steps?",
+      "a": "T_max is typically set to the total number of training steps — the schedule runs exactly one cycle. If you extend training (more steps), the lr hits η_min early and stays there — suboptimal. Solutions: (1) CosineAnnealingWarmRestarts with multiple cycles — more robust to uncertain training length; (2) track validation loss and extend T_max if improvement continues; (3) use a fixed number of cosine cycles (e.g., 3 cycles total). LLaMA and GPT use single-cycle cosine decay where T_max = total training steps, and η_min = 0.1·η_max."
+    }
+  ],
+  "sources": [
+    { "label": "Goodfellow, Bengio & Courville — Deep Learning, Ch. 8 (Optimisation)", "url": "https://www.deeplearningbook.org/" },
+    { "label": "Loshchilov & Hutter (2017) — SGDR: Stochastic Gradient Descent with Warm Restarts arXiv:1608.03983", "url": "https://arxiv.org/abs/1608.03983" },
+    { "label": "Vaswani et al. (2017) — Attention Is All You Need arXiv:1706.03762", "url": "https://arxiv.org/abs/1706.03762" }
+  ]
+}

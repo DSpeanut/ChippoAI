@@ -1,0 +1,68 @@
+{
+  "visualizationType": "training-curve",
+  "codeSnapshot": {
+    "label": "rmse_metric.py",
+    "code": "import numpy as np\nfrom sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score\n\ny_true = np.array([3.0, 5.0, 2.5, 8.0, 4.5])\ny_pred = np.array([2.5, 5.5, 3.0, 7.0, 5.0])\nerrors = y_true - y_pred  # [0.5, -0.5, -0.5, 1.0, -0.5]\n\n# RMSE: root mean squared error\nmse  = mean_squared_error(y_true, y_pred)  # 0.35\nrmse = np.sqrt(mse)                         # 0.592 (same units as y)\nprint(f'MSE: {mse:.4f}, RMSE: {rmse:.4f}')\n\n# MAE: mean absolute error (more robust to outliers)\nmae = mean_absolute_error(y_true, y_pred)  # 0.600\nprint(f'MAE: {mae:.4f}')\n\n# R² (coefficient of determination)\n# R² = 1 - SS_res/SS_tot = 1 - Σ(y-ŷ)²/Σ(y-ȳ)²\n# R²=1: perfect; R²=0: model no better than predicting mean; R²<0: worse than mean\nr2 = r2_score(y_true, y_pred)\nprint(f'R²: {r2:.4f}')\n\n# Adjusted R²: penalises adding useless features\nn, p = len(y_true), 3  # n samples, p predictors (excluding intercept)\nadj_r2 = 1 - (1 - r2) * (n - 1) / (n - p - 1)\nprint(f'Adjusted R²: {adj_r2:.4f}')\n\n# RMSLE: root mean squared log error (for percentage errors / skewed targets)\n# Useful when: errors should be measured in log scale (e.g., house prices, sales)\ny_true_log = np.array([100, 1000, 50, 10000])\ny_pred_log = np.array([110,  900, 60,  9000])\nrmsle = np.sqrt(mean_squared_error(np.log1p(y_true_log), np.log1p(y_pred_log)))\nprint(f'RMSLE: {rmsle:.4f}')\n\n# MAPE: mean absolute percentage error\nmape = np.mean(np.abs((y_true - y_pred) / y_true)) * 100  # in %\nprint(f'MAPE: {mape:.2f}%')\n# Warning: MAPE is undefined if y_true=0, and asymmetric (overestimates penalties)\n# Prefer sMAPE or RMSLE for skewed or near-zero targets"
+  },
+  "eli3": [
+    "RMSE (Root Mean Squared Error) measures how far off your predictions are, in the same units as the thing you're predicting. If you predict house prices in thousands of dollars and RMSE=25, your predictions are off by about $25,000 on average — though large errors count more.",
+    "RMSE penalizes big mistakes more than small ones because it squares the errors before averaging. That's why it differs from MAE (Mean Absolute Error) which treats all errors equally. Use RMSE when large errors are especially bad (missing by $100k is worse than 10 misses of $10k each).",
+    "R² tells you how much of the variation in the data your model explains. R²=0.80 means your model explains 80% of the variation — but R²=0 means your model is as good as just always guessing the mean, and R²<0 means it's worse than that."
+  ],
+  "whenWhy": [
+    {
+      "title": "RMSE for models penalizing large errors",
+      "body": "RMSE = √(MSE) = √(E[(y-ŷ)²]) is the standard regression metric when large errors are especially costly. By squaring before averaging, RMSE weights large errors quadratically. Use cases: demand forecasting (under-predicting by 100 units is much worse than 10 misses of 10 units), medical dosage (large errors cause harm), financial risk (tail risk matters). RMSE is in the same units as the target — interpretable as 'typical error magnitude, with large errors upweighted.' [Willmott & Matsuura, 2005]"
+    },
+    {
+      "title": "R² for explaining variance and model comparison",
+      "body": "R² = 1 - Σ(yᵢ-ŷᵢ)²/Σ(yᵢ-ȳ)² measures the fraction of target variance explained by the model. R²=1: perfect fit; R²=0: model equivalent to predicting the mean ȳ; R²<0: model worse than predicting the mean (possible when evaluating on test set). Adjusted R² = 1-(1-R²)·(n-1)/(n-p-1) penalises adding irrelevant predictors that increase R² by chance. Use R² for explaining how well the model captures signal relative to baseline; use RMSE for absolute error in domain units."
+    },
+    {
+      "title": "RMSLE for percentage-scale or skewed targets",
+      "body": "RMSLE = √(MSE(log(1+y), log(1+ŷ))) measures relative (percentage) errors rather than absolute errors. For predicting house prices (range $50K–$5M), a $50K error on a $100K house is 50% — much worse than the same absolute error on a $1M house. RMSLE treats both equally as ~50% errors. Standard in Kaggle competitions with skewed targets (sales, prices, counts). Alternative: MAPE = mean |y-ŷ|/|y| — but MAPE is undefined for y=0 and asymmetric (bounded below by 0, unbounded above)."
+    }
+  ],
+  "deepDiveIntro": [
+    "RMSE = √((1/n)·Σᵢ(yᵢ-ŷᵢ)²). As n→∞, RMSE estimates √E[(y-f(x))²] — the expected squared error, which equals √(Bias²+Variance+σ²) from the bias-variance decomposition. RMSE is the sample estimate of the true risk under squared loss. It is measured in the same units as y — interpretable as 'typical error with large errors upweighted.' RMSE ≥ MAE always, with equality iff all errors are equal. The ratio RMSE/MAE measures the heterogeneity of error magnitudes: ratio=1 means all errors are the same size; larger ratio means a few large errors dominate. [1]",
+    "R² = 1 - SS_res/SS_tot = 1 - Σ(y-ŷ)²/Σ(y-ȳ)². Derivation: SS_tot = Σ(yᵢ-ȳ)² is the total variance; SS_res = Σ(yᵢ-ŷᵢ)² is the unexplained variance. R² = 1 - SS_res/SS_tot ∈ (-∞, 1]. For OLS (ordinary least squares), R² = square of Pearson correlation r between y and ŷ. On the test set, R² can be negative: if the model performs worse than the trivial mean predictor. Adjusted R² = 1-(1-R²)·(n-1)/(n-p-1) penalises the p additional parameters to prevent inflation from irrelevant features. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "RMSE vs MAE: When to Use Each",
+      "body": "RMSE: optimal under Gaussian noise assumption; minimises expected MSE; sensitive to outliers (outlier y contributes (y-ŷ)² — quadratic). MAE: optimal under Laplace noise; minimises expected MAE; minimiser is the conditional median (not mean); robust to outliers. Rule of thumb: if outliers are measurement errors that should be downweighted → use MAE or Huber loss. If large errors are genuinely catastrophic (not noise) → RMSE is appropriate. For evaluation: report both; if RMSE >> MAE, there are large errors in the dataset worth investigating. [1]",
+      "formula": "RMSE = √((1/n)·Σᵢ(yᵢ−ŷᵢ)²)"
+    },
+    {
+      "heading": "R² Interpretation and Limitations",
+      "body": "R² ranges: < 0 (worse than mean baseline), 0 (no better than mean), 0.5 (50% variance explained), 1.0 (perfect). Domain norms: econometrics/social science R²>0.3 is good; physical sciences R²>0.95 expected; finance R²>0.05 is often significant. Limitations: (1) R² increases monotonically with number of predictors — always use adjusted R² for model comparison. (2) High R² ≠ correct model (Anscombe's quartet: four datasets with identical R²=0.67 but very different patterns). (3) R² measures linear correlation in fitted vs true; doesn't detect nonlinear residual patterns. Always plot residuals. [2]"
+    },
+    {
+      "heading": "RMSLE and Log-Scale Targets",
+      "body": "RMSLE = √((1/n)·Σᵢ(log(1+yᵢ) - log(1+ŷᵢ))²) = √((1/n)·Σᵢ(log((1+yᵢ)/(1+ŷᵢ)))²). For large y: log((1+y)/(1+ŷ)) ≈ log(y/ŷ) — RMSLE measures the RMS of log-ratios, i.e., percentage errors on a log scale. Symmetry: underestimating by 50% and overestimating by 50% give similar RMSLE (vs MAPE which is asymmetric). Training with RMSLE: train with MSE on log1p-transformed targets, predict, then expm1-transform predictions back. Note: RMSLE penalises underestimates slightly more than overestimates — for y_true=100, predicting 50 gives log-ratio=0.69, predicting 150 gives log-ratio=0.41. [1]"
+    }
+  ],
+  "youtubeLabel": "RMSE, MAE, R² — Regression Metrics Explained",
+  "youtubeUrl": "https://www.youtube.com/embed/hhY0KpcXkhA",
+  "takeaways": [
+    "RMSE = √(Σ(y−ŷ)²/n) — same units as target, large errors weighted quadratically. [1]",
+    "RMSE ≥ MAE always; RMSE/MAE >> 1 signals outlier errors worth investigating. [1]",
+    "R² = 1 − SS_res/SS_tot; can be negative on test set if model worse than mean predictor. [2]",
+    "Adjusted R² = 1−(1−R²)·(n−1)/(n−p−1) — penalises additional predictors. [2]",
+    "RMSLE for skewed/log-scale targets (prices, counts) — measures percentage-scale errors. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why can RMSE give a misleading picture when errors are heteroscedastic?",
+      "a": "Heteroscedasticity means error variance changes with the predicted value — a common pattern when predicting prices or counts across a wide range. RMSE averages squared errors uniformly, so a few high-value predictions with large absolute errors dominate the metric even if percentage errors are similar across the range. For example: predicting house prices where large houses have large absolute errors but small percentage errors. Fix: (1) Transform the target (log, Box-Cox) before modeling — makes errors more homoscedastic; evaluate RMSLE instead of RMSE. (2) Compute RMSE in groups (by predicted value range) to detect heteroscedasticity. (3) Use weighted RMSE: w(y)·RMSE where w(y) downweights the high-variance region."
+    },
+    {
+      "q": "What does a negative R² mean and is it always bad?",
+      "a": "Negative R² means the model's predictions have higher squared error than always predicting the mean ȳ — the model is actively harmful compared to the trivial baseline. On training data, OLS never gives R²<0 (OLS is defined to minimise SS_res). On test data, R²<0 is common when: (1) the model severely overfits (high variance); (2) test distribution is very different from training (distribution shift); (3) the model makes systematic errors in a specific subgroup. Negative R² is not always catastrophic for production: if the model correctly ranks examples even though its absolute predictions are off, it may still be valuable for ranking tasks. But for point prediction, negative R² is a strong signal to investigate distribution shift or overfitting."
+    }
+  ],
+  "sources": [
+    { "label": "Willmott & Matsuura (2005) — Advantages of the mean absolute error over the root mean square error, Climate Research", "url": "https://www.int-res.com/articles/cr2005/30/c030p079.pdf" },
+    { "label": "Hastie, Tibshirani & Friedman (2009) — The Elements of Statistical Learning, Chapter 7 (Springer)", "url": "https://hastie.su.domains/ElemStatLearn/" }
+  ]
+}

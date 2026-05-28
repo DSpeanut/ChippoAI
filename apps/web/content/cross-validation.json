@@ -1,0 +1,68 @@
+{
+  "visualizationType": "training-curve",
+  "codeSnapshot": {
+    "label": "cross_validation.py",
+    "code": "import numpy as np\nfrom sklearn.model_selection import (\n    KFold, StratifiedKFold, cross_val_score,\n    LeaveOneOut, GroupKFold, TimeSeriesSplit\n)\nfrom sklearn.linear_model import Ridge\n\nX, y = np.random.randn(500, 20), np.random.randn(500)\n\n# --- Standard k-fold CV ---\nkf = KFold(n_splits=5, shuffle=True, random_state=42)\nscores = cross_val_score(Ridge(alpha=1.0), X, y, cv=kf, scoring='neg_mean_squared_error')\nprint(f'5-fold CV MSE: {-scores.mean():.4f} ± {scores.std():.4f}')\n\n# --- Stratified k-fold (preserves class balance, classification only) ---\nX_clf, y_clf = np.random.randn(500, 20), np.random.randint(0, 3, 500)\nskf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)\nfrom sklearn.linear_model import LogisticRegression\nscores_clf = cross_val_score(LogisticRegression(), X_clf, y_clf, cv=skf)\nprint(f'Stratified 5-fold Accuracy: {scores_clf.mean():.4f}')\n\n# --- Leave-One-Out CV (k = n, maximum computation) ---\nloo = LeaveOneOut()\n# Only use on small datasets (n < 200) — n evaluations needed\nloo_scores = cross_val_score(Ridge(alpha=1.0), X[:50], y[:50], cv=loo,\n                              scoring='neg_mean_squared_error')\nprint(f'LOO-CV MSE: {-loo_scores.mean():.4f}')\n\n# --- Group k-fold (prevent data leakage from grouped data) ---\n# Example: each patient has multiple samples — don't split patient across folds\ngroups = np.repeat(np.arange(50), 10)  # 50 patients, 10 samples each\ngkf = GroupKFold(n_splits=5)\nfor fold, (train_idx, val_idx) in enumerate(gkf.split(X, y, groups=groups)):\n    # No patient appears in both train and val within a fold\n    assert len(set(groups[train_idx]) & set(groups[val_idx])) == 0\n\n# --- Nested CV: outer for performance estimate, inner for HPO ---\nfrom sklearn.model_selection import GridSearchCV\ninner_cv = KFold(n_splits=3, shuffle=True, random_state=1)\nouter_cv = KFold(n_splits=5, shuffle=True, random_state=42)\nclf = GridSearchCV(Ridge(), param_grid={'alpha': [0.01, 0.1, 1.0, 10.0]}, cv=inner_cv)\nnested_scores = cross_val_score(clf, X, y, cv=outer_cv,\n                                scoring='neg_mean_squared_error')\nprint(f'Nested CV MSE: {-nested_scores.mean():.4f} ± {nested_scores.std():.4f}')"
+  },
+  "eli3": [
+    "Cross-validation is a smarter way to estimate how well your model will perform on new data. Instead of using just one fixed validation set, you divide the data into k groups (folds), train k times (each time using a different fold as validation), and average the results.",
+    "Why is this better? With a single validation set, you get a noisy estimate — you might have gotten lucky or unlucky with that particular split. By averaging k evaluations, you get a much more stable and reliable estimate of performance.",
+    "k=5 or k=10 is the standard choice — this is not arbitrary. Kohavi (1995) showed experimentally that k=10 gives the best bias-variance tradeoff for accuracy estimation. Leave-one-out (k=n) is unbiased but has very high variance and is expensive for large datasets."
+  ],
+  "whenWhy": [
+    {
+      "title": "Small datasets where a fixed val set is too noisy",
+      "body": "For n<1000, a 15% validation set has only ~150 examples — too few for stable performance estimates. k-fold CV uses all n examples for training (across folds) and all n examples for evaluation (each used once as validation), giving lower-variance estimates. k=10-fold CV is the recommended default (Kohavi 1995): low enough variance, manageable computation (10× training runs). For very small datasets (n<100), leave-one-out CV is preferred — every example is used as a validation point exactly once."
+    },
+    {
+      "title": "Model selection and hyperparameter tuning",
+      "body": "Cross-validation is the standard method for comparing models and selecting hyperparameters. sklearn's GridSearchCV and RandomizedSearchCV both use cross-validation internally. Nested CV: outer k-fold for unbiased performance estimate, inner k-fold for hyperparameter selection. Without nested CV, the selected hyperparameters are optimised to the outer validation folds, causing overoptimistic performance estimates. This bias grows with the number of hyperparameter configurations tried."
+    },
+    {
+      "title": "Grouped and structured data",
+      "body": "Group k-fold prevents data leakage from correlated groups: if data contains multiple samples per patient, subject, or document, standard k-fold might put some samples from the same patient in both train and val, inflating performance. GroupKFold ensures all samples from a group are in the same fold. Similarly, StratifiedKFold preserves class balance in each fold for imbalanced classification — prevents a fold happening to contain mostly majority-class examples."
+    }
+  ],
+  "deepDiveIntro": [
+    "k-fold cross-validation partitions D = {(x₁,y₁),...,(xₙ,yₙ)} into k disjoint folds D₁,...,Dₖ. The CV error is: CV(f̂) = (1/k)·Σᵢ₌₁ᵏ L(f̂₋ᵢ, Dᵢ) where f̂₋ᵢ is the model trained on all folds except Dᵢ. LOOCV is k=n: CV(f̂) = (1/n)·Σᵢ₌₁ⁿ L(f̂₋ᵢ, {(xᵢ,yᵢ)}). Hastie et al. (ESL): CV is approximately an estimate of the expected test error E_D[L(f̂, (x_new, y_new))] — the expectation being over random training sets of size n. [1]",
+    "Bias-variance tradeoff in CV fold count k: LOOCV (k=n) is nearly unbiased — each model is trained on n-1 samples, close to n. But high variance: the n fold models are trained on nearly identical datasets, producing correlated estimates. k=5 or k=10 fold: slightly higher bias (models trained on only (k-1)/k × n samples) but much lower variance. Empirical finding (Kohavi, 1995): k=10 minimises the combination of bias and variance for classification accuracy estimation across many datasets. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "k-Fold CV Procedure and Computation",
+      "body": "Algorithm: (1) Shuffle data randomly. (2) Split into k equal-size folds. (3) For i=1..k: train f̂₋ᵢ on D\\Dᵢ, compute Lᵢ = L(f̂₋ᵢ, Dᵢ). (4) Report CV_err = (1/k)·ΣLᵢ and std(Lᵢ)/√k as the standard error. Computation: k times the cost of a single training run. k=5: 5× cost; LOOCV: n× cost. For linear models: LOOCV has a closed form: LOO_err = (1/n)·Σᵢ ((yᵢ - ŷᵢ)/(1 - Hᵢᵢ))² where H is the hat matrix (influence matrix) — computable in one matrix inversion, not n training runs. [1]",
+      "formula": "CV(f̂) = (1/k)·Σᵢ₌₁ᵏ L(f̂₋ᵢ, Dᵢ)"
+    },
+    {
+      "heading": "Nested Cross-Validation",
+      "body": "Problem: if you use k-fold CV to select hyperparameters and report the CV error, that error is biased downward (hyperparameters were optimised to the CV folds). Nested CV separates these concerns. Outer k-fold: for each outer fold, hold out a test fold. Inner j-fold: on the remaining data, run hyperparameter search via CV. Train final model with best hyperparameters on all non-test data. Evaluate on outer test fold. Repeat for all outer folds. The outer CV score is an unbiased estimate of the generalisation performance of the model selection procedure. Cost: k×j×H training runs (H = number of HPO configs). Common setup: outer k=5, inner j=3, HPO with 20 random configs → 300 training runs. [1]"
+    },
+    {
+      "heading": "Stratified and Group CV",
+      "body": "Stratified k-fold: in each fold, maintain class proportions equal to the full dataset. For binary classification with 90/10 class split: each train fold has ~90/10 and each val fold has ~90/10. Prevents folds where all rare-class examples are in training or validation. Group k-fold: guarantee that no group appears in both training and validation in any fold. Use cases: patient medical records (don't split a patient across folds), news articles (don't split articles from the same source), graph nodes (don't train on neighbors of test nodes). Failure to use GroupKFold when groups exist causes data leakage and inflated CV scores. [1]"
+    }
+  ],
+  "youtubeLabel": "Cross-Validation: k-Fold, Nested, and Best Practices",
+  "youtubeUrl": "https://www.youtube.com/embed/fSytzGwwBVw",
+  "takeaways": [
+    "CV(f̂) = (1/k)·ΣᵢL(f̂₋ᵢ,Dᵢ) — average loss over k held-out folds. [1]",
+    "k=5 or k=10 recommended: lower bias than k=n (LOOCV) with much lower variance. [2]",
+    "Nested CV: outer folds for performance estimate, inner folds for hyperparameter search — unbiased. [1]",
+    "StratifiedKFold for classification: preserves class distribution in each fold. [1]",
+    "GroupKFold when data has correlated groups (patients, documents): prevents leakage. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why does cross-validation underestimate error for time series data?",
+      "a": "Standard k-fold CV shuffles data randomly, so future data leaks into training folds. For a time series at time t, the validation fold may contain timestamps before some training fold timestamps — the model is trained on data from after the validation period. This mimics lookahead, producing optimistically biased CV estimates. Solution: sklearn TimeSeriesSplit — training folds are always chronologically before the validation fold, with an optional gap parameter to prevent direct lookback. Alternatively, blocked time series CV: create k contiguous blocks chronologically, always using earlier blocks for training and later blocks for validation."
+    },
+    {
+      "q": "What is the '.632 bootstrap' and when is it better than k-fold?",
+      "a": "Bootstrap validation: sample n points with replacement from D to form D_boot (training), evaluate on examples not in D_boot (approximately 36.8% of D). The naive bootstrap error is pessimistic (only ~63.2% of data used for training). The .632 estimator corrects this: Err_.632 = 0.368·err_train + 0.632·err_boot. The '.632+' estimator (Efron & Tibshirani, 1997) further adjusts for overfit models. Bootstrap is preferred over LOOCV when: (1) the metric is difficult to compute analytically; (2) the dataset has complex structure (bootstrap provides more stable fold compositions). In practice, k=10 fold CV is more widely used due to lower computational cost and simpler implementation."
+    }
+  ],
+  "sources": [
+    { "label": "Hastie, Tibshirani & Friedman (2009) — The Elements of Statistical Learning, Chapter 7 (Springer)", "url": "https://hastie.su.domains/ElemStatLearn/" },
+    { "label": "Kohavi R. (1995) — A study of cross-validation and bootstrap for accuracy estimation and model selection, IJCAI", "url": "https://dl.acm.org/doi/10.5555/1643031.1643047" }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "visualizationType": "training-curve",
+  "codeSnapshot": {
+    "label": "perplexity_eval.py",
+    "code": "import torch\nimport numpy as np\nfrom transformers import AutoModelForCausalLM, AutoTokenizer\n\n# Perplexity = exp(-(1/N) Σ log p(wₜ|w₁,...,wₜ₋₁))\n# Lower perplexity = model is less surprised = better language model\n\ndef compute_perplexity(model, tokenizer, text: str,\n                       stride: int = 512, max_length: int = 1024) -> float:\n    \"\"\"\n    Sliding-window perplexity for long texts.\n    Uses stride to avoid conditioning on truncated context.\n    \"\"\"\n    encodings = tokenizer(text, return_tensors='pt')\n    input_ids = encodings['input_ids']          # (1, T)\n    T = input_ids.shape[1]\n\n    nlls = []  # negative log-likelihoods per token\n    prev_end_loc = 0\n    for begin_loc in range(0, T, stride):\n        end_loc = min(begin_loc + max_length, T)\n        trg_len  = end_loc - prev_end_loc    # tokens to score in this window\n        input_chunk = input_ids[:, begin_loc:end_loc].to(model.device)\n        target_ids  = input_chunk.clone()\n        # Mask context tokens (don't score them — they're conditioning context)\n        target_ids[:, :-trg_len] = -100\n\n        with torch.no_grad():\n            outputs = model(input_chunk, labels=target_ids)\n            # loss = mean negative log-likelihood over non-masked positions\n            nll = outputs.loss * trg_len  # total NLL for this window's tokens\n        nlls.append(nll)\n        prev_end_loc = end_loc\n        if end_loc == T:\n            break\n\n    # Perplexity = exp(mean NLL per token)\n    ppl = torch.exp(torch.stack(nlls).sum() / T).item()\n    return ppl\n\n# Example: compute perplexity of GPT-2 on a sentence\nmodel_name = 'gpt2'\ntokenizer = AutoTokenizer.from_pretrained(model_name)\nmodel = AutoModelForCausalLM.from_pretrained(model_name)\nmodel.eval()\n\ntext = 'The quick brown fox jumps over the lazy dog.'\nppl = compute_perplexity(model, tokenizer, text)\nprint(f'Perplexity: {ppl:.2f}')\n# GPT-2 on Penn Treebank: ~29.4\n# LLaMA-7B on Penn Treebank: ~5.7\n# Uniform random over 50K vocab: ~50,000"
+  },
+  "eli3": [
+    "Perplexity measures how surprised a language model is by a text. If the model correctly predicts each word with high probability, perplexity is low. If it's frequently shocked by what comes next, perplexity is high.",
+    "Think of it like a test: show a language model text one word at a time and ask it to predict the next word. Perplexity is roughly the average number of equally likely choices the model was considering at each step. Perplexity=100 means the model was as confused as if it had to choose randomly from 100 options. Perplexity=3 means it was nearly sure, down to about 3 choices.",
+    "Lower perplexity is better. GPT-2 has perplexity ~29 on Penn Treebank; LLaMA-7B has ~5.7. A model that randomly guesses from a 50,000-word vocabulary has perplexity~50,000 — perfectly useless."
+  ],
+  "whenWhy": [
+    {
+      "title": "Comparing language models on the same tokenizer/dataset",
+      "body": "Perplexity is the standard intrinsic evaluation metric for language models. Lower perplexity on a held-out test set indicates the model better captures the statistical patterns in that domain. Used to compare: different model sizes (7B vs 13B), different architectures (Transformer vs Mamba), or training data quality. Critical caveat: perplexity is only comparable across models using the same tokenizer and test set. Different tokenizers produce different token counts per word, changing the denominator N."
+    },
+    {
+      "title": "Monitoring training progress",
+      "body": "Validation perplexity is the primary training progress metric for language model pre-training. Decreasing validation perplexity indicates the model is improving. Sudden perplexity spikes indicate gradient instability or data quality issues. Loss = log(perplexity) — for causal LMs, the training objective (cross-entropy loss) is directly interpretable as the log-perplexity. GPT-3 training logs show smooth perplexity decrease over training tokens, allowing extrapolation of final performance."
+    },
+    {
+      "title": "Domain adaptation and fine-tuning evaluation",
+      "body": "Perplexity measures how well a model has adapted to a new domain. Fine-tuning a general LLM on medical text: perplexity on medical test sentences should decrease (model better predicts medical vocabulary and structure). Catastrophic forgetting: perplexity on general text should not increase much. Monitor both domain-specific and general perplexity during fine-tuning to detect forgetting. Perplexity on the instruction template (prompt tokens) is also sometimes tracked to verify the model hasn't forgotten the chat format."
+    }
+  ],
+  "deepDiveIntro": [
+    "Perplexity PP(W) = exp(-(1/N)·Σₜ₌₁ᴺ log p(wₜ|w₁,...,wₜ₋₁)) where W = w₁,...,wₙ is the test sequence and p is the model's conditional probability. This is exp(H) where H = -(1/N)·Σ log p(wₜ|...) is the empirical per-token cross-entropy. From information theory: perplexity is the exponentiated cross-entropy — the effective branching factor (average number of equally likely continuations) per step. A model with perplexity K is as good as uniformly choosing from K options at each step. [1]",
+    "Bits-per-character (BPC) and bits-per-token are equivalent formulations: BPC = log₂(PP)/chars_per_token. The difference is the base (natural log gives nats; log₂ gives bits) and the normalization unit (characters vs tokens vs words). When comparing perplexity across models, all three must be the same: same tokenizer, same test set, same normalization. LLaMA-2-7B achieves ~5.68 perplexity on the LLaMA-2 evaluation set (2048 token sliding window); reported in the LLaMA-2 paper (Touvron et al., 2023). [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Perplexity Formula and Computation",
+      "body": "For a causal LM: PP(W) = exp(-(1/N)·Σₜ log p_θ(wₜ|w<t)). This equals exp(L) where L is the cross-entropy training loss on the test set. In PyTorch: model(input_ids, labels=input_ids).loss gives the average cross-entropy per token; perplexity = exp(loss). For long texts exceeding max_length: use sliding window evaluation — compute NLL on a stride-length suffix of each window (to avoid edge effects from truncated context). The HuggingFace perplexity tutorial uses stride=512 for a 1024-token window model. [1]",
+      "formula": "PP(W) = exp(−(1/N)·Σₜ₌₁ᴺ log p(wₜ|w₁,...,wₜ₋₁))"
+    },
+    {
+      "heading": "Tokenizer Dependence and Comparability",
+      "body": "Perplexity is normalized per token, not per word. A tokenizer that splits words into more subword tokens (BPE with smaller vocabulary) produces longer sequences → more prediction steps → perplexity measured on finer-grained tokens. This makes perplexity incomparable across models with different tokenizers. Example: GPT-2 (vocab=50K, BPE) and BERT (vocab=30K, WordPiece) would have different perplexities on the same text even if they had identical language modeling ability. Solution: report bits-per-character (BPC) which normalizes by characters — tokenizer-agnostic. [1]"
+    },
+    {
+      "heading": "Perplexity vs Downstream Task Performance",
+      "body": "Lower perplexity on held-out text generally correlates with better downstream task performance, but the correlation is imperfect. Scaling laws (Hoffmann et al., 2022): perplexity decreases as a smooth power law with training compute. Downstream task performance shows 'emergent' step-function improvements at certain perplexity thresholds. Implication: perplexity is a useful proxy during training but shouldn't replace task-specific evaluation. A model fine-tuned with RLHF may have higher perplexity (vs SFT baseline) on general text but much better instruction-following — perplexity and alignment can trade off. [1]"
+  ]
+  },
+  "youtubeLabel": "Perplexity in NLP — How Good Is Your Language Model?",
+  "youtubeUrl": "https://www.youtube.com/embed/NURcDHhYe98",
+  "takeaways": [
+    "PP(W)=exp(−(1/N)·Σ log p(wₜ|w<t)) — exponentiated per-token cross-entropy. [1]",
+    "Interpretable as effective branching factor: PP=K means model as uncertain as uniform over K options. [1]",
+    "Only comparable across models with the same tokenizer and test set. [1]",
+    "BPC (bits-per-character) is tokenizer-agnostic — use for cross-model comparison. [1]",
+    "Lower perplexity ≈ better LM, but RLHF alignment can increase perplexity while improving helpfulness. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why does perplexity increase after RLHF/SFT alignment?",
+      "a": "RLHF and SFT shift the model distribution away from the base pre-training distribution — the model becomes more likely to generate instruction-following responses and less likely to generate arbitrary continuations. On a general held-out corpus (e.g., Wikipedia, web text), the base model has lower perplexity than the SFT/RLHF model because it was trained to predict any text. The alignment-trained model assigns lower probability to random completions and higher probability to instruction-following patterns. This increases perplexity on general benchmarks but improves helpfulness scores. Perplexity should only be compared on the distribution relevant to the model's intended use — not general web text for an instruction-tuned model."
+    },
+    {
+      "q": "How does sliding window perplexity differ from full-sequence perplexity?",
+      "a": "Full-sequence perplexity: process the entire sequence in one forward pass (requires model context length ≥ sequence length). Sliding window: process the sequence in overlapping windows of max_length, scoring a stride-length suffix in each window. The key difference: in full-sequence evaluation, all tokens are conditioned on the same context (the full prefix). In sliding window, early tokens get less conditioning context. For models with max_length << text length, sliding window is necessary. The stride parameter trades off computation vs accuracy: stride=max_length (non-overlapping) is fastest but scores early tokens with no context; stride=1 (maximum overlap) is most accurate but requires T forward passes. stride=max_length/2 is a good default. HuggingFace's perplexity tutorial uses stride=512, max_length=1024."
+    }
+  ],
+  "sources": [
+    { "label": "Brown et al. (2020) — Language Models are Few-Shot Learners (GPT-3) arXiv:2005.14165", "url": "https://arxiv.org/abs/2005.14165" }
+  ]
+}

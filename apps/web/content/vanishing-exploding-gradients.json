@@ -1,0 +1,73 @@
+{
+  "visualizationType": "network-diagram",
+  "codeSnapshot": {
+    "label": "gradient_problems.py",
+    "code": "import torch\nimport torch.nn as nn\nimport numpy as np\n\n# Demonstrate vanishing gradient with sigmoid\ntorch.manual_seed(42)\n\n# Deep network with sigmoid activations\nclass DeepSigmoid(nn.Module):\n    def __init__(self, n_layers=20):\n        super().__init__()\n        self.layers = nn.ModuleList([nn.Linear(64, 64) for _ in range(n_layers)])\n    def forward(self, x):\n        for layer in self.layers:\n            x = torch.sigmoid(layer(x))\n        return x\n\nmodel_sigmoid = DeepSigmoid(n_layers=20)\nx = torch.randn(16, 64)\nloss = model_sigmoid(x).sum()\nloss.backward()\n\n# Print gradient norms by layer\nfor i, layer in enumerate(model_sigmoid.layers):\n    grad_norm = layer.weight.grad.norm().item()\n    if i in [0, 5, 10, 15, 19]:\n        print(f\"Layer {i:2d} grad norm: {grad_norm:.2e}\")\n# Expect: layer 19 ~1e-1, layer 0 ~1e-10 (vanishing)\n\n# Deep network with ReLU: no vanishing gradient\nclass DeepReLU(nn.Module):\n    def __init__(self, n_layers=20):\n        super().__init__()\n        self.layers = nn.ModuleList([nn.Linear(64, 64) for _ in range(n_layers)])\n    def forward(self, x):\n        for layer in self.layers:\n            x = torch.relu(layer(x))\n        return x\n\nmodel_relu = DeepReLU(n_layers=20)\nloss_relu = model_relu(x).sum()\nloss_relu.backward()\n\nfor i, layer in enumerate(model_relu.layers):\n    grad_norm = layer.weight.grad.norm().item()\n    if i in [0, 5, 10, 15, 19]:\n        print(f\"ReLU Layer {i:2d} grad norm: {grad_norm:.2e}\")\n\n# Gradient clipping to handle exploding gradients\nmodel = nn.Linear(10, 1)\noptimizer = torch.optim.SGD(model.parameters(), lr=0.1)\nx, y = torch.randn(32, 10), torch.randn(32, 1)\nloss = nn.MSELoss()(model(x), y)\nloss.backward()\ntorch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)\noptimizer.step()"
+  },
+  "eli3": [
+    "In a deep neural network, gradients are multiplied together as they travel from the output back through each layer. If these multiplications repeatedly use small numbers (less than 1), the gradient shrinks exponentially — it vanishes. Early layers receive essentially zero gradient signal and learn nothing.",
+    "The opposite problem — exploding gradients — happens when multiplications repeatedly involve large numbers. The gradient grows exponentially, causing massive, destabilising weight updates. In recurrent networks processing long sequences, both problems are especially severe.",
+    "Solutions: use ReLU (derivative is 1 for positive inputs, not < 0.25 like sigmoid), skip connections (provide gradient highways around multiplication chains), batch normalisation (keeps activations in a good range), and gradient clipping (caps gradient magnitude before the update step)."
+  ],
+  "whenWhy": [
+    {
+      "title": "Deep networks with saturating activations (sigmoid, tanh)",
+      "body": "Sigmoid derivative f'(z) = σ(z)(1−σ(z)) ≤ 0.25. Tanh derivative f'(z) = 1−tanh²(z) ≤ 1. In a 20-layer sigmoid network, the gradient from output to first layer multiplies 20 such derivatives: max product ≤ 0.25^20 ≈ 10^{-12}. First-layer weights never learn meaningful features. The switch to ReLU (f'=1 for z>0) was a major empirical breakthrough enabling training of networks with 50+ layers."
+    },
+    {
+      "title": "Recurrent networks on long sequences",
+      "body": "In a vanilla RNN, the gradient flows through T time steps: ∂L_T/∂h₀ = ∏ᵢ₌₁ᵀ (∂hᵢ/∂hᵢ₋₁) = ∏ᵢ₌₁ᵀ Wᵀ diag(f'(zᵢ)). For T=100 timesteps: if the spectral radius ρ(W·diag(f')) < 1, gradient vanishes; if ρ > 1, it explodes. LSTM and GRU use additive recurrent updates (not multiplicative) with gating to maintain constant gradient magnitude over long sequences."
+    },
+    {
+      "title": "Diagnosing training failures",
+      "body": "If early layers have near-zero gradient norms (use TensorBoard or log torch.nn.utils.clip_grad_norm_ values) while later layers train normally — vanishing gradients. If loss NaNs or explodes in the first few steps — likely exploding gradients. Fix: gradient clipping (torch.nn.utils.clip_grad_norm_), lower learning rate, better initialisation, or add residual connections."
+    }
+  ],
+  "deepDiveIntro": [
+    "For an L-layer network, the gradient of the loss w.r.t. layer l weights involves the product of L−l Jacobian matrices: ∂L/∂wₗ = (∂L/∂aL) · ΠₖₗLaₖ. The spectral properties of this product determine gradient flow. If all singular values of the Jacobian factors are < 1/√d (where d is layer width), the product shrinks geometrically. If all are > 1/√d, it grows. [1]",
+    "Glorot & Bengio (2010) analysed this systematically: for a random Gaussian weight initialisation W ~ N(0, σ²) in a d×d linear layer, ‖∂a_l/∂a_{l-1}‖_F ≈ σ·√d. For stable gradient flow: σ·√d = 1, i.e., σ = 1/√d — the Xavier initialisation. This ensures the signal neither vanishes nor explodes at initialisation. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Vanishing Gradient: Sigmoid Bottleneck",
+      "body": "Sigmoid f'(z) = σ(z)(1−σ(z)) ∈ (0, 0.25]. For d-dimensional layers: ‖∂aₗ/∂aₗ₋₁‖_F ≈ 0.25·‖Wₗ‖_F / √d ≤ 0.25. Repeated multiplication across L layers: gradient magnitude ≤ 0.25^L. At L=10: < 10^{-6}. At L=50: < 10^{-30}. Practically: early layer weights have gradient norms below machine epsilon, receiving no useful update signal. The 2010s shift to ReLU reduced this to f'=1 (for positive inputs) — gradient flows freely unless the neuron is dead (always negative). [1]",
+      "formula": "Gradient magnitude ≤ (max |f'|)^L · ‖W‖^L"
+    },
+    {
+      "heading": "Exploding Gradients: Spectral Radius",
+      "body": "Exploding gradients occur when ρ(W) > 1 (spectral radius of weight matrix > 1). In RNNs: gradient ∝ ρ(W)^T → ∞ for T steps. In deep networks: same for forward weight matrices with large norms. Gradient clipping is the standard fix: if ‖g‖ > max_norm, g ← g·(max_norm/‖g‖). This clips the global gradient norm, not per-parameter — preserving the direction of the gradient but bounding its magnitude. Typical max_norm=1.0 for transformers. [1]",
+      "formula": "clip: if ‖g‖ > c then g ← g · c/‖g‖"
+    },
+    {
+      "heading": "Skip Connections as Gradient Highways",
+      "body": "ResNet (He et al., 2016): aₗ₊₁ = F(aₗ, Wₗ) + aₗ. The gradient: ∂L/∂aₗ = ∂L/∂aₗ₊₁ · (1 + ∂F/∂aₗ). The identity term '1' ensures the gradient has at least the magnitude from the direct shortcut, regardless of how small ∂F/∂aₗ is. Even in a 1000-layer ResNet, the gradient from any layer flows directly back to layer 1 via the chain of identity connections — no multiplicative decay. This is why ResNets enabled training of very deep networks (100–1000 layers). [1]"
+    },
+    {
+      "heading": "Batch Normalisation and Gradient Flow",
+      "body": "BatchNorm (Ioffe & Szegedy, 2015) normalises activations before each layer: standardises the gradient signal entering each layer. Without BN, activations can have very different scales across layers and mini-batches, amplifying or attenuating gradient magnitudes. BN reduces internal covariate shift — makes the gradient signal more consistent throughout training. However: BN also introduces a gradient path through the normalisation statistics (mean and variance), which must be handled carefully. [2]"
+    }
+  ],
+  "youtubeLabel": "Vanishing & Exploding Gradients — Deep Learning",
+  "youtubeUrl": "https://www.youtube.com/embed/qhXZsFVxGKo",
+  "takeaways": [
+    "Vanishing: gradient decays as (max|f'|)^L — sigmoid/tanh saturate at f'≤0.25. [1]",
+    "Exploding: gradient grows as ρ(W)^L — spectral radius > 1 causes divergence. [1]",
+    "Solutions: ReLU (f'=1), skip connections (additive gradient path), gradient clipping. [1]",
+    "Xavier init: σ=√(2/(n_in+n_out)) — ensures unit gradient variance at initialisation. [2]",
+    "LSTM gating and transformer normalisation prevent gradient issues in sequential models. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why does ReLU solve vanishing gradients but not completely?",
+      "a": "ReLU has f'(z) = 1 for z > 0 and 0 for z ≤ 0. For active neurons (z > 0), the derivative is 1 — no multiplicative decay. However: 'dead ReLU' problem: if z ≤ 0 always, the gradient is permanently zero and the neuron never recovers. With weight initialisation that makes most z < 0 or with a large negative bias, dead neurons proliferate. Also: ReLU is not bounded above, so exploding activations are possible if weights grow. He initialisation (σ=√(2/n)) accounts for the half-activation probability of ReLU. Leaky ReLU (f'(z<0) = 0.01) and ELU reduce dead neuron frequency."
+    },
+    {
+      "q": "How does gradient clipping interact with adaptive optimizers like Adam?",
+      "a": "Gradient clipping should be applied BEFORE the optimizer step, to the raw gradients (not the Adam-modified updates). torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0) clips the gradient vector, then optimizer.step() applies Adam's adaptive scaling to the clipped gradient. If you clip after Adam (clip the update), you're removing the adaptive scaling information. The correct order: (1) loss.backward(), (2) clip_grad_norm_, (3) optimizer.step(). This is the standard practice for training transformers, RLHF, and most LLM training pipelines."
+    }
+  ],
+  "sources": [
+    { "label": "Goodfellow, Bengio & Courville — Deep Learning, Ch. 8 (Optimisation) and Ch. 10 (RNNs)", "url": "https://www.deeplearningbook.org/" },
+    { "label": "Glorot & Bengio (2010) — Understanding the difficulty of training deep feedforward neural networks, AISTATS 2010", "url": "http://proceedings.mlr.press/v9/glorot10a.html" }
+  ]
+}

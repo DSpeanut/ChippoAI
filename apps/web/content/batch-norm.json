@@ -1,0 +1,72 @@
+{
+  "visualizationType": "network-diagram",
+  "codeSnapshot": {
+    "label": "batch_norm.py",
+    "code": "import torch\nimport torch.nn as nn\n\n# Batch Normalisation in a CNN\nmodel = nn.Sequential(\n    nn.Conv2d(3, 64, 3, padding=1),\n    nn.BatchNorm2d(64),   # after conv, before activation\n    nn.ReLU(),\n    nn.Conv2d(64, 128, 3, padding=1),\n    nn.BatchNorm2d(128),\n    nn.ReLU()\n)\n\n# Manual BatchNorm (1D for clarity)\ndef batch_norm_manual(x, gamma, beta, eps=1e-5):\n    # x: (B, D)\n    mu = x.mean(dim=0)            # (D,) — mean across batch\n    var = x.var(dim=0, unbiased=False)  # (D,) — variance across batch\n    x_hat = (x - mu) / (var + eps).sqrt()  # normalise\n    return gamma * x_hat + beta   # scale and shift\n\nB, D = 32, 256\nx = torch.randn(B, D)\ngamma = torch.ones(D)   # learnable scale, init=1\nbeta = torch.zeros(D)   # learnable shift, init=0\nx_out = batch_norm_manual(x, gamma, beta)\nprint(f\"After BN: mean={x_out.mean():.4f}, std={x_out.std():.4f}\")  # ≈ 0, 1\n\n# At inference: use running statistics (not batch stats)\n# PyTorch BN tracks: running_mean, running_var\n# running_mean = (1-momentum)*running_mean + momentum*batch_mean  (momentum=0.1)\nbn = nn.BatchNorm1d(D)\nbn.train()  # uses batch statistics\nbn.eval()   # uses running_mean, running_var\n\n# Batch size effect\n# Large B: stable statistics (BN works well)\n# Small B (B=1,2): unstable statistics — use LayerNorm or GroupNorm"
+  },
+  "eli3": [
+    "Batch Normalisation (BatchNorm) is a technique that normalises the inputs to each layer so they always have approximately zero mean and unit variance, within each mini-batch. This keeps the input distribution to each layer stable throughout training, so each layer doesn't have to constantly readjust to shifts in its input.",
+    "Without BatchNorm, as the weights in early layers change, the distribution of inputs to later layers shifts constantly — called 'internal covariate shift'. This forces later layers to keep re-learning how to handle different input distributions, slowing training. BatchNorm removes this problem.",
+    "BatchNorm has two learnable parameters per unit: γ (scale) and β (shift). After normalising to zero mean and unit variance, these learned parameters let the network re-scale if needed. So BatchNorm doesn't force the network to be normalised — it just provides a stable normalised starting point that it can adapt from."
+  ],
+  "whenWhy": [
+    {
+      "title": "Training deep CNNs (ResNet, VGG, EfficientNet)",
+      "body": "BatchNorm is the standard regularisation technique for convolutional networks. It allows training with higher learning rates (normalised activations prevent gradient explosion), reduces sensitivity to weight initialisation, and acts as a regulariser (mini-batch statistics add noise similar to dropout). ResNet-50 without BN trains poorly; with BN it achieves 76% ImageNet top-1."
+    },
+    {
+      "title": "Stabilising training with high learning rates",
+      "body": "Ioffe & Szegedy (2015) showed BatchNorm allows 14× higher learning rates without divergence. Normalised inputs limit the effective gradient scale — even if weights in a layer are very large or small, the normalised output has controlled magnitude. This makes the loss landscape smoother and allows larger, faster gradient steps."
+    },
+    {
+      "title": "When BatchNorm fails: small batches, RNNs, or online learning",
+      "body": "BatchNorm's statistics are unstable with batch size B < 8 (high variance estimate). Alternative: LayerNorm (normalise over features, not batch — works for B=1) for transformers and RNNs; GroupNorm (normalise over channel groups) for object detection where batch size varies; InstanceNorm (normalise per sample per channel) for style transfer."
+    }
+  ],
+  "deepDiveIntro": [
+    "BatchNorm (Ioffe & Szegedy, 2015): given a mini-batch {xᵢ} of B samples, for each feature dimension d: μ_d = (1/B)Σᵢ xᵢ,d; σ²_d = (1/B)Σᵢ(xᵢ,d − μ_d)²; x̂ᵢ,d = (xᵢ,d − μ_d)/√(σ²_d + ε); yᵢ,d = γ_d · x̂ᵢ,d + β_d. Parameters γ, β are learned. At training: use batch statistics. At inference: use exponential moving averages of training statistics: μ_run ← (1−m)μ_run + m·μ_batch (PyTorch default m=0.1). [1]",
+    "The gradient of BatchNorm has a peculiar structure: the gradient ∂L/∂xᵢ depends on all other samples in the batch via the shared μ and σ². This mini-batch coupling is both BatchNorm's strength (smoothing) and limitation (batch-size dependence, incompatibility with sequential models). [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Forward Pass Algorithm",
+      "body": "Given mini-batch B = {x₁,...,x_B}: μ = (1/B)Σxᵢ. σ² = (1/B)Σ(xᵢ−μ)². x̂ᵢ = (xᵢ−μ)/√(σ²+ε). y = γx̂ + β. ε (typically 1e-5) prevents division by zero. γ (init=1) and β (init=0) are learned via gradient descent with the rest of the network. The normalisation is applied per-feature (for FC layers) or per-channel (for conv layers, averaging over batch AND spatial dimensions). [1]",
+      "formula": "x̂ = (x − μ_B) / √(σ²_B + ε);  y = γx̂ + β"
+    },
+    {
+      "heading": "Effect on Gradient Flow",
+      "body": "Normalisation makes the gradient w.r.t. pre-normalisation activations scale-invariant: if you scale all weights in a layer by c, the output after BN is unchanged (c cancels in normalisation). But the gradient through BN also changes: ∂L/∂W is proportional to 1/‖W‖, so gradients from BN-normalised layers effectively have adaptive learning rates. This is why BN allows higher lr — the actual gradient signal is self-normalising. [1]"
+    },
+    {
+      "heading": "Batch Norm in Inference Mode",
+      "body": "At inference (model.eval()), PyTorch uses running_mean and running_var instead of batch statistics. running_mean is updated during training as: running_mean ← (1 − momentum)·running_mean + momentum·batch_mean (PyTorch: momentum=0.1 by default, so running mean tracks with 10-step lag). Forgetting to call model.eval() is a common bug: inference predictions will use noisy batch statistics from a single sample, producing unstable outputs. Always model.eval() before inference. [1]"
+    },
+    {
+      "heading": "BatchNorm vs LayerNorm vs GroupNorm",
+      "body": "Normalisation axis: BatchNorm: average over batch dimension (axis=0). LayerNorm: average over feature dimension (axis=-1). GroupNorm: average over groups of channels (axis=c within groups). InstanceNorm: average over spatial dimensions per-sample per-channel. Use case: BatchNorm for CNNs (B≥16); LayerNorm for transformers and NLP (B=1 works); GroupNorm for object detection (variable B); InstanceNorm for style transfer (per-image normalisation). [2]"
+    }
+  ],
+  "youtubeLabel": "Batch Normalization — Deep Learning.ai",
+  "youtubeUrl": "https://www.youtube.com/embed/dXB-KQYkzNU",
+  "takeaways": [
+    "Normalise mini-batch to μ=0, σ²=1; then learn γ, β to re-scale: y=γ((x−μ)/√(σ²+ε))+β. [1]",
+    "Training: batch statistics; inference: running mean/var (call model.eval()!). [1]",
+    "Allows 14× higher learning rates; reduces init sensitivity; implicit regularisation. [1]",
+    "Fails for small batch sizes (B<8) or sequential models — use LayerNorm instead. [2]",
+    "GroupNorm for object detection; InstanceNorm for style transfer. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why does BatchNorm act as a regulariser?",
+      "a": "BatchNorm's statistics (μ_B, σ²_B) depend on the random mini-batch composition. Different batches produce different normalisation statistics for each sample — the same sample x_i receives slightly different normalisation depending on which other samples are in its batch. This is random noise analogous to dropout: each sample experiences a slightly different transformation during training. At test time, fixed running statistics remove this noise. This mini-batch dependence is a stochastic regularisation that reduces overfitting — empirically, models trained with BN often need less dropout."
+    },
+    {
+      "q": "What goes wrong when you use BatchNorm with very small batch sizes?",
+      "a": "With B=1 (single sample), the sample's own statistics (mean and variance computed from d features) are used. Variance estimation with one sample has high variance itself — you're estimating population statistics from a single observation. For B=2: estimation is still poor. The variance estimate has E[σ²_batch] = σ²_pop·(1−1/B) bias. For B=2: σ²_batch ≈ 0.5σ²_pop — systematically underestimates variance, causing over-normalisation. For detection models (DETR, Faster-RCNN) where B=2 is common due to GPU memory, GroupNorm (G=32 groups, normalises within groups of channels) is used instead."
+    }
+  ],
+  "sources": [
+    { "label": "Ioffe & Szegedy (2015) — Batch Normalization: Accelerating Deep Network Training arXiv:1502.03167", "url": "https://arxiv.org/abs/1502.03167" },
+    { "label": "Wu & He (2018) — Group Normalization arXiv:1803.08494", "url": "https://arxiv.org/abs/1803.08494" }
+  ]
+}

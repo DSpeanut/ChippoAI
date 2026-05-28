@@ -1,0 +1,75 @@
+{
+  "visualizationType": "loss-curve",
+  "codeSnapshot": {
+    "label": "mse_loss.py",
+    "code": "import torch\nimport torch.nn as nn\nimport numpy as np\n\n# PyTorch MSE\ncriterion = nn.MSELoss(reduction='mean')\ny_pred = torch.tensor([2.5, 0.0, 2.0, 8.0])\ny_true = torch.tensor([3.0, -0.5, 2.0, 7.0])\nloss = criterion(y_pred, y_true)\nprint(f\"MSE: {loss.item():.4f}\")  # 0.375\n\n# Manual: (1/n) * sum((y - ŷ)²)\nerrors = y_true - y_pred\nmse_manual = (errors ** 2).mean()\nprint(f\"Manual MSE: {mse_manual.item():.4f}\")  # 0.375\n\n# Gradient of MSE wrt ŷ: -2/n * (y - ŷ)\n# For ŷ=2.5, y=3.0: grad = -2/4 * (3.0-2.5) = -0.25\ngrad = -2 / len(y_pred) * (y_true - y_pred)\nprint(f\"Gradient: {grad.numpy()}\")  # [-0.25, 0.25, 0.0, 0.5]\n\n# Sensitivity to outliers vs MAE\nclean = torch.tensor([1.0, 2.0, 3.0, 4.0])\npred = torch.tensor([1.1, 2.1, 3.1, 10.0])  # outlier at index 3\nmse = nn.MSELoss()(pred, clean)\nmae = nn.L1Loss()(pred, clean)\nprint(f\"MSE with outlier: {mse.item():.4f}\")  # 10.91\nprint(f\"MAE with outlier: {mae.item():.4f}\")"
+  },
+  "eli3": [
+    "Imagine you're playing darts. MSE (Mean Squared Error) measures how far off your throws are, but it squares the distances first. A throw that's 2 inches off counts as 4 (2²), and one that's 4 inches off counts as 16 (4²). It punishes big misses much more than small ones.",
+    "The squaring does two useful things: it makes all errors positive (so they don't cancel out), and it makes the loss smooth and easy to minimize with calculus — unlike absolute value which has a sharp corner at zero.",
+    "In practice: fit a line through data points by minimizing the sum of squared vertical distances. This turns out to be the same as finding the maximum likelihood estimate if your noise is Gaussian. That's why MSE is the default for regression."
+  ],
+  "whenWhy": [
+    {
+      "title": "Standard regression baseline",
+      "body": "MSE is the default loss for regression tasks (house price prediction, demand forecasting, sensor readings). It corresponds to maximum likelihood estimation under Gaussian noise: if residuals eᵢ ~ N(0, σ²), maximizing the likelihood is identical to minimizing Σ(yᵢ - ŷᵢ)². The closed-form OLS solution for linear regression (β = (XᵀX)⁻¹Xᵀy) directly minimizes MSE."
+    },
+    {
+      "title": "Smooth gradient — friendly to optimizers",
+      "body": "∂MSE/∂ŷᵢ = -2/n (yᵢ - ŷᵢ). The gradient is linear in the residual, making training stable and predictable. Unlike MAE (whose gradient is a constant sign, not proportional to error), MSE provides larger gradient signals for larger errors, accelerating convergence far from the optimum."
+    },
+    {
+      "title": "When NOT to use MSE: outlier-heavy data",
+      "body": "MSE squares errors, so a single outlier with error 10× typical can dominate the loss. For skewed or heavy-tailed distributions, prefer MAE (robust to outliers) or Huber loss (quadratic near zero, linear for large residuals). Also avoid MSE for classification — it provides poor gradient signal compared to cross-entropy."
+    }
+  ],
+  "deepDiveIntro": [
+    "MSE for a dataset of n samples is L = (1/n) Σᵢ₌₁ⁿ (yᵢ - ŷᵢ)². It is the squared L2 norm of the residual vector divided by n. MSE is equivalent to negative log-likelihood under a Gaussian model: if yᵢ | xᵢ ~ N(f(xᵢ), σ²), then -log p(y|x) ∝ (1/2σ²) Σ(yᵢ - f(xᵢ))². Minimising MSE = maximising this likelihood. [1]",
+    "The bias-variance decomposition of MSE reveals its structure: E[(y - f̂(x))²] = [Bias(f̂(x))]² + Var(f̂(x)) + σ². Here σ² is irreducible noise. The training MSE gives a biased estimate of test MSE (optimism bias); cross-validation corrects this. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Definition and Gradient",
+      "body": "L = (1/n) Σᵢ (yᵢ - ŷᵢ)². The gradient with respect to prediction ŷᵢ is ∂L/∂ŷᵢ = -2/n (yᵢ - ŷᵢ). The gradient with respect to model parameter w is ∂L/∂w = (2/n) Σᵢ (ŷᵢ - yᵢ) ∂ŷᵢ/∂w via chain rule. For a linear model ŷ = wᵀx: ∂L/∂w = -(2/n) Xᵀ(y - Xw). Setting to zero gives the normal equations: w* = (XᵀX)⁻¹Xᵀy. [1]",
+      "formula": "L = (1/n) Σᵢ (yᵢ - ŷᵢ)²"
+    },
+    {
+      "heading": "MSE vs MAE vs Huber: Outlier Sensitivity",
+      "body": "MSE contribution from one sample: (yᵢ - ŷᵢ)². If residual = 10, MSE contribution = 100; MAE = 10. MSE is super-linear in error — an outlier with 10× typical error contributes 100× to MSE but only 10× to MAE. The Huber loss interpolates: quadratic for |e| ≤ δ, linear for |e| > δ. This gives MSE-like gradients for small residuals and MAE-like robustness for large ones. Choosing δ ≈ median absolute deviation is a data-driven rule of thumb. [3]",
+      "formula": "L_Huber = 0.5e² if |e| ≤ δ, else δ|e| − 0.5δ²"
+    },
+    {
+      "heading": "RMSE and Normalised MSE",
+      "body": "RMSE = √MSE puts the loss back in the units of y, making it interpretable as 'average deviation'. For comparing across datasets with different y scales, use normalised RMSE: NRMSE = RMSE / (y_max − y_min) or NRMSE = RMSE / ȳ. R² = 1 − MSE / Var(y) measures fraction of variance explained; R²=1 is perfect, R²=0 means the model is no better than predicting the mean, R² can be negative for models worse than the mean. [1]",
+      "formula": "R² = 1 − Σ(yᵢ−ŷᵢ)² / Σ(yᵢ−ȳ)²"
+    },
+    {
+      "heading": "Why MSE Fails for Classification",
+      "body": "For binary classification with sigmoid output ŷ ∈ (0,1) and labels y ∈ {0,1}: MSE gradient is ∂L/∂z = (ŷ − y) σ'(z) where σ'(z) = σ(z)(1−σ(z)). When predictions are saturated (ŷ ≈ 0 or 1), σ'(z) ≈ 0 and gradients vanish — training slows catastrophically. Cross-entropy avoids this: its gradient with sigmoid is simply (ŷ − y), not modulated by the derivative of sigmoid. [1]"
+    }
+  ],
+  "youtubeLabel": "MSE & MAE Loss Functions — StatQuest",
+  "youtubeUrl": "https://www.youtube.com/embed/OgK8JFjkSto",
+  "takeaways": [
+    "L = (1/n) Σ(y − ŷ)² — squares residuals, so outliers dominate. [1]",
+    "Gradient: ∂L/∂ŷᵢ = −2/n (yᵢ − ŷᵢ) — proportional to error, stable training. [1]",
+    "MSE = MLE under Gaussian noise assumption; OLS closed form: w* = (XᵀX)⁻¹Xᵀy. [2]",
+    "Bias-Variance: E[(y−f̂)²] = Bias² + Variance + σ². MSE decomposes cleanly. [2]",
+    "Use Huber loss when outliers are present; use cross-entropy for classification. [3]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why does MSE penalise outliers more than MAE and when does that matter?",
+      "a": "MSE = Σe²/n vs MAE = Σ|e|/n. A residual of 10 contributes 100 to MSE but only 10 to MAE. This super-linear penalty means MSE pulls the model toward outliers to reduce their squared error, often at the expense of typical predictions. For house prices with a few multi-million-dollar luxury homes, MSE will overfit to those. Use MAE or Huber when the data has a long-tailed distribution or known outliers."
+    },
+    {
+      "q": "Does minimising MSE on the training set guarantee low test MSE?",
+      "a": "No. Training MSE is always an optimistic (biased low) estimate of test MSE — the model has seen the training labels and can overfit them. The bias grows with model complexity and shrinks with sample size. Corrected estimators include AIC (−2log L̂ + 2k), BIC, or k-fold cross-validation MSE. Ridge regression (L2 penalty) explicitly trades higher training MSE for lower test MSE by shrinking coefficients."
+    }
+  ],
+  "sources": [
+    { "label": "Goodfellow, Bengio & Courville — Deep Learning, Ch. 5 (Machine Learning Basics)", "url": "https://www.deeplearningbook.org/" },
+    { "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 2 & 7", "url": "https://hastie.su.domains/ElemStatLearn/" },
+    { "label": "Huber, P.J. (1964) — Robust Estimation of a Location Parameter, Annals of Mathematical Statistics", "url": "https://doi.org/10.1214/aoms/1177703732" }
+  ]
+}

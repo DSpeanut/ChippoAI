@@ -1,0 +1,68 @@
+{
+  "visualizationType": "lr-schedule",
+  "codeSnapshot": {
+    "label": "warmup.py",
+    "code": "import torch\nimport torch.nn as nn\nfrom torch.optim.lr_scheduler import LambdaLR\n\nmodel = nn.Linear(10, 1)\noptimizer = torch.optim.AdamW(model.parameters(), lr=3e-4)\n\n# Linear warmup + cosine decay (standard for transformers)\ndef get_cosine_schedule_with_warmup(optimizer, num_warmup_steps, num_training_steps, min_lr_ratio=0.1):\n    def lr_lambda(current_step):\n        if current_step < num_warmup_steps:\n            return float(current_step) / float(max(1, num_warmup_steps))  # linear ramp\n        progress = float(current_step - num_warmup_steps) / float(\n            max(1, num_training_steps - num_warmup_steps))\n        import math\n        cosine_decay = max(min_lr_ratio, 0.5 * (1.0 + math.cos(math.pi * progress)))\n        return cosine_decay\n    return LambdaLR(optimizer, lr_lambda)\n\nnum_warmup = 2000\nnum_total = 100000\nscheduler = get_cosine_schedule_with_warmup(optimizer, num_warmup, num_total)\n\n# Log lr at key steps\nfor step in [0, 1, 100, 500, 2000, 5000, 50000, 100000]:\n    scheduler.last_epoch = step\n    lrs = scheduler.get_last_lr() if step > 0 else [optimizer.param_groups[0]['lr'] * (step+1)/num_warmup]\n    print(f\"Step {step:6d}: lr={optimizer.param_groups[0]['lr']:.2e}\")\n    if step < 100000:\n        scheduler.step()\n\n# Hugging Face version (requires transformers library)\n# from transformers import get_cosine_schedule_with_warmup\n# scheduler = get_cosine_schedule_with_warmup(\n#     optimizer, num_warmup_steps=2000, num_training_steps=100000)"
+  },
+  "eli3": [
+    "Warmup is the practice of starting training with a very small learning rate and gradually increasing it to the target rate over the first few hundred or thousand steps. This prevents the model from making wild, destructive updates right at the start when it has learned nothing.",
+    "Think of it like warming up a car engine in cold weather: you don't floor the accelerator immediately. You let it idle and build up gradually. In training, the model's gradients are very noisy at the start (random initialisation), so a small initial learning rate keeps those noisy updates small and safe.",
+    "Warmup is especially important with Adam/AdamW: in the first steps, the second moment estimate v is near zero, which makes the effective learning rate η/√v very large. Warmup counteracts this by keeping η small until v accumulates enough history to be reliable."
+  ],
+  "whenWhy": [
+    {
+      "title": "Transformer training: warmup is mandatory",
+      "body": "The original transformer (Vaswani et al., 2017) used 4000 warmup steps with inverse square root decay. Modern LLMs (GPT-4, LLaMA, Mistral) use linear warmup over 500–4000 steps. Without warmup, Adam's adaptive learning rate diverges in the first few steps because v̂ is near zero (underestimated second moment → large effective step size). Warmup prevents NaN losses and catastrophic early updates."
+    },
+    {
+      "title": "Fine-tuning pretrained models",
+      "body": "Fine-tuning with a large initial learning rate can destroy pretrained weights in the first few steps (catastrophic forgetting). Warmup gives the optimizer time to adapt to the new task distribution before making large weight updates. Typical fine-tuning recipe: 50–200 warmup steps, total fine-tuning steps 1000–10000, peak lr 1e-5 to 5e-5."
+    },
+    {
+      "title": "Diagnosing early training instability",
+      "body": "If your training loss spikes or goes to NaN in the first 100 steps, the likely cause is missing or too-short warmup. Increasing warmup steps (or decreasing initial lr) almost always fixes this. A warmup of 2–5% of total steps is a reliable default. For very large models (>10B params), longer warmup (2000+ steps) reduces the risk of early-step catastrophic updates."
+    }
+  ],
+  "deepDiveIntro": [
+    "Linear warmup: η_t = η_max · t/T_w for t ≤ T_w. After T_w steps, the main schedule (cosine, polynomial, etc.) takes over. The warmup ensures that during the first T_w steps, the effective learning rate is small and gradually increasing. The product η·m̂/(√v̂+ε) is small because η is small, even if m̂/(√v̂+ε) is large due to small v̂. [1]",
+    "The Adam warmup problem (Reddi et al., 2020; Liu et al., RAdam, 2020): in the first few steps, Adam's second moment estimate v̂ is biased and unreliable because (1−β₂ᵗ) is very small for large β₂=0.999. At t=1: v̂₁ = g₁²/(1−0.999) = 1000g₁². This overestimates the second moment at step 1 — but the bias correction makes v̂₁ = g₁², while the true long-run estimate would be different. RAdam (Rectified Adam) uses a formula to detect when the second moment estimate has low variance and falls back to SGD during warmup. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Linear Warmup Formula",
+      "body": "For step t ∈ [0, T_warmup]: η_t = η_max · t/T_warmup. At t=0: η = 0. At t=T_warmup: η = η_max. After T_warmup: follow the main schedule. Alternative: exponential warmup η_t = η_max · (t/T_warmup)^k for more gradual ramp. Constant factor: start at η_max/100 and ramp linearly. The minimum start value and ramp speed are less important than ensuring the first 100-500 steps have a small enough lr to not diverge. [1]",
+      "formula": "η_t = η_max · t / T_warmup  for  t ≤ T_warmup"
+    },
+    {
+      "heading": "Why Warmup Matters for Adam Specifically",
+      "body": "At step t=1: m̂₁ = g₁, v̂₁ = g₁². Effective step = η·g₁/|g₁| = η·sign(g₁) — magnitude η regardless of gradient size. This is fine. But at t=2: m̂₂ = β₁g₁ + (1−β₁)g₂, v̂₂ depends on both g₁ and g₂. The variance of v̂ is high in early steps — the second moment estimate fluctuates wildly. RAdam monitors the maximum length of the approximation of the SMA (simple moving average): when ρₜ < 4, the variance is too high and it falls back to SGD. This makes RAdam warmup-free but equivalent to Adam with warmup in practice. [2]"
+    },
+    {
+      "heading": "Warmup Steps: How Many?",
+      "body": "Rule of thumb: T_warmup ≈ 1–5% of total training steps. Examples: BERT pre-training (1M steps): warmup = 10,000 steps (1%). LLaMA-7B (1T tokens, ~250K steps at bs=4096): warmup ≈ 2000 steps (0.8%). GPT-3 (300B tokens): warmup ≈ 375M tokens. ViT large-scale: 10,000 steps. For fine-tuning: warmup = 5–10% of total fine-tuning steps (often 50–500 steps). Longer warmup generally helps for larger batch sizes and larger models. [1]"
+    }
+  ],
+  "youtubeLabel": "Learning Rate Warmup in Transformer Training",
+  "youtubeUrl": "https://www.youtube.com/embed/vc16-1oLqtM",
+  "takeaways": [
+    "Linear warmup: η_t = η_max·t/T_warmup — ramp from 0 to η_max over T_warmup steps. [1]",
+    "Prevents early Adam divergence: keeps η small while second moment estimate v̂ is unreliable. [2]",
+    "T_warmup ≈ 1–5% of total steps; 2000 steps is the common default for LLM pre-training. [1]",
+    "RAdam (Rectified Adam) adapts warmup automatically; matches Adam+warmup in practice. [2]",
+    "Fine-tuning with warmup: 50–500 steps, peak lr 1e-5 to 5e-5 — prevents catastrophic forgetting. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "What happens if warmup is too long?",
+      "a": "Very long warmup wastes training budget — you're training at sub-optimal learning rates for too long. The model learns slowly and may not reach the same final performance within the training budget. Also: if the warmup + cosine decay doesn't sum to total_steps, you'll either stop before η_min or have a discontinuity. Practically, T_warmup > 10% of total steps is unusual and rarely helps. For LLMs: 4000 steps warmup for 500K total steps is borderline too long; 2000 steps is safer."
+    },
+    {
+      "q": "Is warmup necessary for SGD + momentum, or just for Adam?",
+      "a": "Warmup is less critical for SGD but still beneficial for large models and large learning rates. SGD doesn't have Adam's second moment problem (no adaptive scaling), so early gradients don't produce anomalously large updates. However, for large learning rates (η > 0.01 for deep networks), warmup prevents divergence in the first epoch. ResNet ImageNet training: start at lr=0.01 and warm up to lr=0.1 over first 5 epochs (Goyal et al., 2017). Without warmup, the first epoch training loss spikes noticeably at high lr."
+    }
+  ],
+  "sources": [
+    { "label": "Vaswani et al. (2017) — Attention Is All You Need arXiv:1706.03762", "url": "https://arxiv.org/abs/1706.03762" },
+    { "label": "Liu et al. (2020) — On the Variance of the Adaptive Learning Rate and Beyond (RAdam) arXiv:1908.03265", "url": "https://arxiv.org/abs/1908.03265" }
+  ]
+}

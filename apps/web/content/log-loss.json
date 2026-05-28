@@ -1,0 +1,67 @@
+{
+  "visualizationType": "training-curve",
+  "codeSnapshot": {
+    "label": "log_loss.py",
+    "code": "import numpy as np\nfrom sklearn.metrics import log_loss\n\n# Binary log-loss (cross-entropy)\n# L = -(1/n) Σ [yᵢ·log(p̂ᵢ) + (1-yᵢ)·log(1-p̂ᵢ)]\ny_true = np.array([1, 1, 0, 0, 1])\ny_prob = np.array([0.9, 0.7, 0.2, 0.3, 0.6])  # predicted probabilities\n\n# Manual computation\neps = 1e-15  # numerical stability: clip probabilities away from 0 and 1\ny_prob_clipped = np.clip(y_prob, eps, 1 - eps)\nloss = -np.mean(y_true * np.log(y_prob_clipped) + (1 - y_true) * np.log(1 - y_prob_clipped))\nprint(f'Log-loss (manual): {loss:.4f}')\nprint(f'Log-loss (sklearn): {log_loss(y_true, y_prob):.4f}')\n# → Log-loss ≈ 0.211 (lower is better; 0 = perfect, ln(2)≈0.693 = random)\n\n# Effect of confidence on log-loss\n# Correct prediction with high confidence: low log-loss\n# Correct prediction with low confidence: higher log-loss\n# Wrong prediction with high confidence: very high log-loss (catastrophic)\ncases = [\n    (1, 0.99, 'Correct + confident'),       # loss ≈ 0.01\n    (1, 0.60, 'Correct + uncertain'),        # loss ≈ 0.51\n    (1, 0.10, 'Incorrect + confident'),      # loss ≈ 2.30 (catastrophic)\n    (1, 0.50, 'Completely uncertain'),        # loss = ln(2) ≈ 0.693\n]\nfor y, p, label in cases:\n    l = -(y * np.log(p) + (1-y) * np.log(1-p))\n    print(f'{label}: {l:.3f}')\n\n# Multi-class log-loss\n# L = -(1/n) Σᵢ Σⱼ yᵢⱼ · log(p̂ᵢⱼ)   where yᵢⱼ ∈ {0,1} (one-hot)\ny_true_mc = [0, 1, 2, 1]  # class indices\ny_prob_mc = np.array([\n    [0.8, 0.1, 0.1],   # predict class 0 (correct)\n    [0.2, 0.7, 0.1],   # predict class 1 (correct)\n    [0.1, 0.2, 0.7],   # predict class 2 (correct)\n    [0.3, 0.5, 0.2],   # predict class 1 (correct, uncertain)\n])\nmc_loss = log_loss(y_true_mc, y_prob_mc)\nprint(f'Multi-class log-loss: {mc_loss:.4f}')"
+  },
+  "eli3": [
+    "Log-loss (also called cross-entropy loss) measures how good your model's probability predictions are — not just whether they're right or wrong, but how confident they are. Saying '90% chance of rain' when it rains is better than saying '60% chance,' even though both are correct.",
+    "The key insight: log-loss punishes confident wrong answers much more than uncertain wrong answers. Saying '99% chance of class A' when the answer is class B gives a huge loss. This encourages models to output well-calibrated probabilities — not just the most likely class.",
+    "A perfect model has log-loss=0. A completely random model (always saying 50/50 for binary) has log-loss=ln(2)≈0.693. If your log-loss is higher than 0.693, your model is actively making things worse by outputting biased probabilities."
+  ],
+  "whenWhy": [
+    {
+      "title": "Evaluating calibration of probabilistic classifiers",
+      "body": "Log-loss is a proper scoring rule — it is minimised by reporting true probabilities (not overconfident or underconfident). It rewards calibrated models: a model that says '70%' should be right 70% of the time for that claim to be optimal. Unlike accuracy (which only checks the argmax) or AUC (which only checks ranking), log-loss penalises miscalibration directly. Use log-loss when downstream decisions depend on probability estimates (medical diagnosis probability estimates drive treatment protocols; fraud scoring drives investigation thresholds)."
+    },
+    {
+      "title": "Standard metric for classification benchmarks",
+      "body": "Log-loss is the primary metric for Kaggle classification competitions and NLP/ML benchmarks where probability estimates matter. Binary log-loss = binary cross-entropy (the standard training loss for logistic regression and neural network classifiers). Evaluating with log-loss on a held-out set checks both discriminative ability and calibration — a model can have good AUC but poor log-loss if it discriminates well but produces poorly calibrated probabilities (e.g., outputs all near 0.5)."
+    },
+    {
+      "title": "Log-loss as negative log-likelihood",
+      "body": "Binary log-loss = negative average log-likelihood of a Bernoulli model: L = -E[log p(y|x,θ)]. Minimising log-loss is equivalent to maximum likelihood estimation under a Bernoulli (logistic regression) model. Multi-class log-loss = negative average log-likelihood under a categorical (softmax) model. This probabilistic interpretation makes log-loss the natural evaluation metric when the model outputs probabilities — it directly measures how surprised the model is by the true labels."
+    }
+  ],
+  "deepDiveIntro": [
+    "Binary log-loss: L = -(1/n)·Σᵢ[yᵢ·log p̂ᵢ + (1-yᵢ)·log(1-p̂ᵢ)] where yᵢ∈{0,1} and p̂ᵢ∈(0,1) is the predicted probability of class 1. Multi-class extension: L = -(1/n)·Σᵢ Σⱼ yᵢⱼ·log(p̂ᵢⱼ) where yᵢⱼ is the one-hot label. Log-loss is a proper scoring rule (Good, 1952): E[L] is minimised when p̂ᵢ = P(yᵢ=1|xᵢ) — the true conditional probability. Any model that reports true probabilities minimises expected log-loss; reporting anything else has higher expected loss. [1]",
+    "Numerical stability: log(0) = -∞. In practice, probabilities are clipped to [ε, 1-ε] with ε=1e-7 or ε=1e-15. sklearn.metrics.log_loss applies this clipping automatically. The log(p) term: as p→0 with y=1, the loss →+∞ (catastrophic prediction). As p→1 with y=1, the loss →0 (perfect). Interpretation: log-loss measures the number of bits needed to encode the true labels given the model's predictions (in nats if natural log is used; bits if log base 2). Lower log-loss = more compressed encoding = better model. [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Proper Scoring Rules and Calibration",
+      "body": "A scoring rule S(p, y) is proper if E[S(p, y)] is uniquely minimised at p = P(y|x) (the true probability). Log-loss is strictly proper: any deviation from truth increases expected score. This makes log-loss the right loss for training and evaluating probabilistic classifiers. Consequence: a model that is discriminative (high AUC) but not calibrated (probabilities ≠ true probabilities) will have suboptimal log-loss. Platt scaling and temperature scaling are post-hoc calibration methods that improve log-loss without changing AUC (they adjust probability estimates without changing the ranking). [1]"
+    },
+    {
+      "heading": "Log-loss for Confident Mistakes",
+      "body": "For a correct prediction: log-loss = -log(p̂_true) ∈ [0, +∞). High p̂ → low loss. Incorrect prediction: log-loss = -log(1-p̂_wrong) which is large when p̂_wrong is large. Specifically: predicting p=0.99 for the wrong class gives -log(0.01)≈4.6 — a very high penalty. This 'punishment for confident mistakes' is the defining feature of log-loss vs accuracy. In practice: models that overfit often become overconfident → high log-loss on test set even when accuracy is OK. Calibration curves (reliability diagrams) show whether predicted probabilities match actual frequencies. [1]",
+      "formula": "L = −(1/n)·Σᵢ[yᵢ·log(p̂ᵢ) + (1−yᵢ)·log(1−p̂ᵢ)]"
+    },
+    {
+      "heading": "Relationship to Cross-Entropy and KL Divergence",
+      "body": "Binary log-loss = binary cross-entropy H(y, p̂) = -Σ y·log(p̂) - Σ(1-y)·log(1-p̂). Multi-class log-loss = categorical cross-entropy. Connection to KL divergence: H(p, q) = H(p) + D_KL(p||q) where H(p) is the entropy of the true distribution (irreducible). Minimising cross-entropy H(p, q) is equivalent to minimising D_KL(p||q) (since H(p) is constant). So training a neural network with cross-entropy loss = minimising KL divergence between the model distribution q and the true distribution p — maximum likelihood under the model family. [1]"
+    }
+  ],
+  "youtubeLabel": "Log Loss and Cross-Entropy — Classification Metrics",
+  "youtubeUrl": "https://www.youtube.com/embed/MztgenIfGgM",
+  "takeaways": [
+    "L=−(1/n)Σ[y·log(p̂)+(1−y)·log(1−p̂)] — negative log-likelihood of Bernoulli model. [1]",
+    "Proper scoring rule: minimised by reporting true probabilities — rewards calibration. [1]",
+    "Confident wrong answers are catastrophically penalised: −log(0.01)≈4.6. [1]",
+    "Random model (p=0.5 always): log-loss=ln(2)≈0.693 — use as baseline. [1]",
+    "Equal to cross-entropy; minimising = minimising KL(true||model). [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "How do you handle the log-loss of a model that outputs exactly 0 or 1?",
+      "a": "log(0) = -∞, so a prediction of p=0 for the true class gives infinite log-loss. In practice: (1) sklearn clips predictions to [1e-15, 1-1e-15]. (2) Add label smoothing: replace hard 0/1 targets with ε/K and 1-ε+ε/K — prevents the model from being penalised infinitely for mispredictions. (3) Temperature scaling: after training, divide logits by T>1 to soften predictions. (4) Use Brier score (MSE of probabilities) instead of log-loss for heavy-tailed evaluation — Brier score is bounded in [0,1] and less sensitive to extreme probabilities. The numerical clipping approach is standard for evaluation; label smoothing and temperature scaling are for training and post-hoc calibration."
+    },
+    {
+      "q": "When does optimizing log-loss during training diverge from AUC on the test set?",
+      "a": "Log-loss and AUC can diverge when: (1) Calibration vs discrimination: a model can rank examples correctly (high AUC) but assign poorly calibrated probabilities (high log-loss). Platt scaling improves calibration (log-loss) without changing AUC. (2) Distribution shift: the model's probability estimates are well-calibrated for the training distribution but not the test distribution. AUC (ranking) degrades less quickly than log-loss under class proportion shift because AUC is invariant to class imbalance. (3) Label noise: noisy labels increase minimum achievable log-loss (irreducible entropy) while AUC can still be high if the ranking is correct. In practice: track both — AUC for discrimination and log-loss for calibration."
+    }
+  ],
+  "sources": [
+    { "label": "Good (1952) — Rational Decisions, Journal of the Royal Statistical Society", "url": "https://www.jstor.org/stable/2984087" }
+  ]
+}

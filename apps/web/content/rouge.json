@@ -1,0 +1,67 @@
+{
+  "visualizationType": "architecture-diagram",
+  "codeSnapshot": {
+    "label": "rouge.py",
+    "code": "from collections import Counter\nfrom rouge_score import rouge_scorer\n\n# ROUGE (Recall-Oriented Understudy for Gisting Evaluation) — Lin, 2004\n# Recall-oriented: measures what fraction of reference n-grams appear in candidate\n# BLEU is precision-oriented; ROUGE is recall-oriented\n\ndef rouge_n(candidate: str, reference: str, n: int) -> dict:\n    \"\"\"ROUGE-N: n-gram recall, precision, and F1.\"\"\"\n    cand_tokens = candidate.lower().split()\n    ref_tokens  = reference.lower().split()\n    cand_ngrams = Counter([tuple(cand_tokens[i:i+n]) for i in range(len(cand_tokens)-n+1)])\n    ref_ngrams  = Counter([tuple(ref_tokens[i:i+n])  for i in range(len(ref_tokens)-n+1)])\n    # Overlap: clipped to min(candidate count, reference count)\n    overlap = sum(min(cand_ngrams[ng], ref_ngrams[ng]) for ng in cand_ngrams)\n    ref_total  = max(1, sum(ref_ngrams.values()))\n    cand_total = max(1, sum(cand_ngrams.values()))\n    recall    = overlap / ref_total   # ROUGE-N recall\n    precision = overlap / cand_total  # ROUGE-N precision\n    f1 = (2 * precision * recall / (precision + recall)) if (precision + recall) > 0 else 0.0\n    return {'recall': recall, 'precision': precision, 'f1': f1}\n\n# Example\ncand = 'The cat sat on the mat'\nref  = 'The cat is sitting on the mat'\nprint('ROUGE-1:', rouge_n(cand, ref, 1))\nprint('ROUGE-2:', rouge_n(cand, ref, 2))\n\n# Production: use rouge_score library (Google's implementation)\nscorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)\nscores = scorer.score(ref, cand)\nfor name, score in scores.items():\n    print(f'{name}: P={score.precision:.3f} R={score.recall:.3f} F1={score.fmeasure:.3f}')\n\n# ROUGE-L: Longest Common Subsequence (LCS)\n# Not necessarily contiguous — more flexible than n-gram overlap\ndef lcs_length(x: list, y: list) -> int:\n    \"\"\"Dynamic programming LCS.\"\"\"\n    m, n = len(x), len(y)\n    dp = [[0] * (n + 1) for _ in range(m + 1)]\n    for i in range(1, m + 1):\n        for j in range(1, n + 1):\n            dp[i][j] = dp[i-1][j-1] + 1 if x[i-1] == y[j-1] else max(dp[i-1][j], dp[i][j-1])\n    return dp[m][n]\n\nlcs = lcs_length(cand.split(), ref.split())\nrougeL_recall    = lcs / len(ref.split())\nrougeL_precision = lcs / len(cand.split())\nprint(f'ROUGE-L manual — LCS={lcs}, R={rougeL_recall:.3f}, P={rougeL_precision:.3f}')"
+  },
+  "eli3": [
+    "ROUGE measures how much of a reference summary is covered by a system-generated summary. While BLEU asks 'how much of what the system says is in the reference?' (precision), ROUGE asks 'how much of the reference did the system capture?' (recall).",
+    "For summarisation, recall matters more than precision: we care that the summary covers the important points from the source, even if it says a few extra things. ROUGE-1 counts word overlaps, ROUGE-2 counts two-word phrase overlaps, ROUGE-L counts the longest common subsequence.",
+    "ROUGE is the standard metric for text summarisation (CNN/DailyMail, XSum benchmarks). A ROUGE-1 F1 of 0.40 is typical for extractive summarisation; 0.20-0.30 for abstractive summarisation (which generates new words not in the source)."
+  ],
+  "whenWhy": [
+    {
+      "title": "Text summarisation evaluation",
+      "body": "ROUGE (Lin, 2004) was specifically designed for summarisation evaluation. The recall orientation is appropriate: a good summary should cover all important points in the reference, even if it's longer. CNN/DailyMail and XSum benchmarks use ROUGE-1, ROUGE-2, and ROUGE-L as primary metrics. Extractive summarisation (selecting sentences from source) typically achieves higher ROUGE than abstractive (generating new text), because extracted sentences verbatim match reference words."
+    },
+    {
+      "title": "ROUGE-L for sequence structure",
+      "body": "ROUGE-L uses Longest Common Subsequence (LCS), which does not require contiguous matches. This is more flexible than ROUGE-2 for abstractive summaries that rephrase content using the same words in different order. A summary 'cat on mat' and reference 'the cat sits on the mat' have LCS='cat on mat' (length 3), giving ROUGE-L recall=3/6=0.5. ROUGE-L captures fluency and sentence-level structure better than ROUGE-N for generative models."
+    },
+    {
+      "title": "Multi-reference and bootstrap evaluation",
+      "body": "ROUGE-N with multiple references: for each n-gram in the candidate, take the maximum overlap with any single reference. This rewards candidates that partially match different references. Jackknife resampling is standard for ROUGE significance testing: remove one reference at a time, compute ROUGE on each subset, report mean ± std. Most papers report ROUGE F1 (combining precision and recall) but recall-only ROUGE is still common in older papers — always clarify which is reported."
+    }
+  ],
+  "deepDiveIntro": [
+    "ROUGE-N recall = Σ(ref) Count_match(n-gram) / Σ(ref) Count(n-gram) where Count_match(n-gram) is the clipped count of the n-gram in the candidate. ROUGE-N precision = Σ Count_match(n-gram) / Σ Count(n-gram in candidate). ROUGE-N F1 = 2·P·R/(P+R). ROUGE-L: let LCS(c,r) be the longest common subsequence between candidate c and reference r. ROUGE-L recall = LCS/|r|, precision = LCS/|c|, F1 = (1+β²)·P·R/(β²·P+R) with β=Rlcs/Plcs (default: β is large → ROUGE-L ≈ recall). Lin (2004) showed ROUGE-2 and ROUGE-L correlate most strongly with human judgments for news summarisation. [1]",
+    "ROUGE-S (skip-bigram): counts co-occurrences of word pairs in the same order with any gap between them. ROUGE-SU: ROUGE-S + ROUGE-1. Skip-bigrams are less commonly used today. Lin & Hovy (2003) showed that combinations of ROUGE variants (e.g., ROUGE-2 + ROUGE-L) correlate better with human assessments than individual variants. For modern abstractive summarisation evaluation, BERTScore and newer learned metrics outperform ROUGE, but ROUGE remains the standard for benchmark comparability. [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "ROUGE-N Formula",
+      "body": "ROUGE-N = Σ_{s∈References} Σ_{gram_n∈s} Count_match(gram_n) / Σ_{s∈References} Σ_{gram_n∈s} Count(gram_n). Count_match(gram_n) = min(Count(gram_n, candidate), Count(gram_n, reference)). The denominator normalizes by the number of n-grams in the reference (recall orientation). This is symmetric to BLEU's denominator (which normalizes by hypothesis n-grams). ROUGE recall + BLEU precision together give a more complete picture of generation quality. ROUGE-1 recall≈0.6 means 60% of reference words appear in the candidate. [1]",
+      "formula": "ROUGE-N = Σ Count_match(gram_n) / Σ_reference Count(gram_n)"
+    },
+    {
+      "heading": "ROUGE-L: Longest Common Subsequence",
+      "body": "LCS(x,y): the longest sequence of tokens that appear in both x and y in the same order (not necessarily contiguous). Computed in O(|x|·|y|) time via dynamic programming. ROUGE-L precision = LCS/|c|, ROUGE-L recall = LCS/|r|, ROUGE-L F1 = 2·P·R/(P+R). Advantage over ROUGE-2: captures sentence-level structure without requiring contiguous phrases. Example: candidate 'cat mat on' vs reference 'cat is on the mat' — ROUGE-2 finds 0 contiguous bigram matches but ROUGE-L finds LCS={'cat','on'} (length 2, recall=2/5=0.40). [1]"
+    },
+    {
+      "heading": "ROUGE vs BERTScore for Abstractive Summarisation",
+      "body": "ROUGE relies on lexical overlap — abstractive models that paraphrase rather than extract are penalised for using synonyms or different sentence structures. BERTScore uses contextual embeddings to compute similarity — semantically equivalent paraphrases score similarly. Study (Zhang et al., 2020): BERTScore correlates better with human judgments than ROUGE on abstractive summarisation tasks (XSum, CNN/DailyMail). However, ROUGE remains the standard benchmark metric because: (1) reproducible without downloading models; (2) decades of historical results allow comparison. Best practice: report both ROUGE and BERTScore for abstractive models. [1]"
+    }
+  ],
+  "youtubeLabel": "ROUGE Score Explained — Summarisation Evaluation",
+  "youtubeUrl": "https://www.youtube.com/embed/TMshhnrEXlg",
+  "takeaways": [
+    "ROUGE-N = Σ Count_match(gram_n) / Σ_reference Count(gram_n) — recall-oriented n-gram overlap. [1]",
+    "ROUGE-1 (words), ROUGE-2 (bigrams), ROUGE-L (LCS) are the three standard variants. [1]",
+    "ROUGE-L: longest common subsequence — captures order without requiring contiguous matches. [1]",
+    "ROUGE complements BLEU: BLEU=precision, ROUGE=recall — use both for full picture. [1]",
+    "For abstractive summarisation, BERTScore outperforms ROUGE in human correlation. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why does ROUGE-1 often appear high even for poor summaries?",
+      "a": "ROUGE-1 measures unigram (word) overlap. Common function words ('the', 'is', 'of', 'and') appear in both candidate and reference frequently, inflating ROUGE-1. Solutions: (1) Remove stopwords before computing ROUGE-1. (2) Use ROUGE-2 instead — 'the cat' matches less spuriously than 'the' alone. (3) Use recall-only ROUGE (denominator = reference length) rather than F1 — precision punishes spurious words. The rouge_score library (Google) includes stemming to reduce exact-match sensitivity. For dialogue evaluation, even ROUGE-2 can be low for good responses that use different but valid phrasing — human evaluation or BERTScore is preferred."
+    },
+    {
+      "q": "How does ROUGE handle multiple reference summaries?",
+      "a": "Standard approach (Lin, 2004): compute ROUGE between the candidate and each reference individually, then take the maximum ROUGE score across references. This rewards candidates that partially match any human reference — appropriate since human summarizers have different valid choices. Some implementations average across references instead — this is more conservative and penalises candidates that match one reference but not others. The rouge_score library supports multiple references via the max aggregation. For benchmark comparisons: always use the same number of references and the same aggregation method — different choices make scores incomparable."
+    }
+  ],
+  "sources": [
+    { "label": "Lin (2004) — ROUGE: A Package for Automatic Evaluation of Summaries, ACL Workshop 2004", "url": "https://aclanthology.org/W04-1013/" }
+  ]
+}

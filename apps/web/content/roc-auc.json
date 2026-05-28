@@ -1,0 +1,68 @@
+{
+  "visualizationType": "architecture-diagram",
+  "codeSnapshot": {
+    "label": "roc_auc.py",
+    "code": "import numpy as np\nfrom sklearn.metrics import (\n    roc_curve, roc_auc_score, RocCurveDisplay,\n    average_precision_score, precision_recall_curve\n)\nfrom sklearn.datasets import make_classification\nfrom sklearn.linear_model import LogisticRegression\n\n# Binary ROC-AUC\nX, y = make_classification(n_samples=1000, n_features=20, weights=[0.7, 0.3],\n                            random_state=42)\nclf = LogisticRegression()\nclf.fit(X[:800], y[:800])\nscores = clf.predict_proba(X[800:])[:, 1]  # positive class probabilities\ny_test = y[800:]\n\n# ROC curve\nfpr, tpr, thresholds = roc_curve(y_test, scores)\n# fpr[i] = FPR at threshold thresholds[i]\n# tpr[i] = TPR (Recall) at threshold thresholds[i]\n\nauc = roc_auc_score(y_test, scores)\nprint(f'AUC: {auc:.4f}')\n# AUC = P(score(positive) > score(negative)) — probabilistic interpretation\n\n# Probabilistic interpretation of AUC\nn_pos = (y_test == 1).sum()\nn_neg = (y_test == 0).sum()\npos_scores = scores[y_test == 1]\nneg_scores = scores[y_test == 0]\nauc_empirical = np.mean([sp > sn for sp in pos_scores for sn in neg_scores])\nprint(f'AUC (empirical): {auc_empirical:.4f}')  # matches roc_auc_score\n\n# Multi-class AUC (OvR — one-vs-rest)\nfrom sklearn.datasets import make_classification\nfrom sklearn.multiclass import OneVsRestClassifier\nX_mc, y_mc = make_classification(n_samples=1000, n_classes=3, n_features=20,\n                                  n_informative=10, random_state=42)\nclf_mc = OneVsRestClassifier(LogisticRegression())\nclf_mc.fit(X_mc[:800], y_mc[:800])\nscores_mc = clf_mc.predict_proba(X_mc[800:])  # (200, 3)\nauc_macro = roc_auc_score(y_mc[800:], scores_mc, multi_class='ovr', average='macro')\nprint(f'Multi-class AUC (macro): {auc_macro:.4f}')\n\n# PR-AUC for imbalanced data\nap = average_precision_score(y_test, scores)  # average precision = PR-AUC\nprint(f'PR-AUC (Average Precision): {ap:.4f}')"
+  },
+  "eli3": [
+    "The ROC curve (Receiver Operating Characteristic) shows how well a classifier separates positives from negatives across all possible decision thresholds. Each point on the curve is a different threshold — how strict you are about calling something positive.",
+    "AUC (Area Under the Curve) summarises this into one number: the probability that a randomly chosen positive example gets a higher score than a randomly chosen negative example. AUC=0.5 means the model is random; AUC=1.0 means perfect separation.",
+    "ROC-AUC is threshold-independent — it evaluates the model's discriminative ability regardless of where you set the cutoff. This makes it ideal for comparing classifiers, while the confusion matrix tells you how well a specific threshold works."
+  ],
+  "whenWhy": [
+    {
+      "title": "Comparing classifiers regardless of threshold",
+      "body": "Different applications require different operating points (high recall vs high precision), making threshold-dependent metrics (accuracy, F1 at a fixed threshold) hard to compare across classifiers. ROC-AUC evaluates performance across all thresholds simultaneously, giving a single number that captures the classifier's overall discriminative ability. Standard in medical research (diagnosis), information retrieval (ranking), and credit scoring. AUC is also invariant to class priors — changing the class ratio doesn't change AUC."
+    },
+    {
+      "title": "Choosing between ROC-AUC and PR-AUC",
+      "body": "For balanced or mildly imbalanced datasets: ROC-AUC is the standard. For severely imbalanced datasets (positive rate <5%): PR-AUC (average precision) is more informative. Reason: ROC-AUC can be high even when the model produces many false positives, because the FPR denominator (TN+FP) is dominated by the large number of true negatives. PR-AUC directly measures performance on positives: precision (of predicted positives) vs recall (of actual positives). Davis & Goadrich (2006): there is a one-to-one correspondence between points on the ROC and PR curves, but PR curve reveals more information in the high-recall, low-precision regime."
+    },
+    {
+      "title": "AUC for ranking and scoring systems",
+      "body": "AUC = P(score(pos) > score(neg)) — the Wilcoxon-Mann-Whitney statistic. This means AUC directly measures ranking quality: how often the classifier ranks a positive above a negative. For recommender systems, fraud detection, and credit scoring, what matters is correct ranking (relative order of scores), not the absolute probability calibration. A model with AUC=0.95 correctly ranks 95% of (positive, negative) pairs — useful even if probability estimates are uncalibrated."
+    }
+  ],
+  "deepDiveIntro": [
+    "ROC curve: plot TPR = TP/(TP+FN) vs FPR = FP/(FP+TN) as the classification threshold τ varies from +∞ (predict all negative) to -∞ (predict all positive). Each threshold τ gives one (FPR, TPR) point. AUC = ∫₀¹ TPR(FPR) d(FPR) = area under this curve. AUC has the probabilistic interpretation: AUC = P(f(x₊) > f(x₋)) where x₊ ~ P and x₋ ~ N are random positive and negative examples. This equals the Wilcoxon-Mann-Whitney U statistic normalised by n₊·n₋ (Hanley & McNeil, 1982). [1]",
+    "The ROC curve has invariance properties: (1) AUC is invariant to monotone transformations of the score — only the ranking matters, not the absolute values. (2) AUC is invariant to class imbalance — changing the ratio of positives to negatives in the test set doesn't change AUC (unlike accuracy, F1, or precision at a fixed threshold). (3) A classifier with AUC=0.5 is equivalent to random guessing; AUC<0.5 indicates an inverted classifier (flip predictions to get AUC=1-original AUC). [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Computing the ROC Curve and AUC",
+      "body": "Algorithm: (1) Sort test examples by score descending. (2) Starting at (FPR=0,TPR=0), iterate through sorted examples: if positive, move up (TPR += 1/n₊); if negative, move right (FPR += 1/n₋). (3) AUC = area under the piecewise-linear curve. Trapezoidal rule: AUC = Σᵢ (FPRᵢ - FPRᵢ₋₁)·(TPRᵢ + TPRᵢ₋₁)/2. The equivalent formula using ranks: AUC = (U/(n₊·n₋)) where U = Σᵢ:yᵢ=1 rank(xᵢ) - n₊(n₊+1)/2 (Wilcoxon rank-sum statistic). [1]",
+      "formula": "AUC = P(score(x₊) > score(x₋)) where x₊ ~ Positive, x₋ ~ Negative"
+    },
+    {
+      "heading": "Partial AUC and Operating Constraints",
+      "body": "Full AUC integrates over all FPR values [0,1], but for many applications only a specific FPR range matters (e.g., FPR ≤ 0.01 for rare event detection). Partial AUC: pAUC = ∫₀^{fpr_max} TPR(FPR) d(FPR). sklearn: roc_auc_score(max_fpr=0.1) computes pAUC over [0, 0.1]. Normalise by dividing by fpr_max to get a [0,1] metric. Medical diagnostics: often report sensitivity at fixed specificity (e.g., 'sensitivity at 95% specificity') — a single point on the ROC curve — rather than the full AUC. [1]"
+    },
+    {
+      "heading": "Multi-Class AUC",
+      "body": "Multi-class AUC requires specifying an averaging strategy: (1) OvR (One-vs-Rest): compute AUC for each class against all others, then average. Macro-OvR: equal weight per class; Weighted-OvR: weight by class prevalence. (2) OvO (One-vs-One, Hand & Till, 2001): compute AUC for each pair of classes, average over all pairs. OvO is more informative for imbalanced multi-class problems (not dominated by majority class pairs). sklearn: roc_auc_score(..., multi_class='ovr', average='macro') or multi_class='ovo'. [1]"
+    }
+  ],
+  "youtubeLabel": "ROC Curves and AUC — Explained Simply",
+  "youtubeUrl": "https://www.youtube.com/embed/4jRBRDbJemM",
+  "takeaways": [
+    "AUC = P(score(pos) > score(neg)) — probability of correct ranking of a pos/neg pair. [1]",
+    "AUC is invariant to monotone score transformations and class imbalance changes. [1]",
+    "ROC curve: TPR vs FPR across all thresholds; AUC = area under this curve. [1]",
+    "Prefer PR-AUC over ROC-AUC when positive class is rare (<5%) — ROC can be misleadingly high. [2]",
+    "AUC=0.5 is random; AUC=1.0 is perfect; AUC<0.5 means flip predictions. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why does a high AUC not guarantee a useful classifier?",
+      "a": "AUC measures ranking ability — it does not guarantee that the classifier produces well-calibrated probabilities. A classifier that ranks all positives above all negatives has AUC=1.0, but if it outputs scores of 0.51 for positives and 0.49 for negatives, the threshold-dependent metrics (precision, recall at threshold=0.5) are still poor. Additionally, AUC averages over all thresholds, including extreme ones that are never used in practice. For high-FPR operating points (e.g., FPR=0.9), a classifier can boost AUC by improving TPR where it doesn't matter. If your application only operates at a specific FPR, use partial AUC or sensitivity/specificity at that operating point."
+    },
+    {
+      "q": "How does AUC relate to the Gini coefficient used in credit scoring?",
+      "a": "The Gini coefficient in credit scoring is defined as Gini = 2·AUC - 1. It rescales AUC from [0.5, 1] to [0, 1], where 0 is random and 1 is perfect. This is equivalent to the Somers' D statistic (concordance minus discordance divided by total pairs). In credit scoring, a Gini > 0.4 (AUC > 0.7) is considered acceptable; Gini > 0.6 (AUC > 0.8) is good. The Gini coefficient in this context is not the same as the Gini impurity used in decision trees — it's a ranking quality measure derived directly from the ROC curve."
+    }
+  ],
+  "sources": [
+    { "label": "Hanley & McNeil (1982) — The Meaning and Use of the Area under a Receiver Operating Characteristic Curve, Radiology", "url": "https://pubs.rsna.org/doi/10.1148/radiology.143.1.7063747" },
+    { "label": "Davis & Goadrich (2006) — The Relationship Between Precision-Recall and ROC Curves, ICML 2006", "url": "https://dl.acm.org/doi/10.1145/1143844.1143874" }
+  ]
+}

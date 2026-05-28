@@ -1,0 +1,68 @@
+{
+  "visualizationType": "regularization",
+  "codeSnapshot": {
+    "label": "weight_decay.py",
+    "code": "import torch\nimport torch.nn as nn\n\n# Weight decay in SGD: equivalent to L2 regularisation\n# Update: w ← w*(1 - lr*wd) - lr*grad\noptimizer_sgd = torch.optim.SGD(\n    [nn.Parameter(torch.randn(5))],\n    lr=0.01,\n    weight_decay=1e-4  # λ: w' = w*(1 - lr*wd)\n)\n\n# Weight decay in AdamW: DECOUPLED (correct)\n# Gradient step: w ← w - lr*m̂/(√v̂+ε)\n# Weight decay:  w ← w - lr*wd*w  (separate, constant)\noptimizer_adamw = torch.optim.AdamW(\n    [nn.Parameter(torch.randn(5))],\n    lr=1e-3,\n    weight_decay=0.01  # decoupled from gradient scaling\n)\n\n# Common practice: no weight decay on bias, LayerNorm, embedding norm\ndef get_param_groups(model, weight_decay):\n    no_decay = {'bias', 'LayerNorm.weight', 'layer_norm.weight'}\n    return [\n        {'params': [p for n, p in model.named_parameters()\n                    if not any(nd in n for nd in no_decay)],\n         'weight_decay': weight_decay},\n        {'params': [p for n, p in model.named_parameters()\n                    if any(nd in n for nd in no_decay)],\n         'weight_decay': 0.0}\n    ]\n\nmodel = nn.TransformerEncoderLayer(d_model=512, nhead=8)\nparam_groups = get_param_groups(model, weight_decay=0.1)\noptimizer = torch.optim.AdamW(param_groups, lr=3e-4)\nprint(f\"Groups: {len(param_groups)} ({sum(len(g['params']) for g in param_groups)} params)\")"
+  },
+  "eli3": [
+    "Weight decay is a training technique that shrinks all model weights a little bit at each training step, independently of the gradient. After the gradient update, each weight is multiplied by (1 − η·λ) — slightly less than 1 — so they slowly decay toward zero over training.",
+    "This prevents weights from growing too large (which would make the model overconfident and overfit). Small weights means the model makes smooth, modest predictions — a sign of a well-generalised model. Large weights means the model makes extreme predictions that fit training data but fail on new data.",
+    "Weight decay and L2 regularisation are identical for SGD. For Adam, they differ: Adam's L2 regularisation (weight_decay in Adam) is scaled by the adaptive gradient factor, creating uneven regularisation. AdamW decouples the decay and applies it directly to weights, which is the correct approach."
+  ],
+  "whenWhy": [
+    {
+      "title": "Universal default: almost every neural network uses weight decay",
+      "body": "Weight decay (1e-4 to 1e-2) is applied in essentially all production neural network training. ResNet on ImageNet: weight_decay=1e-4 with SGD. Transformer/LLM training: weight_decay=0.1 with AdamW. ViT: weight_decay=0.3. The specific value matters: too small → no regularisation benefit; too large → underfitting (weights collapse to zero, model loses capacity)."
+    },
+    {
+      "title": "Which parameters to exclude from weight decay",
+      "body": "Biases and normalisation parameters (γ, β in LayerNorm, BatchNorm) should have weight_decay=0. Biases are not over-parameterised and shrinking them harms model capacity. LayerNorm parameters are typically small and close to 1 (γ) and 0 (β) by design — decaying them disrupts normalisation. In PyTorch, this requires separate parameter groups in the optimizer."
+    },
+    {
+      "title": "Weight decay as implicit maximum a posteriori (MAP) estimation",
+      "body": "Applying weight decay is equivalent to placing a Gaussian prior N(0, 1/(2λ)) on all weights and doing MAP inference. The prior pulls weights toward zero (the 'prior belief' is that most features are not important). The strength of this prior (λ) trades off between fitting the data and respecting the prior. This Bayesian interpretation explains why weight decay helps: it encodes the inductive bias that simpler (smaller-weight) models are preferred."
+    }
+  ],
+  "deepDiveIntro": [
+    "Weight decay for SGD: wₜ₊₁ = wₜ − η∇L_data(wₜ) − ηλwₜ = wₜ(1−ηλ) − η∇L_data. This is exactly the same as the gradient update for L_total = L_data + (λ/2)‖w‖² (L2 penalty): ∂L_total/∂w = ∂L_data/∂w + λw, so wₜ₊₁ = wₜ − η(∂L_data/∂w + λw) = wₜ(1−ηλ) − η∂L_data/∂w. For SGD, weight_decay and L2 regularisation are identical. [1]",
+    "For Adam, L2 reg (Adam with weight_decay) modifies the gradient: g_reg = g + λw. This then goes through the adaptive scaling: w ← w − η·m̂(g_reg)/√(v̂(g_reg)+ε). The effective regularisation strength per parameter is η·λ/√(v̂+ε) — varying per parameter. AdamW (Loshchilov & Hutter, 2019) fixes this by applying the weight decay step separately after the Adam update, giving uniform regularisation η·λ per parameter. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Weight Decay vs L2 Regularisation",
+      "body": "For SGD with learning rate η: Weight decay update: w ← w(1−ηλ) − η∇L. L2 reg gradient: ∂(L + λ/2‖w‖²)/∂w = ∇L + λw. SGD step: w ← w − η(∇L + λw) = w(1−ηλ) − η∇L. These are identical. For Adam: L2 adds λw to gradient, which goes through m/√v scaling. Weight decay (AdamW) adds −ηλw to the update after the Adam step — scaling is different. The distinction matters and is the reason AdamW outperforms Adam+L2 on LLMs. [1][2]",
+      "formula": "SGD: w ← w(1−ηλ) − η∇L  (weight decay = L2 regularisation)"
+    },
+    {
+      "heading": "Weight Decay and Batch Normalisation",
+      "body": "Batch normalisation makes the network's output invariant to weight scale: if all weights in layer l are multiplied by c, the BN layer normalises them back. So weight decay on BN-normalised layers doesn't regularise the function — it only changes the weight norms before normalisation. However, Van Laarhoven (2017) showed this still matters: smaller ‖w‖ → larger effective learning rate (the gradient relative to weight norm is larger). Weight decay with BN effectively controls the signal-to-noise ratio of the gradient, not the function capacity. [1]"
+    },
+    {
+      "heading": "Parameter Groups: Exclude Biases and Norms",
+      "body": "Standard practice (from BERT, GPT, LLaMA): apply weight_decay only to weight matrices (attention, FFN, embedding). Exclude: (1) biases — not a capacity bottleneck, shrinking hurts alignment. (2) LayerNorm weight (γ) — these are scale parameters, decaying them disrupts normalisation. (3) LayerNorm bias (β) — mean parameter. Hugging Face trainer does this automatically. PyTorch requires manual parameter grouping. Typical: weight_decay=0.1 for transformer weights, 0.0 for all others. [2]"
+    }
+  ],
+  "youtubeLabel": "Weight Decay & L2 Regularization — Deep Learning",
+  "youtubeUrl": "https://www.youtube.com/embed/Q81RR3yKn30",
+  "takeaways": [
+    "w ← w(1−ηλ) − η∇L: each step shrinks weights toward zero at rate ηλ. [1]",
+    "SGD: weight decay = L2 regularisation (identical update). For Adam/AdamW: NOT the same. [1]",
+    "AdamW decouples weight decay from gradient scaling — always use AdamW, not Adam+weight_decay. [2]",
+    "Exclude biases and LayerNorm parameters from weight decay in transformers. [2]",
+    "Typical: wd=1e-4 (CNNs), wd=0.01–0.1 (transformers, LLMs). [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Does weight decay work differently in the final layer vs earlier layers?",
+      "a": "Yes, in some architectures. The final classification layer maps embeddings to logits — its weight norms directly scale the output logit magnitudes, affecting confidence. Heavy weight decay on the final layer can cause the model to produce very low-confidence logits (small scale). Some fine-tuning recipes apply lower weight decay to the final layer or none at all (final_layer_weight_decay=0). Contrastive learning methods (CLIP, SimCLR) sometimes zero out weight decay on the projection head and apply standard weight decay to the backbone. This matters when the scale of logits has physical meaning (calibration, temperature scaling)."
+    },
+    {
+      "q": "Can weight decay be too large?",
+      "a": "Yes. If λ is too large (or ηλ > 1), weights shrink faster than gradients can grow them — the model converges to w≈0, losing all learned representations (zero weights → zero outputs → undefined gradients for activation functions). Practically: with SGD lr=0.01 and weight_decay=0.1, the multiplicative factor per step is (1−0.01·0.1) = 0.999 — fine. With weight_decay=100 and lr=0.01: factor = 0.0 — catastrophic. For AdamW: the effective weight decay per step is η·λ (not ηλ as a product with raw lr and decay, since AdamW applies them separately). Keep η·λ << 1."
+    }
+  ],
+  "sources": [
+    { "label": "Goodfellow, Bengio & Courville — Deep Learning, Ch. 7 (Regularisation)", "url": "https://www.deeplearningbook.org/" },
+    { "label": "Loshchilov & Hutter (2019) — Decoupled Weight Decay Regularization arXiv:1711.05101", "url": "https://arxiv.org/abs/1711.05101" }
+  ]
+}

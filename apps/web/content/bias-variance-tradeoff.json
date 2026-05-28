@@ -1,0 +1,68 @@
+{
+  "visualizationType": "training-curve",
+  "codeSnapshot": {
+    "label": "bias_variance_tradeoff.py",
+    "code": "import numpy as np\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.preprocessing import PolynomialFeatures\nfrom sklearn.linear_model import Ridge\nfrom sklearn.model_selection import cross_val_score\n\n# Bias-Variance Decomposition (regression example)\n# E[(y - f̂(x))²] = Bias²[f̂(x)] + Var[f̂(x)] + σ²_ε\n\nnp.random.seed(42)\nn_train, n_test, n_exp = 50, 1000, 200  # 200 independent experiments\nsigma = 0.5  # irreducible noise std\n\n# True function\ndef f_true(x): return np.sin(2 * np.pi * x)\n\nx_test = np.linspace(0, 1, n_test)\ny_test_noiseless = f_true(x_test)\n\npredictions = []  # (n_exp, n_test)\nfor _ in range(n_exp):\n    # New training set each experiment\n    x_train = np.random.rand(n_train)\n    y_train = f_true(x_train) + sigma * np.random.randn(n_train)\n    # Fit a degree-3 polynomial\n    model = Pipeline([('poly', PolynomialFeatures(degree=3)),\n                      ('reg', Ridge(alpha=0.01))])\n    model.fit(x_train.reshape(-1, 1), y_train)\n    predictions.append(model.predict(x_test.reshape(-1, 1)))\n\npredictions = np.array(predictions)   # (n_exp, n_test)\nmean_pred = predictions.mean(axis=0)  # E[f̂(x)] over training sets\n\nbias_sq  = ((mean_pred - y_test_noiseless) ** 2).mean()\nvariance = predictions.var(axis=0).mean()\nirred    = sigma ** 2\ntotal_mse = bias_sq + variance + irred\n\nprint(f'Bias²:     {bias_sq:.4f}')\nprint(f'Variance:  {variance:.4f}')\nprint(f'Irred:     {irred:.4f}')\nprint(f'Total MSE: {total_mse:.4f}')\n\n# Tradeoff: increasing polynomial degree → ↑ variance, ↓ bias\nfor degree in [1, 3, 5, 10, 15]:\n    model = Pipeline([('poly', PolynomialFeatures(degree=degree)),\n                      ('reg', Ridge(alpha=0.001))])\n    cv_mse = -cross_val_score(model, x_test.reshape(-1,1), y_test_noiseless,\n                              cv=5, scoring='neg_mean_squared_error').mean()\n    print(f'Degree {degree:2d}: CV MSE = {cv_mse:.4f}')"
+  },
+  "eli3": [
+    "Every model makes errors for two reasons: it's either too simple (bias — systematically wrong) or too sensitive (variance — results change a lot depending on which training data you happen to use). Getting one wrong usually makes the other worse.",
+    "High bias is like always guessing the average height of adults as 5'7\" — you'll be consistently wrong for tall and short people. High variance is like a model that says 5'7\" one day and 6'2\" the next depending on who it saw recently — inconsistent and unreliable.",
+    "The bias-variance tradeoff is why more complex models don't always win: a degree-100 polynomial fits training data perfectly but varies wildly on new data (high variance). A straight line has high bias but low variance. The sweet spot is in between — the right complexity for the dataset size."
+  ],
+  "whenWhy": [
+    {
+      "title": "Diagnosing underfitting vs overfitting",
+      "body": "High bias (underfitting): training error and validation error are both high and similar — the model is too simple to capture the pattern. Fix: increase model complexity, add features, reduce regularization. High variance (overfitting): training error is low but validation error is much higher — the model fits noise. Fix: more training data, regularization, reduce model complexity, dropout, early stopping. The train/val error gap directly measures variance; the absolute val error measures bias + variance + noise."
+    },
+    {
+      "title": "Regularization and the bias-variance tradeoff",
+      "body": "Ridge regression: as λ→∞, the model shrinks to the zero vector (high bias, zero variance). As λ→0, the model becomes OLS (low bias, but high variance in small-data settings). The optimal λ minimises validation MSE = Bias²+Variance+σ². Cross-validation finds this optimum empirically. ESL Chapter 7: 'The challenge of model selection is to trade off bias and variance.' This tradeoff is fundamental: any estimator with lower bias than another on a given problem class must have higher variance somewhere."
+    },
+    {
+      "title": "Double descent in modern overparameterized models",
+      "body": "Classical bias-variance theory predicts a U-shaped test error curve as model complexity increases. Modern deep learning violates this: after the interpolation threshold (where the model fits training data perfectly), test error decreases again as models become more overparameterized. This 'double descent' (Belkin et al., 2019; Hastie et al., 2022) is observed in neural networks, random forests, and linear models with more parameters than data. Understanding: the implicit regularization of gradient descent selects the minimum-norm interpolating solution, which generalises well in high dimensions."
+    }
+  ],
+  "deepDiveIntro": [
+    "For regression with target y = f(x) + ε where E[ε]=0, Var[ε]=σ², the expected squared error of estimator f̂ at a point x is: E[(y - f̂(x))²] = (E[f̂(x)] - f(x))² + E[(f̂(x) - E[f̂(x)])²] + σ² = Bias²[f̂(x)] + Var[f̂(x)] + σ². The expectation is over both the noise ε in the test point and the randomness in the training set D. The irreducible error σ² cannot be reduced by any model — it's the noise floor. Minimising MSE requires balancing Bias² and Variance. [1]",
+    "The decomposition requires expectations over training sets: Bias[f̂(x)] = E_D[f̂(x)] - f(x) (systematic error averaged over many training sets); Var[f̂(x)] = E_D[(f̂(x) - E_D[f̂(x)])²] (variability of predictions over training sets). In practice: we observe one training set. Cross-validation error estimates total error; the bias-variance split must be inferred from error curves vs complexity or regularization strength. [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Bias-Variance Decomposition Derivation",
+      "body": "Let ȳ = E_D[f̂(x)] (mean prediction over training sets). MSE(x) = E[(y-f̂)²] = E[(y-ȳ+ȳ-f̂)²] = E[(y-ȳ)²] + 2E[(y-ȳ)(ȳ-f̂)] + E[(ȳ-f̂)²]. The cross-term E[(y-ȳ)(ȳ-f̂)] = (f(x)-ȳ)·E[(ȳ-f̂)] = 0 (since E[f̂]=ȳ). So: MSE(x) = E[(y-ȳ)²] + E[(ȳ-f̂)²] = [σ²+(f(x)-ȳ)²] + Var[f̂(x)] = σ² + Bias² + Variance. The decomposition is exact — not an approximation. [1]",
+      "formula": "E[(y−f̂(x))²] = Bias²[f̂(x)] + Var[f̂(x)] + σ²"
+    },
+    {
+      "heading": "Complexity vs Error Curves",
+      "body": "Training error: monotonically decreases with complexity (more complex model → lower training loss). Validation error: U-shaped in classical theory — decreases (bias decreasing) then increases (variance increasing). The minimum of the U-curve is the optimal complexity. In practice: plot validation error vs model complexity (polynomial degree, tree depth, number of neurons) or regularization strength (λ). The classical plot: x-axis = log λ (decreasing), y-axis = MSE — as λ decreases: bias decreases, variance increases, optimum in between. [1]"
+    },
+    {
+      "heading": "Double Descent Phenomenon",
+      "body": "Modern deep learning shows two descent phases: (1) Classical regime (n_params < n_data): bias decreases, variance increases — U-shaped curve as predicted by classical theory. (2) Interpolation threshold: model exactly fits training data (training loss = 0). (3) Modern regime (n_params > n_data): as model is further over-parameterized, test error decreases again. Explanation: gradient descent implicitly regularizes by finding the minimum-norm solution. In the overparameterized regime, the minimum-norm interpolant is smooth and generalises well. Implication: classical early stopping based on U-shaped validation curve may be suboptimal for very large models — continue training well past interpolation. [2]"
+    }
+  ],
+  "youtubeLabel": "Bias-Variance Tradeoff Explained",
+  "youtubeUrl": "https://www.youtube.com/embed/EuBBz3bI-aA",
+  "takeaways": [
+    "E[(y−f̂)²] = Bias²[f̂] + Var[f̂] + σ² — exact decomposition of expected MSE. [1]",
+    "High bias = underfitting (training error high); high variance = overfitting (large train-val gap). [1]",
+    "Irreducible error σ² cannot be reduced by any model — it's the noise floor. [1]",
+    "Regularization trades bias for variance: λ↑ → bias↑, variance↓; optimal λ minimises total MSE. [1]",
+    "Double descent: test error can decrease again in heavily overparameterized regime (deep learning). [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Is there a bias-variance tradeoff in classification, and how does it differ from regression?",
+      "a": "The bias-variance decomposition for classification (0-1 loss) is more complex than for regression — the decomposition is not as clean because the loss is not squared. Domingos (2000) derived a bias-variance decomposition for 0-1 loss where the interaction between bias and variance can be either constructive (reducing total error) or destructive. In practice: for classification, the effect is similar to regression — high-variance classifiers overfit and high-bias classifiers underfit — but the exact decomposition differs. For MSE (Brier score or cross-entropy loss), the regression decomposition applies directly. Most practitioners use the regression intuition for classification as well, relying on train/val error gap as the practical diagnostic."
+    },
+    {
+      "q": "How does ensemble learning reduce variance without increasing bias?",
+      "a": "Bagging (Bootstrap Aggregating): train k models on k bootstrap samples, average predictions. The averaged prediction has variance reduced by factor 1/k if models are independent: Var[mean(f̂₁,...,f̂ₖ)] = (1/k)·Var[f̂ᵢ] + ((k-1)/k)·Cov[f̂ᵢ,f̂ⱼ]. If models are positively correlated (ρ>0), variance reduction is limited: Var = σ²·(ρ + (1-ρ)/k). Random forest reduces correlation ρ by subsampling features at each split — this is the key innovation. Bias: averaging unbiased estimators is unbiased; averaging biased estimators gives the same bias. So bagging reduces variance with little bias change — it explicitly navigates the bias-variance tradeoff by targeting variance."
+    }
+  ],
+  "sources": [
+    { "label": "Hastie, Tibshirani & Friedman (2009) — The Elements of Statistical Learning, Chapter 7 (Springer)", "url": "https://hastie.su.domains/ElemStatLearn/" },
+    { "label": "Belkin et al. (2019) — Reconciling Modern Machine-Learning Practice and the Classical Bias-Variance Trade-Off, PNAS", "url": "https://www.pnas.org/doi/10.1073/pnas.1903070116" }
+  ]
+}

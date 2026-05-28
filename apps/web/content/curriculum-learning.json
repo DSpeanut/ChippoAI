@@ -1,0 +1,68 @@
+{
+  "visualizationType": "training-curve",
+  "codeSnapshot": {
+    "label": "curriculum_learning.py",
+    "code": "import torch\nimport torch.nn as nn\nimport numpy as np\n\n# Simple curriculum: sort training examples by difficulty\n# Difficulty metric: example loss at current model\n\nclass CurriculumSampler:\n    \"\"\"Sort by difficulty (loss) at each epoch; start easy, increase.\"\"\"\n    def __init__(self, dataset, n_stages=5):\n        self.dataset = dataset\n        self.n_stages = n_stages\n        self.current_stage = 0\n        self.difficulty_scores = torch.zeros(len(dataset))  # higher = harder\n\n    def update_difficulties(self, model, device='cpu'):\n        model.eval()\n        with torch.no_grad():\n            for i, (x, y) in enumerate(self.dataset):\n                x, y = x.unsqueeze(0).to(device), torch.tensor([y])\n                loss = nn.CrossEntropyLoss()(model(x), y)\n                self.difficulty_scores[i] = loss.item()\n        model.train()\n\n    def get_indices(self):\n        # Stage 0: easiest 20% of data; stage 4: all data\n        threshold = (self.current_stage + 1) / self.n_stages\n        n_samples = int(threshold * len(self.dataset))\n        sorted_idx = torch.argsort(self.difficulty_scores)  # easy first\n        return sorted_idx[:n_samples].tolist()\n\n# Self-paced learning: model decides difficulty\ndef self_paced_loss(losses, lambda_sp, weights=None):\n    \"\"\"Include sample if loss < 1/lambda_sp; exclude harder ones.\"\"\"\n    if weights is None:\n        weights = (losses < 1.0 / lambda_sp).float()  # v_i ∈ {0,1}\n    return (weights * losses).mean()\n\n# Curriculum in NLP: start with short sequences\n# Sort by sequence length (proxy for difficulty)\nsequence_lengths = np.array([20, 150, 8, 90, 45, 200, 12, 75])\ncurriculum_order = np.argsort(sequence_lengths)  # short → long\nprint(\"Curriculum order:\", curriculum_order)\n# [2, 0, 6, 4, 7, 3, 5, 1]  (sorted by length)\n\n# Gradual data exposure (used in GPT-3 training)\n# Start with high-quality curated data, gradually add web text\nstage_1_data = 'high_quality_books'   # clean, simple\nstage_2_data = 'wikipedia'            # structured\nstage_3_data = 'web_crawl'            # noisy, complex"
+  },
+  "eli3": [
+    "Curriculum learning trains a model the same way a teacher would teach a student: start with easy examples and gradually introduce harder ones. A student learning to read starts with simple words before tackling complex sentences. A model learning to classify images might start with clear, well-lit images before seeing blurry or occluded ones.",
+    "The intuition: easy examples provide clean, unambiguous gradient signal that helps the model learn the core task. Hard examples (noisy labels, ambiguous cases, complex patterns) add noise early on when the model is weak. Presenting hard examples too early can lead to learning wrong patterns.",
+    "Modern LLM training uses curriculum learning implicitly: GPT models are often pre-trained on curated high-quality text first, then exposed to noisier web data. Progressive image resolutions (start small, scale up) is another form of curriculum learning."
+  ],
+  "whenWhy": [
+    {
+      "title": "NLP: length-based curriculum for sequence models",
+      "body": "Training language models on short sequences first (curriculum by length) consistently improves convergence speed. RNN-based seq2seq models benefit most: BPTT is more stable for short sequences. Transformers are less affected due to parallel computation, but starting with shorter sequences (context length 512 before 2048) reduces memory pressure and allows larger effective batch sizes early in training."
+    },
+    {
+      "title": "Noisy labels: self-paced learning",
+      "body": "Self-Paced Learning (Kumar et al., 2010): train on the easiest examples first (lowest current loss), gradually add harder ones. This prevents the model from fitting noisy labels early — mislabelled examples typically have higher loss than correctly labelled ones throughout early training. Used in semi-supervised learning and webly supervised data where labels are unreliable."
+    },
+    {
+      "title": "Progressive training for efficiency (progressive resizing)",
+      "body": "Progressive resizing (Howard, 2018): train at small resolution first (64×64), then increase to final resolution (224×224). Lower resolution training is much faster (4× fewer pixels per step) and establishes coarse features quickly. Fine details are learned in later high-resolution stages. fast.ai popularised this as a training speedup: same final accuracy, 2–3× faster training. EfficientNetV2 uses progressive training with simultaneously increasing augmentation strength."
+    }
+  ],
+  "deepDiveIntro": [
+    "Curriculum learning (Bengio et al., 2009) formalises the idea of a 'meaningful' data order for gradient-based training. For a dataset D with difficulty function d(x, y): at training step t, sample from the subset D_t = {(x,y): d(x,y) ≤ θ_t} where θ_t is an increasing threshold. As θ_t → max_d, D_t → D (full dataset). The key result: under certain conditions on the loss landscape, curriculum training converges faster and to better local minima than random ordering (IID training). [1]",
+    "Self-Paced Learning (Kumar et al., 2010) solves the joint optimisation: min_{w,v∈[0,1]^n} Σᵢ vᵢ·L(xᵢ,yᵢ;w) − (1/λ)Σᵢvᵢ. The binary weight vᵢ ∈ {0,1} indicates whether example i is included. Optimal vᵢ* = 1{L(xᵢ;w) < 1/λ} — include example if its current loss is below threshold 1/λ. Gradually increase λ to include more (harder) examples as training progresses. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Defining Difficulty",
+      "body": "Difficulty metrics: (1) Curriculum by loss: d(x,y;w) = L(x,y;w) at current model — examples with low loss are 'easy'. (2) Curriculum by length: for NLP, d = sequence length; for images, d = number of objects. (3) Curriculum by label noise: estimate clean probability (CleanLab, Confident Learning) and exclude likely-mislabelled examples. (4) Human-defined: domain expert assigns difficulty levels (medical: healthy vs pathological cases). (5) Transfer learning: d = loss under a strong pretrained model — examples the strong model gets right are easy. [1]"
+    },
+    {
+      "heading": "Self-Paced Learning Objective",
+      "body": "SPL: min_{w,v∈{0,1}^n} Σᵢ vᵢL(xᵢ;w) − (1/λ)Σᵢvᵢ. The −(1/λ)Σvᵢ term is a reward for including more examples (incentivises curriculum to grow). Optimal v for fixed w: vᵢ* = 1{Lᵢ < 1/λ}. Algorithm: (1) Fix v, optimise w (standard gradient descent on included examples). (2) Fix w, solve for v (closed form). (3) Increase λ (include more examples). Converges to a stationary point. Soft SPL: v ∈ [0,1] (continuous weights); vᵢ = max(0, 1 − λLᵢ). [2]",
+      "formula": "vᵢ* = 1{L(xᵢ; w) < 1/λ}"
+    },
+    {
+      "heading": "Progressive Image Resizing",
+      "body": "Stage 1: train at resolution r₁ (e.g., 64×64) for E₁ epochs. Stage 2: resize model inputs to r₂ (e.g., 128×128), train for E₂ epochs. Stage 3: final resolution r₃ = 224×224, train for E₃ epochs. Memory and computation scale as r². Going from 64 to 224 quadruples pixels — but at 64×64, effective batch size can be 4× larger. Total compute budget: roughly the same as a single 224×224 run, but features are learned at multiple scales progressively. ViT progressive training: train at 224×224 then fine-tune at 384×384 for 2% accuracy gain with much lower cost than training at 384 from scratch. [1]"
+    }
+  ],
+  "youtubeLabel": "Curriculum Learning — Self-Paced Training",
+  "youtubeUrl": "https://www.youtube.com/embed/nHjA_HfuEow",
+  "takeaways": [
+    "Start with easy examples (low difficulty score), gradually include harder ones as training progresses. [1]",
+    "Self-paced: vᵢ*=1{Lᵢ<1/λ} — include examples with current loss below threshold. [2]",
+    "NLP curriculum: sequence length (short first); vision: resolution or augmentation strength. [1]",
+    "Progressive resizing: train at 64→128→224 — same final accuracy, 2–3× faster. [1]",
+    "Prevents early overfitting to noisy/hard examples during the critical early training phase. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Does curriculum learning always outperform random ordering?",
+      "a": "Not universally. Curriculum learning shows the largest benefits when: (1) the dataset has a large variance in difficulty (some examples are much harder than others); (2) the model is small relative to the dataset (limited capacity makes early hard examples particularly harmful); (3) labels are noisy (hard examples are more likely to be mislabelled). For clean datasets with uniform difficulty and large models, random ordering often matches curriculum performance. LLaMA and most modern LLMs are trained with random ordering — the data quality filtering (removing low-quality web text) provides the equivalent of coarse curriculum selection without explicit ordering."
+    },
+    {
+      "q": "How does curriculum learning interact with batch normalisation?",
+      "a": "BatchNorm's statistics depend on the current batch composition. In early curriculum training (only easy examples), batch statistics reflect the distribution of easy examples. When hard examples are introduced, the distribution shifts — batch statistics change suddenly, causing a brief instability in layers after BatchNorm. This is one reason curriculum learning is most commonly used with LayerNorm (transformers) or without normalisation (some tabular models), where the training signal doesn't depend on batch statistics. If using BatchNorm with curriculum, increase the momentum parameter during transitions between curriculum stages to allow faster adaptation of running statistics."
+    }
+  ],
+  "sources": [
+    { "label": "Bengio et al. (2009) — Curriculum Learning, ICML 2009", "url": "https://dl.acm.org/doi/10.1145/1553374.1553380" },
+    { "label": "Kumar, Packer & Koller (2010) — Self-Paced Learning for Latent Variable Models, NeurIPS 2010", "url": "https://proceedings.neurips.cc/paper/2010/hash/e57c6b956a6521b28495f2886ca0977a-Abstract.html" }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "visualizationType": "training-curve",
+  "codeSnapshot": {
+    "label": "grid_search.py",
+    "code": "from sklearn.model_selection import GridSearchCV, ParameterGrid\nfrom sklearn.svm import SVC\nfrom sklearn.datasets import make_classification\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.pipeline import Pipeline\nimport numpy as np\n\nX, y = make_classification(n_samples=1000, n_features=20, random_state=42)\n\n# Grid search: evaluate ALL combinations of specified hyperparameter values\n# Total evaluations = ∏ᵢ |values_i| × k_folds\n# Here: 3 × 3 × 4 × 5 = 180 evaluations\nparam_grid = {\n    'svc__C':      [0.1, 1.0, 10.0],          # 3 values\n    'svc__gamma':  [0.001, 0.01, 0.1],          # 3 values\n    'svc__kernel': ['linear', 'rbf', 'poly', 'sigmoid'],  # 4 values\n}\n\npipe = Pipeline([('scaler', StandardScaler()), ('svc', SVC())])\n\ngrid = GridSearchCV(\n    estimator=pipe,\n    param_grid=param_grid,\n    cv=5,                        # 5-fold cross-validation per configuration\n    scoring='accuracy',\n    n_jobs=-1,                   # parallelise across CPU cores\n    verbose=1,\n    refit=True,                  # refit best config on full training set\n)\ngrid.fit(X, y)\n\nprint(f'Best params: {grid.best_params_}')\nprint(f'Best CV score: {grid.best_score_:.4f}')\nprint(f'Total configs evaluated: {len(grid.cv_results_[\"params\"])}')\n# → 36 configs × 5 folds = 180 model fits\n\n# ParameterGrid: inspect the grid without fitting\ngrid_list = list(ParameterGrid(param_grid))\nprint(f'Total grid size: {len(grid_list)}')  # 36\n\n# When grid search is appropriate:\n# - Few hyperparameters (< 4 dimensions)\n# - Discrete/categorical hyperparameters\n# - Sufficient compute budget (grid_size × cv_folds fits affordable)\n# - All hyperparameters equally important a priori\n\n# Visualise: grid search results as heatmap (for 2D grid)\nimport pandas as pd\nresults = pd.DataFrame(grid.cv_results_)\n# Filter RBF results for C vs gamma heatmap\nrbf_results = results[results['param_svc__kernel'] == 'rbf']\npivot = rbf_results.pivot_table(\n    index='param_svc__C',\n    columns='param_svc__gamma',\n    values='mean_test_score'\n)\nprint('RBF C vs gamma heatmap:\\n', pivot)"
+  },
+  "eli3": [
+    "Grid search is the simplest way to find the best hyperparameters: you specify a list of values for each hyperparameter, and the algorithm tries every possible combination. If you have 3 learning rates and 4 regularization values, grid search trains 12 models (3×4) and picks the best.",
+    "Grid search is guaranteed to find the best combination within the grid — but only within the grid. If the best learning rate is 0.003 and you only tried 0.001 and 0.01, you'll miss it. Choosing the right values to include in the grid is critical.",
+    "Grid search becomes impractical quickly: 5 hyperparameters with 5 values each = 5⁵ = 3,125 combinations × 5-fold CV = 15,625 model fits. For most deep learning problems, random search or Bayesian optimization is far more efficient."
+  ],
+  "whenWhy": [
+    {
+      "title": "Small, discrete hyperparameter spaces",
+      "body": "Grid search is appropriate when the hyperparameter space is small and discrete: SVM with C∈{0.1,1,10} and kernel∈{linear,rbf,poly} = 6 configurations. sklearn's GridSearchCV parallelises these automatically (n_jobs=-1). For classic ML models (SVM, random forest, gradient boosting) with <4 hyperparameters and <5 values each, grid search is a reasonable first approach. With 5-fold CV: 6×5=30 model fits typically completes in seconds to minutes."
+    },
+    {
+      "title": "Reproducible exhaustive search for publication",
+      "body": "Grid search provides a fully reproducible, exhaustive search over the specified grid. This is valuable for academic papers where you need to demonstrate that the best configuration was found systematically within a predefined set. Bergstra & Bengio (2012) recommend grid search only when all hyperparameters are known to be important — if most don't matter, grid search wastes compute on all combinations of unimportant parameters."
+    },
+    {
+      "title": "Warm-starting from coarse to fine grid",
+      "body": "Two-phase grid search: coarse grid first (log-spaced, 3 values per dimension), then fine grid around the best region. Example: first search C∈{0.01, 1, 100}; best is C=1; then fine search C∈{0.3, 0.5, 1.0, 2.0, 5.0}. This exponential refinement reaches the optimum faster than a single fine grid. Computationally similar to halving grid search, but simpler to implement."
+    }
+  ],
+  "deepDiveIntro": [
+    "Grid search evaluates all N = ∏ᵢ₌₁^d |λᵢ| configurations, where |λᵢ| is the number of values for hyperparameter i and d is the number of hyperparameters. For each configuration, k-fold cross-validation gives k model fits. Total cost: N·k model fits. The configuration with highest mean validation score is selected and refitted on all training data. This is an exhaustive search with deterministic output — given the same grid and data, the result is always the same. [1]",
+    "Larochelle et al. (2007) showed that the effective number of hyperparameters that matter for a given model is often much less than the total — random search exploits this by covering the marginal distribution of each hyperparameter more efficiently than grid search. However, for truly low-dimensional categorical spaces (e.g., optimizer type ∈ {Adam, SGD, RMSProp}), grid search exhaustively covers the discrete choices, which random search might under-sample. [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Grid Search Complexity and Parallelism",
+      "body": "Grid search is embarrassingly parallel: each configuration's k-fold CV is independent of others. sklearn's n_jobs=-1 uses all CPU cores; distributed grid search scales to clusters (joblib Dask backend, Ray Tune). Memory: each worker loads a full model — for large models (XGBoost with 10K trees), memory can be a bottleneck. Total configurations: exponential in number of hyperparameters. Rule of thumb: grid search is practical for ≤4 hyperparameters with ≤5 values each (≤625 configurations). Beyond this, random or Bayesian search is preferred. [1]"
+    },
+    {
+      "heading": "Grid Search vs Random Search Tradeoff",
+      "body": "Grid search: uniform coverage of the grid, guaranteed to find the grid optimum. Random search (Bergstra & Bengio, 2012): for the same budget of N evaluations, random search covers the effective dimensions more efficiently. If only 2 of 9 hyperparameters matter, grid search wastes 7 dimensions (7 evaluations per effective configuration); random search gets N independent draws in the effective 2D space. Visual proof: grid of 3×3 in 2D gives 9 points; random 9 samples give 9 different marginal values per dimension (vs 3 for grid). [1]"
+    },
+    {
+      "heading": "Nested Grid Search for Preprocessing",
+      "body": "sklearn Pipeline allows grid search to include preprocessing as hyperparameters: {'scaler': [StandardScaler(), MinMaxScaler(), 'passthrough'], 'model__C': [0.1, 1.0, 10.0]}. This prevents data leakage: each fold's validation data is transformed only using the scaler fit on the training fold (Pipeline ensures this automatically). Grid searching over preprocessing choices (imputation strategy, feature selection threshold, dimensionality reduction components) is a best practice for tabular ML pipelines — often neglected in favor of model-only HPO. [1]"
+    }
+  ],
+  "youtubeLabel": "Grid Search vs Random Search — Hyperparameter Optimization",
+  "youtubeUrl": "https://www.youtube.com/embed/5nYqK-HaoKY",
+  "takeaways": [
+    "Total configs = ∏ᵢ |values_i|; total fits = configs × k_folds — grows exponentially with dimensions. [1]",
+    "Exhaustive within the specified grid — guaranteed to find the best discrete combination. [1]",
+    "Embarrassingly parallel: n_jobs=-1 uses all CPU cores with no communication overhead. [1]",
+    "Practical for ≤4 hyperparameters with ≤5 values each; use random/Bayesian beyond this. [1]",
+    "Use sklearn Pipeline to include preprocessing in the grid — prevents data leakage. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "How do you handle continuous hyperparameters in grid search?",
+      "a": "Grid search requires discrete values — for continuous hyperparameters like learning rate (range 1e-6 to 1e-1), you must manually discretize the space. Best practice: use logarithmically spaced values for hyperparameters with wide ranges (learning rate, regularization strength, batch size). np.logspace(-6, -1, 6) gives [1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 1e-1] — equally spaced in log scale, which matches the typical sensitivity of these hyperparameters. For hyperparameters with narrow ranges (momentum β ∈ [0.8, 0.99]), linearly spaced values are appropriate: np.linspace(0.8, 0.99, 5). The choice of spacing significantly affects grid search quality — always reason about the sensitivity scale of each hyperparameter."
+    },
+    {
+      "q": "What is the 'lucky draw' problem with small grids?",
+      "a": "If the true optimum is between grid points (e.g., optimal C=0.7, grid searches C∈{0.1,1.0,10.0}), grid search finds the closest grid point (C=1.0) — which may be far from optimal in absolute performance terms. For highly sensitive hyperparameters (those where small changes cause large performance differences), coarse grids can miss the optimum significantly. This is the 'resolution' problem — fine grids are needed but exponentially more expensive. Solutions: (1) Two-phase search (coarse then fine). (2) Random search (samples continuously from the distribution). (3) Bayesian optimization (models the loss landscape and samples intelligently). The resolution problem is most severe for hyperparameters that interact strongly (the optimal C depends on gamma in SVM)."
+    }
+  ],
+  "sources": [
+    { "label": "Bergstra & Bengio (2012) — Random Search for Hyper-Parameter Optimization, JMLR", "url": "https://www.jmlr.org/papers/v13/bergstra12a.html" }
+  ]
+}

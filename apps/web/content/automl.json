@@ -1,0 +1,66 @@
+{
+  "visualizationType": "architecture-diagram",
+  "codeSnapshot": {
+    "label": "automl.py",
+    "code": "# AutoML: Automated Machine Learning\n# Automates model selection + hyperparameter optimization (CASH problem)\n# Tools: Auto-sklearn, H2O AutoML, AutoGluon, TPOT, Google AutoML\n\n# ---- Auto-sklearn (Feurer et al., 2015) ----\nfrom autosklearn.classification import AutoSklearnClassifier\nfrom sklearn.datasets import make_classification\nfrom sklearn.model_selection import train_test_split\n\nX, y = make_classification(n_samples=1000, n_features=20, random_state=42)\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)\n\n# Auto-sklearn: Bayesian optimization over 15+ sklearn classifiers\n# + 14 preprocessing steps + their hyperparameters (~110 hyperparameters total)\nautoml = AutoSklearnClassifier(\n    time_left_for_this_task=300,   # total time budget (seconds)\n    per_run_time_limit=30,          # max time per single model fit\n    n_jobs=-1,\n    ensemble_size=20,               # ensemble of top models (default)\n    memory_limit=4096,\n)\nautoml.fit(X_train, y_train)\nprint(f'Auto-sklearn score: {automl.score(X_test, y_test):.4f}')\nprint(automl.leaderboard())  # shows models tried and their performance\n\n# ---- AutoGluon (Amazon, 2020) ----\n# For tabular data: stacks multiple models in a multi-layer ensemble\n# Requires minimal configuration — just call fit()\nfrom autogluon.tabular import TabularDataset, TabularPredictor\nimport pandas as pd\n\n# Convert to DataFrame (AutoGluon expects tabular format)\ndf = pd.DataFrame(X_train, columns=[f'f{i}' for i in range(X_train.shape[1])])\ndf['label'] = y_train\n\npredictor = TabularPredictor(label='label', eval_metric='accuracy')\npredictor.fit(\n    df,\n    time_limit=120,        # total time budget\n    presets='best_quality' # or 'medium_quality', 'fast_training'\n)\n\n# AutoGluon trains: GBM, CatBoost, XGBoost, RandomForest, LightGBM,\n# Neural Net, KNN, and stacks them in multiple layers\n# 'best_quality': uses 5-fold CV + stacking for each base model\ntest_df = pd.DataFrame(X_test, columns=[f'f{i}' for i in range(X_test.shape[1])])\nprint(f'AutoGluon score: {predictor.evaluate(test_df.assign(label=y_test))[\"accuracy\"]:.4f}')\nprint(predictor.leaderboard())"
+  },
+  "eli3": [
+    "AutoML automatically searches for the best machine learning model and settings for your data, so you don't have to be an expert. Instead of manually trying different algorithms (random forest, gradient boosting, SVM) and hyperparameters, you give AutoML your data and a time budget, and it does the search for you.",
+    "The core problem AutoML solves is called CASH (Combined Algorithm Selection and Hyperparameter optimization): choose the best algorithm AND its best hyperparameters simultaneously. This is much harder than just tuning one fixed algorithm.",
+    "AutoML tools often match expert ML practitioners on standard tabular datasets. They're especially useful for rapid prototyping, benchmarking, and teams without deep ML expertise. AutoGluon can build a competitive model in minutes by training and stacking multiple algorithms automatically."
+  ],
+  "whenWhy": [
+    {
+      "title": "Rapid prototyping and baselines for new datasets",
+      "body": "AutoML provides a strong baseline model quickly, without manual feature engineering or model selection. On Kaggle tabular competitions, AutoGluon and Auto-sklearn are often within 1-2% of the top leaderboard position. For practitioners who need a quick 'is machine learning useful for this problem?' answer, AutoML provides an honest baseline in minutes. Feurer et al. (2019) showed Auto-sklearn 2.0 matches expert performance on 39/41 benchmark datasets from OpenML."
+    },
+    {
+      "title": "CASH: simultaneous algorithm and hyperparameter selection",
+      "body": "CASH (Thornton et al., 2013) formalises AutoML: min_{A,λ} E[L(M_{A,λ}, D_train, D_val)] over all algorithms A ∈ {SVM, RF, GBM,...} and their hyperparameters λ. Auto-sklearn uses SMAC (Bayesian optimization with RF surrogate) over a combined space of 15 classifiers × 14 preprocessing steps × their hyperparameters (~110 dimensions). Meta-learning warm-start: using performance of algorithms on similar past datasets to initialise the search. This dramatically reduces the search budget needed."
+    },
+    {
+      "title": "Ensembling and stacking automation",
+      "body": "AutoML doesn't just pick the best single model — it builds ensembles. Auto-sklearn uses ensemble selection (Caruana et al., 2004): greedily add models to an ensemble that maximise validation performance. AutoGluon uses multi-layer stacking: train base models, use their predictions as features for meta-models, repeat for multiple layers. These ensembles consistently outperform single models by 1-3% accuracy, and AutoML handles the full pipeline automatically."
+    }
+  ],
+  "deepDiveIntro": [
+    "AutoML formalises the CASH problem: given dataset D = (D_train, D_val), algorithm space A = {A₁,...,Aₖ}, hyperparameter space Λ = Λ₁ × ... × Λₖ: find (A*, λ*) = argmin_{A,λ} L(M_{A,λ}, D_train, D_val). This is a bilevel optimisation: outer level selects (A,λ), inner level trains model M_{A,λ} on D_train and evaluates on D_val. Auto-sklearn solves this with SMAC over the combined space, using meta-learned warm-starting configurations from 140 reference datasets. [1]",
+    "Automated feature engineering is a complementary AutoML component: FeatureTools (deep feature synthesis) automatically generates features from relational data (join tables, aggregations). TPOT uses genetic programming to optimise the full ML pipeline (feature transforms + model). AutoGluon handles tabular data by: (1) automatic feature type detection (categorical vs numerical); (2) automated missing value imputation; (3) label encoding and target encoding for categoricals. [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Auto-sklearn: Meta-Learning and SMAC",
+      "body": "Auto-sklearn warm-starts search using meta-features: compute 38 statistical properties of the dataset (n_samples, n_features, class imbalance, feature correlations). Find the 25 most similar past datasets from a library of 140 datasets. Use their top configurations as initial SMAC evaluations. This warm-start provides good initialisation without spending budget on random exploration. SMAC then explores from these promising starting points using GP-based Bayesian optimization. Final result: ensemble selection from all evaluated models (even mediocre ones improve ensemble performance via diversity). [1]"
+    },
+    {
+      "heading": "AutoGluon Stacking Architecture",
+      "body": "AutoGluon's 'best_quality' preset: Layer 1: train 8-10 base models (LightGBM, CatBoost, XGBoost, RandomForest, ExtraTrees, NeuralNet, KNN) with 5-fold CV. Layer 2 (stack 1): train meta-models using base model OOF (out-of-fold) predictions as features + original features. Layer 3 (stack 2): repeat stacking on layer 2 outputs. Final: weighted ensemble of all layers. AutoGluon achieves strong performance because stacking exploits complementary model strengths: gradient boosting handles non-linear interactions; neural net handles high-cardinality categoricals; KNN captures local patterns. [1]"
+    },
+    {
+      "heading": "When AutoML Doesn't Work",
+      "body": "AutoML limitations: (1) Unstructured data — AutoML for tabular excels; AutoML for images/text/speech requires domain-specific NAS or pre-trained model selection, which is harder. (2) Data leakage-prone pipelines — AutoML applies transformations within CV folds, but complex pipeline interactions (time series, grouped data) may require manual pipeline design. (3) Custom constraints — if the model must be interpretable (linear, decision tree, max depth 5), general AutoML will often select complex black-box models. (4) Compute budget — AutoML best_quality presets can take hours; unsuitable for online or low-latency production pipelines. [1]"
+    }
+  ],
+  "youtubeLabel": "AutoML: Automated Machine Learning Explained",
+  "youtubeUrl": "https://www.youtube.com/embed/W3zD1oXo-dY",
+  "takeaways": [
+    "CASH: simultaneous algorithm selection + hyperparameter optimization — the AutoML problem. [1]",
+    "Auto-sklearn: SMAC over 15 classifiers × 14 preprocessing steps, meta-learning warm-start. [1]",
+    "AutoGluon: multi-layer stacking of 8+ base models — consistently strong on tabular benchmarks. [1]",
+    "Ensemble selection from all evaluated configs (not just the best) improves performance. [1]",
+    "AutoML matches expert performance on standard tabular datasets in minutes. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "How do you prevent AutoML from overfitting to the validation set during search?",
+      "a": "AutoML HPO is vulnerable to the same validation set overfitting as manual HPO: with hundreds of configurations evaluated, the best validation score is optimistic. Mitigations: (1) Nested CV: Auto-sklearn uses inner 5-fold CV per configuration evaluation, so the score being optimised is already cross-validated. The outer test set is never seen during search. (2) Conservative early stopping: stop the search before validation performance saturates. (3) Hold out a final test set entirely separate from the HPO loop — report test performance only once. (4) Use multiple random seeds and report mean ± std. AutoGluon's 'best_quality' uses OOF (out-of-fold) predictions for stacking, ensuring no train/val contamination within the AutoML pipeline."
+    },
+    {
+      "q": "How does AutoML handle class imbalance in the search process?",
+      "a": "AutoML tools differ in their handling: Auto-sklearn: the search space includes sampling methods (SMOTE, random under/oversampling) as preprocessing hyperparameters, automatically tuned alongside the classifier. AutoGluon: applies class weighting by default for imbalanced targets; the 'class_weight' hyperparameter is tuned for applicable models. H2O AutoML: includes balance_classes as a search dimension. Best practice: explicitly specify the evaluation metric (balanced_accuracy, AUC-ROC, F1-macro) rather than accuracy when data is imbalanced — AutoML optimises for the metric you specify, so metric choice drives what 'best' means. If imbalance is severe (<1% positive rate), also consider reducing the base model budget and spending more on ensemble calibration."
+    }
+  ],
+  "sources": [
+    { "label": "Feurer et al. (2019) — Auto-sklearn 2.0: Hands-free AutoML via Meta-Learning arXiv:2007.04074", "url": "https://arxiv.org/abs/2007.04074" }
+  ]
+}

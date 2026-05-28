@@ -1,0 +1,73 @@
+{
+  "visualizationType": "regularization",
+  "codeSnapshot": {
+    "label": "l2_regularization.py",
+    "code": "import torch\nimport torch.nn as nn\n\n# L2 regularisation: use weight_decay in the optimizer (correct for SGD)\nmodel = nn.Linear(10, 1)\n\n# SGD + L2: weight_decay adds λ*w to the gradient each step\n# This is equivalent to L2 penalty in the loss\noptimizer_sgd = torch.optim.SGD(\n    model.parameters(), lr=0.01, weight_decay=1e-4\n)\n\n# AdamW: use weight_decay here for DECOUPLED L2 (correct)\noptimizer_adamw = torch.optim.AdamW(\n    model.parameters(), lr=1e-3, weight_decay=0.01\n)\n\n# WARNING: Adam + weight_decay is NOT the same as L2 reg (use AdamW instead)\noptimizer_adam_wrong = torch.optim.Adam(\n    model.parameters(), lr=1e-3, weight_decay=0.01  # L2 is scaled by 1/sqrt(v) — wrong\n)\n\n# Closed-form Ridge regression solution\nimport numpy as np\nX = np.random.randn(100, 10)\ny = np.random.randn(100, 1)\nlambda_ = 0.1\n# w* = (X^T X + λI)^{-1} X^T y\nw_ridge = np.linalg.solve(X.T @ X + lambda_ * np.eye(10), X.T @ y)\nprint(f\"Ridge solution norm: {np.linalg.norm(w_ridge):.4f}\")\n\n# Compare: OLS norm vs Ridge norm (Ridge is always smaller)\nw_ols = np.linalg.solve(X.T @ X, X.T @ y)\nprint(f\"OLS norm:   {np.linalg.norm(w_ols):.4f}\")\nprint(f\"Ridge norm: {np.linalg.norm(w_ridge):.4f}\")"
+  },
+  "eli3": [
+    "L2 regularisation (Ridge regression in linear models) adds a penalty for large weights: the sum of all squared weights multiplied by a constant λ. This forces the model to prefer small weights unless having a large weight provides a proportionally large reduction in prediction error.",
+    "Unlike L1 which drives weights to zero, L2 shrinks all weights toward zero proportionally. A weight of 5 gets penalised 25× more than a weight of 1. This creates smooth, dense solutions — all features contribute a little rather than some contributing a lot and others nothing.",
+    "In deep learning, L2 regularisation is equivalent to weight decay: at each gradient step, you multiply the weights by (1 − η·λ) before adding the gradient update. This is the most common form of regularisation and is built into almost every optimizer via the weight_decay parameter."
+  ],
+  "whenWhy": [
+    {
+      "title": "Preventing overfitting in general ML",
+      "body": "L2 is the default regularisation for most models. Ridge regression with cross-validated λ is the starting point for linear models. Neural networks use weight decay (typically λ=1e-4 for CNNs, λ=0.01–0.1 for transformers). L2 regularisation reduces the effective degrees of freedom of the model, preventing it from memorising noise in the training data."
+    },
+    {
+      "title": "Stable training near singularities (XᵀX not invertible)",
+      "body": "In linear regression with more features than samples (p > n), XᵀX is singular. Ridge adds λI to make XᵀX + λI always invertible: w* = (XᵀX + λI)⁻¹Xᵀy. This stabilises the solution and prevents explosive coefficient estimates. The numerical conditioning of XᵀX + λI improves as λ increases."
+    },
+    {
+      "title": "Weight decay in deep learning (weight_decay parameter)",
+      "body": "In neural network optimizers, weight_decay implements L2 regularisation. For SGD: wₜ = wₜ₋₁(1 − η·λ) − η·∇L (equivalent to L2 penalty). For AdamW: weight decay is decoupled from gradient scaling (wₜ = Adam_step − η·λ·wₜ₋₁). Use AdamW not Adam when you need L2 regularisation with adaptive optimizers."
+    }
+  ],
+  "deepDiveIntro": [
+    "L2 regularised loss: L_total = L_data + λΣⱼwⱼ². Gradient: ∂L_total/∂wⱼ = ∂L_data/∂wⱼ + 2λwⱼ. The update rule wⱼ ← wⱼ(1 − 2ηλ) − η·∂L_data/∂wⱼ shows that each step multiplies weights by (1−2ηλ) < 1 — exponential decay toward zero. For linear regression, the closed-form solution is w* = (XᵀX + λI)⁻¹Xᵀy, which is always unique (unlike OLS which requires XᵀX to be invertible). [1]",
+    "Bayesian interpretation: L2 regularisation is equivalent to MAP estimation with a Gaussian prior on weights: p(w) = N(0, 1/(2λ)·I). Minimising L_data + λ‖w‖² = maximising log p(y|X,w) + log p(w) ∝ − likelihood − log prior. The L2 penalty corresponds to the negative log of a zero-mean Gaussian prior. Stronger regularisation (larger λ) = stronger prior belief that weights should be small. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Ridge Regression Closed Form",
+      "body": "For linear regression y = Xw + ε: arg min_w ‖y − Xw‖² + λ‖w‖² has the closed-form solution w* = (XᵀX + λI)⁻¹Xᵀy. In terms of the SVD X = UΣVᵀ: w*_ridge = V diag(σⱼ/(σⱼ² + λ)) Uᵀy. Compare OLS: w*_ols = V diag(1/σⱼ) Uᵀy. Ridge shrinks each singular value component by σⱼ/(σⱼ²+λ) < 1/σⱼ. Small singular values (nearly collinear features) are shrunk most. This is the bias-variance tradeoff in action. [1]",
+      "formula": "w* = (XᵀX + λI)⁻¹Xᵀy"
+    },
+    {
+      "heading": "Effective Degrees of Freedom",
+      "body": "Ridge regression has effective degrees of freedom: df(λ) = Σⱼ σⱼ²/(σⱼ²+λ) where σⱼ are singular values of X. At λ=0: df = rank(X) (full OLS). At λ→∞: df → 0 (all weights → 0). Intermediate λ gives fractional df — Ridge trades lower variance for higher bias in a controlled way. Choosing λ via CV minimises expected test MSE at the optimal bias-variance tradeoff. [1]"
+    },
+    {
+      "heading": "L2 vs L1 vs No Regularisation",
+      "body": "No reg: maximises training fit, overfits. L2: shrinks weights proportionally, handles correlated features by distributing weight among them, smooth solution, no sparsity. L1: sparse solution, selects features, unstable with correlated features (picks one arbitrarily). Elastic Net: L1 + L2 interpolation — sparse but stable under correlation. For deep networks: L2 (weight decay) is standard; L1 is rarely used in neural nets because it doesn't interact well with batch norm and adaptive optimizers. [2]"
+    },
+    {
+      "heading": "Weight Decay in Deep Learning",
+      "body": "Weight decay update: wₜ = wₜ₋₁(1 − η·λ) − η·∇L_data. This is equivalent to L2 regularisation for SGD. For Adam, coupling weight decay with the gradient (Adam's weight_decay parameter) is incorrect — the L2 penalty is divided by √v̂ which varies per parameter. AdamW fixes this by applying weight decay directly: wₜ = wₜ₋₁ − η·m̂/(√v̂+ε) − η·λ·wₜ₋₁. Typical λ: 1e-4 for CNNs (SGD), 0.01–0.1 for transformers (AdamW). [1]",
+      "formula": "L2 penalty update: w ← w(1 − ηλ) − η∇L_data"
+    }
+  ],
+  "youtubeLabel": "Ridge Regression (L2) — StatQuest",
+  "youtubeUrl": "https://www.youtube.com/embed/Q81RR3yKn30",
+  "takeaways": [
+    "L_total = L_data + λΣwⱼ² — penalty on squared weight magnitude. [1]",
+    "Ridge closed form: w* = (XᵀX+λI)⁻¹Xᵀy — always invertible, shrinks all weights. [1]",
+    "Bayesian: L2 = MAP estimation with Gaussian prior N(0, 1/(2λ)·I) on weights. [2]",
+    "df(λ) = Σσⱼ²/(σⱼ²+λ) — effective degrees of freedom decreases as λ increases. [1]",
+    "Use AdamW (not Adam) for correct decoupled weight decay in neural networks. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why doesn't L2 regularisation produce sparsity like L1?",
+      "a": "The gradient of wⱼ² is 2wⱼ. As wⱼ → 0, the gradient → 0 — the penalty force weakens and eventually stops pushing. The weight gets very small but never exactly zero. Geometrically, the L2 ball (sphere) is smooth with no corners, so the optimal constrained solution is typically at a point where the data-loss gradient is tangent to the sphere — not at a coordinate corner. L1's diamond shape has corners that align with coordinate axes, making zero-weight solutions likely."
+    },
+    {
+      "q": "How does L2 regularisation affect the training dynamics of deep networks differently from shallow models?",
+      "a": "In shallow linear models, L2 has the clean closed-form effect of shrinking all weights toward zero proportionally. In deep networks, L2 interacts with batch normalisation in a subtle way: batch norm makes the output invariant to weight scale (scaling all weights in a layer by c doesn't change the output when followed by BN). So L2 regularisation on BN-normalised layers doesn't directly regularise the model's function — it only controls the scale of weights before normalisation. Van Laarhoven (2017) showed weight decay in deep networks with BN mainly controls the effective learning rate via the signal-to-noise ratio in the BN statistics, not the traditional regularisation effect."
+    }
+  ],
+  "sources": [
+    { "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 3", "url": "https://hastie.su.domains/ElemStatLearn/" },
+    { "label": "Goodfellow, Bengio & Courville — Deep Learning, Ch. 7 (Regularisation)", "url": "https://www.deeplearningbook.org/" }
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "visualizationType": "training-curve",
+  "codeSnapshot": {
+    "label": "bayesian_optimization_hpo.py",
+    "code": "# Bayesian Optimization for Hyperparameter Optimization\n# Surrogate model (GP) + Acquisition function → next point to evaluate\nimport numpy as np\nfrom scipy.stats import norm\nfrom sklearn.gaussian_process import GaussianProcessRegressor\nfrom sklearn.gaussian_process.kernels import Matern\n\n# ---- Gaussian Process Surrogate ----\n# After n evaluations: posterior μₙ(x), σₙ(x)\n# Acquisition function guides next query point\n\ndef expected_improvement(X, gp, y_best, xi=0.01):\n    \"\"\"\n    Expected Improvement (EI) acquisition function.\n    EI(x) = E[max(f(x) - f*, 0)]\n           = (μ(x) - f* - ξ)·Φ(Z) + σ(x)·φ(Z)  if σ > 0\n           = 0                                       if σ = 0\n    where Z = (μ(x) - f* - ξ) / σ(x)\n    \"\"\"\n    mu, sigma = gp.predict(X, return_std=True)\n    sigma = sigma.reshape(-1, 1)\n    mu = mu.reshape(-1, 1)\n    Z = (mu - y_best - xi) / (sigma + 1e-9)\n    ei = (mu - y_best - xi) * norm.cdf(Z) + sigma * norm.pdf(Z)\n    ei[sigma <= 0.0] = 0.0\n    return ei.ravel()\n\ndef upper_confidence_bound(X, gp, kappa=2.576):\n    \"\"\"UCB(x) = μ(x) + κ·σ(x)  [exploitation + exploration]\"\"\"\n    mu, sigma = gp.predict(X, return_std=True)\n    return mu + kappa * sigma\n\n# Bayesian optimization loop\ndef bayesian_optimize(objective, bounds, n_init=5, n_iter=20):\n    \"\"\"\n    bounds: list of (low, high) for each hyperparameter\n    objective: f(x) → scalar (higher is better)\n    \"\"\"\n    d = len(bounds)\n    # Phase 1: random initialisation (Latin hypercube)\n    X = np.array([[np.random.uniform(lo, hi) for lo, hi in bounds]\n                  for _ in range(n_init)])\n    y = np.array([objective(x) for x in X])\n\n    # GP surrogate (Matern kernel — standard for HPO)\n    kernel = Matern(nu=2.5)  # once differentiable, good for HPO landscapes\n    gp = GaussianProcessRegressor(kernel=kernel, alpha=1e-6, normalize_y=True,\n                                   n_restarts_optimizer=5)\n    for i in range(n_iter):\n        gp.fit(X, y)\n        # Maximise acquisition function over dense grid (or with L-BFGS-B)\n        candidates = np.array([[np.random.uniform(lo, hi) for lo, hi in bounds]\n                                for _ in range(10000)])\n        ei = expected_improvement(candidates, gp, y.max())\n        x_next = candidates[np.argmax(ei)]\n        y_next = objective(x_next)\n        X = np.vstack([X, x_next])\n        y = np.append(y, y_next)\n        print(f'Iter {i+1:2d}: x={x_next}, y={y_next:.4f}, best={y.max():.4f}')\n    return X[np.argmax(y)], y.max()\n\n# TPE (Tree-structured Parzen Estimator) — used by Optuna, Hyperopt\n# Models p(x|good) and p(x|bad) separately, selects x maximising p(x|good)/p(x|bad)\nimport optuna\noptuna.logging.set_verbosity(optuna.logging.WARNING)\n\ndef optuna_objective(trial):\n    lr = trial.suggest_float('lr', 1e-5, 1e-1, log=True)\n    wd = trial.suggest_float('weight_decay', 1e-6, 1e-2, log=True)\n    # ... train model and return validation score\n    return -lr * wd  # placeholder\n\nstudy = optuna.create_study(direction='maximize')  # TPE sampler by default\nstudy.optimize(optuna_objective, n_trials=30)\nprint(f'Best: {study.best_params}')"
+  },
+  "eli3": [
+    "Bayesian optimization is a smart hyperparameter search that learns from previous evaluations. It builds a surrogate model (usually a Gaussian Process) that predicts performance for any hyperparameter configuration, then uses this model to decide where to search next.",
+    "The key idea: instead of trying random configurations, it intelligently balances exploration (trying unknown regions) and exploitation (trying near the current best). An acquisition function captures this tradeoff — Expected Improvement (EI) calculates 'how much better could this configuration be vs my current best?'",
+    "Bayesian optimization is much more efficient than random search when training is expensive (hours per configuration). With 20 evaluations, it often matches random search with 200 evaluations. It's the standard approach for tuning deep learning training runs, NLP model training, and expensive scientific simulations."
+  ],
+  "whenWhy": [
+    {
+      "title": "Expensive objective functions (few evaluations affordable)",
+      "body": "When each model evaluation takes hours (large neural network, protein folding simulation), you can't afford hundreds of random trials. Bayesian optimization achieves near-optimal hyperparameters in 20-50 evaluations for most problems. Snoek et al. (2012) showed that 30 BO evaluations outperformed manual expert tuning and random search on CNN/SVM hyperparameter optimization tasks. Standard applications: neural network architecture + training hyperparameter search, drug discovery (expensive lab tests), and engineering simulations."
+    },
+    {
+      "title": "Continuous hyperparameter spaces with complex landscapes",
+      "body": "Gaussian Process surrogates model the full hyperparameter landscape including correlations and non-monotone behavior (e.g., learning rate and batch size interact — optimal LR depends on batch size). Random search treats each hyperparameter independently; BO learns these correlations from past evaluations. This makes BO especially effective when the optimal hyperparameter configuration depends on complex interactions, such as the relationship between momentum, learning rate, and weight decay in AdamW."
+    },
+    {
+      "title": "TPE: Bayesian optimization for mixed spaces",
+      "body": "Gaussian Process BO struggles with high-dimensional (>20D) and mixed (continuous + discrete + categorical) spaces due to GP kernel computation cost. TPE (Tree-structured Parzen Estimator, Bergstra et al., 2011) models the conditional distribution p(x|good) and p(x|bad) as kernel density estimates, then picks x that maximises p(x|good)/p(x|bad). TPE handles mixed spaces naturally and scales to higher dimensions. Hyperopt and Optuna (default sampler) use TPE — the most widely used BO variant in practice."
+    }
+  ],
+  "deepDiveIntro": [
+    "Bayesian optimization (Snoek et al., 2012): given n past evaluations {(xᵢ,yᵢ)}ᵢ₌₁ⁿ, fit a GP surrogate p(f|X,y) = GP(μₙ,Kₙ). The posterior mean μₙ(x) and std σₙ(x) define the predictive distribution. Acquisition function α(x) guides the next evaluation: xₙ₊₁ = argmax_x α(x). Expected Improvement: EI(x) = E[max(f(x)-f*,0)] = (μ(x)-f*-ξ)·Φ(Z)+σ(x)·φ(Z) where Z=(μ(x)-f*-ξ)/σ(x), Φ is the standard normal CDF, φ is the PDF, and ξ≥0 is the exploration tradeoff parameter. [1]",
+    "Matern kernel (ν=2.5) is standard for HPO surrogates: k(x,x') = (1+√5‖x-x'‖/l+5‖x-x'‖²/3l²)·exp(-√5‖x-x'‖/l). This kernel is once differentiable — appropriate for the rough, non-smooth hyperparameter landscapes typical in ML. RBF (infinitely differentiable) overly smooths the landscape; Matérn-2.5 is the standard choice (Snoek et al., 2012). Hyperparameter marginalisation: integrate over GP hyperparameters (kernel lengthscale l, noise level) using MCMC to avoid overfitting the surrogate. [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Expected Improvement Acquisition Function",
+      "body": "EI(x) = E[max(f(x)-f*,0)] where f*=max_{i} yᵢ is the current best. Derivation: f(x) ~ N(μ(x), σ²(x)). EI(x) = ∫_{f*}^{∞} (f-f*)·N(f;μ,σ²) df = (μ-f*)·Φ(Z) + σ·φ(Z) where Z=(μ-f*)/σ. With ξ tradeoff: Z=(μ-f*-ξ)/σ. ξ=0: exploit; ξ>0: explore. Standard: ξ=0.01. EI is zero when σ=0 (certain about prediction) and large when σ is large (uncertain) or μ-f* is large (predicted improvement). BO alternates between regions of high uncertainty and regions of high predicted performance. [1]",
+      "formula": "EI(x) = (μ(x)−f*−ξ)·Φ(Z) + σ(x)·φ(Z),  Z = (μ(x)−f*−ξ)/σ(x)"
+    },
+    {
+      "heading": "TPE: Tree-structured Parzen Estimator",
+      "body": "TPE (Bergstra et al., 2011): instead of modelling p(y|x) (as GP does), model p(x|y). Split past observations into 'good' ({x: f(x) > f_γ} where γ is the γ-th quantile, typically γ=0.15) and 'bad' ({x: f(x) ≤ f_γ}). Fit KDE: l(x) = p(x|good), g(x) = p(x|bad). Select x that maximises l(x)/g(x) — Thompson sampling from l(x) by evaluating l(x)/g(x) for many random samples. EI under TPE ∝ l(x)/g(x). TPE handles conditional spaces: hyperparameter h_2 is only sampled if h_1='deep' — this is the 'tree-structured' part. sklearn-compatible: Hyperopt, Optuna. [2]"
+    },
+    {
+      "heading": "SMAC and Random Forest Surrogates",
+      "body": "SMAC (Hutter et al., 2011) uses a random forest as the surrogate model instead of a GP. Random forests handle: (1) Mixed spaces (categorical + continuous) natively; (2) High dimensionality (100+ hyperparameters); (3) Conditional hyperparameters. RF variance gives the uncertainty estimate for the acquisition function. SMAC is the backbone of Auto-sklearn (Feurer et al., 2015) and popular for algorithm configuration (setting hyperparameters for entire algorithm libraries). Warmstarting SMAC: initialise with meta-learned configurations from similar past datasets — dramatically speeds convergence on new problems. [1]"
+    }
+  ],
+  "youtubeLabel": "Bayesian Optimization Explained — Gaussian Processes and Acquisition Functions",
+  "youtubeUrl": "https://www.youtube.com/embed/c4KKvyWW_Xk",
+  "takeaways": [
+    "EI(x)=(μ−f*−ξ)·Φ(Z)+σ·φ(Z) — balances exploitation (high μ) and exploration (high σ). [1]",
+    "GP surrogate: Matérn-2.5 kernel standard; posterior μₙ,σₙ updated after each evaluation. [1]",
+    "BO achieves in 20-50 evaluations what random search needs 200+ for expensive objectives. [1]",
+    "TPE: models p(x|good)/p(x|bad) via KDE — handles categorical and conditional spaces. [2]",
+    "SMAC uses random forest surrogate: scales to high-dimensional mixed spaces (used in Auto-sklearn). [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "When does Bayesian optimization underperform random search?",
+      "a": "Bayesian optimization underperforms random search when: (1) Cheap evaluation budget (< 20 evaluations) — GP fitting and acquisition maximization overhead dominates. (2) High-dimensional space (>20 dimensions) — GP kernel matrix computation is O(n³) in observations and the GP struggles to model high-D spaces reliably. (3) Noisy objective — GP is designed for noiseless observations; high noise (from stochastic training) requires a noise-aware GP (observation noise σ_n > 0), which is available in sklearn GaussianProcessRegressor(alpha=σ_n²). (4) Very fast evaluations — if each trial takes seconds, the overhead of BO (GP fitting, acquisition maximization) is comparable to the trial cost; random search is simpler and equally fast. For deep learning: BO is worthwhile when single training runs take >1 hour."
+    },
+    {
+      "q": "How do you handle parallel Bayesian optimization (batch BO)?",
+      "a": "Standard BO is sequential: fit GP, maximise acquisition, evaluate, repeat. In parallel settings (multiple GPU workers), you want to query a batch of points simultaneously. Batch BO approaches: (1) Local Penalisation (González et al., 2016): after selecting x₁, penalise the acquisition function near x₁ before selecting x₂ — discourages the batch from clustering around one point. (2) Thompson Sampling: for each parallel worker, sample a random function from the GP posterior and maximise it — this is equivalent to BO with diversity. (3) Hallucination / Kriging Believer: assume pending evaluations return μ(x_pending) and add them to the GP — allows selecting future points without waiting. Optuna supports parallelism natively with the optuna.Study multiprocessing backend."
+    }
+  ],
+  "sources": [
+    { "label": "Snoek, Larochelle & Adams (2012) — Practical Bayesian Optimization of Machine Learning Algorithms, NeurIPS 2012", "url": "https://proceedings.neurips.cc/paper/2012/hash/05311655a15b75fab86956663e1819cd-Abstract.html" },
+    { "label": "Bergstra et al. (2011) — Algorithms for Hyper-Parameter Optimization (TPE), NeurIPS 2011", "url": "https://proceedings.neurips.cc/paper/2011/hash/86e8f7ab32cfd12577bc2619bc635690-Abstract.html" }
+  ]
+}

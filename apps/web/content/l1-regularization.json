@@ -1,0 +1,72 @@
+{
+  "visualizationType": "regularization",
+  "codeSnapshot": {
+    "label": "l1_regularization.py",
+    "code": "import torch\nimport torch.nn as nn\n\n# L1 regularisation in PyTorch (manual — no built-in for L1 in optimizers)\nmodel = nn.Linear(10, 1)\noptimizer = torch.optim.SGD(model.parameters(), lr=0.01)\n\nlambda_l1 = 1e-3\n\nfor epoch in range(100):\n    x = torch.randn(32, 10)\n    y = torch.randn(32, 1)\n    optimizer.zero_grad()\n    loss = nn.MSELoss()(model(x), y)\n    # L1 penalty: add |w| to loss\n    l1_penalty = lambda_l1 * sum(p.abs().sum() for p in model.parameters())\n    total_loss = loss + l1_penalty\n    total_loss.backward()\n    optimizer.step()\n\n# Elastic Net: L1 + L2\nlambda_l1, lambda_l2 = 1e-3, 1e-4\nfor epoch in range(100):\n    x, y = torch.randn(32, 10), torch.randn(32, 1)\n    optimizer.zero_grad()\n    loss = nn.MSELoss()(model(x), y)\n    l1 = lambda_l1 * sum(p.abs().sum() for p in model.parameters())\n    l2 = lambda_l2 * sum((p**2).sum() for p in model.parameters())\n    (loss + l1 + l2).backward()\n    optimizer.step()\n\n# Check sparsity after L1 training\nwith torch.no_grad():\n    weights = model.weight.data\n    sparsity = (weights.abs() < 1e-4).float().mean()\n    print(f\"Fraction of near-zero weights: {sparsity.item():.2f}\")"
+  },
+  "eli3": [
+    "L1 regularisation (also called Lasso in linear regression) adds the sum of the absolute values of all weights to the loss function. This forces the model to not only fit the data but also keep weights small.",
+    "The key property of L1: it drives some weights exactly to zero. This produces sparse models — most weights are zero, meaning most features are ignored. The model automatically performs feature selection, keeping only the most useful features.",
+    "Why zero exactly? The absolute value function has a sharp corner at zero (not smooth like L2). This corner creates a strong force pulling weights all the way to zero rather than just making them small."
+  ],
+  "whenWhy": [
+    {
+      "title": "Automatic feature selection in high-dimensional data",
+      "body": "When you have many features (p >> n), L1 regularisation identifies the most important subset. In genomics, you might have 20,000 genes as features but only a few hundred relevant ones. Lasso automatically zeroes out irrelevant gene coefficients, producing an interpretable model with a small active set. The selected features have direct scientific meaning."
+    },
+    {
+      "title": "Compressed sensing and sparse signal recovery",
+      "body": "L1 minimisation is the foundation of compressed sensing: recover a sparse signal x from few measurements y = Ax (fewer equations than unknowns). If x is truly sparse (few nonzero components), L1 minimisation exactly recovers x when A satisfies the Restricted Isometry Property. This is used in MRI acceleration (fewer measurements → faster scan), signal denoising, and neural network compression."
+    },
+    {
+      "title": "Interpretable models with feature coefficients",
+      "body": "In clinical risk scores or credit scoring, the model must be interpretable: each risk factor is either present (nonzero weight) or absent (zero weight). Lasso naturally produces such models. The resulting coefficient vector directly identifies which variables matter — unlike L2 regularisation which only shrinks coefficients without zeroing them."
+    }
+  ],
+  "deepDiveIntro": [
+    "L1 regularised loss: L_total = L_data + λΣⱼ|wⱼ|. For linear regression, this is Lasso (Least Absolute Shrinkage and Selection Operator, Tibshirani, 1996). Lasso has no closed-form solution (unlike Ridge), but the coordinate descent algorithm solves it efficiently: update each wⱼ separately using the soft-thresholding operator. The solution has the property that many wⱼ = 0 exactly. [1]",
+    "Geometric interpretation: the L1 constraint ‖w‖₁ ≤ t defines a diamond (L1 ball) in weight space. The Lagrangian formulation shows that minimising L_data + λ‖w‖₁ is equivalent to minimising L_data subject to ‖w‖₁ ≤ t (for some t(λ)). The diamond has corners on the axes — the optimal solution is likely to hit a corner where all but one weight is zero. This is why L1 produces sparsity. [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Gradient and Soft-Thresholding",
+      "body": "Subgradient of |wⱼ|: sign(wⱼ) for wⱼ ≠ 0; any value in [−1, 1] for wⱼ = 0. The L1 update: wⱼ ← wⱼ − η(∂L_data/∂wⱼ + λ sign(wⱼ)). This nudges weights toward zero by λη at each step. The proximal operator for L1 (used in ISTA/ADMM): prox_{ηλ‖·‖₁}(v)ⱼ = sign(vⱼ)·max(|vⱼ|−ηλ, 0) — soft thresholding. Small weights (|vⱼ| < ηλ) are exactly zeroed. Large weights are shrunk by ηλ. [1]",
+      "formula": "Soft thresholding: wⱼ ← sign(vⱼ) · max(|vⱼ| − ηλ, 0)"
+    },
+    {
+      "heading": "L1 vs L2 Regularisation: Geometry",
+      "body": "L2 (Ridge): adds λ‖w‖² to loss. Gradient: 2λwⱼ — proportional to weight. Small weights get small penalty → L2 cannot zero out weights. L1 (Lasso): adds λ‖w‖₁. Subgradient: λ·sign(wⱼ) — constant magnitude regardless of wⱼ. Small weights still get a full penalty → pulled to exactly zero. Geometric: L2 ball is smooth sphere, L1 ball is diamond with corners. The data loss contours are most likely to touch the corners (sparsity) for L1, the edge (no exact zeros) for L2. [1][2]",
+      "formula": "L_Lasso = L_data + λΣ|wⱼ|;  L_Ridge = L_data + λΣwⱼ²"
+    },
+    {
+      "heading": "Coordinate Descent for Lasso",
+      "body": "Lasso solution via coordinate descent (Friedman et al., 2010): For linear regression, fix all weights except wⱼ and solve for wⱼ analytically: wⱼ ← (1/n) sign(rⱼ) · max(|rⱼ| − λ, 0) where rⱼ = Σᵢ xᵢⱼ(yᵢ − Xw + wⱼxᵢⱼ) is the partial residual. Cycle through all j until convergence. This is implemented in scikit-learn's Lasso (solver='coordinate_descent'). Path algorithms (LARS) solve the full regularisation path from λ=∞ (all zeros) to λ=0 (OLS) efficiently. [2]"
+    },
+    {
+      "heading": "Elastic Net: L1 + L2",
+      "body": "Elastic Net (Zou & Hastie, 2005): L = L_data + λ₁‖w‖₁ + λ₂‖w‖². Combines L1 sparsity with L2 grouping effect (correlated features tend to be selected/zeroed together, unlike Lasso which picks one). Elastic Net is more stable than Lasso when features are highly correlated. In scikit-learn: ElasticNet(alpha=λ₁+λ₂, l1_ratio=λ₁/(λ₁+λ₂)). Used as default in logistic regression with 'elasticnet' penalty. [2]"
+  ],
+  "youtubeLabel": "Lasso Regression (L1) — StatQuest",
+  "youtubeUrl": "https://www.youtube.com/embed/NGf0voTMlcs",
+  "takeaways": [
+    "L_total = L_data + λΣ|wⱼ| — penalty on absolute weight magnitude. [1]",
+    "Subgradient = λ·sign(w) (constant magnitude) → drives small weights exactly to zero. [1]",
+    "Soft-thresholding: wⱼ ← sign(vⱼ)·max(|vⱼ|−ηλ, 0) — exact zeroing of small weights. [1]",
+    "L1 ball is a diamond: optimal solution hits a corner where most weights are zero. [1]",
+    "Elastic Net = L1 + L2: sparse like Lasso but handles correlated features better. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why does L1 produce exactly zero weights while L2 doesn't?",
+      "a": "For L2: the gradient of λwⱼ² is 2λwⱼ. As wⱼ → 0, the gradient → 0. So there's no force pushing the weight through zero — it just gets very small but never exactly zero. For L1: the subgradient of λ|wⱼ| is λ·sign(wⱼ) for wⱼ ≠ 0 — constant force toward zero regardless of magnitude. When the weight is small enough (|wⱼ| < ηλ), the subgradient step overshoots zero, but the soft-thresholding proximal operator clips it to exactly zero. This exact zeroing is a fundamental property of L1 that L2 cannot replicate."
+    },
+    {
+      "q": "How do you tune λ in Lasso — cross-validation or information criteria?",
+      "a": "Standard approach: k-fold cross-validation over a grid of λ values (scikit-learn: LassoCV). LassoCV uses a path algorithm (LARS) to efficiently compute solutions for all λ values simultaneously, much cheaper than fitting separately. AIC/BIC are alternatives: AIC = n·log(MSE) + 2·df where df = number of nonzero coefficients. AIC tends to select more features than CV; BIC is more conservative. In practice, CV is preferred because it directly optimises held-out prediction error. The 'one standard error' rule: choose the most regularised model within 1 SE of the minimum CV error — adds conservatism and simplicity."
+    }
+  ],
+  "sources": [
+    { "label": "Tibshirani, R. (1996) — Regression Shrinkage and Selection via the Lasso, JRSS-B 58(1):267–288", "url": "https://doi.org/10.1111/j.2517-6161.1996.tb02080.x" },
+    { "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 3", "url": "https://hastie.su.domains/ElemStatLearn/" }
+  ]
+}

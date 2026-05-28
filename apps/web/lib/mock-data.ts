@@ -585,6 +585,82 @@ export const mockEntries: WikiEntry[] = [
   { id: "e306", title: "PPO", slug: "ppo", difficulty: "advanced" as const, status: "published" as const, subcategoryId: "5-7", tags: ["deep-rl", "ppo", "policy-gradient", "clipped-objective", "rlhf"] },
   { id: "e307", title: "DDPG", slug: "ddpg", difficulty: "advanced" as const, status: "published" as const, subcategoryId: "5-7", tags: ["deep-rl", "ddpg", "actor-critic", "deterministic-policy", "continuous-control"] },
   { id: "e308", title: "A3C", slug: "a3c", difficulty: "advanced" as const, status: "published" as const, subcategoryId: "5-7", tags: ["deep-rl", "a3c", "a2c", "async", "advantage", "parallel-workers"] },
+
+  // Training, Optimization & Evaluation — 7-1 Loss Functions (e309–e316)
+  { id: "e309", title: "MSE Loss", slug: "mse-loss", difficulty: "beginner" as const, status: "published" as const, subcategoryId: "7-1", tags: ["loss", "mse", "regression", "squared-error", "gaussian-noise"] },
+  { id: "e310", title: "MAE Loss", slug: "mae-loss", difficulty: "beginner" as const, status: "published" as const, subcategoryId: "7-1", tags: ["loss", "mae", "regression", "absolute-error", "robust"] },
+  { id: "e311", title: "Cross-Entropy Loss", slug: "cross-entropy-loss", difficulty: "beginner" as const, status: "published" as const, subcategoryId: "7-1", tags: ["loss", "cross-entropy", "classification", "softmax", "negative-log-likelihood"] },
+  { id: "e312", title: "Hinge Loss", slug: "hinge-loss", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-1", tags: ["loss", "hinge", "svm", "margin", "max-margin"] },
+  { id: "e313", title: "Huber Loss", slug: "huber-loss", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-1", tags: ["loss", "huber", "robust", "outliers", "delta"] },
+  { id: "e314", title: "KL Divergence Loss", slug: "kl-divergence-loss", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-1", tags: ["loss", "kl-divergence", "information-theory", "vae", "distillation"] },
+  { id: "e315", title: "Contrastive Loss", slug: "contrastive-loss", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-1", tags: ["loss", "contrastive", "self-supervised", "simclr", "infonce"] },
+  { id: "e316", title: "Triplet Loss", slug: "triplet-loss", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-1", tags: ["loss", "triplet", "metric-learning", "hard-negative-mining", "facenet"] },
+
+  // Training, Optimization & Evaluation — 7-2 Optimization Algorithms (e317–e325)
+  { id: "e317", title: "SGD", slug: "sgd", difficulty: "beginner" as const, status: "published" as const, subcategoryId: "7-2", tags: ["optimizer", "sgd", "stochastic-gradient-descent", "mini-batch", "convergence"] },
+  { id: "e318", title: "Momentum Optimizer", slug: "momentum-optimizer", difficulty: "beginner" as const, status: "published" as const, subcategoryId: "7-2", tags: ["optimizer", "momentum", "polyak", "nesterov", "acceleration"] },
+  { id: "e319", title: "Adam Optimizer", slug: "adam-optimizer", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-2", tags: ["optimizer", "adam", "adaptive", "moments", "bias-correction"] },
+  { id: "e320", title: "AdaGrad", slug: "adagrad", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-2", tags: ["optimizer", "adagrad", "adaptive", "sparse", "dying-lr"] },
+  { id: "e321", title: "RMSProp", slug: "rmsprop", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-2", tags: ["optimizer", "rmsprop", "adaptive", "ema", "centered"] },
+  { id: "e322", title: "AdamW", slug: "adamw", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-2", tags: ["optimizer", "adamw", "weight-decay", "decoupled", "regularization"] },
+  { id: "e323", title: "LR Schedules", slug: "lr-schedules", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-2", tags: ["lr-schedule", "cosine", "step-decay", "polynomial", "cyclical"] },
+  { id: "e324", title: "Warmup", slug: "warmup", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-2", tags: ["warmup", "learning-rate", "radam", "linear-warmup", "transformers"] },
+  { id: "e325", title: "Cosine Annealing", slug: "cosine-annealing", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-2", tags: ["cosine-annealing", "sgdr", "warm-restarts", "lr-schedule", "cyclical"] },
+
+  // Training, Optimization & Evaluation — 7-3 Regularization (e326–e331)
+  { id: "e326", title: "L1 Regularization", slug: "l1-regularization", difficulty: "beginner" as const, status: "published" as const, subcategoryId: "7-3", tags: ["regularization", "l1", "lasso", "sparsity", "feature-selection"] },
+  { id: "e327", title: "L2 Regularization", slug: "l2-regularization", difficulty: "beginner" as const, status: "published" as const, subcategoryId: "7-3", tags: ["regularization", "l2", "ridge", "weight-decay", "gaussian-prior"] },
+  { id: "e328", title: "Dropout", slug: "dropout", difficulty: "beginner" as const, status: "published" as const, subcategoryId: "7-3", tags: ["regularization", "dropout", "mc-dropout", "inverted-dropout", "ensemble"] },
+  { id: "e329", title: "Early Stopping", slug: "early-stopping", difficulty: "beginner" as const, status: "published" as const, subcategoryId: "7-3", tags: ["regularization", "early-stopping", "patience", "validation", "overfitting"] },
+  { id: "e330", title: "Weight Decay", slug: "weight-decay", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-3", tags: ["regularization", "weight-decay", "l2", "decoupled", "adamw"] },
+  { id: "e331", title: "Label Smoothing", slug: "label-smoothing", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-3", tags: ["regularization", "label-smoothing", "calibration", "soft-targets", "classification"] },
+
+  // Training, Optimization & Evaluation — 7-4 DL Training Techniques (e332–e340)
+  { id: "e332", title: "Backpropagation", slug: "backpropagation", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-4", tags: ["backprop", "chain-rule", "autodiff", "gradients", "reverse-mode"] },
+  { id: "e333", title: "Vanishing & Exploding Gradients", slug: "vanishing-exploding-gradients", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-4", tags: ["vanishing-gradients", "exploding-gradients", "skip-connections", "bptt", "spectral-radius"] },
+  { id: "e334", title: "Weight Initialization", slug: "weight-initialization", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-4", tags: ["initialization", "xavier", "he", "glorot", "kaiming"] },
+  { id: "e335", title: "Batch Normalization", slug: "batch-norm", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-4", tags: ["batch-norm", "normalization", "internal-covariate-shift", "gamma", "beta"] },
+  { id: "e336", title: "Layer Normalization", slug: "layer-norm", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-4", tags: ["layer-norm", "rmsnorm", "pre-norm", "post-norm", "transformers"] },
+  { id: "e337", title: "Gradient Clipping", slug: "gradient-clipping", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-4", tags: ["gradient-clipping", "max-norm", "exploding-gradients", "rnn", "llm-training"] },
+  { id: "e338", title: "Mixed Precision Training", slug: "mixed-precision-training", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-4", tags: ["mixed-precision", "fp16", "bf16", "amp", "gradscaler"] },
+  { id: "e339", title: "Data Augmentation", slug: "data-augmentation", difficulty: "beginner" as const, status: "published" as const, subcategoryId: "7-4", tags: ["augmentation", "mixup", "cutmix", "randaugment", "regularization"] },
+  { id: "e340", title: "Curriculum Learning", slug: "curriculum-learning", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-4", tags: ["curriculum-learning", "self-paced", "difficulty", "progressive-resizing", "ordering"] },
+
+  // Training, Optimization & Evaluation — 7-5 LLM Training & Alignment (e341–e347)
+  { id: "e341", title: "Pre-training", slug: "pre-training", difficulty: "advanced" as const, status: "published" as const, subcategoryId: "7-5", tags: ["pre-training", "clm", "mlm", "chinchilla", "scaling-laws"] },
+  { id: "e342", title: "SFT", slug: "sft", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-5", tags: ["sft", "supervised-fine-tuning", "instruction-masking", "lima", "lora"] },
+  { id: "e343", title: "RLHF", slug: "rlhf", difficulty: "advanced" as const, status: "published" as const, subcategoryId: "7-5", tags: ["rlhf", "ppo", "reward-model", "bradley-terry", "alignment"] },
+  { id: "e344", title: "DPO", slug: "dpo", difficulty: "advanced" as const, status: "published" as const, subcategoryId: "7-5", tags: ["dpo", "direct-preference-optimization", "alignment", "beta", "reference-model"] },
+  { id: "e345", title: "Constitutional AI", slug: "constitutional-ai", difficulty: "advanced" as const, status: "published" as const, subcategoryId: "7-5", tags: ["constitutional-ai", "rlaif", "critique-revision", "alignment", "claude"] },
+  { id: "e346", title: "Instruction Tuning", slug: "instruction-tuning", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-5", tags: ["instruction-tuning", "flan", "zero-shot", "multi-task", "task-diversity"] },
+  { id: "e347", title: "LoRA / QLoRA", slug: "lora-qlora", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-5", tags: ["lora", "qlora", "peft", "low-rank", "nf4"] },
+
+  // Training, Optimization & Evaluation — 7-6 Classical ML Evaluation (e348–e356)
+  { id: "e348", title: "Train / Val / Test Split", slug: "train-val-test-split", difficulty: "beginner" as const, status: "published" as const, subcategoryId: "7-6", tags: ["train-val-test", "data-split", "stratified", "temporal-split", "data-leakage"] },
+  { id: "e349", title: "Cross-Validation", slug: "cross-validation", difficulty: "beginner" as const, status: "published" as const, subcategoryId: "7-6", tags: ["cross-validation", "k-fold", "loocv", "nested-cv", "group-kfold"] },
+  { id: "e350", title: "Bias-Variance Tradeoff", slug: "bias-variance-tradeoff", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-6", tags: ["bias-variance", "overfitting", "underfitting", "double-descent", "regularization"] },
+  { id: "e351", title: "Confusion Matrix", slug: "confusion-matrix", difficulty: "beginner" as const, status: "published" as const, subcategoryId: "7-6", tags: ["confusion-matrix", "tp-fp-fn-tn", "precision", "recall", "mcc"] },
+  { id: "e352", title: "ROC-AUC", slug: "roc-auc", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-6", tags: ["roc", "auc", "tpr", "fpr", "ranking"] },
+  { id: "e353", title: "F1 Score", slug: "f1-score", difficulty: "beginner" as const, status: "published" as const, subcategoryId: "7-6", tags: ["f1", "precision", "recall", "harmonic-mean", "fbeta"] },
+  { id: "e354", title: "RMSE", slug: "rmse-metric", difficulty: "beginner" as const, status: "published" as const, subcategoryId: "7-6", tags: ["rmse", "mse", "r-squared", "regression-metric", "rmsle"] },
+  { id: "e355", title: "Log-Loss", slug: "log-loss", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-6", tags: ["log-loss", "cross-entropy", "calibration", "proper-scoring", "negative-log-likelihood"] },
+  { id: "e356", title: "PR Curve", slug: "pr-curve", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-6", tags: ["pr-curve", "average-precision", "map", "imbalanced", "recall"] },
+
+  // Training, Optimization & Evaluation — 7-7 LLM & DL Evaluation (e357–e363)
+  { id: "e357", title: "Perplexity", slug: "perplexity-eval", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-7", tags: ["perplexity", "language-model", "cross-entropy", "bits-per-character", "evaluation"] },
+  { id: "e358", title: "BLEU", slug: "bleu", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-7", tags: ["bleu", "machine-translation", "n-gram", "brevity-penalty", "sacrebleu"] },
+  { id: "e359", title: "ROUGE", slug: "rouge", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-7", tags: ["rouge", "summarization", "recall", "lcs", "rouge-l"] },
+  { id: "e360", title: "BERTScore", slug: "bertscore", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-7", tags: ["bertscore", "semantic-similarity", "bert", "contextual-embeddings", "idf"] },
+  { id: "e361", title: "HumanEval", slug: "human-eval-benchmark", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-7", tags: ["humaneval", "pass-at-k", "code-generation", "unit-tests", "mbpp"] },
+  { id: "e362", title: "LLM-as-Judge", slug: "llm-as-judge", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-7", tags: ["llm-as-judge", "mt-bench", "elo", "pairwise", "position-bias"] },
+  { id: "e363", title: "LLM Benchmarks", slug: "llm-benchmarks", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-7", tags: ["mmlu", "hellaswag", "gsm8k", "arc", "benchmark"] },
+
+  // Training, Optimization & Evaluation — 7-8 Hyperparameter Tuning (e364–e368)
+  { id: "e364", title: "Grid Search", slug: "grid-search", difficulty: "beginner" as const, status: "published" as const, subcategoryId: "7-8", tags: ["grid-search", "hyperparameter", "exhaustive", "gridsearchcv", "cross-validation"] },
+  { id: "e365", title: "Random Search", slug: "random-search", difficulty: "beginner" as const, status: "published" as const, subcategoryId: "7-8", tags: ["random-search", "hyperparameter", "hyperband", "successive-halving", "sampling"] },
+  { id: "e366", title: "Bayesian Optimization", slug: "bayesian-optimization-hpo", difficulty: "advanced" as const, status: "published" as const, subcategoryId: "7-8", tags: ["bayesian-optimization", "gaussian-process", "acquisition-function", "ei", "tpe"] },
+  { id: "e367", title: "AutoML", slug: "automl", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-8", tags: ["automl", "cash", "auto-sklearn", "autogluon", "ensemble"] },
+  { id: "e368", title: "Neural Architecture Search", slug: "neural-architecture-search", difficulty: "advanced" as const, status: "published" as const, subcategoryId: "7-8", tags: ["nas", "darts", "one-shot", "weight-sharing", "efficientnet"] },
 ]
 
 export const difficultyColors = {

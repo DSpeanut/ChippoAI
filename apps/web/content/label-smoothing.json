@@ -1,0 +1,73 @@
+{
+  "visualizationType": "distribution",
+  "codeSnapshot": {
+    "label": "label_smoothing.py",
+    "code": "import torch\nimport torch.nn as nn\nimport torch.nn.functional as F\n\n# PyTorch built-in label smoothing\ncriterion = nn.CrossEntropyLoss(label_smoothing=0.1)  # ε=0.1\nlogits = torch.randn(4, 10)   # batch of 4, 10 classes\nlabels = torch.tensor([3, 7, 1, 5])\nloss = criterion(logits, labels)\nprint(f\"Smoothed CE loss: {loss.item():.4f}\")\n\n# Manual label smoothing\ndef label_smooth_loss(logits, labels, epsilon=0.1, n_classes=10):\n    # Create smoothed target distribution\n    # y_smooth = (1-ε) * one_hot + ε / K\n    one_hot = F.one_hot(labels, n_classes).float()\n    smooth_targets = one_hot * (1 - epsilon) + epsilon / n_classes\n    log_probs = F.log_softmax(logits, dim=-1)\n    # Cross-entropy with soft targets: -Σ y_smooth * log p\n    loss = -(smooth_targets * log_probs).sum(dim=-1).mean()\n    return loss\n\nloss_manual = label_smooth_loss(logits, labels, epsilon=0.1, n_classes=10)\nprint(f\"Manual smooth loss: {loss_manual.item():.4f}\")\n\n# Effect on model confidence\nwith torch.no_grad():\n    model = nn.Linear(512, 1000)   # ImageNet classifier\n    x = torch.randn(1, 512)\n    logits_out = model(x)\n    probs = F.softmax(logits_out, dim=-1)\n    print(f\"Max prob (overconfident): {probs.max().item():.4f}\")\n    # With label smoothing: max prob typically ~0.9 instead of ~0.999"
+  },
+  "eli3": [
+    "Label smoothing is a regularisation technique that makes training targets a little bit uncertain. Instead of saying 'this image is 100% class A' (one-hot label), you say 'it's 90% class A and 1% each of the other 10 classes' (smooth label). The model learns to be slightly less confident.",
+    "Without smoothing, the model is trained to assign probability 1 to the true class and 0 to everything else — this requires logits of +∞ and −∞, which causes overconfident, poorly calibrated predictions. Smoothing softens the targets and prevents this extreme confidence.",
+    "Label smoothing was introduced in the original Transformer paper ('Attention is All You Need', 2017) with ε=0.1 and has since become standard for image classifiers and language models. It improves both accuracy and calibration."
+  ],
+  "whenWhy": [
+    {
+      "title": "Transformer training (NMT, classification)",
+      "body": "Vaswani et al. (2017) used ε=0.1 in 'Attention is All You Need' for machine translation. Label smoothing hurts perplexity (the model is less certain by design) but improves BLEU score and generalisation. The 2017 paper reports: 'We use label smoothing of value ε_ls=0.1. This hurts perplexity, as the model learns to be more unsure, but improves accuracy and BLEU score.' Smoothing is now default in most transformer implementations."
+    },
+    {
+      "title": "Image classification: improving calibration",
+      "body": "EfficientNet, ViT, and DeiT all use label smoothing (ε=0.1). Neural networks trained without smoothing often output probabilities like 0.9999 for correct classes — highly overconfident. Calibration (how well predicted probabilities match actual accuracy) suffers. Label smoothing pushes the predicted probability for correct class to ~1−ε instead of ~1, producing well-calibrated softmax outputs that match actual accuracy."
+    },
+    {
+      "title": "Noisy labels: handling label uncertainty",
+      "body": "When labels are noisy (annotation errors, ambiguous classes), true one-hot targets are misleading. Label smoothing distributes some probability mass to incorrect classes — implicitly treating labels as slightly unreliable. This is appropriate when ground truth is uncertain, such as fine-grained visual recognition (distinguishing dog breeds), medical diagnosis, or crowdsourced labels."
+    }
+  ],
+  "deepDiveIntro": [
+    "Label smoothing (Szegedy et al., 2016): replace one-hot target y (with yₖ=1 if k=true class, 0 otherwise) with soft target ỹ: ỹₖ = (1−ε)·1{k=true} + ε/K. The cross-entropy with smooth target: L = −Σₖ ỹₖ log p̂ₖ = −(1−ε) log p̂_{true} − (ε/K)Σₖ log p̂ₖ. The first term is the standard CE; the second is the entropy of the uniform distribution H(U,p̂) = −(1/K)Σlog p̂ₖ. So label-smoothed CE = (1−ε)CE + ε·H(U,p̂) — a convex combination of standard CE and uniform entropy. [1]",
+    "The gradient effect: for logit z_j (true class j=c): ∂L/∂z_c = (1−ε)(p̂_c − 1) + ε(p̂_c − 1/K) = p̂_c − (1−ε) − ε/K = p̂_c − (1−ε(K−1)/K). This is zero when p̂_c = 1 − ε(K−1)/K ≈ 1−ε for large K. Standard CE drives p̂_c → 1; smoothed CE drives p̂_c → 1−ε. This is exactly the calibration mechanism. [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Smoothed Target Distribution",
+      "body": "ỹₖ = (1−ε) if k=true class, else ε/(K−1). Note: some formulations use ε/K for all classes including true class, giving ỹ_{true} = 1−ε+ε/K ≈ 1−ε. Both are common; PyTorch's label_smoothing=ε uses the first formulation. The target distribution has entropy H(ỹ) = −(1−ε)log(1−ε) − ε·log(ε/(K−1)). For ε=0.1, K=1000: H(ỹ) ≈ 0.33 bits — small but nonzero entropy, preventing overconfidence. [1]",
+      "formula": "ỹₖ = (1−ε)·1{k=true} + ε/K"
+    },
+    {
+      "heading": "Effect on Calibration",
+      "body": "Calibration: P(y=k | p̂=p) ≈ p — predicted probability matches actual frequency. Standard CE pushes logits toward ±∞ to achieve p̂_true → 1 and p̂_other → 0. In practice: overconfident predictions (p̂_true=0.999 when actual accuracy=0.90). Label smoothing targets p̂_true = 1−ε (≈0.9 for ε=0.1), much closer to typical model accuracy. Mueller & Thyagarajan (2019) showed smoothing improves Expected Calibration Error (ECE) by 40–60% compared to unsmoothed training. [2]",
+      "formula": "Calibration target: p̂_true → 1 − ε (not → 1)"
+    },
+    {
+      "heading": "Distillation Connection",
+      "body": "Knowledge distillation (Hinton et al., 2015) trains a student to match the teacher's soft predictions (p̂_teacher). Label smoothing can be seen as a simplified distillation where the teacher is a uniform distribution. Both approaches provide soft targets that encode inter-class relationships. The main difference: real distillation uses a teacher's trained predictions (which encode class similarities); label smoothing uses uniform smoothing (ignores class relationships). [1]"
+    },
+    {
+      "heading": "When Label Smoothing Hurts",
+      "body": "Label smoothing hurts perplexity for language models (forces model to be less certain about the next token, even when it should be certain). Müller et al. (2019) showed it hurts teacher-student distillation: smooth teacher predictions erase information about class similarities. For tasks requiring high-confidence predictions (anomaly detection, OOD detection), smooth models produce smaller confidence gaps between in- and out-of-distribution samples. Use ε=0 (no smoothing) for knowledge distillation teachers and uncertainty-aware applications. [2]"
+    }
+  ],
+  "youtubeLabel": "Label Smoothing Explained — Vision Transformers",
+  "youtubeUrl": "https://www.youtube.com/embed/ORrStCArmP4",
+  "takeaways": [
+    "ỹₖ = (1−ε)·1{k=true} + ε/K — soft targets prevent overconfident predictions. [1]",
+    "Gradient drives p̂_true → (1−ε) not → 1 — direct calibration improvement. [1]",
+    "ε=0.1 is standard (Vaswani 2017 Transformer, EfficientNet, ViT). [1]",
+    "Smoothed CE = (1−ε)·CE + ε·H(U,p̂) — uniform entropy penalty. [1]",
+    "Hurts perplexity and distillation; improves calibration and generalisation. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why does label smoothing hurt knowledge distillation?",
+      "a": "In knowledge distillation, the teacher's soft predictions encode inter-class similarities — e.g., a cat image has probability 0.8 for 'cat' and 0.1 for 'tiger' (because they look similar). These soft labels carry 'dark knowledge' about class relationships. When the teacher is trained with label smoothing (ε=0.1), all non-true classes are shifted equally by ε/K regardless of similarity. A tiger image and a toaster image get the same small probability from the cat classifier — information about cat-tiger similarity is erased. The student can't learn class relationships from a smooth teacher. For distillation: train the teacher without label smoothing (or with ε=0)."
+    },
+    {
+      "q": "What is the optimal ε for label smoothing?",
+      "a": "The typical answer is ε=0.1, but the optimal value depends on the number of classes K, the dataset noise level, and the task. Larger K → smaller optimal ε (more classes means each gets less probability). Noisy labels → larger ε (more smoothing handles more uncertainty). For ImageNet (K=1000): ε=0.1 is standard. For fine-grained recognition (K=10,000 bird species): ε=0.01–0.05 is often better. For language models (K=vocab_size, 30K+): ε=0.1 hurts perplexity noticeably — some use ε=0.0 or ε=0.01. Cross-validate ε on a held-out set when unsure."
+    }
+  ],
+  "sources": [
+    { "label": "Szegedy et al. (2016) — Rethinking the Inception Architecture for Computer Vision arXiv:1512.00567", "url": "https://arxiv.org/abs/1512.00567" },
+    { "label": "Müller, Simon & Garg (2019) — When Does Label Smoothing Help? NeurIPS 2019 arXiv:1906.02629", "url": "https://arxiv.org/abs/1906.02629" }
+  ]
+}

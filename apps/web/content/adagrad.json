@@ -1,0 +1,68 @@
+{
+  "visualizationType": "optimizer-trace",
+  "codeSnapshot": {
+    "label": "adagrad.py",
+    "code": "import torch\nimport torch.nn as nn\n\nmodel = nn.Linear(10, 1)\n\n# PyTorch AdaGrad\noptimizer = torch.optim.Adagrad(\n    model.parameters(),\n    lr=0.01,\n    lr_decay=0,        # optional LR decay per step\n    weight_decay=0,    # L2 regularisation\n    eps=1e-10          # numerical stability\n)\n\n# AdaGrad update rule:\n# G_t = G_{t-1} + g_t^2   (accumulate squared gradients, per parameter)\n# w_t = w_{t-1} - η / sqrt(G_t + ε) * g_t\n\n# Manual implementation\nclass AdaGrad:\n    def __init__(self, params, lr=0.01, eps=1e-10):\n        self.params = list(params)\n        self.lr = lr\n        self.eps = eps\n        self.G = [torch.zeros_like(p) for p in self.params]\n\n    def step(self):\n        for p, G in zip(self.params, self.G):\n            if p.grad is None: continue\n            G.add_(p.grad ** 2)  # accumulate squared gradients\n            p.data.sub_(self.lr * p.grad / (G.sqrt() + self.eps))\n\n# Demonstrate diminishing learning rate problem:\n# After many steps, G grows large → effective lr → 0\nimport torch\nG = torch.zeros(1)\nfor t in range(1, 201):\n    g = torch.tensor([1.0])  # constant gradient for illustration\n    G += g**2\n    eff_lr = 1.0 / (G.sqrt() + 1e-10)\n    if t in [1, 10, 50, 100, 200]:\n        print(f\"Step {t:3d}: G={G.item():.1f}, eff_lr={eff_lr.item():.4f}\")"
+  },
+  "eli3": [
+    "AdaGrad adapts the learning rate for each parameter based on how frequently that parameter has been updated. Parameters that have received many large gradient updates get a smaller learning rate (they've already learned a lot). Parameters that rarely get updated keep a higher learning rate (they still have a lot to learn).",
+    "This was designed for problems where some features appear much more often than others — like word frequencies in text. Common words ('the', 'a') appear in every sentence and get huge gradient updates. Rare words need to learn from the few times they appear. AdaGrad handles this automatically.",
+    "The downside: AdaGrad never forgets. The accumulated sum of squared gradients only grows, so the learning rate only shrinks — eventually reaching near zero. RMSProp and Adam fix this by using exponential moving averages instead of cumulative sums."
+  ],
+  "whenWhy": [
+    {
+      "title": "Sparse features in NLP and recommendation systems",
+      "body": "In logistic regression or shallow embedding models for text/recommendation, some features (words, user IDs) appear millions of times while others appear once. AdaGrad gives rare features a high effective learning rate and common features a low one. This is ideal for convex problems with sparse data, such as linear classifiers trained on bag-of-words features."
+    },
+    {
+      "title": "Why AdaGrad is rarely used in deep learning",
+      "body": "In deep networks trained for hundreds of epochs, the accumulated G_t grows unboundedly → effective learning rate → 0. Training effectively stops before convergence. The same problem makes AdaGrad unsuitable for non-convex optimisation where you need sustained updates throughout training. RMSProp (decaying average of G_t) and Adam (first + second moment with bias correction) fix this issue."
+    },
+    {
+      "title": "Convex optimisation with sparse gradients",
+      "body": "AdaGrad has provable regret bounds for online convex optimisation with sparse gradients: O(√T) vs O(T) for SGD. Duchi et al. (2011) proved that AdaGrad achieves the optimal O(d · ln T) bound for d-dimensional sparse problems. For convex shallow models (linear regression, logistic regression, shallow embeddings) trained once, AdaGrad outperforms SGD and avoids manual learning rate tuning."
+    }
+  ],
+  "deepDiveIntro": [
+    "AdaGrad (Duchi et al., 2011): Gₜ = Gₜ₋₁ + gₜ ⊙ gₜ (element-wise square accumulation); wₜ = wₜ₋₁ − (η/√(Gₜ+ε)) ⊙ gₜ. Here Gₜ ∈ ℝᵈ accumulates squared gradients per parameter. The effective learning rate for parameter i at step t is η/√(Gᵢ,ₜ + ε). For a parameter with total squared gradient G, this is O(1/√G) — decreasing monotonically. [1]",
+    "The diagonal approximation: AdaGrad uses the diagonal of the empirical Fisher matrix Ĝₜ = diag(Gₜ/t) as a preconditioner. The ideal preconditioner is the full inverse Fisher matrix F⁻¹, but that's O(d²) to store. AdaGrad's diagonal preconditioner is a memory-efficient approximation that works well when parameter gradients have very different scales. [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Update Rule",
+      "body": "Gₜ,ᵢ = Gₜ₋₁,ᵢ + gₜ,ᵢ². wₜ,ᵢ = wₜ₋₁,ᵢ − η · gₜ,ᵢ / √(Gₜ,ᵢ + ε). Equivalently: wₜ = wₜ₋₁ − η · (Gₜ + ε·I)^(−1/2) · gₜ. G_t,i grows as Σₖ₌₁ᵗ gₖ,ᵢ². For a parameter i with constant gradient magnitude g: Gₜ,ᵢ = t·g², effective lr = η/(g√t) → 0. This is the key limitation: the learning rate decays at rate 1/√t regardless of whether the model has converged. [1]",
+      "formula": "Gₜ = Gₜ₋₁ + gₜ²;  wₜ = wₜ₋₁ − η·gₜ/√(Gₜ+ε)"
+    },
+    {
+      "heading": "AdaGrad vs RMSProp: The Dying Learning Rate Fix",
+      "body": "AdaGrad: Gₜ = Σₖ₌₁ᵗ gₖ² (cumulative, monotone increasing). RMSProp: vₜ = γvₜ₋₁ + (1−γ)gₜ² (exponential moving average). RMSProp forgets old gradients: at steady state, vₜ ≈ (1−γ)/(1−γ) E[g²] = E[g²]. The effective learning rate η/√vₜ stabilises at η/√E[g²] rather than decaying to 0. This makes RMSProp suitable for non-stationary problems and long training runs. AdaGrad is appropriate when you want learning rate to decrease over time (online convex optimisation). [2]"
+    },
+    {
+      "heading": "Full-Matrix AdaGrad",
+      "body": "The full (non-diagonal) AdaGrad update: Gₜ = Gₜ₋₁ + gₜgₜᵀ; wₜ = wₜ₋₁ − η·Gₜ^(−1/2)·gₜ. Uses the full Fisher matrix for preconditioning — optimal for correlated parameters. O(d²) storage and O(d³) matrix square root make this infeasible for large d. Practical approximations: LBFGS (rank-2 inverse Hessian updates), K-FAC (Kronecker-factored Fisher), Shampoo (matrix square root per layer). [1]"
+    }
+  ],
+  "youtubeLabel": "AdaGrad Explained — Adaptive Learning Rates",
+  "youtubeUrl": "https://www.youtube.com/embed/JXQT_vxqwIs",
+  "takeaways": [
+    "Gₜ = Gₜ₋₁ + gₜ²; wₜ = wₜ₋₁ − η·gₜ/√(Gₜ+ε) — per-parameter adaptive learning rate. [1]",
+    "Effective lr ∝ 1/√(accumulated squared gradient) — decays to 0, main limitation. [1]",
+    "Optimal for sparse convex problems: O(√T) regret bound for sparse gradients. [1]",
+    "RMSProp fixes dying lr by using exponential moving average of g² instead of cumulative sum. [2]",
+    "Rarely used in deep learning — Adam (= AdaGrad + momentum + EMA fix) is preferred. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "In what setting is AdaGrad provably better than SGD?",
+      "a": "AdaGrad achieves regret O(Σᵢ ‖gₜ,ᵢ‖₂ · √T) = O(d^(1/2) · ‖g‖₁ · √T) for sparse problems. When gradients are sparse (many zero entries), ‖g‖₁ << d^(1/2) ‖g‖₂, and AdaGrad's bound is much tighter than SGD's O(‖g‖₂ √T). Duchi et al. proved this is optimal up to logarithmic factors for online convex optimisation with subgradients. In practice: training word embeddings, logistic regression on text features, or linear models on high-dimensional sparse data are the right use cases."
+    },
+    {
+      "q": "What is ε in AdaGrad and how does it affect training?",
+      "a": "ε prevents division by zero when G_t,i = 0 (parameter i has never received a gradient). PyTorch default ε = 1e-10, which is much smaller than Adam's 1e-8. With ε = 1e-10, the first gradient update for an unused parameter is: Δw = η·g/√(g² + 1e-10) ≈ η·sign(g) — almost a full step. With larger ε (e.g., ε = 0.1), the effective learning rate is bounded by η/√ε even for small G — provides more conservative initial updates. For fp16 training, ε < 6e-5 may underflow — use ε = 1e-7 or 1e-6."
+    }
+  ],
+  "sources": [
+    { "label": "Duchi, Hazan & Singer (2011) — Adaptive Subgradient Methods for Online Learning and Stochastic Optimization, JMLR 12:2121–2159", "url": "https://www.jmlr.org/papers/v12/duchi11a.html" },
+    { "label": "Goodfellow, Bengio & Courville — Deep Learning, Ch. 8", "url": "https://www.deeplearningbook.org/" }
+  ]
+}

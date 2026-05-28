@@ -1,0 +1,72 @@
+{
+  "visualizationType": "lr-schedule",
+  "codeSnapshot": {
+    "label": "cosine_annealing.py",
+    "code": "import torch\nimport torch.nn as nn\nimport torch.optim as optim\nimport math\n\nmodel = nn.Linear(10, 1)\noptimizer = optim.AdamW(model.parameters(), lr=3e-4)\n\n# Basic cosine annealing\nscheduler = optim.lr_scheduler.CosineAnnealingLR(\n    optimizer,\n    T_max=100,    # number of steps in one cycle\n    eta_min=1e-6  # minimum learning rate\n)\n\n# Cosine annealing with warm restarts (SGDR)\nscheduler_sgdr = optim.lr_scheduler.CosineAnnealingWarmRestarts(\n    optimizer,\n    T_0=100,    # first cycle length\n    T_mult=2,   # multiply cycle length by T_mult after each restart\n    eta_min=1e-6\n)\n\n# Manual formula\ndef cosine_lr(step, T_max, eta_min, eta_max):\n    return eta_min + 0.5 * (eta_max - eta_min) * (1 + math.cos(math.pi * step / T_max))\n\n# Print lr values at different steps\neta_max, eta_min = 3e-4, 1e-6\nfor step in [0, 25, 50, 75, 100]:\n    lr = cosine_lr(step, T_max=100, eta_min=eta_min, eta_max=eta_max)\n    print(f\"step={step:3d}: lr={lr:.2e}\")\n# step=  0: lr=3.00e-04\n# step= 25: lr=2.12e-04\n# step= 50: lr=1.50e-04 (midpoint)\n# step= 75: lr=8.78e-05\n# step=100: lr=1.00e-06 (minimum)\n\n# LLaMA-style: η_min = 0.1 * η_max\neta_min_llama = 0.1 * eta_max\nprint(f\"LLaMA η_min: {eta_min_llama:.2e}\")"
+  },
+  "eli3": [
+    "Cosine annealing is a learning rate schedule that follows the shape of a cosine curve: starts high, decreases slowly at first, then faster in the middle, then slowly again at the end. This is better than step decay (abrupt drops) because it gives the optimizer a smooth, gradual transition from exploration to fine-tuning.",
+    "The name comes from the mathematical cosine function (cos), which makes a smooth S-shaped curve when plotted from 0 to π. At the start (step=0), cos(0)=1 so lr is maximum. At the end (step=T), cos(π)=−1 so lr is minimum. Everything in between is smooth.",
+    "With 'warm restarts' (SGDR), the learning rate resets back to maximum after each cycle. This allows the model to escape local minima periodically and can produce diverse 'snapshots' at the end of each cycle that can be ensembled for better performance."
+  ],
+  "whenWhy": [
+    {
+      "title": "Standard LLM pre-training schedule",
+      "body": "GPT-3, LLaMA, Chinchilla, and Mistral all use linear warmup + cosine decay to η_min = 0.1·η_max. Single-cycle cosine decay over all training steps is the most common LLM schedule. LLaMA-7B: lr=3e-4, η_min=3e-5 (= 0.1·η_max), 32K warmup steps, cosine over 1M steps total."
+    },
+    {
+      "title": "Vision model training (ImageNet, ViT)",
+      "body": "He et al. (2019) showed cosine annealing outperforms step decay by ~0.5% on ImageNet top-1 accuracy for ResNet-50 (76.9% vs 76.5%). ViT training uses cosine with warmup: Dosovitskiy et al. trained ViT-L on ImageNet-21k with 10K warmup steps and cosine decay. The smooth schedule avoids the abrupt accuracy plateau that follows step decay drops."
+    },
+    {
+      "title": "Snapshot ensembling with warm restarts",
+      "body": "SGDR (Loshchilov & Hutter, 2017): save the model at each restart minimum. Each snapshot has converged to a different basin of the loss landscape (resets give different starting points for cosine). Average predictions from K snapshots for free — equivalent to ensembling K independently trained models. T_mult=2 gives cycle lengths 100, 200, 400 steps — each longer cycle allows deeper convergence."
+    }
+  ],
+  "deepDiveIntro": [
+    "Cosine annealing schedule: η_t = η_min + 0.5(η_max − η_min)(1 + cos(πt/T_max)). At t=0: η = η_max. At t=T_max/2: η = (η_max+η_min)/2. At t=T_max: η = η_min. The rate of decrease is slowest at the beginning and end (near the extremes of the cosine function) and fastest in the middle — the opposite of step decay where the rate is zero until a discrete drop. [1]",
+    "SGDR with warm restarts: η_t = η_min + 0.5(η_max − η_min)(1 + cos(π·T_cur/T_i)) where T_cur is steps within the current cycle and T_i is the current cycle length (T_i = T₀·T_mult^(cycle number)). After each restart, T_i is multiplied by T_mult (typically 1 or 2) — longer cycles allow deeper exploration as training progresses. [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Cosine Decay Formula",
+      "body": "η_t = η_min + 0.5(η_max − η_min)(1 + cos(πt/T_max)). Derivative: dη/dt = −0.5(η_max − η_min)(π/T_max) sin(πt/T_max). The rate of decay is maximum at t=T_max/2 (sin is 1 there) and zero at t=0 and t=T_max (sin is 0). This is unlike linear decay where the rate is constant and step decay where it is zero except at drop points. The smooth slow-fast-slow profile matches the intuition: explore freely early, transition in the middle, fine-tune precisely at the end. [1]",
+      "formula": "η_t = η_min + 0.5(η_max − η_min)(1 + cos(πt/T_max))"
+    },
+    {
+      "heading": "η_min: Setting the Floor",
+      "body": "η_min is the minimum learning rate at the end of the cycle. Common choices: absolute (1e-6 to 1e-5) or relative (η_max / 10 to η_max / 100). LLaMA sets η_min = η_max / 10 = 0.1·η_max — a relatively high floor. Chinchilla uses similar proportions. The floor matters: too high → model doesn't fully converge; too low → loss of any residual gradient signal at the end of training. For fine-tuning, η_min = 1e-7 is common."
+    },
+    {
+      "heading": "Comparison with Step Decay",
+      "body": "Step decay: η drops by factor γ at specific epochs {30, 60, 90}. Three issues: (1) Stepwise drops cause a sudden change in gradient scale — requires all buffers (momentum, v in Adam) to re-adapt. (2) The timing of drops must be tuned per dataset size and batch size. (3) Accuracy plateaus between drops. Cosine annealing avoids all three: continuous, no sudden changes, no timing to tune. He et al. (2019): cosine ≥ step decay by 0.3–0.7% on ImageNet consistently across architectures. [2]"
+    },
+    {
+      "heading": "Cycle Scheduling and 1cycle Policy",
+      "body": "Smith (2018) introduced the 1cycle policy: linear warmup + cosine decay in a single cycle, with the final few iterations below η_min (annealing phase). The lr starts at η_min/10, rises linearly to η_max, then cosine decays to η_min/10 over the full training budget. The paper showed this achieves SOTA in fewer total steps than standard schedules. PyTorch: torch.optim.lr_scheduler.OneCycleLR. Used in fast.ai's training philosophy — trains ResNet-50 on ImageNet in ~60 epochs vs standard 90. [3]"
+  ],
+  "youtubeLabel": "Cosine Annealing & SGDR — Learning Rate Scheduling",
+  "youtubeUrl": "https://www.youtube.com/embed/vc16-1oLqtM",
+  "takeaways": [
+    "η_t = η_min + 0.5(η_max−η_min)(1+cos(πt/T)) — smooth from η_max to η_min. [1]",
+    "Rate is slowest at beginning and end, fastest in the middle — smooth exploration to exploitation. [1]",
+    "SGDR warm restarts: reset to η_max after each cycle; snapshots can be ensembled. [1]",
+    "η_min = 0.1·η_max is the LLaMA/Chinchilla standard; absolute 1e-6 for fine-tuning. [1]",
+    "Outperforms step decay by 0.3–0.7% on ImageNet with no timing to tune. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why does cosine annealing outperform step decay on large-scale training?",
+      "a": "Step decay has three structural problems: (1) Dead zones: between drops, lr is constant and the model can get stuck in sharp minima without any escape. Cosine decay provides continuous gentle pressure toward smaller minima throughout. (2) Adaptive optimizer disruption: a sudden 10× lr drop forces Adam's momentum buffers to re-adapt — the model effectively starts a new phase of training. (3) Poor cycle budget allocation: the 3-drop schedule (30/60/90 epochs) was designed for specific datasets; it doesn't transfer across datasets or batch sizes without re-tuning. Cosine is parameterised by only T_max and η_min — much simpler."
+    },
+    {
+      "q": "What is the relationship between cosine annealing and simulated annealing?",
+      "a": "Simulated annealing (Kirkpatrick et al., 1983) is a meta-heuristic optimisation algorithm: start at high 'temperature' (accept bad moves with high probability), decrease temperature over time. At high temperature, the algorithm explores broadly; at low temperature, it converges. Cosine annealing in deep learning is analogous: high learning rate = high temperature (large random steps explore the loss landscape); low lr = low temperature (small steps converge to a local minimum). The cosine shape (slow start, fast middle, slow end) mimics the optimal cooling schedule in simulated annealing theory."
+    }
+  ],
+  "sources": [
+    { "label": "Loshchilov & Hutter (2017) — SGDR: Stochastic Gradient Descent with Warm Restarts arXiv:1608.03983", "url": "https://arxiv.org/abs/1608.03983" },
+    { "label": "He et al. (2019) — Bag of Tricks for Image Classification with CNNs arXiv:1812.01187", "url": "https://arxiv.org/abs/1812.01187" },
+    { "label": "Smith & Topin (2018) — Super-Convergence: Very Fast Training of Neural Networks arXiv:1708.07120", "url": "https://arxiv.org/abs/1708.07120" }
+  ]
+}

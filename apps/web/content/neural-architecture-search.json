@@ -1,0 +1,67 @@
+{
+  "visualizationType": "architecture-diagram",
+  "codeSnapshot": {
+    "label": "neural_architecture_search.py",
+    "code": "# Neural Architecture Search (NAS) — three paradigms\n# 1. RL-based (Zoph & Le, 2017) — original NAS\n# 2. Differentiable (DARTS, Liu et al., 2019)\n# 3. One-shot / Weight Sharing (ENAS, Pham et al., 2018)\n\nimport torch\nimport torch.nn as nn\nimport torch.nn.functional as F\n\n# ---- DARTS: Differentiable Architecture Search ----\n# Key idea: relax discrete op choices to continuous weights α\n# Mixed operation: ō(x) = Σ_o softmax(α_o) · o(x)\n# Optimise α (architecture) and w (weights) jointly via bilevel optimisation\n\nOPERATIONS = [\n    nn.Identity(),\n    nn.ZeroPad2d(0),         # zero (skip)\n    nn.Conv2d(16, 16, 3, padding=1),\n    nn.Conv2d(16, 16, 5, padding=2),\n    nn.MaxPool2d(3, stride=1, padding=1),\n    nn.AvgPool2d(3, stride=1, padding=1),\n]\n\nclass MixedOp(nn.Module):\n    \"\"\"Soft mixture of operations — differentiable NAS building block.\"\"\"\n    def __init__(self, n_ops):\n        super().__init__()\n        self.ops = nn.ModuleList(OPERATIONS)\n        # Architecture parameter: α ∈ R^{n_ops} (learnable)\n        self.alpha = nn.Parameter(torch.zeros(n_ops))  # init to zero (uniform softmax)\n\n    def forward(self, x):\n        weights = F.softmax(self.alpha, dim=0)   # continuous relaxation\n        # Weighted sum of all ops — each op gets a soft weight\n        return sum(w * op(x) for w, op in zip(weights, self.ops))\n\n    def discretize(self):\n        \"\"\"After search: select the operation with largest α weight.\"\"\"\n        best_op_idx = self.alpha.argmax().item()\n        return self.ops[best_op_idx]\n\n# DARTS bilevel optimisation\n# Outer loop: update α (architecture) using val loss\n# Inner loop: update w (weights) using train loss\n# Approximate: single-step alternation\nclass DARTSCell(nn.Module):\n    def __init__(self, n_nodes=4, C=16):\n        super().__init__()\n        self.n_nodes = n_nodes\n        # Each node has edges from all previous nodes\n        self.edges = nn.ModuleList([\n            MixedOp(len(OPERATIONS))\n            for _ in range(n_nodes * (n_nodes - 1) // 2)  # edges in a DAG\n        ])\n\n    def forward(self, inputs):\n        states = list(inputs)  # two input nodes\n        edge_idx = 0\n        for i in range(self.n_nodes):\n            s = sum(self.edges[edge_idx + j](states[j]) for j in range(i + 2))\n            states.append(s)\n            edge_idx += i + 2\n        return torch.cat(states[-4:], dim=1)  # concatenate last 4 nodes\n\n# Weight sharing (one-shot NAS):\n# Train a supernet that contains all candidate architectures\n# Each forward pass randomly samples a path (sub-architecture)\n# After training, architecture search over the trained supernet (no retraining needed)\nclass Supernet(nn.Module):\n    def __init__(self):\n        super().__init__()\n        self.cells = nn.ModuleList([DARTSCell() for _ in range(8)])\n\n    def forward(self, x, architecture=None):\n        for i, cell in enumerate(self.cells):\n            op_choices = architecture[i] if architecture else None\n            x = cell(x)  # uses mixed ops or sampled ops\n        return x"
+  },
+  "eli3": [
+    "Neural Architecture Search (NAS) automatically designs neural network architectures instead of having humans manually choose the number of layers, layer types, and connections. It searches over thousands of possible architectures to find the best one for a task.",
+    "Early NAS used reinforcement learning: an RL agent generates architecture descriptions and gets rewarded by the validation accuracy of each proposed network (Zoph & Le, 2017). This was extremely expensive — thousands of GPU-hours. Modern NAS (DARTS) is differentiable: instead of discrete choices, it learns soft weights over all possible operations and optimises everything with gradient descent.",
+    "NAS found architectures like EfficientNet (the basis for many modern vision models) that humans never would have designed manually. The trade-off: NAS is expensive (hours to days of search) but produces highly optimised architectures for specific hardware and tasks."
+  ],
+  "whenWhy": [
+    {
+      "title": "Automated architecture design for specific hardware",
+      "body": "MobileNet and EfficientNet were designed via NAS to optimise accuracy-efficiency tradeoffs for mobile hardware. EfficientNet (Tan & Le, 2019) used NAS to find the base architecture, then neural architecture-level compound scaling. Hardware-aware NAS: include latency/memory as constraints in the search objective. ProxylessNAS, Once-for-All, and FBNet specifically search for architectures with target latency on specific devices (Pixel, iPhone, Jetson). Production NAS: specialise architecture per hardware target."
+    },
+    {
+      "title": "DARTS: differentiable search in hours",
+      "body": "Original RL-based NAS (Zoph & Le, 2017) required ~32,000 GPU-hours to find good architectures. DARTS (Liu et al., 2019) reduced this to ~4 GPU-hours by making architecture search differentiable. The continuous relaxation: replace discrete op choice with a softmax mixture of all operations. Jointly optimise architecture parameters α (on validation set) and weight parameters w (on training set). After search: discretize by taking argmax of α per edge. This bilevel optimisation can be approximated as simple alternating gradient steps."
+    },
+    {
+      "title": "One-shot NAS with weight sharing",
+      "body": "ENAS (Pham et al., 2018) trains a single 'supernet' whose weights are shared across all candidate sub-architectures. During search: sample a random path through the supernet, compute loss, update shared weights. After training: evaluate candidate architectures using shared weights (no retraining). This reduces NAS cost from days to hours by amortising training across all architectures. Once-for-All (Cai et al., 2020) extends this: train one network that can be sliced to any size, then search over sliced architectures without any retraining."
+  ],
+  "deepDiveIntro": [
+    "NAS defines a search space S (set of candidate architectures), a search strategy S (how to explore S), and a performance estimation strategy P (how to evaluate a candidate architecture). RL-based NAS (Zoph & Le, 2017): S is a recurrent controller that samples architectures as sequences; reinforcement: reward = validation accuracy of trained architecture. DARTS (Liu et al., 2019): the cell-based search space is a DAG of N nodes with mixed operations on each edge; α ∈ R^{|O|×E} are architecture parameters. The bilevel problem: min_α L_val(w*(α), α) s.t. w*(α) = argmin_w L_train(w, α). [1]",
+    "DARTS approximation: instead of solving the inner optimisation to convergence (expensive), approximate w*(α) by a single gradient step: w* ≈ w - η∇_w L_train. This gives the first-order DARTS approximation. Second-order DARTS uses the Neumann expansion to compute the cross-derivative ∂²L_train/∂α∂w — more accurate but more expensive. First-order DARTS is the default (Liu et al., 2019). After search: discretize the continuous α to discrete ops by taking argmax, then retrain the discretised architecture from scratch for accurate performance estimation. [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "DARTS Continuous Relaxation",
+      "body": "DARTS cell: a DAG with N=4 intermediate nodes and 2 input nodes. Each edge (i,j) has a mixed operation: ō^{(i,j)}(x) = Σ_{o∈O} softmax(α^{(i,j)}_o) · o(x). The cell output is the concatenation of all intermediate node outputs: concat(Σᵢ ō^{(i,j)}(h_i) for i < j) for each node j. Architecture parameters α have |O|×E dimensions (|O|=number of operations, E=number of edges=N(N+1)/2). After search: on each edge, keep only the top-k operations by α weight. DARTS-found cells achieve ~2.6% error on CIFAR-10 vs 3.4% for human-designed ResNets of similar parameter count. [1]",
+      "formula": "ō^{(i,j)}(x) = Σ_{o∈O} softmax(α^{(i,j)}_o)·o(x)"
+    },
+    {
+      "heading": "Search Spaces: Cell-Based vs Macro",
+      "body": "Cell-based search (DARTS, ENAS, NASNet): search for a small computational cell that is tiled/stacked N times to form the full network. This dramatically reduces the search space (search over the cell, not the full network). Macro search (original RL-NAS): search over the full layer sequence. Cell-based search assumes the optimal macro architecture (stacking identical cells) is a fixed design choice — this limits flexibility but dramatically reduces search cost. EfficientNet uses NAS for the base architecture (macro) and then compound scaling (width, depth, resolution) to scale it — combining both approaches. [1]"
+    },
+    {
+      "heading": "One-Shot NAS and Supernet Training",
+      "body": "Supernet: a single model that contains all candidate architectures as sub-graphs. Training: at each forward pass, sample a random architecture (sub-graph of the supernet), forward through it, backpropagate. Shared weights: all sub-architectures share the same weight tensors — training one sub-architecture implicitly trains weights used by all architectures sharing those parameters. Evaluation: given a candidate architecture, run it through the supernet (shared weights) and measure validation accuracy — no retraining needed. Weight sharing assumption: the ranking of architectures by their shared-weight accuracy approximates ranking by fully-trained accuracy. This assumption can fail (Sciuto et al., 2020) — supernet accuracy correlates but doesn't perfectly predict fully-trained accuracy. [1]"
+    }
+  ],
+  "youtubeLabel": "Neural Architecture Search — DARTS and One-Shot NAS",
+  "youtubeUrl": "https://www.youtube.com/embed/wL-p5cjDG64",
+  "takeaways": [
+    "DARTS: continuous relaxation ō=Σ softmax(α)·o(x) — joint gradient optimisation of α and w. [1]",
+    "Bilevel: min_α L_val(w*(α),α) — α on val, w on train; approximate with alternating steps. [1]",
+    "Cell-based search: find one cell design, stack N times — 1000× fewer search dimensions than macro. [1]",
+    "One-shot NAS: supernet shares weights across architectures — search without retraining. [1]",
+    "EfficientNet: NAS-found base + compound scaling (width, depth, resolution jointly). [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why does the DARTS-discretised architecture sometimes underperform the continuous architecture during search?",
+      "a": "The DARTS discretization gap: during search, each edge uses a weighted sum of all operations (mixed op). After discretization, each edge uses only one operation. The gap occurs because: (1) Operations that are individually weak but positively interact with other mixed ops appear better during search than when isolated. (2) Skip connections (identity) tend to dominate α weights during search because they pass gradients freely, making the network shallow. After discretization, many edges become skip connections → architecture collapses. Fix: DARTS+ adds a regularisation term that penalises the dominance of skip connections during search. P-DARTS progressively increases the proportion of skip connections during search to match the target count. (3) Performance collapse: DARTS can find architectures that look good on validation during search but have poor final performance — gap between search and evaluation proxy. Mitigating: use the test dataset performance (with full training) as the true evaluation, not the search-phase validation performance."
+    },
+    {
+      "q": "How do you design a NAS search space for transformers?",
+      "a": "Transformer NAS search spaces typically include: (1) Number of attention heads (1, 2, 4, 8, 12, 16). (2) Hidden dimension (128, 256, 512, 1024). (3) FFN expansion ratio (1×, 2×, 4×, 8×). (4) Number of layers. (5) Attention type (full, local window, sparse). (6) Per-layer choices: some layers may use different configurations. AutoFormer, HAT (Hardware-Aware Transformer), and Once-for-All-Transformer use this approach. Constraint-aware search: specify target FLOPs or latency, and only evaluate architectures within the constraint. The key challenge: transformer search spaces are structured (all layers must have compatible dimensions for residual connections) — conditional search space design is essential."
+    }
+  ],
+  "sources": [
+    { "label": "Liu, Simonyan & Yang (2019) — DARTS: Differentiable Architecture Search, ICLR 2019 arXiv:1806.09055", "url": "https://arxiv.org/abs/1806.09055" },
+    { "label": "Zoph & Le (2017) — Neural Architecture Search with Reinforcement Learning, ICLR 2017 arXiv:1611.01578", "url": "https://arxiv.org/abs/1611.01578" }
+  ]
+}

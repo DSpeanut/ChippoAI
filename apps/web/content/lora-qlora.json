@@ -1,0 +1,72 @@
+{
+  "visualizationType": "architecture-diagram",
+  "codeSnapshot": {
+    "label": "lora_qlora.py",
+    "code": "# LoRA (Hu et al., 2022) + QLoRA (Dettmers et al., 2023)\nimport torch\nfrom peft import LoraConfig, get_peft_model, TaskType, prepare_model_for_kbit_training\nfrom transformers import AutoModelForCausalLM, BitsAndBytesConfig\n\n# ---- LoRA ----\n# ΔW = BA where B ∈ R^{d×r}, A ∈ R^{r×k}, rank r ≪ min(d, k)\n# h = W₀x + (α/r)·BAx\n# Init: A ~ N(0, σ²), B = 0  →  ΔW = 0 at start\n\nlora_config = LoraConfig(\n    task_type=TaskType.CAUSAL_LM,\n    r=16,                  # rank — 4 to 64; lower r = fewer params\n    lora_alpha=32,         # α scaling factor; effective lr multiplier = α/r = 2.0\n    lora_dropout=0.05,\n    target_modules=[       # which weight matrices to adapt\n        'q_proj', 'k_proj', 'v_proj', 'o_proj',   # attention\n        'gate_proj', 'up_proj', 'down_proj',        # MLP\n    ],\n    bias='none',           # don't train biases (they're tiny)\n)\n\n# Standard LoRA on full-precision model\nmodel = AutoModelForCausalLM.from_pretrained(\n    'meta-llama/Llama-2-7b-hf',\n    torch_dtype=torch.bfloat16,\n    device_map='auto',\n)\nmodel = get_peft_model(model, lora_config)\nmodel.print_trainable_parameters()\n# → trainable params: 83,886,080 || all params: 6,771,970,048 || trainable%: 1.24\n\n# ---- QLoRA ----\n# Base model in 4-bit NF4 (Normal Float 4, optimal for Gaussian weights)\n# Adapters (B, A) in BF16\n# Double quantization: also quantize the quantization constants\n\nquantization_config = BitsAndBytesConfig(\n    load_in_4bit=True,\n    bnb_4bit_compute_dtype=torch.bfloat16,   # computation in BF16\n    bnb_4bit_quant_type='nf4',               # NF4 quantization\n    bnb_4bit_use_double_quant=True,          # double quantization\n)\n\nmodel_4bit = AutoModelForCausalLM.from_pretrained(\n    'meta-llama/Llama-2-7b-hf',\n    quantization_config=quantization_config,\n    device_map='auto',\n)\n# Prepare model: cast LayerNorm to FP32, enable gradient checkpointing\nmodel_4bit = prepare_model_for_kbit_training(model_4bit)\nmodel_4bit = get_peft_model(model_4bit, lora_config)\n# Memory: 7B in NF4 ≈ 3.5 GB (weights) + 1.0 GB (adapters) ≈ 4.5 GB active GPU\n# vs 7B in BF16: 14 GB — QLoRA is ~3x more memory efficient"
+  },
+  "eli3": [
+    "LoRA (Low-Rank Adaptation) is a technique for fine-tuning large language models cheaply. Instead of updating all billions of weights in a model, LoRA adds tiny 'adapter' matrices to specific layers and only trains those. The base model stays frozen — you're only learning a small correction.",
+    "Think of it like attaching a thin overlay to a painting instead of repainting the whole canvas. The overlay captures what needs to change, while the original painting stays intact. LoRA adapters for a 7B model can be as small as 50–100MB, making them easy to share and swap.",
+    "QLoRA takes this further: it compresses the frozen base model to 4-bit precision (taking 4× less memory), while keeping the adapters in full precision for accurate gradient computation. This makes fine-tuning a 65B model feasible on a single 48GB GPU — something that previously required 8× 80GB GPUs."
+  ],
+  "whenWhy": [
+    {
+      "title": "Fine-tuning large models on limited hardware",
+      "body": "Full fine-tuning of a 7B LLM in BF16 requires ~120GB GPU memory (model + optimizer states + gradients). LoRA with r=16 trains only ~1% of parameters, reducing optimizer states and gradients proportionally: ~20GB for 7B LoRA. QLoRA further reduces this to ~6GB for 7B (NF4 base + BF16 adapters + paged optimizer), making 7B fine-tuning feasible on a single 8GB consumer GPU. QLoRA enabled the open-source LLM fine-tuning boom (WizardLM, OpenHermes, Orca-2 all used QLoRA)."
+    },
+    {
+      "title": "Task-specific adapters without catastrophic forgetting",
+      "body": "LoRA preserves the original model weights (W₀ never changes) — the adaptation is entirely in ΔW = BA. This means: (1) No catastrophic forgetting of pre-training knowledge; (2) Multiple LoRA adapters can be trained for different tasks and swapped at inference time without reloading the base model (LoRA Hub); (3) The base model + many task adapters pattern is emerging as the standard for multi-task LLM deployment. vLLM and SGLang support LoRA adapter hot-swapping for efficient multi-tenant serving."
+    },
+    {
+      "title": "Nearly matching full fine-tune quality at 1/100th the cost",
+      "body": "Hu et al. (2022) showed LoRA with r=4 matches full fine-tune on GPT-3 on commonsense reasoning and NLU tasks. Dettmers et al. (2023) showed QLoRA (4-bit base + BF16 adapters) matches full BF16 fine-tune on Vicuna benchmark across model sizes (7B, 13B, 33B, 65B). The quality ceiling: LoRA may underperform full fine-tune on tasks requiring extensive weight changes (e.g., learning a new language), but for instruction tuning and task adaptation it is consistently competitive."
+    }
+  ],
+  "deepDiveIntro": [
+    "LoRA (Hu et al., 2022) decomposes the weight update ΔW ∈ R^{d×k} as a product of two low-rank matrices: ΔW = BA where B ∈ R^{d×r} and A ∈ R^{r×k}, rank r ≪ min(d, k). The forward pass becomes: h = W₀x + ΔWx = W₀x + (α/r)·BAx where α is a scalar hyperparameter. Initialization: A ~ N(0, σ²), B = 0, so ΔW = 0 at the start of training. Only A and B are trained (W₀ is frozen). Parameter count: d×r + r×k vs d×k — e.g., for d=4096, k=4096, r=16: 131,072 vs 16,777,216 (0.78% of original). [1]",
+    "QLoRA (Dettmers et al., 2023) introduces three innovations: (1) NF4 (Normal Float 4) quantization — an information-theoretically optimal 4-bit data type for normally distributed weights; (2) Double quantization — quantizing the quantization constants (second-level quantization saves 0.37 bits/parameter); (3) Paged optimizers — using NVIDIA unified memory to page optimizer states between GPU and CPU RAM, preventing OOM during memory spikes. These together allow 65B model fine-tuning on a single 48GB A100, vs 320GB BF16 baseline (6.7× reduction). [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "LoRA Forward Pass and Rank Selection",
+      "body": "The modified forward pass: h = W₀x + (α/r)·BAx. The α/r scaling: α controls the relative weight of the LoRA update vs the pre-trained weights. Standard setting: α = 2r (so α/r = 2). Lower rank r: fewer parameters, less expressive, less risk of overfitting. Typical r values: 4 (minimal), 8–16 (standard), 32–64 (higher capacity for complex tasks). Target modules: apply LoRA to attention projections (q_proj, k_proj, v_proj, o_proj) and optionally MLP layers (gate_proj, up_proj, down_proj). Applying to all linear layers (full LoRA) typically outperforms attention-only LoRA but doubles parameters. [1]",
+      "formula": "h = W₀x + (α/r)·BAx,  B ∈ R^{d×r},  A ∈ R^{r×k}"
+    },
+    {
+      "heading": "NF4 Quantization (QLoRA)",
+      "body": "Standard 4-bit quantization: scale the weight range to [-8, 7] (16 values). Problem: pre-trained model weights follow a roughly normal distribution — uniform quantization wastes bits in the tails. NF4 (Normal Float 4): assign quantization levels based on the quantiles of a standard normal distribution. Each level corresponds to equal probability mass. This minimises quantization error for normally distributed weights — information-theoretically optimal for weights drawn from N(0, σ²). In practice: NF4 matches INT8 quality at 4 bits, enabling near-lossless 4× compression. [2]"
+    },
+    {
+      "heading": "Memory Analysis: LoRA vs QLoRA vs Full FT",
+      "body": "| Method | 7B Model Memory | 65B Model Memory |\n|---|---|---|\n| Full FT (BF16) | ~120GB | ~780GB |\n| LoRA (BF16 base) | ~20GB | ~140GB |\n| QLoRA (NF4 base) | ~6GB | ~48GB |\n7B Full FT breakdown: 14GB weights + 56GB Adam states + 28GB gradients + 14GB activations ≈ 112GB. QLoRA 7B: 3.5GB NF4 weights + 1GB adapters (BF16) + 1GB Adam for adapters = ~5.5GB. Paged optimizers handle memory spikes during backward pass. [2]"
+    },
+    {
+      "heading": "LoRA Merging and Serving",
+      "body": "At inference: LoRA can be merged back into the base model: W_merged = W₀ + (α/r)·BA. This adds zero inference overhead vs the base model. Alternatively, keep adapter separate for hot-swapping: compute (α/r)·BAx separately and add to W₀x. LoRA Hub: community-trained adapters shared on HuggingFace. At serving time: vLLM loads one base model and multiple LoRA adapters, routing requests to the appropriate adapter. This amortises base model cost across many fine-tuned variants — a key efficiency advantage for production multi-task LLM deployment. [1]"
+    }
+  ],
+  "youtubeLabel": "LoRA and QLoRA: Efficient LLM Fine-Tuning Explained",
+  "youtubeUrl": "https://www.youtube.com/embed/YVU5wAA6Txo",
+  "takeaways": [
+    "LoRA: ΔW=BA (rank-r decomposition), only A and B trained — ~1% of original parameters. [1]",
+    "h = W₀x + (α/r)·BAx; initialize B=0 so ΔW=0 at start; α=2r is standard. [1]",
+    "QLoRA: NF4 4-bit base + BF16 adapters + double quantization → 65B fine-tune on 48GB GPU. [2]",
+    "LoRA nearly matches full fine-tune quality at 1/100th parameters for instruction tuning tasks. [1]",
+    "Adapters can be merged (zero inference cost) or hot-swapped for multi-task serving. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "When does LoRA fail to match full fine-tuning?",
+      "a": "LoRA underperforms full fine-tuning in several scenarios: (1) Large distribution shift: if the target task is very different from pre-training (e.g., fine-tuning an English model for Chinese), the low-rank constraint limits how much the model can change. Full fine-tuning can update any weight freely; LoRA is limited to rank-r changes. (2) Very large rank: at r = min(d,k), LoRA equals full fine-tuning but loses its efficiency. (3) Long sequence tasks requiring attention pattern changes in many layers: LoRA applied only to attention matrices may miss MLP changes needed for long-context tasks. Mitigations: increase r, apply LoRA to all linear layers (including MLP), or use full fine-tuning for the critical layers and LoRA for others."
+    },
+    {
+      "q": "How do you choose rank r and which layers to apply LoRA to?",
+      "a": "Rank selection: r=8 is a safe default for instruction tuning. r=16–32 for complex tasks (domain-specific fine-tuning, style transfer). r=4 for efficiency-critical deployments (matches full FT on many tasks). r is usually tuned via validation loss. Layer selection: the original LoRA paper (Hu et al.) applied only to attention weights (q, v) and found this sufficient. Empirically: applying to all linear layers (q, k, v, o, gate, up, down) consistently outperforms attention-only LoRA by 1–3 perplexity points. Ablations in Dettmers et al. (2023) show 'all linear layers' is the recommended default for QLoRA. Bias terms are typically excluded (tiny size, minimal impact)."
+    }
+  ],
+  "sources": [
+    { "label": "Hu et al. (2022) — LoRA: Low-Rank Adaptation of Large Language Models arXiv:2106.09685", "url": "https://arxiv.org/abs/2106.09685" },
+    { "label": "Dettmers et al. (2023) — QLoRA: Efficient Finetuning of Quantized LLMs arXiv:2305.14314", "url": "https://arxiv.org/abs/2305.14314" }
+  ]
+}

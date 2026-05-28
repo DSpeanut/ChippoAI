@@ -1,0 +1,67 @@
+{
+  "visualizationType": "training-curve",
+  "codeSnapshot": {
+    "label": "train_val_test_split.py",
+    "code": "import numpy as np\nfrom sklearn.model_selection import train_test_split, StratifiedShuffleSplit\n\n# Standard random split — 70/15/15\nX, y = np.random.randn(10000, 20), np.random.randint(0, 2, 10000)\n\n# Step 1: carve off test set first (never touch again until final eval)\nX_trainval, X_test, y_trainval, y_test = train_test_split(\n    X, y, test_size=0.15, random_state=42, stratify=y  # stratify preserves class ratio\n)\n# Step 2: split remaining 85% into train / val\nX_train, X_val, y_train, y_val = train_test_split(\n    X_trainval, y_trainval, test_size=0.15/0.85,  # 15% of original\n    random_state=42, stratify=y_trainval\n)\nprint(f'Train: {len(X_train)}, Val: {len(X_val)}, Test: {len(X_test)}')\n# → Train: 7000, Val: 1500, Test: 1500\n\n# Stratified split (sklearn StratifiedShuffleSplit)\n# Ensures each split has the same class distribution as the full dataset\nsss = StratifiedShuffleSplit(n_splits=1, test_size=0.15, random_state=42)\nfor train_idx, test_idx in sss.split(X, y):\n    X_train_strat, X_test_strat = X[train_idx], X[test_idx]\n    y_train_strat, y_test_strat = y[train_idx], y[test_idx]\n\n# Temporal split for time series — never use random split for time series!\n# Must split chronologically to avoid lookahead bias\nimport pandas as pd\ndf = pd.DataFrame({'date': pd.date_range('2020-01-01', periods=10000, freq='h'),\n                   'value': np.random.randn(10000)})\ndf = df.sort_values('date')\ntrain_end = int(0.70 * len(df))\nval_end   = int(0.85 * len(df))\ndf_train  = df.iloc[:train_end]\ndf_val    = df.iloc[train_end:val_end]\ndf_test   = df.iloc[val_end:]\nprint(f'Temporal split — Train: {len(df_train)}, Val: {len(df_val)}, Test: {len(df_test)}')"
+  },
+  "eli3": [
+    "Before training a model, you split your data into three groups: training data (to fit the model), validation data (to tune the model's settings), and test data (to get a fair final score). The test set is locked away and only used once — at the very end.",
+    "Without this split, you'd be like a student who studies the exam questions directly — you'd get a perfect score but you wouldn't have actually learned anything. The test set simulates new, unseen data and tells you how your model will perform in the real world.",
+    "The most important rule: never let the test set influence any training decision. If you use the test set to choose your model or tune hyperparameters, your final accuracy estimate will be optimistically wrong — a common mistake called data leakage."
+  ],
+  "whenWhy": [
+    {
+      "title": "Unbiased performance estimation",
+      "body": "The train set fits the model. The validation set guides hyperparameter search and model selection. The test set provides a final unbiased estimate of generalisation performance. Without a separate test set, all performance estimates are optimistic because the model (or hyperparameters) were chosen to perform well on that data. Goodfellow et al. (2016) emphasise this as the fundamental protocol: 'Never use information from the test set to make choices about the model or hyperparameters.' Common ratios: 70/15/15 (smaller datasets), 98/1/1 (large datasets where 1% is plenty for evaluation)."
+    },
+    {
+      "title": "Stratified splits for imbalanced classification",
+      "body": "Random splits can leave certain classes under-represented in one split by chance (especially for rare classes with <5% prevalence). Stratified splitting ensures each split has the same class proportion as the full dataset. sklearn.StratifiedShuffleSplit or train_test_split(stratify=y) handles this automatically. Critical for medical datasets (rare disease prevalence 1%) or fraud detection (fraud rate 0.1%) where a non-stratified test set might not contain any rare class examples."
+    },
+    {
+      "title": "Temporal splits for time-series data",
+      "body": "For time-series data (stock prices, sensor readings, user activity logs), random splits cause data leakage: training on data from after the test period (lookahead bias). The model appears to predict the future but has actually seen it. Always use chronological splits: train on t<T_train, validate on T_train≤t<T_val, test on t≥T_val. Walk-forward validation (expanding or sliding window) is the time-series equivalent of cross-validation."
+    }
+  ],
+  "deepDiveIntro": [
+    "The three-way split formalises the machine learning workflow: (1) Training set: minimise L(θ; D_train) w.r.t. θ. (2) Validation set: choose hyperparameters λ that minimise L(θ*(λ); D_val). (3) Test set: report L(θ*(λ*); D_test) as the final generalisation estimate. The validation and test errors are estimates of the expected loss on new data from the same distribution. The test error is unbiased only if the test set is used exactly once — each additional look inflates the estimate via implicit multiple testing. Hastie et al. (ESL, Chapter 7): 'Using the test set to choose the model is as bad as using the training set.' [1]",
+    "For small datasets where a 15% test set might have high variance, k-fold cross-validation is preferred over a single train/val split. But even with cross-validation, a held-out test set should still be kept for final evaluation — cross-validation is used for model selection, not final performance reporting. The two-stage protocol: use CV to select the model, train on all non-test data, evaluate once on the test set. [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Split Ratios and Dataset Size",
+      "body": "The right split ratio depends on dataset size. For n=1000: 60/20/20 — the val and test sets each need ~200 examples for meaningful estimates. For n=100K: 80/10/10. For n=10M: 98/1/1 — 100K examples per set is more than enough. The key: test set needs enough examples to estimate the metric with low variance. For a 5% error rate with ±0.5% precision, you need ~n=7600 test examples (by Wilson confidence interval for proportions). For regression: variance of RMSE estimate decreases as 1/√n. [1]"
+    },
+    {
+      "heading": "Data Leakage",
+      "body": "Data leakage: any information from the test set (or future data) flowing into the training process. Types: (1) Target leakage — a feature derived from the label is included in training features. (2) Train-test contamination — test examples appear in the training set (e.g., deduplication not performed). (3) Preprocessing leakage — fit a scaler on all data including test, then evaluate on test (inflates performance). Prevention: always fit preprocessing (scalers, PCA, imputers) on training data only, transform val/test using the training statistics. sklearn Pipeline enforces this: fit_transform on train, transform on val/test. [1]"
+    },
+    {
+      "heading": "Walk-Forward Validation for Time Series",
+      "body": "Time series cross-validation: expanding window — train on t₁..tₖ, evaluate on tₖ₊₁; then train on t₁..tₖ₊₁, evaluate on tₖ₊₂; etc. Sliding window — fix training window size, advance the entire window forward each fold. Both prevent lookahead bias. Gap between train end and val start: important for features that use future data (e.g., exponential moving averages that mix past and future). sklearn TimeSeriesSplit implements expanding-window CV with configurable gap parameter. [1]"
+    }
+  ],
+  "youtubeLabel": "Train, Validation, Test Split — Why and How",
+  "youtubeUrl": "https://www.youtube.com/embed/dSCFk168vmo",
+  "takeaways": [
+    "Train: fit model; Val: tune hyperparameters; Test: final unbiased estimate — never touch test until the end. [1]",
+    "Ratios depend on dataset size: 70/15/15 (small), 80/10/10 (medium), 98/1/1 (large). [1]",
+    "Stratified split: preserves class distribution in each set — essential for imbalanced datasets. [1]",
+    "Temporal split for time-series: always chronological — random splits cause lookahead bias. [1]",
+    "Preprocessing leakage: fit scalers/imputers on train only, transform val/test with training statistics. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "What is the 'test set contamination' problem in LLM benchmark evaluation?",
+      "a": "LLMs are pre-trained on massive internet corpora that may include benchmark test sets (MMLU, HellaSwag, HumanEval). If the model saw the test questions during pre-training, benchmark scores overestimate true generalisation — a form of train-test contamination at the pre-training stage. Detection: compare model accuracy on questions known to be in the training corpus vs. a held-out set. Mitigation: hold out new benchmarks created after the model's training cutoff (e.g., ARC-Challenge-2024). OpenAI and Google routinely test for contamination by checking n-gram overlap between training data and benchmarks. This is a fundamental challenge for honest LLM evaluation."
+    },
+    {
+      "q": "How does the validation set become 'contaminated' through hyperparameter search?",
+      "a": "If you run hundreds of hyperparameter configurations and select the one with the best validation error, the validation error becomes an optimistic estimate of generalisation — you've implicitly fit the hyperparameters to the validation set. This is sometimes called 'validation set overfitting' or 'hyperparameter overfitting.' Quantitatively: with k independent configurations tested, the expected minimum validation error is E[min(ε₁,...,εₖ)] < true_error. Solutions: (1) Nested cross-validation (outer loop for test estimate, inner loop for hyperparameter search). (2) Hold out a separate 'meta-test' set after hyperparameter search. (3) Use Bayesian optimisation which is more sample-efficient, reducing the number of configurations tried."
+    }
+  ],
+  "sources": [
+    { "label": "Goodfellow, Bengio & Courville (2016) — Deep Learning, Chapter 5 & 11 (MIT Press)", "url": "https://www.deeplearningbook.org/" },
+    { "label": "Hastie, Tibshirani & Friedman (2009) — The Elements of Statistical Learning, Chapter 7 (Springer)", "url": "https://hastie.su.domains/ElemStatLearn/" }
+  ]
+}

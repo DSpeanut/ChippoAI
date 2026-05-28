@@ -1,0 +1,71 @@
+{
+  "visualizationType": "training-curve",
+  "codeSnapshot": {
+    "label": "dpo.py",
+    "code": "import torch\nimport torch.nn as nn\nimport torch.nn.functional as F\nfrom transformers import AutoModelForCausalLM, AutoTokenizer\n\n# DPO Loss (Rafailov et al., 2023)\ndef dpo_loss(policy_chosen_logprobs, policy_rejected_logprobs,\n            ref_chosen_logprobs, ref_rejected_logprobs, beta=0.1):\n    \"\"\"\n    policy_chosen_logprobs:   log π_θ(y_w | x) summed over response tokens\n    policy_rejected_logprobs: log π_θ(y_l | x)\n    ref_chosen_logprobs:      log π_ref(y_w | x)  [frozen reference]\n    ref_rejected_logprobs:    log π_ref(y_l | x)\n    beta: KL penalty coefficient\n    \"\"\"\n    # Log-ratio: policy / reference for each response\n    chosen_ratio  = policy_chosen_logprobs  - ref_chosen_logprobs\n    rejected_ratio = policy_rejected_logprobs - ref_rejected_logprobs\n\n    # DPO loss: -log σ(β*(chosen_ratio - rejected_ratio))\n    logits = beta * (chosen_ratio - rejected_ratio)\n    loss = -F.logsigmoid(logits).mean()\n    return loss\n\n# Compute log-probabilities for a sequence\ndef compute_logprobs(model, input_ids, labels):\n    \"\"\"labels: response token positions; -100 for masked positions.\"\"\"\n    with torch.no_grad():\n        logits = model(input_ids).logits  # (B, T, V)\n    # Shift: logits[t] predicts token[t+1]\n    shift_logits = logits[:, :-1, :]      # (B, T-1, V)\n    shift_labels = labels[:, 1:]          # (B, T-1)\n    log_probs = F.log_softmax(shift_logits, dim=-1)  # (B, T-1, V)\n    # Gather log-probs of actual response tokens\n    token_log_probs = log_probs.gather(\n        2, shift_labels.unsqueeze(-1)).squeeze(-1)  # (B, T-1)\n    # Sum over response tokens (mask -100 positions)\n    mask = (shift_labels != -100)\n    return (token_log_probs * mask).sum(dim=1)  # (B,)\n\n# Training loop\nmodel_name = 'meta-llama/Llama-2-7b-sft'\npolicy_model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16)\nref_model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16)\nref_model.eval()  # frozen\nfor p in ref_model.parameters():\n    p.requires_grad_(False)\n\nbeta = 0.1\noptimizer = torch.optim.AdamW(policy_model.parameters(), lr=5e-7)"
+  },
+  "eli3": [
+    "DPO (Direct Preference Optimisation) achieves the same goal as RLHF — making the model prefer human-preferred responses — but without training a separate reward model or using reinforcement learning. It's a clever mathematical trick that collapses the RLHF pipeline into a single supervised training step.",
+    "The key insight: the optimal RLHF policy can be expressed analytically. Instead of first training a reward model and then using RL to optimise the policy, DPO directly optimises the policy on the preference data. The reward model is implicitly encoded in the policy-to-reference ratio.",
+    "DPO is much simpler than RLHF: no PPO, no reward model, no value model. Just a policy model and a frozen reference model. Training cost is 2× model memory instead of 4×. It's now the most common alignment method for open-source LLMs."
+  ],
+  "whenWhy": [
+    {
+      "title": "Simpler alignment than RLHF with comparable results",
+      "body": "DPO (Rafailov et al., 2023) showed that on TL;DR summarisation, DPO achieves win rates comparable to PPO-based RLHF with significantly simpler implementation. TRL (HuggingFace) provides a DPOTrainer that handles the full DPO pipeline in ~50 lines. Most open-source LLMs (Zephyr, OpenHermes, WizardLM 2) now use DPO instead of PPO."
+    },
+    {
+      "title": "Efficient alignment with limited compute",
+      "body": "DPO requires only 2 model copies (policy + frozen reference) vs 4 for PPO RLHF (policy + reference + reward model + value model). A 7B DPO run needs ~28GB GPU memory (bf16) vs ~112GB for 7B PPO. This makes DPO feasible on 2–4 consumer GPUs, democratising alignment training for the open-source community."
+    },
+    {
+      "title": "SimPO, IPO, and beyond: DPO variants",
+      "body": "DPO has spawned many variants: IPO (f-divergence generalisation, avoids overfitting), ORPO (ratio-based without reference model), SimPO (simplified target, no reference model, better performance). The DPO family has largely replaced PPO for community-scale alignment. PPO is still used at frontier labs (OpenAI, Anthropic) where the additional cost of RL is justifiable for quality gains."
+    }
+  ],
+  "deepDiveIntro": [
+    "DPO derivation (Rafailov et al., 2023): the RLHF objective max_π E[r(x,y)] − β·KL(π||π_ref) has a closed-form optimal solution: π*(y|x) = π_ref(y|x)·exp(r(x,y)/β) / Z(x). Taking the log: log(π*/π_ref) = r/β − log Z. So r(x,y) = β·log(π*(y|x)/π_ref(y|x)) + β·log Z(x). The Bradley-Terry reward model loss becomes (after substituting this expression): L_DPO = −E[log σ(β·log(π_θ(y_w|x)/π_ref(y_w|x)) − β·log(π_θ(y_l|x)/π_ref(y_l|x)))]. This is trained directly on preference pairs without ever computing an explicit reward. [1]",
+    "The DPO loss function is: L_DPO(π_θ;π_ref) = −E_{(x,y_w,y_l)~D}[log σ(β·log[π_θ(y_w|x)/π_ref(y_w|x)] − β·log[π_θ(y_l|x)/π_ref(y_l|x)])]. Each term inside σ is the KL contribution of the response from the reference policy. The loss increases π_θ(y_w)/π_ref(y_w) and decreases π_θ(y_l)/π_ref(y_l) simultaneously. [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "DPO Loss Formula",
+      "body": "L_DPO = −E[log σ(β·(log π_θ(y_w|x) − log π_ref(y_w|x)) − β·(log π_θ(y_l|x) − log π_ref(y_l|x)))]. Simplify: let h_w = log[π_θ(y_w|x)/π_ref(y_w|x)] and h_l = log[π_θ(y_l|x)/π_ref(y_l|x)]. Then L = −E[log σ(β(h_w − h_l))]. The gradient: ∂L/∂θ = −β·E[σ(β(h_l−h_w))·(∇θ log π_θ(y_w|x) − ∇θ log π_θ(y_l|x))]. The coefficient σ(β(h_l−h_w)) upweights hard examples (cases where the model assigns similar probability to chosen and rejected). [1]",
+      "formula": "L_DPO = −E[log σ(β·log[π_θ(y_w|x)/π_ref(y_w|x)] − β·log[π_θ(y_l|x)/π_ref(y_l|x)])]"
+    },
+    {
+      "heading": "β Coefficient",
+      "body": "β controls the KL penalty strength. Large β: policy stays close to π_ref (conservative). Small β: policy can deviate far from reference (aggressive). Typical: β=0.1 (Zephyr, OpenHermes). β=0.01 is used when DPO tends to overfit (policy diverges too far from reference). β=0.5 for conservative alignment. The optimal β is task-dependent — tune on a validation set measuring both reward improvement and reference KL. If chosen_ratio ≈ rejected_ratio (model can't distinguish), increase β to force separation. [1]"
+    },
+    {
+      "heading": "Data Requirements",
+      "body": "DPO requires (prompt, chosen, rejected) triplets. Standard datasets: Anthropic HH-RLHF (161K pairs), UltraFeedback (64K pairs, GPT-4 scored), OpenAI TL;DR comparisons. Data quality: rejected responses should be genuinely bad (not just slightly worse). Large gap between chosen and rejected → stronger learning signal. Synthetic data: generate multiple responses from the model, use a stronger model to rank → 'self-improvement' DPO loop. Ultra-filtered datasets (argilla/distilabel) with GPT-4 judge scores consistently produce better DPO models than human-labelled data. [1]"
+    },
+    {
+      "heading": "DPO vs RLHF: Differences",
+      "body": "| Aspect | RLHF (PPO) | DPO |\n|---|---|---|\n| Reward model | Explicit (trained separately) | Implicit (encoded in π_θ/π_ref) |\n| Training | RL (PPO loop, slow) | Supervised (like SFT) |\n| Memory | 4× model | 2× model |\n| Stability | Sensitive to KL coeff | More stable |\n| Quality ceiling | Higher (explicit reward) | Slightly lower |\nPPO is preferred when: you have a strong reward model, need precise control over KL budget, or are training at frontier scale. DPO is preferred when: you want simplicity, lower compute, and acceptable quality for most tasks. [1]"
+    }
+  ],
+  "youtubeLabel": "DPO: Direct Preference Optimization Explained",
+  "youtubeUrl": "https://www.youtube.com/embed/bZQun8Y4L2A",
+  "takeaways": [
+    "L_DPO = −E[log σ(β·(h_w−h_l))] where h = log(π_θ/π_ref) for each response. [1]",
+    "No reward model or RL — directly trains policy on preference pairs. [1]",
+    "β=0.1 standard; higher β → stay closer to reference; lower β → more aggressive. [1]",
+    "2× model memory vs 4× for PPO RLHF — much more compute-efficient. [1]",
+    "Now the default alignment method for open-source LLMs (Zephyr, WizardLM 2). [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "What is the 'chosen drift' problem in DPO and how is it addressed?",
+      "a": "DPO can decrease log π_θ(y_w|x) (the chosen probability) while still satisfying the loss if it decreases log π_θ(y_l|x) even more. The loss only cares about the ratio h_w − h_l being positive — both can decrease as long as y_l decreases faster. This 'forgetting' of the chosen response is called chosen drift. Empirically: DPO models sometimes produce worse outputs than the SFT baseline on some prompts. Fixes: (1) SFT loss on chosen responses added to DPO loss (ORPO); (2) Reference-free DPO (SimPO) with length-normalised log-probs and a margin γ; (3) IPO (Identity Preference Optimisation) regularises more strongly."
+    },
+    {
+      "q": "How does DPO handle ties and near-ties in preference data?",
+      "a": "In Bradley-Terry preference data, ties (human says 'both are equal') are common. Standard DPO treats all (chosen, rejected) pairs as strict preference — if the pair is actually a tie, it provides noisy gradient signal that can hurt training. Solutions: (1) Filter out ties from training data. (2) Use soft labels: instead of log σ(β(h_w−h_l)), use p_human·log σ(·) + (1−p_human)·log σ(−·) where p_human is the human preference probability (0.5 for a tie). (3) Use preference confidence as a weighting factor — high-confidence (9/10 annotators agree) pairs get more weight."
+    }
+  ],
+  "sources": [
+    { "label": "Rafailov et al. (2023) — Direct Preference Optimization: Your Language Model is Secretly a Reward Model arXiv:2305.18290", "url": "https://arxiv.org/abs/2305.18290" }
+  ]
+}

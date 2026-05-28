@@ -1,0 +1,72 @@
+{
+  "visualizationType": "training-curve",
+  "codeSnapshot": {
+    "label": "data_augmentation.py",
+    "code": "import torch\nimport torchvision.transforms as T\nfrom torchvision.transforms import v2 as T2  # modern API\nimport numpy as np\n\n# Standard image augmentation pipeline (ImageNet training)\ntrain_transform = T.Compose([\n    T.RandomResizedCrop(224, scale=(0.08, 1.0)),   # crop + scale\n    T.RandomHorizontalFlip(p=0.5),                 # flip\n    T.ColorJitter(brightness=0.4, contrast=0.4,    # colour\n                  saturation=0.4, hue=0.1),\n    T.ToTensor(),\n    T.Normalize(mean=[0.485, 0.456, 0.406],\n                std=[0.229, 0.224, 0.225]),         # ImageNet stats\n])\n\n# MixUp augmentation\ndef mixup(x, y, alpha=0.2):\n    \"\"\"x: (B,C,H,W), y: (B,) class labels\"\"\"\n    lam = np.random.beta(alpha, alpha)\n    idx = torch.randperm(x.size(0))\n    mixed_x = lam * x + (1 - lam) * x[idx]\n    # Mixed labels (soft): return both y and y[idx] with lam\n    return mixed_x, y, y[idx], lam\n\n# CutMix augmentation\ndef cutmix(x, y, alpha=1.0):\n    lam = np.random.beta(alpha, alpha)\n    B, C, H, W = x.shape\n    cut_ratio = np.sqrt(1.0 - lam)\n    cut_h, cut_w = int(H * cut_ratio), int(W * cut_ratio)\n    cx = np.random.randint(W); cy = np.random.randint(H)\n    x1 = np.clip(cx - cut_w // 2, 0, W); x2 = np.clip(cx + cut_w // 2, 0, W)\n    y1 = np.clip(cy - cut_h // 2, 0, H); y2 = np.clip(cy + cut_h // 2, 0, H)\n    idx = torch.randperm(B)\n    mixed_x = x.clone()\n    mixed_x[:, :, y1:y2, x1:x2] = x[idx, :, y1:y2, x1:x2]\n    lam = 1 - (x2 - x1) * (y2 - y1) / (W * H)\n    return mixed_x, y, y[idx], lam\n\n# RandAugment (used in ViT, EfficientNet)\ntrain_transform_rand = T.Compose([\n    T.RandomResizedCrop(224),\n    T.RandAugment(num_ops=2, magnitude=9),  # 2 random aug ops, strength 9\n    T.ToTensor(),\n    T.Normalize([0.485,0.456,0.406],[0.229,0.224,0.225]),\n])"
+  },
+  "eli3": [
+    "Data augmentation creates new training examples by applying random transformations to existing ones. Flip an image horizontally, randomly crop it, change its colours a little — the object is still recognisable, but the model sees it in a slightly different form. This teaches the model to be invariant to these irrelevant changes.",
+    "More training data means better generalisation. When you can't collect more real data, augmentation creates artificial diversity. A model trained on cats at every angle, lighting, and crop is more robust than one trained only on centred, well-lit cats.",
+    "Modern techniques like MixUp and CutMix mix two training examples together — the model must simultaneously recognise both classes in a blended image or predict from a patch-swapped image. These harder, artificial examples prevent overfitting more effectively than simple geometric transforms alone."
+  ],
+  "whenWhy": [
+    {
+      "title": "Image classification training (essential, not optional)",
+      "body": "Without augmentation, ImageNet ResNet-50 achieves ~73% top-1. With standard augmentation (random crop, horizontal flip, color jitter): ~76%. With MixUp + CutMix + RandAugment: ~80%+. Augmentation is the primary tool for preventing overfitting in vision — it often provides more benefit than architecture changes. Every ImageNet training recipe uses it."
+    },
+    {
+      "title": "Limited data regimes (medical imaging, satellite data)",
+      "body": "When datasets have only 100–1000 examples per class, augmentation is critical for survival. Domain-specific augmentations: for medical imaging, elastic deformations and random rotations; for satellite imagery, random flips and colour shifts. Strong augmentation can improve performance by 10–20% on small medical datasets where collecting more data is expensive or impossible."
+    },
+    {
+      "title": "Self-supervised learning (SimCLR, DINO, MAE)",
+      "body": "Self-supervised methods create positive pairs by applying two different random augmentations to the same image — the model must learn representations invariant to these augmentations. SimCLR's augmentation policy (random crop, colour jitter, Gaussian blur, grayscale) was carefully tuned to maximise the quality of learned features. The choice of augmentation directly determines what invariances the model learns."
+    }
+  ],
+  "deepDiveIntro": [
+    "Standard augmentation pipeline: random resized crop (scale 0.08–1.0, ratio 3/4–4/3) + random horizontal flip (p=0.5) + colour jitter + normalisation. These provide invariance to: scale, position (crop), reflection symmetry (flip), illumination (colour jitter). The random crop is the most important single augmentation — it implicitly provides scale and position invariance across all image sizes. [1]",
+    "MixUp (Zhang et al., 2018): x̃ = λxᵢ + (1−λ)xⱼ; ỹ = λyᵢ + (1−λ)yⱼ where λ ~ Beta(α, α), α ∈ (0, 1]. Training with mixed labels forces the model to produce smooth, interpolated predictions — this regularises the decision boundary and improves calibration. MixUp + CutMix together provide complementary benefits: MixUp mixes globally, CutMix mixes locally (patch swap). [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Standard Pipeline: Random Crop + Flip",
+      "body": "RandomResizedCrop(224, scale=(0.08, 1.0)): randomly select a crop region with scale ∈ [0.08, 1.0] of the original image area and aspect ratio ∈ [3/4, 4/3], then resize to 224×224. This creates diverse crops including small-scale crops (close-up details) and large-scale crops (full scene). It is significantly more powerful than simple center cropping — the model sees the same object at many different scales and positions. RandomHorizontalFlip(0.5): applies to symmetric classes (cats, dogs, vehicles). Never apply vertical flip without domain knowledge. [1]"
+    },
+    {
+      "heading": "MixUp and CutMix",
+      "body": "MixUp: x̃ = λxᵢ + (1−λ)xⱼ; ỹ = λeᵢ + (1−λ)eⱼ (one-hot vectors). Loss = λ·CE(ŷ, yᵢ) + (1−λ)·CE(ŷ, yⱼ). CutMix: paste a rectangular region from xⱼ onto xᵢ; proportion of replaced area = 1−λ. Labels: ỹ = λyᵢ + (1−λ)yⱼ (same mixing ratio). CutMix trains the model on local features — even a patch is sufficient for classification. Both use Beta(α,1) with α=0.2–1.0. DeiT training: α=0.8 for MixUp, α=1.0 for CutMix, with 50% probability of each. [2]",
+      "formula": "MixUp: x̃ = λxᵢ+(1−λ)xⱼ, ỹ = λyᵢ+(1−λ)yⱼ, λ∼Beta(α,α)"
+    },
+    {
+      "heading": "RandAugment",
+      "body": "RandAugment (Cubuk et al., 2020): apply N random transformations from a set of K operations (shear, rotate, colour, brightness, contrast, posterize, solarize, equalize, etc.), each at magnitude M ∈ [0, 10]. Hyperparameters: N=2 and M=9 are standard. This unified parameterisation avoids the combinatorial search of AutoAugment. EfficientNet uses RandAugment with N=2, M=10+model_scale. ViT typically uses RandAugment with N=2, M=9. [1]"
+    },
+    {
+      "heading": "NLP and Tabular Augmentation",
+      "body": "NLP augmentation: (1) Back-translation: translate to another language and back — paraphrases the sentence; (2) Synonym replacement: replace k random non-stop words with synonyms (EDA, Wei & Zou 2019); (3) Random deletion, swapping, and insertion; (4) Token masking (used in BERT pre-training). Tabular augmentation: SMOTE for class imbalance (create synthetic minority examples by interpolating between existing ones); Gaussian noise on continuous features; random column dropout. [1]"
+    }
+  ],
+  "youtubeLabel": "Data Augmentation in Deep Learning — PyTorch",
+  "youtubeUrl": "https://www.youtube.com/embed/nHjA_HfuEow",
+  "takeaways": [
+    "Random crop + flip + colour jitter: adds scale, position, flip, illumination invariance. [1]",
+    "MixUp: x̃=λxᵢ+(1−λ)xⱼ, ỹ=λyᵢ+(1−λ)yⱼ — smooth decision boundaries, better calibration. [2]",
+    "CutMix: patch swap between images — local feature robustness, complementary to MixUp. [2]",
+    "RandAugment(N=2, M=9): N random ops at magnitude M — avoids combinatorial search. [1]",
+    "SimCLR/DINO: augmentation defines invariances in self-supervised learning. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Which augmentations should NOT be used and why?",
+      "a": "Vertical flip: only valid if the task is rotationally symmetric (satellite imagery). For natural images (cats, faces, vehicles), vertical flip produces unrealistic examples that may confuse the model. Random colour inversion (negation): produces unrealistic examples for colour-sensitive tasks. Strong augmentations (random erasing, cutout) can hurt performance if the erased region contains the discriminative feature — the model learns to predict without seeing the critical part. For fine-grained recognition (bird species), aggressive cropping may remove the key discriminative features (beak, wing pattern). Always validate augmentation effectiveness on a validation set."
+    },
+    {
+      "q": "How do you handle augmentation for test-time improvement (TTA)?",
+      "a": "Test-Time Augmentation (TTA): apply multiple random augmentations to the same test image, get K predictions, average them. This approximates an ensemble of models with slightly different inputs. Standard TTA for image classification: 5–10 crops (4 corners + center) × horizontal flip = 10 predictions per image. TTA typically improves top-1 accuracy by 0.5–2% with K=10. Trade-off: K× inference cost. TTA is common in competition settings but rare in production due to latency constraints. For ViTs and ConvNeXt, TTA with centre crop vs multi-crop shows different quality-latency tradeoffs."
+    }
+  ],
+  "sources": [
+    { "label": "Shorten & Khoshgoftaar (2019) — A survey on Image Data Augmentation for Deep Learning, J. Big Data 6:60", "url": "https://doi.org/10.1186/s40537-019-0197-0" },
+    { "label": "Zhang et al. (2018) — mixup: Beyond Empirical Risk Minimization arXiv:1710.09412", "url": "https://arxiv.org/abs/1710.09412" }
+  ]
+}

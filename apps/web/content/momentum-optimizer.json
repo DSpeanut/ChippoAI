@@ -1,0 +1,69 @@
+{
+  "visualizationType": "optimizer-trace",
+  "codeSnapshot": {
+    "label": "momentum.py",
+    "code": "import torch\nimport torch.nn as nn\n\nmodel = nn.Linear(10, 1)\n\n# SGD with momentum (β=0.9 is standard)\noptimizer = torch.optim.SGD(\n    model.parameters(),\n    lr=0.01,\n    momentum=0.9,          # β: exponential decay factor\n    dampening=0,           # if nonzero: v = βv + (1-dampening)*g\n    nesterov=False         # True = Nesterov variant\n)\n\n# Momentum update rule (PyTorch implementation):\n# v_t = β * v_{t-1} + g_t          (velocity)\n# w_t = w_{t-1} - η * v_t          (update)\n#\n# Note: PyTorch uses this form (without (1-β) factor)\n# Effective learning rate grows to η/(1-β) at steady state\n\n# Manual momentum implementation\nclass MomentumSGD:\n    def __init__(self, params, lr=0.01, beta=0.9):\n        self.params = list(params)\n        self.lr = lr\n        self.beta = beta\n        self.velocity = [torch.zeros_like(p) for p in self.params]\n\n    def step(self):\n        for p, v in zip(self.params, self.velocity):\n            if p.grad is None:\n                continue\n            v.mul_(self.beta).add_(p.grad)  # v = β*v + g\n            p.data.sub_(v * self.lr)        # w = w - η*v\n\noptimizer_manual = MomentumSGD(model.parameters(), lr=0.01, beta=0.9)\nfor _ in range(10):\n    x, y = torch.randn(32, 10), torch.randn(32, 1)\n    loss = nn.MSELoss()(model(x), y)\n    model.zero_grad()\n    loss.backward()\n    optimizer_manual.step()"
+  },
+  "eli3": [
+    "Imagine rolling a ball down a hilly surface instead of a person taking discrete steps. The ball builds up speed (momentum) as it rolls downhill, carries it through small bumps and flat spots, and decelerates when climbing uphill. That's momentum in gradient descent: past gradients accumulate and give you 'speed' in consistent directions.",
+    "Without momentum: every step is independent — you oscillate back and forth in narrow valleys. With momentum: if gradients consistently point in the same direction, velocity builds up and you move faster that way. If gradients flip direction repeatedly (oscillation), they cancel out in the velocity term.",
+    "β=0.9 is the standard momentum coefficient. It means today's gradient contributes 100%, yesterday's contributes 90%, two steps ago contributes 81%, etc. In practice, momentum makes training 2–10× faster and is almost always enabled for SGD."
+  ],
+  "whenWhy": [
+    {
+      "title": "Accelerating through consistent gradient directions",
+      "body": "In loss landscapes with a long narrow valley (e.g., ill-conditioned problems), vanilla SGD oscillates across the valley while crawling along it. Momentum accumulates velocity along the valley floor and dampens oscillations across it. For poorly conditioned problems (κ = λ_max/λ_min of the Hessian is large), SGD convergence is O(κ/T) while momentum achieves O(√κ/T) — a significant speedup."
+    },
+    {
+      "title": "Standard for vision model training (ResNet, EfficientNet, ViT)",
+      "body": "ImageNet training conventions: SGD + momentum (β=0.9) + weight decay (λ=1e-4) with cosine annealing. This combination consistently achieves SOTA for CNN-based architectures. The standard recipe uses batch size 256, learning rate 0.1 (with linear scaling for larger batches), and 90–300 epochs of cosine decay. Adam is rarely used for large vision models in supervised settings."
+    },
+    {
+      "title": "Escaping plateaus and poor conditioning",
+      "body": "Momentum provides persistence through plateau regions where gradients are very small. In deep networks, gradients near the top of a stack of layers can be very small (vanishing gradient) — momentum allows the optimizer to carry through these regions. Additionally, momentum provides a first-order approximation to second-order information by accumulating gradient history."
+    }
+  ],
+  "deepDiveIntro": [
+    "Classical momentum (Polyak, 1964): vₜ = β·vₜ₋₁ + gₜ; wₜ = wₜ₋₁ − η·vₜ. Unrolling the velocity: vₜ = Σₖ₌₀ᵗ β^(t−k) g_k. The velocity is a geometrically weighted sum of all past gradients, decaying at rate β. At steady state with constant gradient g: vₜ → g/(1−β), so the effective step size is η/(1−β). With β=0.9, the effective learning rate is 10× η. [1]",
+    "Nesterov Accelerated Gradient (NAG, Nesterov 1983): vₜ = β·vₜ₋₁ + η·∇L(wₜ₋₁ − β·vₜ₋₁). This computes the gradient at the 'look-ahead' position wₜ₋₁ − β·vₜ₋₁ rather than the current position. For convex functions, NAG achieves the optimal O(1/T²) convergence rate, while standard momentum achieves O(1/T). In practice, NAG often converges slightly faster and is available via nesterov=True in PyTorch. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Classical Momentum Update",
+      "body": "vₜ = β·vₜ₋₁ + gₜ; wₜ = wₜ₋₁ − η·vₜ. The velocity vₜ is an exponential moving average of gradients (without bias correction). At steady state with fixed gradient g: vₜ → g/(1−β) (geometric series). Effective step = η·g/(1−β). For β=0.9: step = 10η; for β=0.99: step = 100η. This means momentum dramatically amplifies learning rate for directions with consistent gradients. Requires tuning both η and β — common choices: β∈{0.9, 0.95, 0.99}. [1]",
+      "formula": "vₜ = β·vₜ₋₁ + gₜ;  wₜ = wₜ₋₁ − η·vₜ"
+    },
+    {
+      "heading": "Convergence on Quadratics",
+      "body": "For a quadratic f(w) = (1/2)wᵀAw with eigenvalues λ₁ ≤ ... ≤ λ_d (condition number κ = λ_d/λ₁): GD convergence: (λ_d−λ₁)²/(λ_d+λ₁)². Optimal momentum convergence: (√κ−1)²/(√κ+1)². Asymptotically, momentum reduces the number of iterations from O(κ) to O(√κ). Optimal momentum: β* = ((√κ−1)/(√κ+1))², optimal step: η* = 4/(λ₁+λ_d + 2√(λ₁λ_d)). In practice, these are set heuristically rather than computed. [2]"
+    },
+    {
+      "heading": "Nesterov vs Classical Momentum",
+      "body": "Classical: gradient at current position wₜ, then apply momentum. Nesterov: first take momentum step to predicted position wₜ − β·vₜ₋₁, then compute gradient there. Classical update: wₜ = wₜ₋₁ − η(β·vₜ₋₁ + gₜ). Nesterov: wₜ = wₜ₋₁ − η·vₜ where vₜ = β·vₜ₋₁ + ∇f(wₜ₋₁ − ηβ·vₜ₋₁). The look-ahead gradient is more informative — it corrects for 'overshooting'. Both converge to the same point but Nesterov is typically faster in the first phase of optimisation. [2]",
+      "formula": "NAG: vₜ = β·vₜ₋₁ + ∇L(wₜ₋₁ − β·ηvₜ₋₁)"
+    }
+  ],
+  "youtubeLabel": "Momentum & SGD — Deep Learning Optimization",
+  "youtubeUrl": "https://www.youtube.com/embed/IHZwWFHWa-w",
+  "takeaways": [
+    "vₜ = β·vₜ₋₁ + gₜ; wₜ = wₜ₋₁ − η·vₜ — velocity accumulates gradient history. [1]",
+    "Effective step size at steady state: η/(1−β). With β=0.9, effective η is 10×. [1]",
+    "Reduces iterations from O(κ) to O(√κ) on quadratics vs vanilla GD (κ = condition number). [2]",
+    "Nesterov: gradient at look-ahead position — achieves O(1/T²) for convex, slightly faster. [2]",
+    "β=0.9 is standard; combine with cosine annealing for vision model training. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why does momentum cause oscillation at the end of training near the minimum?",
+      "a": "Momentum builds velocity in the direction of consistent gradients. Near a minimum, the gradient flips direction every step (the loss landscape curves back). The accumulated velocity causes the optimizer to overshoot, then the gradient reverses, but momentum keeps going in the old direction for a few more steps. This oscillation is visible as the training loss bouncing instead of smoothly decreasing at convergence. The fix: decay the learning rate at the end of training (cosine annealing, step decay) so the effective step size shrinks, and the momentum can't carry you far past the minimum."
+    },
+    {
+      "q": "Should β be tuned independently of learning rate?",
+      "a": "Yes, they interact non-trivially. The effective step size is η/(1−β): changing β from 0.9 to 0.99 increases effective learning rate by 10× without touching η. A common mistake when switching from β=0.9 to β=0.99 is forgetting to decrease η by 10× — this causes divergence. When tuning, fix β first (0.9 is almost always fine), then search over η. The learning rate range test (Smith, 2018) with momentum is a practical way to find the optimal η. Alternative: use AdamW where momentum (β₁=0.9) and adaptive scaling (β₂=0.999) are separate."
+    }
+  ],
+  "sources": [
+    { "label": "Goodfellow, Bengio & Courville — Deep Learning, Ch. 8", "url": "https://www.deeplearningbook.org/" },
+    { "label": "Nesterov, Y. (1983) — A method of solving a convex programming problem with convergence rate O(1/k²), Soviet Mathematics Doklady 27(2):372–376", "url": "https://scholar.google.com/scholar?q=Nesterov+1983+convex+programming" }
+  ]
+}

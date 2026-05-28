@@ -1,0 +1,71 @@
+{
+  "visualizationType": "training-curve",
+  "codeSnapshot": {
+    "label": "early_stopping.py",
+    "code": "import torch\nimport torch.nn as nn\nimport numpy as np\n\nclass EarlyStopping:\n    \"\"\"Stop training when val_loss doesn't improve for `patience` epochs.\"\"\"\n    def __init__(self, patience=10, min_delta=1e-4, restore_best=True):\n        self.patience = patience\n        self.min_delta = min_delta\n        self.restore_best = restore_best\n        self.best_loss = float('inf')\n        self.best_state = None\n        self.counter = 0\n\n    def step(self, val_loss, model):\n        if val_loss < self.best_loss - self.min_delta:\n            self.best_loss = val_loss\n            self.counter = 0\n            if self.restore_best:\n                import copy\n                self.best_state = copy.deepcopy(model.state_dict())\n        else:\n            self.counter += 1\n\n        return self.counter >= self.patience  # True = stop\n\n    def restore(self, model):\n        if self.best_state is not None:\n            model.load_state_dict(self.best_state)\n\n# Usage\nmodel = nn.Linear(10, 1)\noptimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)\nearly_stop = EarlyStopping(patience=10, min_delta=1e-4)\n\nfor epoch in range(1000):\n    # training step\n    x, y = torch.randn(100, 10), torch.randn(100, 1)\n    optimizer.zero_grad()\n    loss = nn.MSELoss()(model(x), y)\n    loss.backward(); optimizer.step()\n\n    # validation\n    with torch.no_grad():\n        x_val, y_val = torch.randn(50, 10), torch.randn(50, 1)\n        val_loss = nn.MSELoss()(model(x_val), y_val).item()\n\n    if early_stop.step(val_loss, model):\n        print(f\"Early stop at epoch {epoch}\")\n        early_stop.restore(model)  # rewind to best weights\n        break"
+  },
+  "eli3": [
+    "Early stopping is the simplest regularisation technique: monitor how well the model performs on held-out validation data and stop training when it stops improving. Keep a copy of the model from its best moment, then stop.",
+    "As training continues past the optimal point, the model starts memorising training data noise (overfitting) and validation performance gets worse. Early stopping catches this before it gets too bad.",
+    "Think of it as knowing when to quit: a student studying for a test reaches peak performance before getting diminishing returns and eventually overlearning — confusing themselves with unnecessary details. Early stopping is the coach saying 'you're ready, stop studying.'"
+  ],
+  "whenWhy": [
+    {
+      "title": "Universal regularisation without changing the model or loss",
+      "body": "Early stopping is zero-cost regularisation: no change to the model architecture, loss function, or optimizer. Just add a validation step. For any model that overfits — neural networks, gradient boosting, deep learning — early stopping reduces overfitting. Useful when you're unsure of the right regularisation strength and want a robust default."
+    },
+    {
+      "title": "Gradient boosting and decision tree ensembles",
+      "body": "In XGBoost, LightGBM, and CatBoost, early stopping on a validation set is the standard way to select the number of trees. The eval_set parameter and early_stopping_rounds argument implement this directly. Adding more trees always reduces training error but can hurt test performance — early stopping finds the tree count that minimises validation error."
+    },
+    {
+      "title": "Fine-tuning with limited data",
+      "body": "When fine-tuning a pretrained model on a small dataset (few hundred to few thousand examples), the model can overfit within a handful of epochs. Early stopping with a patience of 3–5 epochs prevents overfitting without requiring careful tuning of epoch count. The patience parameter controls the sensitivity: small patience catches overfitting earlier but may stop during transient fluctuations."
+    }
+  ],
+  "deepDiveIntro": [
+    "Early stopping is equivalent to L2 regularisation in certain settings. For gradient descent on a linear model without explicit regularisation, stopping at step T is equivalent to Ridge regression with λ = 1/(2ηT): the earlier you stop, the stronger the implicit regularisation. This connection holds approximately for nonlinear models too — early stopping is a form of bias-variance tradeoff. [1]",
+    "The optimal stopping point minimises expected test error, which has a U-shape as training progresses: initially both training and validation error decrease (underfitting regime); at some point validation error starts increasing while training error continues to fall (overfitting regime). Early stopping targets the minimum of the validation curve, which estimates the minimum of the test error curve. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Patience and Min Delta",
+      "body": "patience: number of epochs to wait after the last improvement before stopping. patience=1: stop immediately when val_loss increases. Too aggressive — noise can trigger early stop. patience=10–20: standard for neural networks. patience=50–100: for slowly-improving models or noisy validation sets. min_delta: minimum improvement threshold. If val_loss improves by less than min_delta, don't count it as improvement. Prevents the model from continuing indefinitely on marginal gains. Typical: min_delta=1e-4 for loss values in [0.01, 10] range. [1]"
+    },
+    {
+      "heading": "Best Model Checkpoint",
+      "body": "Save the model at the epoch with lowest validation loss (or highest validation metric). When training stops, restore this checkpoint. Without restoration: the final model is worse than the best model by definition (validation loss has been increasing for `patience` epochs). Implementation: copy.deepcopy(model.state_dict()) at each improvement. For large models, checkpointing to disk (torch.save) is more memory-efficient than storing in RAM. Checkpoint every K epochs and keep the best one. [1]"
+    },
+    {
+      "heading": "Early Stopping vs Regularisation",
+      "body": "Goodfellow et al. show: for a linear model trained with gradient descent from w=0, stopping at step T is equivalent to Ridge regression with effective λ ≈ 1/(2ηT) (where η is the learning rate). The earlier you stop, the stronger the regularisation. This duality provides a theoretical justification: early stopping implicitly constrains the model similarly to L2 regularisation. For non-linear models, the equivalence is approximate but the intuition holds — stopping early limits how far the model can travel from its initialisation. [2]"
+    },
+    {
+      "heading": "Overfitting vs Underfitting Diagnosis",
+      "body": "Plot training loss and validation loss vs epoch. Three regimes: (1) Both decreasing: underfitting — continue training. (2) Training decreasing, validation increasing: overfitting — early stopping point was earlier. (3) Both increasing: learning rate too high or corrupted data — diagnose first. The gap between training and validation loss (generalisation gap) indicates overfitting severity. Early stopping should occur when the gap starts growing consistently. Using the validation loss directly (not the generalisation gap) is the standard criterion. [1]"
+    }
+  ],
+  "youtubeLabel": "Early Stopping — Regularization Explained",
+  "youtubeUrl": "https://www.youtube.com/embed/ORrStCArmP4",
+  "takeaways": [
+    "Monitor validation loss; save the best model; stop after `patience` epochs without improvement. [1]",
+    "Equivalent to L2 regularisation (λ ≈ 1/(2ηT)) for linear models trained from zero. [2]",
+    "Restore best checkpoint after stopping — the final model is always worse than the best. [1]",
+    "Standard for XGBoost/LightGBM: early_stopping_rounds controls number of trees. [1]",
+    "Patience of 10–20 epochs is typical; use min_delta to ignore marginal improvements. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Can early stopping give an overly optimistic test error estimate?",
+      "a": "Yes, if the validation set is used both for early stopping decisions AND for final model evaluation. The validation performance at the early stopping point is biased low — the model was selected to minimise this metric. To get an unbiased estimate, you need a separate test set (not seen during stopping). This is a common mistake in machine learning pipelines: using val loss for early stopping and also reporting val loss as the final performance metric overstates true generalisation."
+    },
+    {
+      "q": "What happens when validation loss fluctuates significantly?",
+      "a": "High validation loss variance (noisy validation set, small dataset) causes early stopping to trigger too early (during a transient fluctuation) or too late (if a genuine improvement is followed by noise). Solutions: (1) Increase patience to tolerate more fluctuation. (2) Use moving average of validation loss instead of raw value. (3) Evaluate on a larger validation set or use k-fold CV. (4) Use min_delta to require meaningful improvement. (5) Use learning rate schedules with checkpointing: the minimum of the cosine decay is a natural stopping point independent of noise."
+    }
+  ],
+  "sources": [
+    { "label": "Goodfellow, Bengio & Courville — Deep Learning, Ch. 7 (Regularisation)", "url": "https://www.deeplearningbook.org/" },
+    { "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 7", "url": "https://hastie.su.domains/ElemStatLearn/" }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "visualizationType": "training-curve",
+  "codeSnapshot": {
+    "label": "random_search.py",
+    "code": "from sklearn.model_selection import RandomizedSearchCV\nfrom sklearn.ensemble import GradientBoostingClassifier\nfrom sklearn.datasets import make_classification\nfrom scipy.stats import uniform, loguniform, randint\nimport numpy as np\n\nX, y = make_classification(n_samples=1000, n_features=20, random_state=42)\n\n# Random search: sample hyperparameter configurations from distributions\n# Key insight (Bergstra & Bengio, 2012):\n# If only 2 of d hyperparameters truly matter, random search covers\n# each effective dimension independently — grid search wastes coverage\n# on the d-2 unimportant dimensions\n\n# Continuous distributions for continuous hyperparameters\nparam_distributions = {\n    'learning_rate':    loguniform(1e-4, 1e-1),  # log-uniform in [1e-4, 1e-1]\n    'n_estimators':     randint(50, 500),          # uniform integer in [50, 500)\n    'max_depth':        randint(2, 10),             # integer [2, 10)\n    'subsample':        uniform(0.5, 0.5),          # uniform in [0.5, 1.0]\n    'min_samples_leaf': randint(1, 20),\n    'max_features':     uniform(0.3, 0.7),          # fraction of features\n}\n\n# RandomizedSearchCV: samples n_iter configurations at random from distributions\nrandom_search = RandomizedSearchCV(\n    estimator=GradientBoostingClassifier(random_state=42),\n    param_distributions=param_distributions,\n    n_iter=50,              # 50 random configs × 5 folds = 250 fits\n    cv=5,\n    scoring='accuracy',\n    n_jobs=-1,\n    random_state=42,        # reproducible sampling\n    verbose=1,\n    refit=True,\n)\nrandom_search.fit(X, y)\n\nprint(f'Best params: {random_search.best_params_}')\nprint(f'Best CV score: {random_search.best_score_:.4f}')\n\n# Hyperband (Li et al., 2018) — resource-adaptive random search\n# Uses successive halving: evaluate many configs cheaply, promote best half,\n# repeat with more resources for survivors\n# Implemented in: Ray Tune, Optuna (HyperbandPruner), HuggingFace Trainer\nfrom optuna import create_study\nfrom optuna.pruners import HyperbandPruner\nfrom optuna.samplers import TPESampler  # Bayesian-informed random sampling\n\n# Optuna trial: define the search space with suggest_* methods\ndef objective(trial):\n    lr = trial.suggest_float('lr', 1e-4, 1e-1, log=True)    # log-uniform\n    n_est = trial.suggest_int('n_estimators', 50, 500)\n    max_d = trial.suggest_int('max_depth', 2, 10)\n    model = GradientBoostingClassifier(learning_rate=lr, n_estimators=n_est,\n                                       max_depth=max_d, random_state=42)\n    return model.fit(X, y).score(X, y)  # simplified; use CV in practice\n\nstudy = create_study(direction='maximize', sampler=TPESampler())\nstudy.optimize(objective, n_trials=20)\nprint(f'Best trial value: {study.best_value:.4f}')"
+  },
+  "eli3": [
+    "Random search randomly samples hyperparameter configurations from a range you specify (e.g., learning rate between 0.0001 and 0.1, chosen randomly from a log-uniform distribution), instead of trying every value on a fixed grid.",
+    "The key insight from Bergstra & Bengio (2012): most hyperparameters don't actually matter much — only 1-3 of them have large effects. If you have 9 hyperparameters but only 2 matter, random search efficiently explores different values for those 2, while grid search wastes 7 dimensions trying every combination of unimportant ones.",
+    "Random search with 50 tries is usually better than grid search with 50 tries — and often comparable to grid search with 500 tries. The reason: random search samples continuously, so it can find values between fixed grid points."
+  ],
+  "whenWhy": [
+    {
+      "title": "High-dimensional hyperparameter spaces",
+      "body": "Bergstra & Bengio (2012) proved that random search dominates grid search when the effective dimensionality (number of hyperparameters that truly matter) is much less than the total number of hyperparameters d. For d=9 dimensions where only 2 matter: a 9D grid with 3^9=19,683 points sees only 3 distinct values per important dimension; the same budget of 19,683 random samples sees ~19,683 distinct values per dimension. Random search is the default starting point for HPO before trying Bayesian methods."
+    },
+    {
+      "title": "Continuous hyperparameter distributions",
+      "body": "Grid search requires discretizing continuous hyperparameters. Random search samples from continuous distributions (loguniform for learning rate, uniform for dropout rate). This means random search can find values between grid points — critical for sensitive hyperparameters where the optimum is at 0.0037 but the grid only checks 0.001 and 0.01. scipy.stats.loguniform(a, b) samples from a log-uniform distribution — the standard prior for scale-invariant hyperparameters like learning rate."
+    },
+    {
+      "title": "Hyperband: resource-adaptive random search",
+      "body": "Hyperband (Li et al., 2018) extends random search with early stopping: start many configurations with a small resource budget (few training epochs), keep only the top fraction, double the budget, repeat. This successive halving eliminates poor configurations early. Hyperband is asymptotically optimal for any fixed budget — it automatically trades off exploring many configurations cheaply vs exploiting promising ones with more compute. Implemented in Ray Tune, Optuna, HuggingFace Trainer."
+    }
+  ],
+  "deepDiveIntro": [
+    "Bergstra & Bengio (2012) formal argument: consider a d-dimensional hyperparameter space where only d_eff < d dimensions are important (the loss is insensitive to the other d-d_eff dimensions). A grid search with n points per dimension covers only n^{1/d_eff} distinct values in the effective dimensions. Random search with N total configurations covers N distinct values per effective dimension (since each sample is independent). For N evaluations: random search has N^{1/d} effective coverage per dimension; grid search has (N/n^{d-d_eff})^{1/d_eff} = n distinct values. For d=9, d_eff=2, n=3: grid search covers 3 values per effective dimension; random search covers 3^9=19,683 values. [1]",
+    "Successive Halving (Jamieson & Talwalkar, 2016): starting with n configurations and budget B, allocate B/n resources each. Keep the top 1/η configurations (η=3 standard), multiply resources by η, repeat for ⌈log_η(n)⌉ rounds. Hyperband (Li et al., 2018) runs successive halving for multiple bracket values of n, amortising the bias-variance tradeoff of choosing n. Total cost: O(B·log(n)/η) model fits, compared to O(n·B) for full training on all configs. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Sampling Distributions for Hyperparameters",
+      "body": "Choice of prior distribution is critical for random search quality. Learning rate: loguniform — the effect of multiplying by 10 is the same regardless of scale (0.0001→0.001 same effect as 0.001→0.01). Regularization (weight decay, C in SVM): loguniform. Dropout rate, subsample, momentum: uniform in [a,b] — linear sensitivity. Integer hyperparameters (n_estimators, layers): randint. Categorical (optimizer, activation): random.choice. scipy.stats distributions are directly compatible with sklearn RandomizedSearchCV. Optuna's suggest_float(log=True) implements loguniform; suggest_int implements randint with uniform or log-uniform spacing. [1]"
+    },
+    {
+      "heading": "Successive Halving and Hyperband",
+      "body": "Successive halving (SHA): R = {c₁,...,cₙ} configurations. Allocate r₀ resources each. Train, evaluate, keep top 1/η, multiply resources by η. Repeat. Final round: 1 configuration, full R resources. Example: n=81, η=3, R=100 epochs. Round 1: 81 configs × ⌊100/81⌋≈1 epoch each. Round 2: 27 configs × 3 epochs. Round 3: 9 configs × 9 epochs. Round 4: 3 configs × 27 epochs. Round 5: 1 config × 81 epochs. Total: 81+81+81+81+81 ≈ 5× fewer epochs than training all 81 for 100 epochs. Hyperband adds multiple brackets with different n to avoid bias from choosing n. [2]"
+    },
+    {
+      "heading": "When Random Search Underperforms",
+      "body": "Random search assumes hyperparameter importance is known (good prior distributions). If the prior is wrong (e.g., uniform over [0.1, 100] for learning rate when the optimum is 1e-4), random search wastes evaluations. Bayesian optimization builds a surrogate model to learn where to sample next — more efficient than random for low-budget (<50 evaluation) settings. For deep learning: learning rate + batch size are nearly always the two most important hyperparameters — a focused random search over just these two often outperforms random search over all hyperparameters. [1]"
+    }
+  ],
+  "youtubeLabel": "Random Search vs Grid Search — Which Is Better?",
+  "youtubeUrl": "https://www.youtube.com/embed/5nYqK-HaoKY",
+  "takeaways": [
+    "Random search dominates grid search when only a few hyperparameters truly matter (Bergstra & Bengio). [1]",
+    "Use loguniform for learning rate, regularization; uniform for rates/fractions; randint for integers. [1]",
+    "50 random configurations typically suffice for 5-10 hyperparameter problems (budget: 50×k_folds fits). [1]",
+    "Hyperband (successive halving): train many configs cheaply, promote best → O(log(n)) speedup. [2]",
+    "Advantage over grid: samples continuously — finds values between fixed grid points. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "How many random search iterations are needed to find the optimum with high probability?",
+      "a": "If the top p fraction of configurations are 'good' (i.e., within ε of optimal performance), then N = log(1-δ)/log(1-p) iterations are needed to find at least one good configuration with probability ≥1-δ. Example: top 5% are good (p=0.05), want 95% probability (δ=0.05): N = log(0.05)/log(0.95) ≈ 59 iterations. Top 10% good, 95% probability: N = log(0.05)/log(0.90) ≈ 29 iterations. This simple probabilistic argument justifies the empirical finding that 50-100 random configurations usually suffices for most practical problems. Bayesian optimization reduces this number by intelligently targeting good regions of the space."
+    },
+    {
+      "q": "How should you handle correlated hyperparameters in random search?",
+      "a": "Standard random search samples each hyperparameter independently from its marginal distribution, ignoring correlations. If hyperparameters are strongly correlated (e.g., in transformers: model_dim must equal num_heads × head_dim), independent sampling produces many invalid configurations (model_dim=256, num_heads=12, head_dim=20 — doesn't divide evenly). Solutions: (1) Conditional search spaces — only sample head_dim given model_dim: head_dim = model_dim/num_heads. Optuna's conditional hyperparameters support this via trial.suggest_* based on other params. (2) Template-based search: define valid architecture templates and search over template indices rather than raw parameters. Optuna, Ray Tune, and NNI all support conditional parameter spaces."
+    }
+  ],
+  "sources": [
+    { "label": "Bergstra & Bengio (2012) — Random Search for Hyper-Parameter Optimization, JMLR", "url": "https://www.jmlr.org/papers/v13/bergstra12a.html" },
+    { "label": "Li et al. (2018) — Hyperband: A Novel Bandit-Based Approach to Hyperparameter Optimization, JMLR", "url": "https://www.jmlr.org/papers/v18/16-558.html" }
+  ]
+}

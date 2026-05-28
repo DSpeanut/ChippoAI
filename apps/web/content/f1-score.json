@@ -1,0 +1,68 @@
+{
+  "visualizationType": "architecture-diagram",
+  "codeSnapshot": {
+    "label": "f1_score.py",
+    "code": "import numpy as np\nfrom sklearn.metrics import f1_score, fbeta_score, precision_score, recall_score\n\ny_true = np.array([1,1,1,1,0,0,0,0,1,0])\ny_pred = np.array([1,0,1,1,0,0,1,0,1,1])  # TP=4, FP=2, FN=1, TN=3\n\n# F1 = 2·P·R/(P+R) = 2·TP / (2·TP + FP + FN)\nprecision = precision_score(y_true, y_pred)  # 4/(4+2) = 0.667\nrecall    = recall_score(y_true, y_pred)     # 4/(4+1) = 0.800\nf1        = f1_score(y_true, y_pred)         # 2*0.667*0.800/(0.667+0.800) = 0.727\nprint(f'P={precision:.3f}, R={recall:.3f}, F1={f1:.3f}')\n\n# Fβ: β < 1 weights precision more; β > 1 weights recall more\n# F0.5: emphasise precision (e.g. information retrieval — don't want false alarms)\nf05 = fbeta_score(y_true, y_pred, beta=0.5)\n# F2: emphasise recall (e.g. cancer screening — don't miss positives)\nf2  = fbeta_score(y_true, y_pred, beta=2.0)\nprint(f'F0.5={f05:.3f}, F2={f2:.3f}')\n\n# Multi-class F1 averaging strategies\ny_true_mc = [0,1,2,0,1,2,0,1,2,0,0,1]\ny_pred_mc = [0,1,1,0,2,2,0,0,2,0,1,1]\n\n# Macro: average F1 per class (equal class weight)\nf1_macro = f1_score(y_true_mc, y_pred_mc, average='macro')\n# Weighted: average F1 weighted by class support\nf1_weighted = f1_score(y_true_mc, y_pred_mc, average='weighted')\n# Micro: compute global TP, FP, FN then compute F1\nf1_micro = f1_score(y_true_mc, y_pred_mc, average='micro')\n# Per-class: F1 for each class\nf1_per_class = f1_score(y_true_mc, y_pred_mc, average=None)\n\nprint(f'Macro F1={f1_macro:.3f}, Weighted F1={f1_weighted:.3f}, Micro F1={f1_micro:.3f}')\nprint(f'Per-class F1: {f1_per_class}')\n\n# Why harmonic mean? Penalises imbalance between P and R\n# Arithmetic mean of P=0.9, R=0.1: (0.9+0.1)/2 = 0.5 — looks OK\n# Harmonic mean (F1): 2*0.9*0.1/(0.9+0.1) = 0.18 — reveals the imbalance\nprint(f'Arithmetic mean: {(0.9+0.1)/2:.2f}')\nprint(f'Harmonic mean (F1): {2*0.9*0.1/(0.9+0.1):.2f}')"
+  },
+  "eli3": [
+    "F1 score is the harmonic mean of precision and recall. Precision measures 'of the things I flagged, how many were actually correct?' while recall measures 'of all the things I should have found, how many did I find?' F1 combines these into one number.",
+    "F1 is better than accuracy for imbalanced datasets: if you have 99% negative class, a model that always says negative gets 99% accuracy but 0% F1 (because it catches zero true positives — recall=0 → F1=0).",
+    "The harmonic mean punishes extreme imbalance between precision and recall. A model with precision=0.9 and recall=0.1 has F1=0.18, not 0.5 — this correctly reflects that the model is useless in practice even though precision looks good."
+  ],
+  "whenWhy": [
+    {
+      "title": "Imbalanced binary classification",
+      "body": "F1 is the standard metric when classes are imbalanced and both precision and recall matter. NLP tasks (named entity recognition, relation extraction), medical diagnosis (disease detection), and information retrieval all use F1 as the primary evaluation metric. F1=0 when either precision=0 or recall=0 — it correctly penalises degenerate models that predict everything as positive (recall=1, precision=low) or never predict positive (precision=undefined, recall=0)."
+    },
+    {
+      "title": "Fβ when errors have asymmetric costs",
+      "body": "Fβ = (1+β²)·P·R / (β²·P+R). β=1 is standard F1 (equal weight to P and R). β<1 weights precision more: F0.5 is used in search and recommendation where false alarms (irrelevant results) are especially costly. β>1 weights recall more: F2 is used in fraud detection and medical screening where missing a positive is worse than a false alarm. The choice of β should reflect the ratio of FN cost to FP cost: β = √(FN_cost / FP_cost)."
+    },
+    {
+      "title": "Multi-class evaluation and averaging strategy",
+      "body": "For K-class problems, per-class F1 scores can be aggregated: Macro F1 (equal weight per class) is sensitive to rare class performance. Weighted F1 (weight by class support) is dominated by majority classes. Micro F1 (global TP/FP/FN) = accuracy in balanced settings. In machine translation and NLP benchmarks (GLUE, SuperGLUE), macro F1 is standard — it equally weights all classes including rare ones. For production systems with imbalanced classes, weighted F1 or class-specific F1 is more interpretable."
+    }
+  ],
+  "deepDiveIntro": [
+    "F1 = 2·TP / (2·TP + FP + FN) = 2·Precision·Recall / (Precision + Recall). This is the harmonic mean H(P,R) = 2/(1/P + 1/R). The harmonic mean is always ≤ the arithmetic mean, with equality only when P=R. It is particularly sensitive to the minimum of P and R — if either is near zero, F1 is near zero. Origin: van Rijsbergen (1979) defined the F-measure in information retrieval as the harmonic mean of precision and recall. [1]",
+    "Fβ generalisation: Fβ = (1+β²)·P·R / (β²·P + R). This is the weighted harmonic mean of precision and recall with P weighted β² times as much as R... wait, let me be precise: Fβ gives β² times as much weight to recall as to precision. At β=1: equal weight (F1). At β→0: Fβ → Precision. At β→∞: Fβ → Recall. Derivation: Fβ = (1+β²)·P·R/(β²·P+R) satisfies Fβ = 0 if R=0, and Fβ = P if β=0. [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Harmonic Mean and Why It Matters",
+      "body": "Arithmetic mean of P=1.0 and R=0.0: AM = 0.5 (misleadingly high — model has zero recall). Harmonic mean (F1) = 2·1.0·0.0/(1.0+0.0) = 0.0 — correctly reflects that the model catches nothing. The harmonic mean punishes imbalance more aggressively than the arithmetic mean: H(P,R) ≤ (P+R)/2, with equality iff P=R. This makes F1 an appropriate metric when you want both precision AND recall to be high — not just their average. If either is unacceptably low, F1 is low. [1]",
+      "formula": "F1 = 2·P·R/(P+R) = 2·TP/(2·TP+FP+FN)"
+    },
+    {
+      "heading": "Macro vs Micro vs Weighted F1",
+      "body": "Given per-class F1 scores F1₁,...,F1ₖ and class supports n₁,...,nₖ: Macro F1 = (1/K)·ΣF1ₖ — simple average, treats all classes equally. Suitable when rare classes matter as much as common ones. Weighted F1 = (Σnₖ·F1ₖ)/n — weighted by support, reflects real-world class distribution. Micro F1 = 2·ΣTPₖ / (2·ΣTPₖ + ΣFPₖ + ΣFNₖ) — equivalent to accuracy for multi-class. Micro F1 gives no weight to class size: a 1000-sample class and a 10-sample class each contribute their TP equally. [1]"
+    },
+    {
+      "heading": "F1 for Span-Level NLP Evaluation",
+      "body": "In NLP tasks (named entity recognition, slot filling, relation extraction), F1 is computed at the span level: a prediction is a TP only if it matches the exact span and label of a reference annotation. TP = exact matches, FP = predicted spans not in reference, FN = reference spans not predicted. This is stricter than token-level F1 (which allows partial credit per token). CoNLL NER evaluation uses span-level F1; SQuAD uses token-level F1 with text normalisation (lower-case, remove articles). Always clarify which F1 variant is being used when comparing across papers. [1]"
+    }
+  ],
+  "youtubeLabel": "F1 Score, Precision and Recall Explained",
+  "youtubeUrl": "https://www.youtube.com/embed/j-EB6RqqjGI",
+  "takeaways": [
+    "F1 = 2·P·R/(P+R) = 2·TP/(2·TP+FP+FN) — harmonic mean of precision and recall. [1]",
+    "F1=0 if either P=0 or R=0 — correctly penalises degenerate classifiers. [1]",
+    "Fβ: β<1 favours precision (search), β>1 favours recall (screening), β=1 is balanced F1. [1]",
+    "Macro F1: equal class weight; Micro F1: global TP/FP/FN; Weighted: by support. [1]",
+    "Use F1 over accuracy for imbalanced classification — accuracy can be high with 0% recall. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why does the F1 score underperform the Matthews Correlation Coefficient for severely imbalanced datasets?",
+      "a": "F1 only considers TP, FP, and FN — it completely ignores TN. In severely imbalanced datasets (e.g., 99% negative), a model that predicts all as positive has recall=1.0, precision=0.01, F1=0.02 — low but not capturing the model's failure to identify true negatives. MCC accounts for all four cells (TP, FP, FN, TN). A model that predicts all positive gets MCC = (TP·TN-FP·FN)/√(...) where TN=0 → MCC near 0 (correct — model is no better than guessing all positive). Chicco & Jurman (2020) show that MCC is more informative than F1 across 30 binary classification benchmark datasets, particularly when TN information is significant. For reporting, prefer MCC when TN is meaningful; F1 when TN is not (information retrieval where there are infinite potential true negatives)."
+    },
+    {
+      "q": "How should you set β in Fβ score in practice?",
+      "a": "β should reflect the relative cost of false negatives vs false positives: β = √(FN_cost / FP_cost). If a false negative costs 4× a false positive: β = √4 = 2 (use F2 — weights recall twice as much as precision). If a false positive costs 4× a false negative: β = √(1/4) = 0.5 (use F0.5). In practice: elicit the cost ratio from domain experts or business stakeholders. If they can't specify costs: use F1 (equal costs). For medical screening: FN_cost >> FP_cost (missing disease is worse than unnecessary follow-up) → β > 1. For spam filtering: FP_cost > FN_cost (blocking legitimate email is worse than missing spam) → β < 1."
+    }
+  ],
+  "sources": [
+    { "label": "Van Rijsbergen (1979) — Information Retrieval, 2nd edition (Butterworth)", "url": "https://dl.acm.org/doi/10.5555/539927" },
+    { "label": "Powers (2011) — Evaluation: From Precision, Recall and F-Measure to ROC, Informedness, Markedness & Correlation, JMLR", "url": "https://jmlr.org/papers/v2/powers11a.html" }
+  ]
+}

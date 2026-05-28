@@ -1,0 +1,68 @@
+{
+  "visualizationType": "network-diagram",
+  "codeSnapshot": {
+    "label": "backpropagation.py",
+    "code": "import torch\nimport torch.nn as nn\n\n# PyTorch autograd implements backprop via dynamic computation graph\nmodel = nn.Sequential(\n    nn.Linear(4, 3),\n    nn.ReLU(),\n    nn.Linear(3, 2),\n    nn.ReLU(),\n    nn.Linear(2, 1)\n)\n\nx = torch.randn(5, 4, requires_grad=False)\ny = torch.randn(5, 1)\n\n# Forward pass: build computation graph\nloss = nn.MSELoss()(model(x), y)\n\n# Backward pass: compute ∂loss/∂w for all w in model\nloss.backward()\n\n# Access gradients\nfor name, param in model.named_parameters():\n    print(f\"{name}: grad shape {param.grad.shape}, norm {param.grad.norm():.4f}\")\n\n# Manual backprop for a 2-layer network\n# Forward:\n# z1 = W1*x + b1\n# a1 = relu(z1)\n# z2 = W2*a1 + b2\n# loss = (z2 - y)^2 / n\n\n# Backward (chain rule):\n# dL/dz2 = 2*(z2-y)/n\n# dL/dW2 = dL/dz2 * a1^T\n# dL/db2 = sum(dL/dz2)\n# dL/da1 = W2^T * dL/dz2\n# dL/dz1 = dL/da1 * relu'(z1)  [relu'(z)=1 if z>0, else 0]\n# dL/dW1 = dL/dz1 * x^T\n# dL/db1 = sum(dL/dz1)\n\nW1 = torch.randn(3, 4, requires_grad=True)\nb1 = torch.zeros(3, requires_grad=True)\nW2 = torch.randn(1, 3, requires_grad=True)\nb2 = torch.zeros(1, requires_grad=True)\n\nz1 = x @ W1.T + b1\na1 = torch.relu(z1)\nz2 = a1 @ W2.T + b2\nloss = ((z2 - y)**2).mean()\nloss.backward()  # PyTorch does the chain rule for us"
+  },
+  "eli3": [
+    "Backpropagation is the algorithm that tells each weight in a neural network 'how much did you contribute to the error, and in which direction should you change?' It works by applying the chain rule of calculus backwards through the network: starting from the output error and propagating it back through each layer.",
+    "Imagine you're the coach of a relay race team that just lost. Backprop is figuring out exactly how much each runner contributed to the loss: the last runner's time, then the second-to-last's contribution to the last's performance, and so on back to the first runner. Everyone gets blamed (or credited) proportionally.",
+    "The key insight is efficiency: computing all gradients from scratch would be O(W·N) where W is the number of weights. Backprop reuses intermediate computations (the chain rule's gradient products) to compute all gradients in O(W) — the same cost as a single forward pass."
+  ],
+  "whenWhy": [
+    {
+      "title": "Training every neural network that exists",
+      "body": "Backpropagation (Rumelhart, Hinton & Williams, 1986) is how all gradient-based neural network training works. Frameworks like PyTorch and JAX implement it automatically via automatic differentiation (autograd). Every call to loss.backward() runs a reverse-mode automatic differentiation pass that is mathematically equivalent to backpropagation."
+    },
+    {
+      "title": "Understanding gradient flow for architecture design",
+      "body": "Understanding backprop is essential for diagnosing training issues: vanishing gradients (gradients become too small in early layers), exploding gradients (too large), and dead neurons (ReLU units that never receive nonzero gradient). Skip connections in ResNets, LSTM gating mechanisms, and gradient clipping all exist to address backprop failure modes."
+    },
+    {
+      "title": "Custom loss functions and gradient computation",
+      "body": "When designing custom losses or architectures, you need to verify that gradients flow correctly. PyTorch's autograd.gradcheck function numerically verifies gradients against finite differences — essential for custom CUDA kernels, sparse operations, or non-standard activation functions that bypass autograd."
+    }
+  ],
+  "deepDiveIntro": [
+    "Backpropagation computes ∂L/∂wₗ for all weights wₗ in layer l using the chain rule. For a network with L layers: ∂L/∂wₗ = (∂L/∂aL)·(∂aL/∂aL₋₁)·...·(∂aₗ/∂wₗ). The key efficiency: the intermediate quantities δₗ = ∂L/∂zₗ (error signals at layer l) are computed recursively from the output: δₗ = (Wₗ₊₁)ᵀδₗ₊₁ ⊙ f'(zₗ). This recursion costs O(nₗ·nₗ₊₁) per layer — the same as the forward pass. Total cost: O(2·FLOPs_forward). [1]",
+    "Reverse-mode automatic differentiation (the general framework): define a computation graph where each node computes a function of its inputs. Backprop traverses this graph in reverse topological order, computing the gradient of L w.r.t. each intermediate value using the local Jacobian of each operation. This is exactly what PyTorch's autograd implements. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "The Chain Rule in Matrix Form",
+      "body": "For layer l with input aₗ₋₁, weights Wₗ, biases bₗ: forward: zₗ = Wₗaₗ₋₁ + bₗ; aₗ = f(zₗ). Backward: δₗ = ∂L/∂zₗ = (Wₗ₊₁)ᵀδₗ₊₁ ⊙ f'(zₗ) (propagate error from next layer, element-wise multiply by activation derivative). ∂L/∂Wₗ = δₗ · aₗ₋₁ᵀ (outer product). ∂L/∂bₗ = δₗ. Output layer: δL = ∂L/∂zL = ∂L/∂aL ⊙ f'(zL) (gradient of loss w.r.t. logits). [1]",
+      "formula": "δₗ = (Wₗ₊₁)ᵀδₗ₊₁ ⊙ f'(zₗ);  ∂L/∂Wₗ = δₗ aₗ₋₁ᵀ"
+    },
+    {
+      "heading": "Computational Cost",
+      "body": "Forward pass: O(Σₗ nₗ·nₗ₋₁) multiplications (matrix-vector products). Backward pass: O(2·Σₗ nₗ·nₗ₋₁) — exactly 2× the forward pass cost. For a batch of B samples: forward costs B·Σ(nₗ·nₗ₋₁); backward costs the same. Memory: backprop stores all intermediate activations aₗ for use in ∂L/∂Wₗ = δₗaₗ₋₁ᵀ — O(Σnₗ) memory per sample. For large networks (transformer with 10B+ params), this memory dominates. Gradient checkpointing trades computation for memory by recomputing some activations during the backward pass. [1]"
+    },
+    {
+      "heading": "Forward vs Reverse Mode Autodiff",
+      "body": "Two modes of automatic differentiation: (1) Forward mode (tangent vector propagation): computes ∂fᵢ/∂xⱼ for all outputs fᵢ w.r.t. one input xⱼ per pass. Cost: O(n_inputs) passes to get full Jacobian. Efficient when n_inputs << n_outputs (rare in ML). (2) Reverse mode (backprop): computes ∂L/∂xᵢ for all inputs xᵢ given one scalar output L per pass. Cost: O(1) passes. Efficient when n_inputs >> n_outputs — exactly the case in ML (many weights, one scalar loss). PyTorch uses reverse mode. [2]"
+    }
+  ],
+  "youtubeLabel": "Backpropagation — 3Blue1Brown",
+  "youtubeUrl": "https://www.youtube.com/embed/Ilg3gGewQ5U",
+  "takeaways": [
+    "δₗ = (Wₗ₊₁)ᵀδₗ₊₁ ⊙ f'(zₗ) — recursive error signal; ∂L/∂Wₗ = δₗaₗ₋₁ᵀ. [1]",
+    "Cost: 2× forward pass in compute, O(Σnₗ) in memory (all activations must be stored). [1]",
+    "Reverse-mode autodiff: O(1) backward passes for any number of parameters. [2]",
+    "Gradient checkpointing: recompute activations during backward to save memory (3× compute, O(√L) memory). [1]",
+    "PyTorch autograd builds a dynamic computation graph; loss.backward() runs reverse-mode autodiff. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why is backprop memory expensive and how does gradient checkpointing help?",
+      "a": "During the backward pass, the gradient ∂L/∂Wₗ = δₗ·aₗ₋₁ᵀ requires the activations aₗ₋₁ from the forward pass. A naive implementation stores all activations throughout the forward pass — O(L·B·n) memory for L layers, batch size B, hidden size n. For a 100-layer transformer with B=32, n=4096, this is ~50GB. Gradient checkpointing (Chen et al., 2016) only stores activations at a subset of 'checkpoint' layers and recomputes the rest during backprop. With √L checkpoints, memory reduces from O(L) to O(√L) at the cost of one additional forward pass (3× compute total instead of 2×)."
+    },
+    {
+      "q": "What is the vanishing gradient problem in the context of backpropagation?",
+      "a": "In the backward pass, δₗ = (Wₗ₊₁)ᵀδₗ₊₁ ⊙ f'(zₗ). The gradient from layer L back to layer l is a product of L−l matrices and activation derivatives: ∂L/∂aₗ = ΠₖWₖᵀ · (Π f'(zₖ)) · ∂L/∂aL. For sigmoid activations: f'(z) = σ(z)(1−σ(z)) ∈ (0, 0.25]. In a 100-layer network: gradient ∝ 0.25^100 ≈ 10^{-60} — numerically zero. Early layers learn nothing. Solutions: ReLU (f'=1 for z>0), skip connections (additive paths bypass multiplication), LSTM gates, layer/batch normalisation."
+    }
+  ],
+  "sources": [
+    { "label": "Rumelhart, Hinton & Williams (1986) — Learning representations by back-propagating errors, Nature 323:533–536", "url": "https://doi.org/10.1038/323533a0" },
+    { "label": "Goodfellow, Bengio & Courville — Deep Learning, Ch. 6 (Deep Feedforward Networks)", "url": "https://www.deeplearningbook.org/" }
+  ]
+}

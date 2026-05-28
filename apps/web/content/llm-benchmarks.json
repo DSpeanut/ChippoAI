@@ -1,0 +1,67 @@
+{
+  "visualizationType": "architecture-diagram",
+  "codeSnapshot": {
+    "label": "llm_benchmarks.py",
+    "code": "# LLM Benchmark Evaluation Overview\n# Standard benchmarks used to measure LLM capability across tasks\n\n# MMLU (Hendrycks et al., 2021) — Massive Multitask Language Understanding\n# 57 subjects × 4-way multiple choice, ~15K questions total\n# Evaluation: 0-shot and 5-shot accuracy\n\nMMUU_SUBJECTS = [\n    'abstract_algebra', 'anatomy', 'astronomy', 'business_ethics',\n    'clinical_knowledge', 'college_biology', 'college_chemistry', ...,  # 57 total\n    'world_religions'\n]\n\ndef mmlu_5shot_prompt(examples: list, question: str, choices: list) -> str:\n    \"\"\"Format a 5-shot MMLU prompt.\"\"\"\n    few_shot = '\\n\\n'.join(\n        f'Q: {ex[\"question\"]}\\n'\n        f'A. {ex[\"choices\"][0]}\\nB. {ex[\"choices\"][1]}\\n'\n        f'C. {ex[\"choices\"][2]}\\nD. {ex[\"choices\"][3]}\\n'\n        f'Answer: {ex[\"answer\"]}'\n        for ex in examples[:5]\n    )\n    test_q = (\n        f'Q: {question}\\n'\n        f'A. {choices[0]}\\nB. {choices[1]}\\n'\n        f'C. {choices[2]}\\nD. {choices[3]}\\n'\n        f'Answer:'\n    )\n    return few_shot + '\\n\\n' + test_q  # model should complete with 'A', 'B', 'C', or 'D'\n\n# Key benchmark scores (approximate, as of 2024):\nBENCHMARK_SCORES = {\n    'MMLU (5-shot accuracy %)':    {'GPT-4': 86.4, 'Claude-3-Opus': 86.8, 'LLaMA-3-70B': 82.0, 'GPT-3': 43.9},\n    'HellaSwag (10-shot %)':       {'GPT-4': 95.3, 'Claude-3-Opus': 95.4, 'LLaMA-3-70B': 93.0, 'GPT-3': 79.3},\n    'GSM8K (8-shot CoT %)':        {'GPT-4': 92.0, 'Claude-3-Opus': 95.0, 'LLaMA-3-70B': 83.0, 'GPT-3': 35.0},\n    'HumanEval (pass@1 %)':        {'GPT-4': 90.2, 'Claude-3-Opus': 84.9, 'LLaMA-3-70B': 57.9, 'GPT-3': 11.4},\n    'MATH (4-shot %)':             {'GPT-4': 52.9, 'Claude-3-Opus': 60.1, 'LLaMA-3-70B': 50.4, 'GPT-3': 0},\n}\nfor benchmark, scores in BENCHMARK_SCORES.items():\n    print(f'\\n{benchmark}:')\n    for model, score in sorted(scores.items(), key=lambda x: -x[1]):\n        print(f'  {model}: {score}')"
+  },
+  "eli3": [
+    "LLM benchmarks are standardised tests used to compare AI models across different abilities — like a school exam that every model takes so you can rank them fairly. Each benchmark tests a different skill: MMLU tests world knowledge, GSM8K tests math reasoning, HumanEval tests coding.",
+    "Unlike human exams, there's an ongoing arms race: once a benchmark is released, model developers train on similar data to score higher. A model that scores 90% on MMLU may not be as smart as it looks — it might have memorised patterns from benchmark-adjacent training data.",
+    "No single benchmark captures everything. A model might score 95% on HellaSwag (commonsense) but 50% on MATH (competition math). The field is moving toward dynamic benchmarks and harder evaluations to stay ahead of benchmark overfitting."
+  ],
+  "whenWhy": [
+    {
+      "title": "Comparing models during development and release",
+      "body": "Benchmarks provide a shared language for comparing models. When a new model is released, reporting MMLU, HellaSwag, GSM8K, and HumanEval scores immediately communicates its capability tier to researchers and practitioners. Model cards (HuggingFace) standardise benchmark reporting. The Open LLM Leaderboard (HuggingFace) runs all models through the same benchmark suite in a controlled environment, preventing cherry-picking."
+    },
+    {
+      "title": "Measuring specific capability improvements",
+      "body": "Different benchmarks target different capabilities: MMLU (knowledge breadth), ARC-Challenge (science reasoning), GSM8K (grade-school math), MATH (competition math), HumanEval (code), HellaSwag/WinoGrande (commonsense). When improving a specific model capability (adding chain-of-thought training for math), the relevant benchmark (GSM8K/MATH) shows the targeted improvement while others remain stable. Benchmark suites like HELM run 30+ tasks to give a comprehensive profile."
+    },
+    {
+      "title": "Detecting contamination and overfitting",
+      "body": "Benchmark contamination: models pre-trained on massive web corpora may have seen benchmark questions during training. Contamination detection: check n-gram overlap between training data and benchmark (Google, OpenAI routinely do this). Mitigation: use benchmarks created after training cutoff, or create private evaluation sets. GPQA (Rein et al., 2023): graduate-level expert questions designed to be hard to memorise — even experts with internet access average ~65% vs non-experts at 34%."
+    }
+  ],
+  "deepDiveIntro": [
+    "MMLU (Hendrycks et al., 2021): 57 subjects covering STEM, humanities, social science, and professional domains (medicine, law, accounting). 14,042 4-way multiple choice questions at expert-level difficulty. Evaluated 5-shot: 5 examples from the subject are included in the prompt. Random baseline: 25% (4-way choice). Human expert baseline: ~89.8%. GPT-4: ~86.4% (5-shot), Claude 3 Opus: ~86.8%. MMLU measures world knowledge and reasoning breadth — a single score summarising performance across diverse domains. [1]",
+    "HellaSwag (Zellers et al., 2019): commonsense NLI. Given 4 sentence continuations, choose the most plausible. Adversarially generated: endings that models found easy to reject were replaced with ones that fool surface-level pattern matching. BERT-large achieved 47.3% (barely above chance) when first released; GPT-4 achieves ~95%. The gap between base model performance and human performance (~95%) closed dramatically with scale — HellaSwag is now near-saturated for frontier models. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Key Benchmarks by Capability",
+      "body": "Knowledge: MMLU (57 subjects, 4-way MC), ARC-Challenge (science, hard), TriviaQA (trivia, open-domain). Reasoning: HellaSwag (commonsense NLI), WinoGrande (pronoun resolution), BIG-Bench Hard (task compositionality). Math: GSM8K (grade-school, 8-shot CoT), MATH (competition math, Hendrycks 2021), MGSM (multilingual math). Code: HumanEval (164 Python, pass@1), MBPP (374 Python), DS-1000 (data science). Instruction following: MT-Bench (80 multi-turn), AlpacaEval (805 instructions, win rate vs GPT-4). Safety: TruthfulQA (truthfulness under pressure), BBQ (bias in QA). [1]"
+    },
+    {
+      "heading": "GSM8K and Chain-of-Thought",
+      "body": "GSM8K (Cobbe et al., 2021): 8,500 grade-school math word problems requiring 2-8 reasoning steps. 8-shot chain-of-thought (Wei et al., 2022) evaluation: the 8 examples show full step-by-step reasoning before the answer. CoT dramatically improves math scores: GPT-3 (175B) without CoT: ~17%; with 8-shot CoT: ~35%. GPT-4: ~92%. Model-graded evaluation: extract the final numerical answer from the generated chain-of-thought. MATH (Hendrycks et al., 2021): 12,500 competition-level problems (AMC, AIME, etc.) — much harder. GPT-4: ~52%; Claude 3 Opus: ~60%. [1]"
+    },
+    {
+      "heading": "Benchmark Saturation and New Challenges",
+      "body": "Many benchmarks are becoming saturated: HellaSwag (frontier models ~95%, human ~95%), ARC-Easy (>99%), WinoGrande (~90%). When a benchmark saturates, it can no longer distinguish between top models. Response: harder benchmarks — GPQA (Rein et al., 2023: graduate-level, expert-verified), ARC-AGI (abstraction), FrontierMath (unsolved competition math). Dynamic benchmarks: SWE-bench (real GitHub issues), WebArena (web navigation), GAIA (general assistant tasks). The frontier is shifting from static benchmarks to agent-based evaluation (tool use, multi-step reasoning in real environments). [1]"
+    }
+  ],
+  "youtubeLabel": "LLM Benchmarks Explained — MMLU, GSM8K, HumanEval",
+  "youtubeUrl": "https://www.youtube.com/embed/cDabGBOmGtE",
+  "takeaways": [
+    "MMLU: 57 subjects, 5-shot, expert knowledge — GPT-4: 86.4%, human experts: 89.8%. [1]",
+    "GSM8K: grade-school math, 8-shot CoT — large CoT boost; GPT-4: 92%. [1]",
+    "HellaSwag: commonsense NLI — near-saturated for frontier models (~95%). [2]",
+    "HumanEval: code execution, pass@k — GPT-4: 90.2% pass@1. [1]",
+    "Contamination risk: web-trained models may have seen benchmark data — use post-cutoff or private evaluations. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why do MMLU scores from different papers sometimes differ by 5+ points for the same model?",
+      "a": "MMLU scores are highly sensitive to evaluation implementation details: (1) Prompt format — whether choices are presented as 'A. option' or '(A) option' or 'Option A' changes model performance significantly. (2) Answer extraction — how you extract the predicted choice from the generated text (greedy argmax on 'A'/'B'/'C'/'D' tokens vs full generation then pattern matching). (3) Number of shots — 0-shot, 3-shot, and 5-shot can differ by 3-5%. (4) System prompt — including a system prompt ('You are a helpful assistant') changes scores by up to 5%. (5) Tokenization differences — same nominal model with different BPE configs. The EleutherAI Language Model Evaluation Harness (lm-eval) provides standardised implementations — always cite the harness version when reporting MMLU."
+    },
+    {
+      "q": "What is ARC-AGI and why is it considered harder to game than MMLU?",
+      "a": "ARC (Abstraction and Reasoning Corpus, François Chollet, 2019) tests abstract visual pattern recognition: given input-output grid pairs illustrating a transformation rule, infer the rule and apply it to a new input. The transformations are designed to require 'core knowledge priors' (object permanence, counting, basic geometry) but not memorised facts. Crucially: ARC tasks cannot be solved by pattern-matching training data because each task's rule is unique. GPT-4 solves only ~34% with prompting (vs 84% for humans). ARC-AGI is resistant to contamination (tasks are novel) and requires genuine reasoning rather than knowledge retrieval — making it a stronger test of generalisation than MMLU."
+    }
+  ],
+  "sources": [
+    { "label": "Hendrycks et al. (2021) — Measuring Massive Multitask Language Understanding (MMLU) arXiv:2009.03300", "url": "https://arxiv.org/abs/2009.03300" },
+    { "label": "Zellers et al. (2019) — HellaSwag: Can a Machine Really Finish Your Sentence? arXiv:1905.07830", "url": "https://arxiv.org/abs/1905.07830" }
+  ]
+}

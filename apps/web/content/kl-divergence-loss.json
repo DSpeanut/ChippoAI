@@ -1,0 +1,73 @@
+{
+  "visualizationType": "distribution",
+  "codeSnapshot": {
+    "label": "kl_divergence.py",
+    "code": "import torch\nimport torch.nn as nn\nimport torch.nn.functional as F\n\n# PyTorch KL Divergence\n# Expects log-probabilities for input, probabilities for target\n# KLDivLoss computes: sum(target * (log(target) - input))\n\nlogits_student = torch.tensor([[3.0, 1.0, 0.2]])   # model output\nlogits_teacher = torch.tensor([[2.5, 2.0, 0.5]])   # teacher output\n\nT = 4.0  # temperature for knowledge distillation\nlog_p_student = F.log_softmax(logits_student / T, dim=1)\np_teacher = F.softmax(logits_teacher / T, dim=1)\n\n# KL(teacher || student) — minimize how much student diverges from teacher\nkl_loss = nn.KLDivLoss(reduction='batchmean')\nloss = kl_loss(log_p_student, p_teacher) * (T ** 2)  # rescale by T²\nprint(f\"Distillation KL Loss: {loss.item():.4f}\")\n\n# VAE: KL between posterior q(z|x) = N(μ, σ²) and prior p(z) = N(0,1)\n# Analytical form: KL = -0.5 * sum(1 + log σ² - μ² - σ²)\nmu = torch.tensor([0.5, -0.3, 0.8])\nlog_var = torch.tensor([-0.2, 0.1, -0.5])\nkl_vae = -0.5 * torch.sum(1 + log_var - mu**2 - torch.exp(log_var))\nprint(f\"VAE KL regularisation: {kl_vae.item():.4f}\")"
+  },
+  "eli3": [
+    "KL divergence measures 'how different is distribution Q from distribution P?' It asks: if the true distribution is P, what extra surprise do you get when you use Q instead? Zero when they're identical, positive otherwise — and it's not symmetric (KL(P||Q) ≠ KL(Q||P)).",
+    "In machine learning, KL divergence is used as a loss whenever you want to train a distribution to match another. In VAEs, you push the latent distribution to stay close to a Gaussian prior. In knowledge distillation, you push the student network to match the teacher's soft predictions.",
+    "The asymmetry is important: KL(P||Q) — called 'forward KL' — is infinite if Q assigns zero probability to anything P believes possible. KL(Q||P) — 'reverse KL' — is infinite if Q assigns anything positive to regions P says are impossible. Which direction you minimise changes the solution."
+  ],
+  "whenWhy": [
+    {
+      "title": "VAE regularisation: latent posterior to prior",
+      "body": "In a Variational Autoencoder, the encoder outputs μ, σ² for a Gaussian posterior q(z|x). The KL term in the ELBO is KL(q(z|x)||p(z)) = KL(N(μ,σ²)||N(0,I)) = −0.5 Σⱼ (1 + log σⱼ² − μⱼ² − σⱼ²). This regularises the latent space to be approximately Gaussian, enabling sampling at inference. The balance between reconstruction loss and KL is controlled by β (β-VAE)."
+    },
+    {
+      "title": "Knowledge distillation: matching teacher soft labels",
+      "body": "Hinton et al. (2015) showed that training a student to minimise KL(p_teacher||p_student) at temperature T transfers dark knowledge beyond hard labels. Soft labels encode inter-class similarities (a '3' looks a bit like an '8'). At T=4–8, the teacher distribution is smooth enough to provide useful signal. The distillation loss is KL × T² (the T² rescales gradient magnitudes to be T-independent)."
+    },
+    {
+      "title": "Reinforcement learning: policy divergence constraint (PPO, TRPO)",
+      "body": "TRPO constrains policy updates: E_s[KL(π_old(·|s)||π_new(·|s))] ≤ δ. This prevents catastrophic policy updates — steps too large in policy space collapse performance. PPO approximates this with a clipped surrogate objective, implicitly controlling KL. KL is also used as an early-stop criterion in PPO: if mean KL > 1.5×target, stop updating for that batch."
+    }
+  ],
+  "deepDiveIntro": [
+    "KL divergence from Q to P: D_KL(P||Q) = Σ_x P(x) log(P(x)/Q(x)) for discrete distributions, or ∫ p(x) log(p(x)/q(x)) dx for continuous. It is always ≥ 0 by Gibbs' inequality, and = 0 iff P = Q. It equals H(P,Q) − H(P): cross-entropy minus entropy. So minimising KL(P||Q) w.r.t. Q is equivalent to minimising cross-entropy H(P,Q) when P is fixed. [1]",
+    "The two directions have different optimisation properties. Forward KL: D_KL(P||Q) — minimising over Q gives mean-seeking behaviour (Q spreads to cover all modes of P, because terms where P>0 and Q=0 are infinite). Reverse KL: D_KL(Q||P) — minimising over Q gives mode-seeking behaviour (Q concentrates on one mode of P, because terms where Q>0 and P=0 are infinite). In variational inference, the ELBO maximises a lower bound on log p(x), which is equivalent to minimising reverse KL. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Definition and Properties",
+      "body": "D_KL(P||Q) = Σ P(x) log(P(x)/Q(x)) = E_P[log P/Q]. Properties: (1) ≥ 0 always (Gibbs inequality: E_P[log Q/P] ≤ log E_P[Q/P] = 0 by Jensen); (2) = 0 iff P = Q a.e.; (3) Not a metric: asymmetric, no triangle inequality; (4) D_KL(P||Q) = H(P,Q) − H(P); (5) Infinite if supp(Q) ⊄ supp(P) (Q assigns 0 to something P says is possible). [1]",
+      "formula": "D_KL(P||Q) = Σ P(x) log[P(x)/Q(x)]"
+    },
+    {
+      "heading": "Analytical KL for Gaussians (VAE)",
+      "body": "For q(z|x) = N(μ, diag(σ²)) and p(z) = N(0, I) in d dimensions: D_KL(q||p) = −(d/2) + (1/2) Σⱼ (σⱼ² + μⱼ² − 1 − log σⱼ²). This closed form allows direct gradient computation w.r.t. μ and σ (or log σ) without Monte Carlo estimation. The reparameterisation trick (z = μ + σ·ε, ε~N(0,1)) enables gradients through the sampling operation. [2]",
+      "formula": "KL(N(μ,σ²)||N(0,1)) = −0.5 Σⱼ(1 + log σⱼ² − μⱼ² − σⱼ²)"
+    },
+    {
+      "heading": "Forward vs Reverse KL in Variational Inference",
+      "body": "Variational inference minimises D_KL(q||p) (reverse KL) over a family q ∈ Q. Reverse KL is mode-seeking: if p is multimodal, q concentrates on one mode (to avoid placing mass where p is small, which would be penalised). Forward KL D_KL(p||q) is mean-seeking and requires samples from p (expectation under p). Expectation-propagation (EP) minimises forward KL. The choice of direction has a large practical impact when the target distribution p is multimodal. [2]"
+    },
+    {
+      "heading": "Jensen-Shannon Divergence and GANs",
+      "body": "JS(P||Q) = 0.5 KL(P||M) + 0.5 KL(Q||M) where M = 0.5(P+Q). JSD is symmetric, bounded in [0, log 2], and is a proper metric when square-rooted. Goodfellow et al. (2014) showed that training a GAN's discriminator to optimality causes the generator to minimise JSD(p_data||p_g). When distributions have disjoint support (common in high-dimensional data), JSD = log 2 and gradient vanishes — motivating Wasserstein GAN's use of the earth mover's distance instead. [3]"
+  ],
+  "youtubeLabel": "KL Divergence — StatQuest with Josh Starmer",
+  "youtubeUrl": "https://www.youtube.com/embed/q0AkK8aYbLY",
+  "takeaways": [
+    "D_KL(P||Q) = Σ P(x) log[P(x)/Q(x)] ≥ 0; zero iff P=Q. [1]",
+    "Asymmetric: forward KL is mean-seeking; reverse KL is mode-seeking. [2]",
+    "For Gaussians: KL(N(μ,σ²)||N(0,1)) = −0.5 Σ(1+log σ² − μ² − σ²) — closed form. [2]",
+    "VAEs minimise ELBO = reconstruction − β·KL; distillation uses KL to match teacher. [2]",
+    "JSD = symmetric KL variant; GAN training implicitly minimises JSD (or Wasserstein). [3]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why does KL(P||Q) blow up when Q assigns zero probability to something P considers possible?",
+      "a": "D_KL(P||Q) = Σ P(x) log(P(x)/Q(x)). When Q(x)=0 and P(x)>0, the term is P(x)·log(∞) = ∞. This means minimising forward KL forces Q to cover all modes of P — you cannot afford to miss any region where P has mass. This 'zero-forcing' property of reverse KL (D_KL(Q||P)) is symmetric: when P(x)=0 and Q(x)>0, the term is Q(x)·log(Q(x)/0) = ∞, so Q is forced to be zero wherever P is zero (mode-seeking)."
+    },
+    {
+      "q": "In knowledge distillation, why multiply the KL loss by T²?",
+      "a": "With temperature T, the student minimises KL(p_teacher^T || p_student^T) where p^T ∝ exp(z/T). The gradient of this loss w.r.t. the student logit zᵢ is (p_student,i^T − p_teacher,i^T)/T. Without the T² rescaling, the gradient magnitudes are 1/T of what they'd be at T=1, making the distillation signal T times weaker than the hard-label CE loss. Multiplying by T² restores the gradient to the same scale. This is the justification from Hinton et al. (2015) for the T² factor."
+    }
+  ],
+  "sources": [
+    { "label": "Goodfellow, Bengio & Courville — Deep Learning, Ch. 3", "url": "https://www.deeplearningbook.org/" },
+    { "label": "Kingma & Welling (2013) — Auto-Encoding Variational Bayes arXiv:1312.6114", "url": "https://arxiv.org/abs/1312.6114" },
+    { "label": "Goodfellow et al. (2014) — Generative Adversarial Nets, NeurIPS 2014", "url": "https://arxiv.org/abs/1406.2661" }
+  ]
+}

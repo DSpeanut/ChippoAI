@@ -1,0 +1,72 @@
+{
+  "visualizationType": "loss-curve",
+  "codeSnapshot": {
+    "label": "hinge_loss.py",
+    "code": "import torch\nimport torch.nn as nn\nimport numpy as np\n\n# Binary hinge loss: L = max(0, 1 - y * score)\n# Labels must be in {-1, +1}\nscores = torch.tensor([0.8, -0.3, 1.5, -1.2])  # raw decision values\nlabels = torch.tensor([1.0, -1.0, 1.0, -1.0])   # {+1, -1}\nhinge = torch.clamp(1 - labels * scores, min=0).mean()\nprint(f\"Hinge loss: {hinge.item():.4f}\")  # 0.375\n\n# PyTorch MultiMarginLoss for multi-class SVM\n# L = Σ_{j≠y} max(0, margin - z_y + z_j)\ncriterion = nn.MultiMarginLoss(margin=1.0)\nlogits = torch.tensor([[3.0, 1.0, -1.0],   # sample 1, true=0\n                       [0.5, 3.5,  1.0]])  # sample 2, true=1\nlabels = torch.tensor([0, 1])\nloss = criterion(logits, labels)\nprint(f\"Multi-class Hinge: {loss.item():.4f}\")\n\n# Squared hinge (smoother variant)\nsquared_hinge = (torch.clamp(1 - labels.float() * scores, min=0) ** 2).mean()\nprint(f\"Squared Hinge: {squared_hinge.item():.4f}\")"
+  },
+  "eli3": [
+    "Hinge loss is the training objective for Support Vector Machines (SVMs). It says: if you classified a sample correctly AND with enough confidence (margin ≥ 1), the loss is zero. You only pay a penalty when you're either wrong or not confident enough.",
+    "Think of it like a hinge on a door: the door swings freely once open past a certain angle, but resists below that angle. The 'hinge' happens at the decision boundary — once your score clears a margin of 1, no loss. Below that, loss is proportional to how short you fall.",
+    "The margin is the key idea. Hinge loss doesn't just try to classify correctly; it insists on correct classification with a gap. This is what makes SVMs find the maximum-margin hyperplane."
+  ],
+  "whenWhy": [
+    {
+      "title": "SVM training: maximum-margin classifier",
+      "body": "Hinge loss + L2 regularisation (weight decay) is the primal formulation of soft-margin SVM. The loss L = max(0, 1 − yᵢ(wᵀxᵢ + b)) + λ‖w‖² pushes the decision boundary away from both classes. The dual solution selects support vectors (samples with nonzero loss) that determine the boundary — making SVM sparse in training data."
+    },
+    {
+      "title": "Multi-class SVMs via Weston-Watkins or Crammer-Singer formulations",
+      "body": "Multi-class hinge: L = Σ_{j≠y} max(0, 1 − z_y + z_j), where z_y is the score for the true class. Penalises any incorrect class that scores within 1 of the true class. This is used in image classifiers and NLP taggers where structured margin matters more than probabilistic calibration."
+    },
+    {
+      "title": "When calibrated probabilities are not needed",
+      "body": "Hinge loss does not produce calibrated probability estimates — only decision scores. Use it when you need a binary yes/no classifier with maximum margin, not probability estimates. For tasks needing P(y=1|x), use logistic regression (cross-entropy) instead. Hinge loss is also non-differentiable at the kink but subgradient methods handle this efficiently."
+    }
+  ],
+  "deepDiveIntro": [
+    "Binary hinge loss: L = (1/n) Σᵢ max(0, 1 − yᵢ f(xᵢ)) where yᵢ ∈ {−1, +1} and f(xᵢ) = wᵀxᵢ + b is the decision score. The loss is zero when yᵢ f(xᵢ) ≥ 1 (correctly classified with margin), and linear in violation otherwise. Combining with L2 penalty gives the SVM primal: min_w (λ‖w‖²/2) + (1/n)Σmax(0, 1 − yᵢ wᵀxᵢ). [1]",
+    "Hinge loss is a convex upper bound on the 0-1 loss. The 0-1 loss (1 if misclassified, 0 if not) is NP-hard to minimise directly — hinge provides a tractable surrogate. Other surrogate losses: logistic (cross-entropy), exponential (AdaBoost). Hinge is tighter than logistic for large-margin examples and sparser in its gradient. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Definition and Geometry",
+      "body": "L(yᵢ, fᵢ) = max(0, 1 − yᵢ fᵢ) where yᵢ ∈ {−1,+1}, fᵢ ∈ ℝ. For a correct prediction with margin (yᵢ fᵢ > 1): loss = 0. At the margin boundary (yᵢ fᵢ = 1): loss = 0. For a margin violation (0 < yᵢ fᵢ < 1): loss = 1 − yᵢ fᵢ > 0 even though classification is correct. Misclassified (yᵢ fᵢ < 0): loss > 1. The gradient for yᵢ fᵢ < 1 is −yᵢ; for yᵢ fᵢ ≥ 1 is 0 (subgradient). [1]",
+      "formula": "L = max(0, 1 − y · f(x))"
+    },
+    {
+      "heading": "SVM Primal and Slack Variables",
+      "body": "The soft-margin SVM minimises: (1/2)‖w‖² + C Σᵢ ξᵢ s.t. yᵢ(wᵀxᵢ+b) ≥ 1 − ξᵢ, ξᵢ ≥ 0. Slack variables ξᵢ = max(0, 1 − yᵢ fᵢ) are exactly the hinge losses. So the SVM objective = (1/2)‖w‖² + C Σᵢ max(0, 1 − yᵢ fᵢ) = L2 reg + hinge loss. The hyperparameter C controls the tradeoff: large C ≈ hard margin (low regularisation), small C ≈ soft margin (high regularisation). [1]"
+    },
+    {
+      "heading": "Squared Hinge Loss",
+      "body": "L² = max(0, 1 − y·f)². Differentiable everywhere (kink is smoothed). Gradient for a margin violation: −2y(1−y·f). Penalises large violations more severely than linear hinge. Used in some SVM formulations and neural networks where differentiability aids optimisation. Squared hinge has heavier tails than linear hinge so is more sensitive to outliers. [2]"
+    },
+    {
+      "heading": "Hinge vs Cross-Entropy: Practical Comparison",
+      "body": "Both are convex surrogates for 0-1 loss. Key differences: (1) Sparsity: hinge produces sparse gradient (zero for well-classified points); CE has nonzero gradient for all points. (2) Probabilistic output: CE with sigmoid/softmax gives calibrated probabilities; hinge does not. (3) Large-margin property: hinge explicitly enforces a margin; CE minimises loss for all examples. In practice, neural network classifiers almost always use cross-entropy — it works better with SGD and produces useful probability estimates. Hinge loss is mainly used with SVMs and kernel methods. [1][2]"
+    }
+  ],
+  "youtubeLabel": "SVM Hinge Loss — StatQuest",
+  "youtubeUrl": "https://www.youtube.com/embed/Js3CLqMFMk8",
+  "takeaways": [
+    "L = max(0, 1 − y·f) — zero loss for correctly classified points beyond the margin. [1]",
+    "Soft-margin SVM objective = L2 regularisation + hinge loss: (λ/2)‖w‖² + Σmax(0,1−yf). [1]",
+    "Subgradient: −y if y·f < 1, else 0 — sparse gradient, only support vectors contribute. [1]",
+    "Squared hinge smooths the kink; both are convex upper bounds on the 0-1 loss. [2]",
+    "Use cross-entropy when probabilities needed; hinge for maximum-margin discriminative classifiers. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why does hinge loss enforce a margin but cross-entropy doesn't?",
+      "a": "Cross-entropy loss −log σ(y·f) is always positive and never reaches zero for finite f, even for very confident correct predictions. It keeps pushing the score higher forever. Hinge loss max(0, 1−y·f) is exactly zero once the score exceeds the margin threshold (y·f ≥ 1), so the gradient is zero for well-classified examples. This selective gradient is what makes SVMs find the widest margin: only support vectors (margin violators) contribute to the update."
+    },
+    {
+      "q": "Can hinge loss be used in deep learning?",
+      "a": "Yes, but rarely. Some metric learning and contrastive learning approaches use hinge loss variants. In image retrieval, the triplet loss max(0, d(a,p) − d(a,n) + m) is a form of hinge loss on embedding distances. For standard classification in neural nets, cross-entropy is preferred because: (1) backpropagation needs differentiable losses everywhere (hinge is non-differentiable at the kink, though subgradients exist), (2) cross-entropy provides stronger gradient signal throughout training, and (3) softmax cross-entropy yields calibrated probabilities."
+    }
+  ],
+  "sources": [
+    { "label": "Cortes & Vapnik (1995) — Support-Vector Networks, Machine Learning 20:273–297", "url": "https://doi.org/10.1007/BF00994018" },
+    { "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 12", "url": "https://hastie.su.domains/ElemStatLearn/" }
+  ]
+}

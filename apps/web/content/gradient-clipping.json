@@ -1,0 +1,67 @@
+{
+  "visualizationType": "training-curve",
+  "codeSnapshot": {
+    "label": "gradient_clipping.py",
+    "code": "import torch\nimport torch.nn as nn\n\nmodel = nn.Linear(10, 1)\noptimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)\n\n# Standard gradient clipping (clip global L2 norm)\nx, y = torch.randn(32, 10), torch.randn(32, 1)\nloss = nn.MSELoss()(model(x), y)\nloss.backward()\n\n# IMPORTANT: clip BEFORE optimizer.step()\ntotal_norm_before = torch.nn.utils.clip_grad_norm_(\n    model.parameters(),\n    max_norm=1.0    # clip if ||g|| > 1.0\n)\nprint(f\"Gradient norm before clip: {total_norm_before:.4f}\")\noptimizer.step()\n\n# How it works:\n# total_norm = sqrt(sum(p.grad.norm()**2 for p in params))\n# if total_norm > max_norm:\n#     scaling = max_norm / total_norm\n#     for p in params: p.grad.data.mul_(scaling)\n\n# Equivalent manual implementation\ndef clip_grad_norm_manual(parameters, max_norm):\n    params = [p for p in parameters if p.grad is not None]\n    total_norm = torch.sqrt(sum(p.grad.norm()**2 for p in params))\n    clip_coef = max_norm / (total_norm + 1e-6)\n    if clip_coef < 1:\n        for p in params:\n            p.grad.data.mul_(clip_coef)\n    return total_norm\n\n# Per-parameter value clipping (less common)\ntorch.nn.utils.clip_grad_value_(model.parameters(), clip_value=0.5)\n# clips each gradient component to [-0.5, 0.5] independently\n\n# Monitor gradient norm during training to diagnose issues\ngrad_norms = []\nfor step in range(100):\n    x, y = torch.randn(32, 10), torch.randn(32, 1)\n    optimizer.zero_grad()\n    loss = nn.MSELoss()(model(x), y)\n    loss.backward()\n    norm = torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)\n    grad_norms.append(norm.item())\n    optimizer.step()"
+  },
+  "eli3": [
+    "Gradient clipping prevents the 'exploding gradient' problem: if gradients become very large, the weight update is also very large, causing the model to make a huge, destructive step. Gradient clipping caps the gradient magnitude before the update, so the step is at most a controlled size.",
+    "Think of it like a speed limiter on a car. The gradient tells you which direction to go and how fast. Clipping limits the maximum speed — if you're heading in the right direction but going 200 mph, clipping brings you to 30 mph. You still go in the right direction, just not dangerously fast.",
+    "The most common type clips the global L2 norm: compute the total magnitude of all gradients across the entire model, and if it exceeds a threshold (usually 1.0), scale all gradients down proportionally. This preserves the gradient direction while bounding the step size."
+  ],
+  "whenWhy": [
+    {
+      "title": "Transformer training (standard practice)",
+      "body": "Gradient clipping with max_norm=1.0 is used in virtually all transformer and LLM training: GPT-2, GPT-3, LLaMA, BERT all clip to 1.0. Without clipping, occasional large batches or hard examples can produce gradient spikes that corrupt trained weights. Loss curves with clipping have occasional flat moments (the clip fires) but never destructive spikes."
+    },
+    {
+      "title": "Recurrent networks on long sequences",
+      "body": "RNNs with backpropagation through time (BPTT) multiply gradients across T timesteps — spectral radius > 1 causes exponential growth. Gradient clipping (Pascanu et al., 2013) is the standard fix: clip the gradient norm to max_norm=5–10 before the update. This was the primary solution for training RNNs before LSTMs became dominant."
+    },
+    {
+      "title": "Reinforcement learning with sparse rewards",
+      "body": "In RL, rewards can vary dramatically — a rare large reward produces large TD error → large gradient. Without clipping, a single large reward event can corrupt policy weights. PPO and SAC both use gradient clipping (max_norm=0.5–1.0) to ensure reward spikes don't destabilise training. RLHF training for LLMs uses clipping throughout."
+    }
+  ],
+  "deepDiveIntro": [
+    "Global gradient norm clipping: g = [g_1,...,g_n] is the concatenation of all parameter gradients. total_norm = ‖g‖₂ = √(Σᵢ‖gᵢ‖²_F). If total_norm > max_norm: g ← g·(max_norm/total_norm). This scales all gradients by the same factor, preserving the relative gradient direction. The update direction is unchanged; only its magnitude is bounded. [1]",
+    "An alternative: value clipping (clip_grad_value_): each gradient component gᵢⱼ ← clip(gᵢⱼ, −c, c). This does NOT preserve gradient direction — it clips each component independently, changing the gradient's direction. This can cause instability. Norm clipping is preferred. [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Global Norm Clipping Algorithm",
+      "body": "total_norm = √(Σₚ ‖∇_p L‖²_F). If total_norm > max_norm: scale = max_norm / total_norm; for each p: ∇_p L ← ∇_p L · scale. The scaling is the same for all parameters — the gradient vector is shortened proportionally, preserving direction. At no point are any individual gradients zeroed or changed in sign. After clipping, ‖g‖₂ = min(total_norm, max_norm). The clipping only fires when there's an abnormally large gradient — in normal training, it's a no-op. [1]",
+      "formula": "g ← g · min(1, max_norm/‖g‖₂)"
+    },
+    {
+      "heading": "Setting max_norm",
+      "body": "Common values: transformers/LLMs: 1.0 (GPT-3, LLaMA, BERT). RNNs: 1.0–5.0 (Pascanu et al., 2013 recommend 1.0). RL (PPO, SAC): 0.5–1.0. CNNs with BN: often not needed (BN stabilises gradients). Diagnostic: log the gradient norm at each step. If the 90th percentile is well below max_norm, clipping rarely fires and is harmless. If the median is close to max_norm, you're always clipping — either the lr is too high or max_norm is too low. Monitor clip frequency: ideally < 10% of steps. [1]"
+    },
+    {
+      "heading": "Clipping vs RNN Stability",
+      "body": "Pascanu et al. (2013) proved that for RNNs with BPTT, gradient clipping provides a fixed-point guarantee: after clipping, the update direction is the same as the full gradient when total_norm ≤ max_norm, and points into a safe region when total_norm > max_norm. They showed this is strictly better than reducing the learning rate to handle gradient spikes, because clipping adapts to the gradient magnitude dynamically. The heuristic max_norm=5 for language modelling and max_norm=1 for image tasks has been validated empirically across many papers. [1]"
+    }
+  ],
+  "youtubeLabel": "Gradient Clipping — Exploding Gradients Solution",
+  "youtubeUrl": "https://www.youtube.com/embed/qhXZsFVxGKo",
+  "takeaways": [
+    "g ← g·min(1, max_norm/‖g‖₂) — scale all gradients proportionally, preserve direction. [1]",
+    "Apply BEFORE optimizer.step(), AFTER loss.backward(). [1]",
+    "max_norm=1.0 is standard for transformers, LLMs, and RLHF training. [1]",
+    "Value clipping (clip_grad_value_) changes gradient direction — avoid; use norm clipping. [1]",
+    "Monitor total_norm at each step: if >max_norm > 10% of steps, consider reducing lr. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Does gradient clipping affect convergence guarantees?",
+      "a": "For convex problems with Lipschitz gradients, gradient clipping with max_norm = c gives convergence rate O(c/√T + R²/(c·T)) where R is the distance to optimum. Optimally set c ∝ 1/√T for convergence to O(1/√T) — same as SGD without clipping. In practice: clipping rarely fires during training (most steps have total_norm < max_norm), so it's nearly equivalent to unclipped SGD on normal steps, with a safety bound on exceptional steps. For non-convex deep networks, the theoretical picture is less clear, but empirically clipping almost always helps or is neutral."
+    },
+    {
+      "q": "Should gradient clipping be applied to all parameters, including frozen ones?",
+      "a": "Only apply clipping to parameters that receive gradient updates (non-frozen parameters). In LoRA fine-tuning where most weights are frozen, clip only the LoRA adapter parameters. If frozen parameter gradients are accidentally included in the norm computation, the norm will be very large (full model size) and the clip will scale down the actual training gradients too aggressively. In PyTorch: pass model.parameters() for full fine-tuning, or a list of specific parameter groups for partial fine-tuning. Use requires_grad=True filter: [p for p in model.parameters() if p.requires_grad]."
+    }
+  ],
+  "sources": [
+    { "label": "Pascanu, Mikolov & Bengio (2013) — On the difficulty of training recurrent neural networks, ICML 2013 arXiv:1211.5063", "url": "https://arxiv.org/abs/1211.5063" }
+  ]
+}

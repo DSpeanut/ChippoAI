@@ -1,0 +1,71 @@
+{
+  "visualizationType": "training-curve",
+  "codeSnapshot": {
+    "label": "instruction_tuning.py",
+    "code": "# Instruction Tuning (FLAN-style) — Wei et al., 2021\n# Fine-tune on many NLP tasks formatted as natural-language instructions\n# Goal: zero-shot generalisation to unseen tasks\n\nfrom datasets import load_dataset\nfrom transformers import AutoTokenizer, AutoModelForSeq2SeqLM, TrainingArguments\nfrom trl import SFTTrainer\n\n# FLAN instruction templates — multiple templates per task for diversity\nFLAN_TEMPLATES = {\n    'sentiment': [\n        'What is the sentiment of the following review?\\n{text}\\nAnswer:',\n        'Is the following review positive or negative?\\n{text}',\n        'Classify the sentiment of this text as positive or negative:\\n{text}',\n    ],\n    'translation': [\n        'Translate the following English text to French:\\n{text}',\n         'English: {text}\\nFrench:',\n    ],\n    'summarization': [\n        'Summarize the following article in one paragraph:\\n{text}',\n        'Give a brief summary of this article:\\n{text}',\n    ],\n}\n\ndef format_flan_example(task: str, example: dict, template_idx: int = 0) -> dict:\n    \"\"\"\n    Format a task example using one of the FLAN-style instruction templates.\n    Multiple templates per task increase prompt diversity during training.\n    \"\"\"\n    template = FLAN_TEMPLATES[task][template_idx]\n    text = template.format(**example['inputs'])\n    return {'text': text, 'labels': example['targets']}\n\n# Training configuration for instruction tuning\n# Key difference from standard SFT: highly diverse tasks in one training run\ntraining_args = TrainingArguments(\n    output_dir='./flan_output',\n    per_device_train_batch_size=8,\n    gradient_accumulation_steps=4,\n    num_train_epochs=3,\n    learning_rate=3e-5,        # slightly higher than SFT on single task\n    lr_scheduler_type='cosine',\n    warmup_ratio=0.05,\n    bf16=True,\n    # Task mixing: typically sample proportional to sqrt of dataset size\n    # to prevent large tasks from dominating\n)\n\n# Task mixing: datasets weighted by sqrt of size (Wei et al. recipe)\n# prevents large datasets (e.g., QA) from overwhelming small tasks (e.g., NLI)\nimport numpy as np\ndataset_sizes = {'squad': 87599, 'snli': 549367, 'cnn_dailymail': 287113}\nweights = {k: np.sqrt(v) for k, v in dataset_sizes.items()}\ntotal = sum(weights.values())\nsampling_probs = {k: v / total for k, v in weights.items()}\nprint('Task sampling probabilities:', sampling_probs)"
+  },
+  "eli3": [
+    "Instruction tuning trains a language model on many different tasks, each described as a natural-language instruction (like 'Summarize this article' or 'Translate this to French'). By training on hundreds of different task types, the model learns to follow instructions for tasks it has never seen before.",
+    "The key insight from the FLAN paper (Wei et al., 2021): if you train a model on enough diverse instruction-formatted tasks, it generalizes to new tasks zero-shot (without any examples). The model learns not just specific task patterns but the meta-skill of 'follow the instruction.'",
+    "Instruction tuning is the bridge between a base language model and a useful assistant. SFT (supervised fine-tuning) on a single task gives you a specialist; instruction tuning on many diverse tasks gives you a generalist assistant. Most modern chat models (FLAN-T5, ChatGPT, Claude, Gemini) use instruction tuning before alignment training."
+  ],
+  "whenWhy": [
+    {
+      "title": "Zero-shot generalisation to unseen tasks",
+      "body": "FLAN (Wei et al., 2021) fine-tuned a 137B LaMDA model on 62 NLP datasets across 12 task clusters, formatted as natural-language instructions. On held-out clusters (never seen during training), FLAN outperformed few-shot GPT-3 (175B, 3× larger) — demonstrating genuine zero-shot generalisation. The mechanism: instruction tuning teaches the model to follow the instruction format, which transfers to new tasks described in the same format. More tasks during training → better zero-shot on unseen tasks."
+    },
+    {
+      "title": "Multi-task diversity prevents catastrophic forgetting",
+      "body": "SFT on a single task causes catastrophic forgetting: the model becomes great at one task but regresses on others. Instruction tuning on 100+ tasks prevents this — the model is continuously trained to maintain performance across diverse domains. FLAN-T5 (Chung et al., 2022) instruction-tuned T5 on 1836 tasks from FLAN, P3, Super-NaturalInstructions — achieving strong performance across MMLU, BBH, and generation tasks without specialising in any single one."
+    },
+    {
+      "title": "Template diversity and task scaling",
+      "body": "A key FLAN design choice: write multiple instruction templates per task (typically 10 templates). Template diversity makes the model robust to prompt phrasing ('Classify the sentiment' vs 'Is this positive or negative?'). Scale matters too: fine-tuning on 62 tasks outperforms 6 tasks significantly; benefits level off above ~100 tasks. Task mixing with √-size weighting prevents large tasks from dominating — small tasks get disproportionate representation."
+    }
+  ],
+  "deepDiveIntro": [
+    "Instruction tuning (Wei et al., 2021) formalises the idea: given a task T and an example (xᵢ, yᵢ), format xᵢ as an instruction-prefixed input: instruction(T) + xᵢ → yᵢ. Train the model to map this format across all tasks simultaneously. The test condition: given a new task T_new with instruction instruction(T_new) + x_test, generate y_test correctly with zero examples. The key result: task cluster held-out evaluation — train on all tasks except cluster C, test zero-shot on C. FLAN outperforms few-shot GPT-3 on 20 of 25 evaluated tasks. [1]",
+    "Scale and task count interact: the improvement from instruction tuning grows with model size and task count. A 137B model benefits strongly from instruction tuning; an 8B model shows smaller benefits. Scaling to 1836 tasks (FLAN-T5, Chung et al., 2022) further improves over the original 62-task FLAN. Chain-of-thought (CoT) tasks added to the instruction mixture improve reasoning on held-out reasoning benchmarks — a key finding for scaling instruction tuning. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Task Formatting and Template Design",
+      "body": "Each NLP task is reformatted as a natural-language instruction. For classification: 'Is the following statement a fact or an opinion? {text}' → 'Fact' or 'Opinion'. For generation: 'Write a question that this passage answers: {passage}' → {question}. Template design principles: (1) use natural language, not task-specific format; (2) write 10 diverse templates per task to avoid template memorization; (3) include both direct-answer templates ('Answer: ...') and implied-format templates ('German: ...'). Each example during training randomly samples one template. [1]"
+    },
+    {
+      "heading": "Task Clusters and Held-Out Evaluation",
+      "body": "FLAN groups 62 tasks into 12 clusters: classification, NLI, reading comprehension, translation, summarisation, commonsense reasoning, etc. To evaluate zero-shot generalisation: train on all clusters except one, evaluate on the held-out cluster. This avoids the confound of task-specific training data leaking into evaluation. Key result: FLAN significantly outperforms GPT-3 zero-shot and few-shot on 20/25 tasks, despite GPT-3 being 3× larger. The held-out cluster design proves instruction tuning enables genuine zero-shot generalisation, not just task-specific memorization. [1]"
+    },
+    {
+      "heading": "FLAN vs Standard SFT",
+      "body": "| Aspect | Standard SFT | Instruction Tuning (FLAN) |\n|---|---|---|\n| Tasks | Single task | 100+ tasks |\n| Generalization | Task-specific | Zero-shot on new tasks |\n| Forgetting | Catastrophic forgetting | Maintained across tasks |\n| Data | 1K–1M examples one task | Diverse mix across tasks |\n| Templates | Fixed format | Multiple per task |\nFLAN requires more data diversity but produces a more generally capable model. Modern LLMs use instruction tuning as the first post-pretraining step, followed by RLHF/DPO for alignment. [1]"
+    },
+    {
+      "heading": "FLAN-T5 and Scaling",
+      "body": "Chung et al. (2022) scaled instruction tuning dramatically: FLAN-T5 trained on 1836 tasks from FLAN, P3, and Super-Natural Instructions. Key results: (1) CoT data in the mixture improves chain-of-thought reasoning on BIG-Bench Hard and MMLU. (2) Input inversion (training on both forward task and reversed task — generating the input from the output) improves generalisation. (3) FLAN-T5-11B outperforms T5-11B significantly on MMLU and matches GPT-3 175B on several benchmarks. Instruction tuning is among the highest-ROI post-training techniques per compute dollar. [2]"
+    }
+  ],
+  "youtubeLabel": "FLAN: Instruction Tuning for Zero-Shot Generalisation",
+  "youtubeUrl": "https://www.youtube.com/embed/bZQun8Y4L2A",
+  "takeaways": [
+    "Train on 100+ tasks as natural-language instructions → zero-shot generalisation to unseen tasks. [1]",
+    "Multiple templates per task (≥10) prevents template memorization and improves robustness. [1]",
+    "Task mixing with √-size weighting prevents large tasks from dominating the training signal. [1]",
+    "FLAN-T5: 1836 tasks + CoT data → strong MMLU and reasoning performance without task-specific data. [2]",
+    "Scale matters: instruction tuning benefits grow with model size and task count. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "How does instruction tuning differ from prompt engineering?",
+      "a": "Prompt engineering adapts the input at inference time (no weight updates) to improve task performance. Instruction tuning adapts the model's weights by training on diverse instruction-formatted examples. The two are complementary: instruction tuning makes the model follow instructions in general; prompt engineering optimises the specific instruction for a specific task at inference time. A key difference: prompt engineering works at test time without access to labeled data; instruction tuning requires labeled data for training. In practice: instruction-tuned models (FLAN, ChatGPT) respond much more reliably to natural-language instructions than base models, making subsequent prompt engineering more effective."
+    },
+    {
+      "q": "Why does instruction tuning help with tasks not in the training mixture?",
+      "a": "The mechanism is not fully understood but several hypotheses hold empirically: (1) Format transfer: instruction tuning teaches the model the input format 'instruction + input → output' — any new task described in this format benefits from this meta-format knowledge. (2) Task feature sharing: many NLP tasks share underlying skills (reading comprehension, entailment, summarisation share 'understanding text' skills). (3) Prompt following as a latent skill: the base model has latent task capabilities from pretraining, but doesn't know to apply them from instructions alone. Instruction tuning 'unlocks' these latent capabilities by training the mapping from instruction to task behavior. FLAN's held-out cluster experiments demonstrate this directly."
+    }
+  ],
+  "sources": [
+    { "label": "Wei et al. (2021) — Finetuned Language Models Are Zero-Shot Learners (FLAN) arXiv:2109.01652", "url": "https://arxiv.org/abs/2109.01652" },
+    { "label": "Chung et al. (2022) — Scaling Instruction-Finetuned Language Models (FLAN-T5) arXiv:2210.11416", "url": "https://arxiv.org/abs/2210.11416" }
+  ]
+}

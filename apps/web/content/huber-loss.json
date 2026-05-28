@@ -1,0 +1,74 @@
+{
+  "visualizationType": "loss-curve",
+  "codeSnapshot": {
+    "label": "huber_loss.py",
+    "code": "import torch\nimport torch.nn as nn\nimport numpy as np\n\n# PyTorch Huber Loss (SmoothL1Loss is Huber with delta=1)\ndelta = 1.0\ncriterion = nn.HuberLoss(delta=delta, reduction='mean')\ny_pred = torch.tensor([1.5, 3.0, -0.5, 8.0])\ny_true = torch.tensor([2.0, 3.5,  0.0, 3.0])\nloss = criterion(y_pred, y_true)\nprint(f\"Huber Loss: {loss.item():.4f}\")\n\n# Manual implementation\ndef huber_loss(y, yhat, delta=1.0):\n    residual = torch.abs(y - yhat)\n    quadratic = 0.5 * residual**2\n    linear = delta * residual - 0.5 * delta**2\n    return torch.where(residual <= delta, quadratic, linear).mean()\n\nloss_manual = huber_loss(y_true, y_pred, delta=delta)\nprint(f\"Manual Huber: {loss_manual.item():.4f}\")\n\n# Compare with MSE and MAE on outlier example\nclean = torch.tensor([1.0, 2.0, 3.0])\npred_with_outlier = torch.tensor([1.1, 2.1, 13.0])  # outlier\nprint(f\"MSE:   {nn.MSELoss()(pred_with_outlier, clean):.4f}\")\nprint(f\"MAE:   {nn.L1Loss()(pred_with_outlier, clean):.4f}\")\nprint(f\"Huber: {nn.HuberLoss(delta=1)(pred_with_outlier, clean):.4f}\")"
+  },
+  "eli3": [
+    "Huber loss is the 'best of both worlds' between MSE and MAE. It behaves like MSE (smooth, quadratic) when errors are small, but switches to MAE (linear, robust) when errors are large. The switch-over point is controlled by a parameter δ (delta).",
+    "Think of it like a penalty for being late. If you're a few minutes late, the penalty grows quickly (quadratic — you really shouldn't be late at all). But if you're hours late, the penalty grows more slowly (linear — you're already in trouble, additional lateness doesn't make it much worse). This prevents one catastrophically late day from dominating your whole record.",
+    "In neural networks, Huber loss (often called SmoothL1 in PyTorch) is used in object detection and reinforcement learning where occasional large residuals (bad detections or reward spikes) should not derail training."
+  ],
+  "whenWhy": [
+    {
+      "title": "Regression with occasional outliers (object detection, RL)",
+      "body": "SSD and Faster R-CNN bounding box regression use Smooth L1 (Huber with δ=1). Large residuals in early training would produce huge MSE gradients that destabilise learning. Huber clips the gradient magnitude to δ for large errors, keeping training stable. Similarly, DQN uses Huber loss for TD-error to prevent explosive Q-value updates from rare large rewards."
+    },
+    {
+      "title": "Setting δ: data-driven choice",
+      "body": "δ controls the boundary between quadratic and linear regions. If most residuals are below δ, Huber ≈ MSE. If most are above δ, Huber ≈ MAE. A principled choice: set δ ≈ 1.35 σ_hat where σ_hat is the robust scale estimate (MAD/0.6745). Alternatively, inspect the residual distribution on a validation set and set δ to roughly the 90th percentile of |residuals|."
+    },
+    {
+      "title": "Smooth approximation to MAE for gradient-based optimisation",
+      "body": "MAE has a non-differentiable point at residual=0, which can cause oscillation in SGD. Huber is differentiable everywhere: the quadratic region near zero provides well-behaved gradients for small corrections. This makes it a drop-in replacement for MAE in any gradient-based optimizer without requiring subgradient methods."
+    }
+  ],
+  "deepDiveIntro": [
+    "The Huber loss (Huber, 1964) is defined piecewise: L_δ(e) = 0.5e² for |e| ≤ δ, and δ(|e| − 0.5δ) for |e| > δ. This ensures continuity and differentiability at |e| = δ (both value and derivative match). The gradient is: ∂L/∂e = e for |e| ≤ δ (like MSE), and δ·sign(e) for |e| > δ (like MAE). The gradient is clipped to ±δ for large residuals. [1]",
+    "Huber is the solution to a minimax problem: it is the loss function that minimises the maximum asymptotic variance over a contamination neighbourhood of a Gaussian distribution. In robust statistics, Huber's M-estimator with this loss achieves the best worst-case efficiency under ε-contamination. [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Definition and Gradient",
+      "body": "L_δ(e) = 0.5e² if |e| ≤ δ, else δ|e| − 0.5δ². The −0.5δ² term ensures continuity at |e|=δ: value = 0.5δ² from the left, δ·δ − 0.5δ² = 0.5δ² from the right. Gradient: ∂L/∂e = e if |e| ≤ δ, else δ·sign(e). Clipping the gradient to ±δ prevents large residuals from dominating the parameter update — this is the core robustness mechanism. [1]",
+      "formula": "L_δ(e) = {0.5e²  if |e|≤δ;  δ(|e|−0.5δ)  if |e|>δ}"
+    },
+    {
+      "heading": "Pseudo-Huber / Smooth Approximation",
+      "body": "L_δ(e) = δ²(√(1 + (e/δ)²) − 1). This is differentiable everywhere and smooth (unlike the piecewise Huber). As e→0: L ≈ 0.5e² (matches Huber). As |e|→∞: L ≈ δ|e| (linear, like Huber). Used when second-order optimisation (Newton methods) requires twice-differentiable losses. Gradient: δ·e/√(δ²+e²), which is smooth at 0. [2]",
+      "formula": "L_pseudo(e) = δ²(√(1+(e/δ)²) − 1)"
+    },
+    {
+      "heading": "Huber vs MSE vs MAE: Gradient Comparison",
+      "body": "| |e| value | MSE gradient | MAE gradient | Huber gradient |\n|---|---|---|---|\n| 0.1 | 0.1 | 0.5 | 0.1 |\n| 0.5 | 0.5 | 0.5 | 0.5 |\n| 1.0 (=δ) | 1.0 | 0.5 | 1.0 |\n| 5.0 | 5.0 | 0.5 | 1.0 |\n| 50.0 | 50.0 | 0.5 | 1.0 |\nFor |e| > δ, Huber gradient is capped at δ, preventing large residuals from causing explosive updates. For |e| ≤ δ, Huber matches MSE's adaptive (decreasing) gradient. [1]"
+    },
+    {
+      "heading": "Huber in Reinforcement Learning (DQN)",
+      "body": "In DQN, the Bellman error δₜ = r + γ max_a' Q(s',a'; θ⁻) − Q(s,a; θ) can be very large in early training. Using MSE loss on this error produces enormous gradients that destabilise the Q-network. Huber loss clamps the gradient to ±1 for large TD errors, making training stable. This is standard practice in value-based RL (DQN, DDPG, TD3). [3]"
+    }
+  ],
+  "youtubeLabel": "Huber Loss vs MSE vs MAE — ML Explained",
+  "youtubeUrl": "https://www.youtube.com/embed/OgK8JFjkSto",
+  "takeaways": [
+    "Quadratic for |e| ≤ δ (smooth gradients), linear for |e| > δ (outlier robustness). [1]",
+    "Gradient capped at ±δ — prevents large residuals from causing explosive updates. [1]",
+    "Differentiable everywhere at the kink (both value and derivative continuous at |e|=δ). [1]",
+    "δ choice: set ≈ 1.35·MAD/0.6745 or the 90th percentile of validation residuals. [1]",
+    "Standard in object detection (Faster R-CNN) and RL (DQN) for training stability. [3]"
+  ],
+  "edgeCases": [
+    {
+      "q": "What is the relationship between Huber loss and M-estimators in robust statistics?",
+      "a": "Huber's M-estimator minimises Σ ρ(eᵢ/σ) where ρ is the Huber function. This is equivalent to a weighted least squares problem where outliers (|e|>δ) receive weight δ/|e| < 1 (down-weighted) and inliers receive weight 1. The resulting estimator is asymptotically normal, unbiased for Gaussian data, and achieves minimax efficiency in a neighbourhood of the Gaussian model under ε-contamination. The 'efficiency' at ε=0 (pure Gaussian) is 95% relative to OLS when δ=1.345σ."
+    },
+    {
+      "q": "What's the difference between PyTorch's SmoothL1Loss and HuberLoss?",
+      "a": "They are related but scaled differently. PyTorch SmoothL1Loss (pre-1.9): L = 0.5e² if |e|<1, else |e|−0.5 — this is Huber with δ=1 but without the δ factor in the linear region. HuberLoss (PyTorch 1.9+, reduction='mean'): L = 0.5e²/δ if |e|<δ, else |e|−0.5δ. The δ normalisation ensures the gradient magnitude at the transition point is 1 regardless of δ. Use nn.HuberLoss(delta=δ) for the standard Huber formulation."
+    }
+  ],
+  "sources": [
+    { "label": "Huber, P.J. (1964) — Robust Estimation of a Location Parameter, Annals of Mathematical Statistics 35(1):73–101", "url": "https://doi.org/10.1214/aoms/1177703732" },
+    { "label": "Goodfellow, Bengio & Courville — Deep Learning, Ch. 5", "url": "https://www.deeplearningbook.org/" },
+    { "label": "Mnih et al. (2015) — Human-level control through deep reinforcement learning, Nature 518:529–533", "url": "https://doi.org/10.1038/nature14236" }
+  ]
+}

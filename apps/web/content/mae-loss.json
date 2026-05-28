@@ -1,0 +1,74 @@
+{
+  "visualizationType": "loss-curve",
+  "codeSnapshot": {
+    "label": "mae_loss.py",
+    "code": "import torch\nimport torch.nn as nn\nimport numpy as np\n\n# PyTorch MAE (L1 Loss)\ncriterion = nn.L1Loss(reduction='mean')\ny_pred = torch.tensor([2.5, 0.0, 2.0, 8.0])\ny_true = torch.tensor([3.0, -0.5, 2.0, 7.0])\nloss = criterion(y_pred, y_true)\nprint(f\"MAE: {loss.item():.4f}\")  # 0.5\n\n# Manual: (1/n) * sum(|y - ŷ|)\nerrors = torch.abs(y_true - y_pred)\nmae_manual = errors.mean()\nprint(f\"Manual MAE: {mae_manual.item():.4f}\")  # 0.5\n\n# Gradient: sign(ŷ - y) / n\n# Constant magnitude, unlike MSE\ngrad = torch.sign(y_pred - y_true) / len(y_pred)\nprint(f\"MAE gradient: {grad.numpy()}\")  # [-0.25, 0.25, 0.0, 0.25]\n\n# Outlier comparison\nclean = torch.tensor([1.0, 2.0, 3.0, 4.0])\npred = torch.tensor([1.1, 2.1, 3.1, 10.0])  # outlier at index 3\nmse = nn.MSELoss()(pred, clean)\nmae = nn.L1Loss()(pred, clean)\nprint(f\"MSE with outlier: {mse.item():.4f}\")  # 10.91\nprint(f\"MAE with outlier: {mae.item():.4f}\")"
+  },
+  "eli3": [
+    "MAE (Mean Absolute Error) is the simplest way to measure prediction error: just take the average of how wrong you are, ignoring the direction. If you predict 8 and the true value is 5, the error is 3. No squaring — a big mistake counts proportionally more than a small one, but not disproportionately more.",
+    "Unlike MSE, MAE treats a miss of 10 as exactly 10× worse than a miss of 1. This makes it more forgiving of outliers and easier to interpret: MAE = 5.2 means 'on average, predictions are 5.2 units off from the truth, in the same units as the target.'",
+    "The downside is that the gradient of |e| is not defined at e=0 and is a constant ±1/n everywhere else — it doesn't get smaller as you approach the correct answer, making optimization less smooth than MSE."
+  ],
+  "whenWhy": [
+    {
+      "title": "Robust regression in the presence of outliers",
+      "body": "MAE minimization is equivalent to finding the conditional median (not the mean) of y given x. The median is a robust statistic — unaffected by extreme values. When your data has heavy tails or known outliers (fraudulent transactions, sensor glitches, corrupted labels), MAE gives a more honest model than MSE. Example: median house price prediction where a few billionaire mansions skew the distribution."
+    },
+    {
+      "title": "Interpretable evaluation metric",
+      "body": "MAE is in the same units as the target variable. A model predicting sales volume with MAE = 142 is off by 142 units on average. This directness makes it the preferred reporting metric for stakeholders. RMSE (√MSE) is also in the same units but amplifies large errors more. When you need an intuitive 'typical error', use MAE."
+    },
+    {
+      "title": "When gradient stability matters less than robustness",
+      "body": "MAE has constant-magnitude gradients (±1/n), so the optimizer doesn't decelerate as it approaches convergence the way MSE does. In practice, this means Adam or RMSProp (adaptive gradient methods) handle MAE better than vanilla SGD. For neural networks with smooth outputs, Huber loss is often preferred — it's quadratic near zero (stable gradients) and linear for large residuals (outlier robustness)."
+    }
+  ],
+  "deepDiveIntro": [
+    "MAE = (1/n) Σᵢ |yᵢ − ŷᵢ|. This is the L1 norm of the residual vector divided by n. Unlike MSE (L2), minimizing L1 loss gives the conditional median: arg min_c E[|Y − c|] = median(Y). This is the statistical reason MAE is robust — the median is resistant to outlier contamination. [1]",
+    "The subdifferential of MAE at a residual eᵢ = yᵢ − ŷᵢ is ∂|eᵢ|/∂ŷᵢ = −sign(eᵢ) for eᵢ ≠ 0, and [−1, 1] at eᵢ = 0. Subgradient methods or smooth approximations (pseudo-Huber) are needed for efficient optimization. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Definition and Gradient",
+      "body": "L = (1/n) Σᵢ |yᵢ − ŷᵢ|. Gradient: ∂L/∂ŷᵢ = −sign(yᵢ − ŷᵢ) / n. The gradient magnitude is constant (1/n) regardless of residual size. This contrasts with MSE where ∂L/∂ŷᵢ = −2/n (yᵢ − ŷᵢ), which decays as the prediction improves. In practice, MAE optimizers converge more slowly near the minimum since gradient doesn't shrink. [1]",
+      "formula": "L = (1/n) Σᵢ |yᵢ − ŷᵢ|, ∂L/∂ŷᵢ = −sign(yᵢ − ŷᵢ)/n"
+    },
+    {
+      "heading": "MAE ↔ Conditional Median",
+      "body": "For a scalar prediction c, E[|Y − c|] is minimized at c = median(Y). When f(x) minimizes E[|Y − f(x)| | X=x] pointwise, f(x) = median(Y|X=x). This is the statistical interpretation: MAE regression fits the conditional median surface, while MSE fits the conditional mean. For asymmetric distributions, median and mean differ; MAE gives a more robust central estimate. [1]",
+      "formula": "arg min_c E[|Y − c|] = median(Y)"
+    },
+    {
+      "heading": "Quantile Regression and MAE",
+      "body": "MAE is a special case of quantile (pinball) loss. The τ-quantile loss is L_τ(e) = e(τ − 1{e < 0}). At τ = 0.5: L₀.₅(e) = 0.5|e| — exactly MAE up to scale. Setting τ ≠ 0.5 allows fitting other quantiles (e.g., τ = 0.9 for 90th percentile forecasting). This is used in conformal prediction and uncertainty quantification. [2]",
+      "formula": "L_τ(e) = e(τ − 1{e<0}); τ=0.5 gives MAE"
+    },
+    {
+      "heading": "MAE vs RMSE in Practice",
+      "body": "RMSE ≥ MAE always (by Jensen's inequality applied to the convex function √·). RMSE/MAE ratio ≥ 1, and the ratio grows with error variance — high ratio signals a few large errors dominate. For model selection, prefer MAE if you want equal weight on all errors, RMSE if large errors are disproportionately costly (e.g., rare big spikes in demand). Both are reported in many Kaggle competitions; choose based on business cost of errors. [1]"
+    }
+  ],
+  "youtubeLabel": "MAE vs MSE — Loss Function Comparison",
+  "youtubeUrl": "https://www.youtube.com/embed/OgK8JFjkSto",
+  "takeaways": [
+    "L = (1/n) Σ|y − ŷ| — in same units as target, robust to outliers. [1]",
+    "Minimising MAE fits the conditional median, not the mean — resistant to extreme values. [1]",
+    "Gradient = −sign(e)/n — constant magnitude, no deceleration near convergence. [1]",
+    "MAE is the τ=0.5 case of quantile (pinball) loss; generalise for other quantiles. [2]",
+    "RMSE ≥ MAE always; large RMSE/MAE ratio signals a few dominant outliers. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why is MAE harder to optimise than MSE for neural networks?",
+      "a": "The gradient of MAE is ±1/n — it doesn't decrease as predictions approach the true value. Near the optimum, MSE provides a natural learning rate decay (gradient ∝ residual), while MAE keeps pushing with full force. This can cause oscillation around the minimum. Practical fix: use Huber loss (smooth near zero), or use adaptive optimizers (Adam, RMSProp) that effectively normalise gradient magnitudes."
+    },
+    {
+      "q": "Is there a closed-form solution for MAE minimization in linear regression?",
+      "a": "No. The normal equations (closed form) come from MSE. MAE minimization is a linear programming problem: min_β 1ᵀt s.t. t ≥ Xβ − y, t ≥ y − Xβ, which can be solved via LP solvers (simplex, interior point). For large datasets, iterative reweighted least squares (IRLS) is used — at each step, solve a weighted MSE where samples with large residuals get down-weighted, converging to the L1 solution."
+    }
+  ],
+  "sources": [
+    { "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 2 & 10", "url": "https://hastie.su.domains/ElemStatLearn/" },
+    { "label": "Koenker, R. — Quantile Regression (2005), Cambridge University Press", "url": "https://www.cambridge.org/core/books/quantile-regression/C18AE7BCF3EC43C16937390D44A328B1" }
+  ]
+}

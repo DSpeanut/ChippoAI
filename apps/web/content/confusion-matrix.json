@@ -1,0 +1,67 @@
+{
+  "visualizationType": "architecture-diagram",
+  "codeSnapshot": {
+    "label": "confusion_matrix.py",
+    "code": "import numpy as np\nfrom sklearn.metrics import (\n    confusion_matrix, classification_report,\n    ConfusionMatrixDisplay, accuracy_score\n)\nimport matplotlib.pyplot as plt\n\n# Binary classification confusion matrix\ny_true = np.array([1,1,1,1,0,0,0,0,1,0])\ny_pred = np.array([1,0,1,1,0,0,1,0,1,1])  # model predictions\n\ncm = confusion_matrix(y_true, y_pred)\n# [[TN, FP],    TN=3, FP=2\n#  [FN, TP]]    FN=1, TP=4\nTN, FP, FN, TP = cm.ravel()\n\nprint(f'TP: {TP}, FP: {FP}, FN: {FN}, TN: {TN}')\n\n# Core metrics derived from the confusion matrix\naccuracy    = (TP + TN) / (TP + TN + FP + FN)   # 0.70\nprecision   = TP / (TP + FP)                      # 0.667 (of predicted positives, how many are right?)\nrecall      = TP / (TP + FN)                      # 0.800 (of actual positives, how many did we catch?)\nspecificity = TN / (TN + FP)                      # 0.600 (true negative rate)\nf1          = 2 * precision * recall / (precision + recall)  # 0.727\n\nprint(f'Accuracy={accuracy:.3f}, Precision={precision:.3f}')\nprint(f'Recall={recall:.3f}, Specificity={specificity:.3f}')\nprint(f'F1={f1:.3f}')\n\n# Multi-class confusion matrix (3 classes)\ny_true_mc = [0,1,2,0,1,2,0,1,2,0,0,1]\ny_pred_mc = [0,1,1,0,2,2,0,0,2,0,1,1]\ncm_mc = confusion_matrix(y_true_mc, y_pred_mc)\nprint('Multi-class CM:\\n', cm_mc)\nprint(classification_report(y_true_mc, y_pred_mc,\n                            target_names=['class_0','class_1','class_2']))\n\n# Macro vs micro averaging\n# Macro: average metric per class (unweighted)\n# Micro: sum TP/FP/FN across all classes, then compute metric\n# Weighted: average metric weighted by class support"
+  },
+  "eli3": [
+    "A confusion matrix is a table that shows where a model gets confused. For binary classification, it has four cells: True Positive (model said yes, was yes), True Negative (model said no, was no), False Positive (model said yes, was no), and False Negative (model said no, was yes).",
+    "Each type of error has different costs. A cancer screening test: a false negative (missed cancer) is catastrophic — we want high recall. A spam filter: a false positive (flagging legitimate email) is very annoying — we want high precision. The confusion matrix lets you see exactly where your model is making mistakes.",
+    "Accuracy alone is misleading with imbalanced classes. A model that always says 'not cancer' is 99% accurate if only 1% of patients have cancer — but it catches zero cases. The confusion matrix exposes this: TP=0, TN=99, FP=0, FN=1."
+  ],
+  "whenWhy": [
+    {
+      "title": "Understanding error types in imbalanced classification",
+      "body": "Accuracy = (TP+TN)/(TP+TN+FP+FN) is misleading when classes are imbalanced. A 99% negative class rate → always predicting negative gives 99% accuracy with 0 TP. The confusion matrix shows TP=0 immediately, regardless of accuracy. Use precision, recall, and F1 for imbalanced classification. Medical testing, fraud detection, and rare event prediction all have severe class imbalance where the confusion matrix is the primary diagnostic."
+    },
+    {
+      "title": "Threshold tuning and operating point selection",
+      "body": "Classification models output a score (e.g., probability). The confusion matrix depends on the threshold used to convert scores to predictions. Varying the threshold traces the ROC curve (TPR vs FPR) and PR curve (Precision vs Recall). The confusion matrix at a specific threshold shows the actual operating point: low threshold → more positives predicted → high recall, low precision; high threshold → fewer positives → high precision, low recall. Business requirements determine where to operate on this tradeoff (maximize recall for safety systems, maximize precision for recommendation systems)."
+    },
+    {
+      "title": "Multi-class error analysis",
+      "body": "For multi-class problems (K classes), the confusion matrix is K×K. Entry (i,j) = number of class-i examples predicted as class-j. Diagonal = correct predictions; off-diagonal = errors. Patterns reveal model weaknesses: classes 2 and 3 often confused → similar features; class 4 always predicted as class 1 → class 4 is underrepresented in training. The confusion matrix is more informative than per-class accuracy alone — it shows the direction of errors."
+    }
+  ],
+  "deepDiveIntro": [
+    "For binary classification with positive class P and negative class N: the confusion matrix captures all four outcomes: TP (true positive), FP (false positive — Type I error), FN (false negative — Type II error), TN (true negative). Core metrics: Accuracy = (TP+TN)/n; Precision = TP/(TP+FP); Recall (Sensitivity, TPR) = TP/(TP+FN); Specificity (TNR) = TN/(TN+FP); Fall-out (FPR) = FP/(FP+TN) = 1-Specificity. Powers (2011) provides a comprehensive taxonomy: Informedness = TPR+TNR-1 (Youden's J); Markedness = PPV+NPV-1; Matthews Correlation Coefficient (MCC) = (TP·TN-FP·FN)/√((TP+FP)(TP+FN)(TN+FP)(TN+FN)). [1]",
+    "MCC (Matthews Correlation Coefficient) is considered the most informative single metric for binary classification — it accounts for all four cells of the confusion matrix and gives a high score only if the classifier performs well on both classes. Range: [-1, +1]. MCC=0 means random performance; MCC=1 means perfect. MCC is preferred over accuracy and F1 for imbalanced datasets (Chicco & Jurman, 2020). [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Core Metrics from the Confusion Matrix",
+      "body": "Precision = TP/(TP+FP): of all predicted positives, how many are actually positive? Penalises false alarms. Recall (Sensitivity) = TP/(TP+FN): of all actual positives, how many did we catch? Penalises missed detections. Specificity = TN/(TN+FP): of all actual negatives, how many did we correctly reject? F1 = 2·P·R/(P+R): harmonic mean of precision and recall. PPV (Positive Predictive Value) = Precision; NPV (Negative Predictive Value) = TN/(TN+FN). Trade-off: increasing recall (lower threshold) always decreases precision and increases FPR. [1]"
+    },
+    {
+      "heading": "Multi-Class Averaging",
+      "body": "For K-class problems, precision and recall are computed per class, then averaged. Macro averaging: mean of per-class metrics (each class weighted equally — sensitive to rare classes). Micro averaging: sum TP, FP, FN across all classes, then compute the metric globally (dominated by majority class). Weighted averaging: weight per-class metrics by class support (number of true examples per class). Choice: macro for balanced classes; weighted for imbalanced; micro for overall aggregate. sklearn classification_report shows all three. [1]"
+    },
+    {
+      "heading": "Matthews Correlation Coefficient (MCC)",
+      "body": "MCC = (TP·TN − FP·FN) / √((TP+FP)(TP+FN)(TN+FP)(TN+FN)). Range: [−1, +1]. MCC=+1 means perfect prediction; MCC=0 means random; MCC=−1 means perfectly inverted predictions. MCC is invariant to class imbalance: if 99% of examples are negative, MCC is still low if the model only predicts negative. Chicco & Jurman (2020): MCC is more informative than F1 and accuracy for imbalanced binary classification — F1 can be high even when TN is ignored entirely. For multi-class: use the multiclass MCC (sklearn.metrics.matthews_corrcoef). [1]",
+      "formula": "MCC = (TP·TN−FP·FN) / √((TP+FP)(TP+FN)(TN+FP)(TN+FN))"
+    }
+  ],
+  "youtubeLabel": "Confusion Matrix, Precision, Recall Explained",
+  "youtubeUrl": "https://www.youtube.com/embed/Kdsp6soqA7o",
+  "takeaways": [
+    "4 cells: TP, FP (Type I), FN (Type II), TN — accuracy alone hides imbalanced-class failures. [1]",
+    "Precision = TP/(TP+FP) penalises false alarms; Recall = TP/(TP+FN) penalises misses. [1]",
+    "MCC = (TP·TN−FP·FN)/√(...) — most balanced single metric; robust to class imbalance. [1]",
+    "Multi-class: macro (equal class weight), micro (global), or weighted (by support) averaging. [1]",
+    "Threshold tuning shifts the operating point: ↓threshold → ↑recall, ↓precision. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "What should you report when both TP and FP denominators are zero (undefined precision)?",
+      "a": "Precision is undefined when TP+FP=0 (model never predicts positive). This happens with very high thresholds or heavily imbalanced classes. sklearn defaults to reporting precision=0.0 in this case with a warning. Best practice: report precision with a note that it is undefined for this threshold/class, and prefer metrics like AUC-ROC or AUC-PR that evaluate performance across all thresholds rather than at a single operating point. For the 'zero division' case: (1) report as undefined/NaN; (2) use zero_division parameter in sklearn; (3) switch to AUC-based metrics for the overall model comparison."
+    },
+    {
+      "q": "When is a higher false positive rate acceptable to maximise recall?",
+      "a": "In safety-critical applications where the cost of a false negative (missed detection) far exceeds the cost of a false positive (false alarm). Examples: (1) Cancer screening — missing cancer (FN) is catastrophic; false alarm (FP) leads to follow-up tests (costly but not harmful). Set recall target of ≥99%. (2) Earthquake early warning — false alarm disrupts infrastructure; missed earthquake risks lives. FN cost >> FP cost. (3) Child safety content moderation — missing harmful content (FN) causes real harm; false positive removes benign content (acceptable). The cost ratio FN_cost/FP_cost should drive the threshold choice: set threshold at the operating point where FN_cost·FNR + FP_cost·FPR is minimised."
+    }
+  ],
+  "sources": [
+    { "label": "Powers (2011) — Evaluation: From Precision, Recall and F-Measure to ROC, Informedness, Markedness & Correlation, JMLR", "url": "https://jmlr.org/papers/v2/powers11a.html" }
+  ]
+}

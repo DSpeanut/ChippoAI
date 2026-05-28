@@ -1,0 +1,68 @@
+{
+  "visualizationType": "optimizer-trace",
+  "codeSnapshot": {
+    "label": "rmsprop.py",
+    "code": "import torch\nimport torch.nn as nn\n\nmodel = nn.Linear(10, 1)\n\n# PyTorch RMSProp\noptimizer = torch.optim.RMSprop(\n    model.parameters(),\n    lr=0.001,\n    alpha=0.99,     # decay factor (γ) for squared gradient EMA\n    eps=1e-8,       # numerical stability\n    weight_decay=0, # L2 regularisation\n    momentum=0,     # optional momentum term\n    centered=False  # if True: normalise by centered variance\n)\n\n# Manual implementation\nclass RMSProp:\n    def __init__(self, params, lr=1e-3, alpha=0.99, eps=1e-8):\n        self.params = list(params)\n        self.lr, self.alpha, self.eps = lr, alpha, eps\n        self.v = [torch.zeros_like(p) for p in self.params]  # EMA of g²\n\n    def step(self):\n        for p, v in zip(self.params, self.v):\n            if p.grad is None: continue\n            v.mul_(self.alpha).addcmul_(p.grad, p.grad, value=1-self.alpha)\n            # v = α*v + (1-α)*g²\n            p.data.sub_(self.lr * p.grad / (v.sqrt() + self.eps))\n\n# Centered RMSProp: normalise by var(g) instead of E[g²]\n# μ_t = α*μ_{t-1} + (1-α)*g_t\n# v_t = α*v_{t-1} + (1-α)*g_t²\n# update: g / sqrt(v_t - μ_t² + ε)\noptimizer_centered = torch.optim.RMSprop(\n    model.parameters(), lr=1e-3, alpha=0.99, centered=True\n)"
+  },
+  "eli3": [
+    "RMSProp (Root Mean Square Propagation) solves AdaGrad's dying learning rate problem. Instead of accumulating all past squared gradients, it uses an exponential moving average — recent gradients matter more, old ones fade away.",
+    "Think of it as a rolling average of how 'noisy' each parameter's gradient has been recently. If a parameter has had consistently large gradients, its effective learning rate stays small. If gradients suddenly become smaller (you're near a good value), the effective learning rate recovers, unlike AdaGrad where it only ever shrinks.",
+    "RMSProp was invented by Geoff Hinton in a Coursera lecture in 2012 — it was never formally published! It's the key building block of Adam: Adam = RMSProp + momentum + bias correction."
+  ],
+  "whenWhy": [
+    {
+      "title": "Recurrent neural networks and non-stationary objectives",
+      "body": "RMSProp was originally proposed for training RNNs on non-stationary problems (Hinton, 2012 Coursera lecture). RNN gradients vary wildly across timesteps — AdaGrad's monotone decay causes learning to stop before the model converges. RMSProp's exponential forgetting adapts to the current gradient scale, keeping the learning rate useful throughout training."
+    },
+    {
+      "title": "Reinforcement learning (policy gradient methods)",
+      "body": "In RL, the gradient signal is noisy and non-stationary (the reward function changes as the policy improves). OpenAI's original PPO and A3C implementations used RMSProp. The adaptive scaling helps stabilise training when reward variance is high. Many modern RL implementations have since switched to Adam or AdamW."
+    },
+    {
+      "title": "When Adam is unavailable (memory constraints)",
+      "body": "Adam requires two moment buffers (m and v) per parameter = 3× model memory including weights. RMSProp requires only one buffer (v) = 2× model memory. For very large models or limited-memory settings, RMSProp is a lower-memory alternative with most of Adam's adaptive learning rate benefit (without the first moment / momentum component)."
+    }
+  ],
+  "deepDiveIntro": [
+    "RMSProp (Hinton, 2012, unpublished): vₜ = γvₜ₋₁ + (1−γ)gₜ²; wₜ = wₜ₋₁ − (η/√(vₜ+ε)) gₜ. The exponential moving average vₜ estimates E[g²] near time t with memory γ. At steady state with stationary gradients, vₜ → E[g²]/(1−γ) ... actually: since vₜ = γvₜ₋₁ + (1−γ)gₜ², at stationarity vₜ ≈ E[gₜ²] (the (1−γ) and the geometric series normalise correctly). The effective learning rate stabilises at η/√E[g²] — unlike AdaGrad's monotone decay. [1]",
+    "Centered RMSProp (Graves, 2013): also subtracts the squared mean: μₜ = γμₜ₋₁ + (1−γ)gₜ; vₜ = γvₜ₋₁ + (1−γ)gₜ²; wₜ = wₜ₋₁ − η·gₜ/√(vₜ − μₜ² + ε). The denominator √(vₜ − μₜ²) estimates the standard deviation of gₜ (not RMS). This normalises the gradient by its variance rather than its second moment — a more principled normalisation when the mean gradient is nonzero. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Update Rule",
+      "body": "vₜ = γ·vₜ₋₁ + (1−γ)·gₜ². wₜ = wₜ₋₁ − η·gₜ / (√vₜ + ε). Effective lr for parameter i: η/√vᵢ,ₜ. Unlike AdaGrad, vₜ is bounded — it doesn't grow forever. For stationary gₜ with E[gₜ²] = σ², vₜ converges to σ² (geometric series sum: Σₖ γᵏ(1−γ)σ² = σ²). So effective lr stabilises at η/σ. Typical γ = 0.99 → 100-step memory; γ = 0.9 → 10-step memory. [1]",
+      "formula": "vₜ = γvₜ₋₁ + (1−γ)gₜ²;  wₜ = wₜ₋₁ − η·gₜ/√(vₜ+ε)"
+    },
+    {
+      "heading": "RMSProp vs AdaGrad: Dying Learning Rate",
+      "body": "AdaGrad accumulates: Gₜ = Σₖ₌₀ᵗ gₖ² → ∞. Effective lr → 0. RMSProp: vₜ = γvₜ₋₁ + (1−γ)gₜ². Weight of step t−k gradient: (1−γ)γᵏ → 0 as k → ∞. Only recent gradients matter. If gradients decrease (near minimum), vₜ decreases → effective lr increases. This non-monotone learning rate is crucial for long training runs. The half-life of a gradient is log(0.5)/log(γ) steps: ≈ 69 steps for γ=0.99. [1]"
+    },
+    {
+      "heading": "RMSProp + Momentum",
+      "body": "PyTorch RMSProp supports optional momentum: mₜ = ρ·mₜ₋₁ + gₜ/√(vₜ+ε); wₜ = wₜ₋₁ − η·mₜ. Adding momentum to RMSProp gets close to Adam but without bias correction. The main difference from Adam: (1) no first moment (momentum applied to the already-normalised gradient, not the raw gradient); (2) no bias correction for v (matters in first ~1/(1−γ) steps). Empirically, RMSProp + momentum ≈ Adam without bias correction on most tasks. [1]"
+    }
+  ],
+  "youtubeLabel": "RMSProp & Adaptive Learning Rates Explained",
+  "youtubeUrl": "https://www.youtube.com/embed/JXQT_vxqwIs",
+  "takeaways": [
+    "vₜ = γvₜ₋₁ + (1−γ)gₜ²; wₜ = wₜ₋₁ − η·gₜ/√(vₜ+ε) — EMA fixes AdaGrad's dying lr. [1]",
+    "vₜ converges to E[gₜ²] at stationarity — effective lr stabilises at η/√E[g²]. [1]",
+    "Centered RMSProp normalises by gradient std (√(v−μ²)) — more principled for non-zero mean. [2]",
+    "Adam = RMSProp + momentum (first moment) + bias correction. [1]",
+    "Lower memory than Adam (1 buffer vs 2) — useful for large models with tight memory budgets. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "What is the effect of γ (alpha) in RMSProp and how should it be tuned?",
+      "a": "γ controls the memory length of the second moment estimate. The half-life of past gradients is log(0.5)/log(γ) ≈ 69/(1−γ) steps. γ=0.9: 69-step memory — adapts quickly to changing gradient scales. γ=0.99: 690-step memory — smooth, stable estimate. γ=0.999: 6900-step memory — very slow adaptation. For non-stationary problems (RL, RNNs), use γ=0.9 for fast adaptation. For stable supervised learning, γ=0.99–0.999 gives better gradient scale estimates. Note: Adam uses β₂=0.999 for the same second moment."
+    },
+    {
+      "q": "Why is RMSProp not formally published, and does that affect trust in it?",
+      "a": "Hinton introduced RMSProp in Lecture 6 of his Coursera 'Neural Networks for Machine Learning' (2012). There is no paper — just a 2-slide derivation. Despite this, RMSProp has been extensively validated empirically: Graves (2013) used it for handwriting generation RNNs; DeepMind used it in the original DQN; TensorFlow and PyTorch both implement it. The lack of a paper with theoretical guarantees is worth noting — RMSProp has no general convergence proof for non-convex problems, unlike Adam (which has asymptotic guarantees under mild assumptions)."
+    }
+  ],
+  "sources": [
+    { "label": "Hinton, G. (2012) — Neural Networks for Machine Learning, Lecture 6e (Coursera)", "url": "https://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf" },
+    { "label": "Graves, A. (2013) — Generating Sequences With Recurrent Neural Networks arXiv:1308.0850", "url": "https://arxiv.org/abs/1308.0850" }
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "visualizationType": "network-diagram",
+  "codeSnapshot": {
+    "label": "layer_norm.py",
+    "code": "import torch\nimport torch.nn as nn\n\n# LayerNorm in a transformer block\nd_model = 512\nln = nn.LayerNorm(d_model)  # normalises over last dimension (features)\n\n# Input: (batch, seq_len, d_model)\nx = torch.randn(4, 128, d_model)\nout = ln(x)\nprint(f\"Output shape: {out.shape}\")\nprint(f\"Per-sample-per-token mean: {out[0, 0].mean():.4f}\")  # ≈ 0\nprint(f\"Per-sample-per-token std:  {out[0, 0].std():.4f}\")   # ≈ 1\n\n# Manual LayerNorm\ndef layer_norm_manual(x, gamma, beta, eps=1e-5):\n    # x: (..., D) — normalise over last dimension\n    mu = x.mean(dim=-1, keepdim=True)          # (..., 1)\n    var = x.var(dim=-1, keepdim=True, unbiased=False)  # (..., 1)\n    x_hat = (x - mu) / (var + eps).sqrt()      # (..., D)\n    return gamma * x_hat + beta                # (..., D)\n\ngamma = torch.ones(d_model)\nbeta = torch.zeros(d_model)\nout_manual = layer_norm_manual(x, gamma, beta)\n# Compare with PyTorch\nprint(f\"Max diff: {(out - out_manual).abs().max():.2e}\")  # should be ~1e-6\n\n# Pre-norm vs Post-norm transformer variants\nclass PreNormBlock(nn.Module):\n    def __init__(self, d_model, nhead):\n        super().__init__()\n        self.norm1 = nn.LayerNorm(d_model)\n        self.attn  = nn.MultiheadAttention(d_model, nhead, batch_first=True)\n        self.norm2 = nn.LayerNorm(d_model)\n        self.ff    = nn.Linear(d_model, d_model)\n\n    def forward(self, x):\n        # Pre-norm: normalise before sublayer\n        x = x + self.attn(self.norm1(x), self.norm1(x), self.norm1(x))[0]\n        x = x + self.ff(self.norm2(x))\n        return x"
+  },
+  "eli3": [
+    "Layer Normalisation (LayerNorm) is like BatchNorm but operates on a single sample at a time, normalising across features instead of across the batch. For each token in a sequence, it computes the mean and standard deviation of that token's feature vector and normalises it to zero mean and unit variance.",
+    "Because LayerNorm doesn't depend on other samples in the batch, it works perfectly for batch size of 1 — ideal for transformers processing variable-length sequences or recurrent models. There's no need for running statistics or special treatment at inference time.",
+    "LayerNorm is the normalisation of choice for all modern transformers: GPT, BERT, LLaMA, and ViT all use it. BatchNorm is more common in CNNs where spatial sharing makes batch statistics more stable."
+  ],
+  "whenWhy": [
+    {
+      "title": "Transformers and sequence models (universal choice)",
+      "body": "Every major transformer (BERT, GPT, LLaMA, ViT, T5) uses LayerNorm. It works at batch size 1 (critical for autoregressive inference where you decode one token at a time), handles variable-length sequences naturally (each position normalised independently), and has no running statistics to maintain. Pre-norm transformers (LayerNorm before attention) are more stable to train than post-norm."
+    },
+    {
+      "title": "Recurrent networks (RNNs, LSTMs)",
+      "body": "BatchNorm fails in RNNs: the batch statistics computed at each time step have different means and variances (the sequence position matters) — separate running statistics are needed for each time step, which is expensive. LayerNorm (Ba et al., 2016) was introduced specifically for RNNs: it normalises each hidden state independently, requiring only per-feature parameters (no sequence-length dependence)."
+    },
+    {
+      "title": "Online learning and inference with batch size 1",
+      "body": "Any scenario where you process one sample at a time (real-time inference, online learning) breaks BatchNorm — batch statistics from B=1 have extreme variance. LayerNorm provides stable normalisation regardless of batch size. For LLM token-by-token generation, LayerNorm is the only viable choice."
+    }
+  ],
+  "deepDiveIntro": [
+    "LayerNorm (Ba et al., 2016): given input x ∈ ℝᵈ (a single sample's feature vector): μ = (1/d)Σⱼxⱼ; σ² = (1/d)Σⱼ(xⱼ−μ)²; x̂ⱼ = (xⱼ−μ)/√(σ²+ε); yⱼ = γⱼx̂ⱼ + βⱼ. Normalises over the feature dimension, not the batch dimension. For a transformer with input (B, T, d_model), LayerNorm normalises over the d_model dimension for each of the B·T positions independently. [1]",
+    "The key difference from BatchNorm: statistics μ and σ are computed per-sample (or per-token in sequences) rather than per-feature across the batch. This means the same normalisation applies regardless of what other samples are in the batch — no coupling between samples. [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Algorithm",
+      "body": "For input x ∈ ℝᵈ: μ = (1/d)Σxⱼ. σ² = (1/d)Σ(xⱼ−μ)². x̂ = (x − μ·1) / √(σ²·1 + ε). y = γ ⊙ x̂ + β. γ ∈ ℝᵈ, β ∈ ℝᵈ are learned (initialised γ=1, β=0). Unlike BatchNorm: no running statistics, no train/eval mode switch needed for normalisation (though dropout still needs model.eval()). For transformers: LayerNorm normalises over the embedding dimension d_model for each token position independently. [1]",
+      "formula": "LN(x) = γ ⊙ (x − μ) / √(σ² + ε) + β"
+    },
+    {
+      "heading": "Pre-Norm vs Post-Norm",
+      "body": "Original transformer (Vaswani 2017) uses post-norm: x = LN(x + Sublayer(x)). Modern transformers use pre-norm (GPT-2, LLaMA, Mistral): x = x + Sublayer(LN(x)). Pre-norm advantages: (1) Gradient flows through the residual stream without touching LayerNorm — stable gradients for deep networks. (2) Training is more stable at the start — LN(x) at the beginning is well-scaled by initialisation. (3) Allows removal of final LN in some architectures. LLaMA, GPT-2, and PaLM all use pre-norm. [1][2]",
+      "formula": "Pre-norm: x = x + F(LN(x))  vs  Post-norm: x = LN(x + F(x))"
+    },
+    {
+      "heading": "RMSNorm: Simplified LayerNorm",
+      "body": "RMSNorm (Zhang & Sennrich, 2019): removes the mean subtraction from LayerNorm. LN normalises by both mean and variance. RMSNorm normalises only by RMS: rmsⱼ = √((1/d)Σᵢxᵢ²). x̂ = x / rms. yⱼ = γⱼx̂ⱼ (no β). LLaMA, Mistral, and Gemma use RMSNorm instead of LayerNorm. Advantages: fewer parameters (no β), 10–20% faster computation. Empirically matches LN performance with 0.5–1% compute savings. [2]",
+      "formula": "RMSNorm(x) = x / √((1/d)Σxᵢ²) · γ"
+    },
+    {
+      "heading": "Comparison: BatchNorm vs LayerNorm",
+      "body": "| Property | BatchNorm | LayerNorm |\n|---|---|---|\n| Normalises over | Batch dimension | Feature dimension |\n| Works for B=1 | No (unstable stats) | Yes |\n| Running stats needed | Yes | No |\n| Train/eval difference | Yes | No |\n| Best for | CNNs, large B | Transformers, RNNs |\n| Effect of shuffling | Changes normalisation | No effect |\nGroupNorm: normalises over groups of channels; bridge between BN (group=all) and InstanceNorm (group=1). GroupNorm with G=32 works for any batch size — used in DETR, Mask R-CNN. [1]"
+    }
+  ],
+  "youtubeLabel": "Layer Normalization vs Batch Normalization",
+  "youtubeUrl": "https://www.youtube.com/embed/2V3Uduw1zwQ",
+  "takeaways": [
+    "LN(x) = γ⊙(x−μ)/√(σ²+ε)+β — normalise over features per token, not over batch. [1]",
+    "Works for batch size 1; no running statistics; no train/eval mode difference for LN. [1]",
+    "Pre-norm (x = x+F(LN(x))) is more stable than post-norm (x = LN(x+F(x))). [1]",
+    "RMSNorm: remove mean subtraction; used in LLaMA, Mistral, Gemma for 10–20% speedup. [2]",
+    "BatchNorm for CNNs; LayerNorm for transformers; GroupNorm for object detection. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why does pre-norm improve training stability over post-norm in transformers?",
+      "a": "In post-norm (x = LN(x + F(x))), the residual path x + F(x) is normalised. Early in training when F(x) ≈ 0 (small random init), x + F(x) ≈ x, so LN sees a nearly constant input and produces well-behaved gradients. But as training progresses, F(x) can dominate — the normalisation point shifts. In pre-norm (x = x + F(LN(x))), the residual stream x accumulates undisturbed. LN operates on the stream before the sublayer — normalising for the sublayer's benefit, not the residual connection. Crucially, gradient flows through the residual highway x = x + ... without passing through LN, preventing gradient from being modified by the normalisation operation in the backward pass."
+    },
+    {
+      "q": "Does LayerNorm affect sequence position differently?",
+      "a": "Yes. LayerNorm normalises over the feature dimension at each position independently. This means the scale of the representation at each position is equalised — a token with naturally high-magnitude features (e.g., a capital letter or a frequent word) gets the same normalised representation as a low-magnitude token. This can erase positional magnitude information. Rotary positional embeddings (RoPE, used in LLaMA) encode position in the angle of the representation rather than its magnitude, making them robust to LayerNorm's magnitude normalisation."
+    }
+  ],
+  "sources": [
+    { "label": "Ba, Kiros & Hinton (2016) — Layer Normalization arXiv:1607.06450", "url": "https://arxiv.org/abs/1607.06450" },
+    { "label": "Zhang & Sennrich (2019) — Root Mean Square Layer Normalization arXiv:1910.07467", "url": "https://arxiv.org/abs/1910.07467" }
+  ]
+}

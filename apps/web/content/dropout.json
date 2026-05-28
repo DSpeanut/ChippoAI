@@ -1,0 +1,72 @@
+{
+  "visualizationType": "network-diagram",
+  "codeSnapshot": {
+    "label": "dropout.py",
+    "code": "import torch\nimport torch.nn as nn\n\n# Dropout in a fully connected network\nclass MLP(nn.Module):\n    def __init__(self, dropout_p=0.5):\n        super().__init__()\n        self.net = nn.Sequential(\n            nn.Linear(784, 512),\n            nn.ReLU(),\n            nn.Dropout(p=dropout_p),  # during training: zero each unit with prob p\n            nn.Linear(512, 256),\n            nn.ReLU(),\n            nn.Dropout(p=dropout_p),\n            nn.Linear(256, 10)\n        )\n    def forward(self, x):\n        return self.net(x)\n\nmodel = MLP(dropout_p=0.5)\n\n# IMPORTANT: behaviour changes between train and eval modes\nmodel.train()   # Dropout is active (units dropped with prob p)\nx = torch.randn(4, 784)\nout_train = model(x)  # some units are zeroed\n\nmodel.eval()    # Dropout is disabled; all units active\nout_eval = model(x)   # consistent (deterministic)\n\n# Why eval mode is needed: at training with p=0.5,\n# expected output = (1-p) * full_output (inverted dropout scales by 1/(1-p))\n# At eval: use full network without scaling (PyTorch handles this automatically)\n\n# Common dropout positions:\n# - After fully connected layers (p=0.5 typical)\n# - After attention layers in transformers (p=0.1)\n# - Before the final classifier head (p=0.3–0.5)\n# - NOT typically after conv layers (use stochastic depth instead)\n\n# AlphaDropout for SELU activations (preserves mean and variance)\nmodel_selu = nn.Sequential(\n    nn.Linear(784, 512), nn.SELU(),\n    nn.AlphaDropout(p=0.05)  # much lower p for SELU\n)"
+  },
+  "eli3": [
+    "Dropout is a regularisation technique where, during training, random neurons are switched off with probability p at each forward pass. The network must learn to not rely on any single neuron — like a sports team where any player might miss a game, so everyone learns to play multiple positions.",
+    "At test time, all neurons are active. But because the network was trained with only a fraction (1−p) of neurons on average, the outputs are scaled by (1−p) during training to compensate — this is called inverted dropout. PyTorch handles this automatically.",
+    "Dropout can be thought of as training an exponential number of different 'thinned' network architectures and averaging their predictions at test time — like a massive implicit ensemble. This explains why it reduces overfitting."
+  ],
+  "whenWhy": [
+    {
+      "title": "Regularising fully connected layers in deep networks",
+      "body": "Dropout (p=0.5) is most effective on large fully-connected layers (e.g., classifier head in CNNs). FC layers with many parameters easily memorise training data. Dropout forces the layer to learn redundant representations. Standard recipe: dropout after every FC layer in the classifier, not in the convolutional backbone (which has fewer parameters and spatial weight sharing already regularises)."
+    },
+    {
+      "title": "Transformers: residual dropout and attention dropout",
+      "body": "Transformers use dropout in three places: (1) after each attention head's output, (2) after the FFN in each layer, (3) on the input embeddings. Typical p=0.1 for large models. Higher dropout hurts capacity in large models — ViT-L uses p=0.1, ViT-H uses p=0.1. BERT uses p=0.1 throughout. Excessive dropout in transformers (p>0.3) significantly harms performance."
+    },
+    {
+      "title": "Dropout as Bayesian approximation",
+      "body": "Gal & Ghahramani (2016) showed that dropout in neural networks approximates deep Gaussian processes. Applying dropout at test time (Monte Carlo Dropout) gives an approximate Bayesian posterior over weights — the variance of predictions across multiple stochastic forward passes approximates predictive uncertainty. Used in safety-critical applications (medical imaging, autonomous driving) where uncertainty estimates matter."
+    }
+  ],
+  "deepDiveIntro": [
+    "Dropout (Srivastava et al., 2014): At each forward pass during training, each unit hⱼ is independently zeroed with probability p. The remaining units are scaled by 1/(1−p) (inverted dropout), so the expected activation is preserved: E[h̃ⱼ] = (1−p)·hⱼ/(1−p) = hⱼ. This ensures the network doesn't need rescaling at test time. Alternative (non-inverted): train with unscaled dropout, multiply all outputs by (1−p) at test — equivalent in expectation but less convenient. [1]",
+    "Dropout can be viewed as training 2ᵈ thinned networks (d = number of units) with shared weights, and averaging their predictions at test time. The number of possible masked networks is exponential; in practice, each training step samples one, and test-time prediction uses the full network (which approximates the average over all thinned networks). [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Inverted Dropout",
+      "body": "Training: h̃ⱼ = hⱼ · Bernoulli(1−p) / (1−p). The division by (1−p) ensures E[h̃ⱼ] = hⱼ. This is 'inverted' dropout — scaling happens during training. At test time: use h directly (no scaling). Without inversion: training uses h·Bernoulli(1−p), test uses (1−p)·h. Both are equivalent in expectation but inverted is more convenient. PyTorch's nn.Dropout implements inverted dropout. The key: the scaling factor 1/(1−p) ensures gradient magnitudes are also roughly preserved during training. [1]",
+      "formula": "h̃ⱼ = {hⱼ/(1−p) with prob 1−p;  0 with prob p}"
+    },
+    {
+      "heading": "Dropout as Regularisation: Weight Tying",
+      "body": "The 2ᵈ thinned networks share weights — each sub-network uses the same w. This weight tying means each weight is trained on (on average) half the data in a different random context each time. The resulting weight is the 'democratic average' over all contexts. This is regularisation: the weight cannot overfit to any specific feature combination because it needs to work well in combination with many different subsets of other features. [1]"
+    },
+    {
+      "heading": "Monte Carlo Dropout for Uncertainty",
+      "body": "At test time, run T forward passes with dropout active (model.train() mode or set each Dropout layer to train). Predictions: ŷᵢ for i=1,...,T. Mean: ȳ = (1/T)Σŷᵢ ≈ E_q[y|x] (predictive mean). Variance: Var = (1/T)Σ(ŷᵢ−ȳ)² ≈ predictive uncertainty. Gal & Ghahramani (2016) showed this is a variational approximation to a deep GP. Practically: T=30–100 forward passes for reliable uncertainty estimates. Computational cost: T× inference cost. [2]"
+    },
+    {
+      "heading": "Dropout Rate Choice",
+      "body": "Optimal p depends on network capacity and overfitting. Heuristics: (1) Large FC layers (>1000 units): p=0.5. (2) Smaller layers: p=0.2–0.3. (3) Convolutional layers: p=0.1–0.2 (or skip — BatchNorm + weight decay is usually enough). (4) Transformer attention/FFN: p=0.1. (5) Embeddings: p=0.1. Too high p (>0.7) causes underfitting — model can't maintain information flow. Too low p (<0.05): insufficient regularisation. p=0 = no dropout. [1]"
+    }
+  ],
+  "youtubeLabel": "Dropout Regularization — Deep Learning.ai",
+  "youtubeUrl": "https://www.youtube.com/embed/ARq74QuavAo",
+  "takeaways": [
+    "Training: zero each unit with prob p, scale surviving units by 1/(1−p) (inverted dropout). [1]",
+    "Test time: all units active, no scaling needed — efficient single forward pass. [1]",
+    "Equivalent to averaging exponentially many thinned networks with shared weights. [1]",
+    "MC Dropout: run T stochastic forward passes at test time for uncertainty estimates. [2]",
+    "Typical rates: p=0.5 for large FC layers; p=0.1 for transformer attention/FFN. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why doesn't dropout help much with convolutional layers?",
+      "a": "In convolutional layers, each filter's weights are applied across the entire spatial dimension of the feature map — weight sharing provides implicit regularisation. Additionally, nearby pixels in a feature map are highly correlated, so dropping a unit at one location doesn't prevent the information from being captured by adjacent units. Spatial dropout (drop entire feature map channels) is more effective than unit dropout for convolutions. Alternatives for CNN regularisation: batch normalisation, stochastic depth, cutout augmentation. Standard dropout is most effective for dense FC layers where each unit independently encodes information."
+    },
+    {
+      "q": "Does dropout work at test time in batch normalisation networks?",
+      "a": "There's a dangerous interaction: batch normalisation statistics (running mean and variance) are computed on the full activations during training, but dropout changes the distribution of active units. At test time, BatchNorm uses training statistics and dropout is disabled — the distribution matches. However, if you apply MC Dropout (dropout at test time with BN), the distribution of activations differs from what BN expects, causing miscalibrated predictions. To use MC Dropout correctly with BN: don't freeze BN during MC inference (let it compute batch statistics from the test sample), or replace BN with layer norm."
+    }
+  ],
+  "sources": [
+    { "label": "Srivastava et al. (2014) — Dropout: A Simple Way to Prevent Neural Networks from Overfitting, JMLR 15:1929–1958", "url": "https://jmlr.org/papers/v15/srivastava14a.html" },
+    { "label": "Gal & Ghahramani (2016) — Dropout as a Bayesian Approximation, ICML 2016 arXiv:1506.02142", "url": "https://arxiv.org/abs/1506.02142" }
+  ]
+}

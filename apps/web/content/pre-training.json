@@ -1,0 +1,69 @@
+{
+  "visualizationType": "training-curve",
+  "codeSnapshot": {
+    "label": "pre_training.py",
+    "code": "import torch\nimport torch.nn as nn\nfrom torch.utils.data import DataLoader\n\n# Causal Language Model pre-training (GPT-style)\n# Next-token prediction: given [t1, t2, ..., t_{T-1}], predict [t2, t3, ..., t_T]\n\nclass CausalLMPretraining:\n    \"\"\"Minimal GPT pre-training loop.\"\"\"\n    def __init__(self, model, tokenizer, optimizer, scheduler):\n        self.model = model\n        self.tokenizer = tokenizer\n        self.optimizer = optimizer\n        self.scheduler = scheduler\n\n    def train_step(self, batch_text):\n        # Tokenise\n        tokens = self.tokenizer(batch_text, return_tensors='pt',\n                               padding=True, truncation=True, max_length=2048)\n        input_ids = tokens['input_ids']   # (B, T)\n        # Shift: inputs = t1..t_{T-1}, labels = t2..t_T\n        inputs = input_ids[:, :-1]        # (B, T-1)\n        labels = input_ids[:, 1:]         # (B, T-1)\n        # Forward\n        logits = self.model(inputs)        # (B, T-1, vocab_size)\n        # Cross-entropy loss over all token positions\n        loss = nn.CrossEntropyLoss()(\n            logits.reshape(-1, logits.size(-1)),  # (B*(T-1), vocab)\n            labels.reshape(-1)                     # (B*(T-1),)\n        )\n        # Backward\n        loss.backward()\n        torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)\n        self.optimizer.step()\n        self.scheduler.step()\n        self.optimizer.zero_grad()\n        return loss.item()\n\n# Masked Language Model (BERT-style)\n# Randomly mask 15% of tokens; predict masked tokens only\ndef create_mlm_batch(input_ids, mask_prob=0.15, vocab_size=30000):\n    labels = input_ids.clone()\n    # Mask 15% randomly\n    prob = torch.full(input_ids.shape, mask_prob)\n    mask = torch.bernoulli(prob).bool()\n    # 80% [MASK], 10% random, 10% unchanged (BERT recipe)\n    indices_replaced = mask & (torch.rand(input_ids.shape) < 0.8)\n    input_ids[indices_replaced] = 103  # [MASK] token id\n    indices_random = mask & (torch.rand(input_ids.shape) >= 0.8) & \\\n                     (torch.rand(input_ids.shape) < 0.9)\n    input_ids[indices_random] = torch.randint(vocab_size, input_ids.shape)[indices_random]\n    # Loss only on masked positions\n    labels[~mask] = -100  # -100 = ignore in CE loss\n    return input_ids, labels"
+  },
+  "eli3": [
+    "Pre-training is the first phase of training a language model — before it learns to follow instructions or chat. The model reads billions of words from the internet, books, and code, learning one simple task: predict the next word. From this, it learns grammar, facts, reasoning patterns, and world knowledge.",
+    "It's like education before specialisation. A doctor spends years in medical school learning general biology, chemistry, and anatomy before specialising in surgery. A language model spends months pre-training on general text before being fine-tuned for specific tasks.",
+    "Two main approaches: causal language modelling (GPT-style: predict next token, left-to-right) and masked language modelling (BERT-style: predict randomly hidden tokens using context from both sides). GPT-style is now dominant because it naturally enables text generation."
+  ],
+  "whenWhy": [
+    {
+      "title": "Foundation model training (scale and compute)",
+      "body": "LLaMA-7B pre-training: 1 trillion tokens, 6144 A100 GPUs, ~100,000 GPU-hours. GPT-4 (estimated): trillions of tokens, thousands of H100s. Pre-training costs $1M–$100M+. This one-time cost produces a model with general knowledge that can be fine-tuned cheaply for hundreds of downstream tasks. The pre-training compute determines the ceiling of model capability — Chinchilla scaling law: optimal compute allocation is roughly 20 tokens per parameter."
+    },
+    {
+      "title": "Causal LM vs Masked LM (CLM vs MLM)",
+      "body": "Causal LM (GPT): predict token t+1 given t1,...,t. Autoregressive — naturally generates text. One loss term per token position. BERT MLM: predict 15% of tokens using full bidirectional context. Not autoregressive — requires two-pass for generation (slow and awkward). CLM has won: GPT-style models (LLaMA, Mistral, GPT-4, Claude) are universal; BERT is still used for classification where you don't need generation."
+    },
+    {
+      "title": "Data quality matters more than data quantity",
+      "body": "LLaMA-1 was trained on 1.4T tokens of filtered web text and outperformed GPT-3 (175B params vs 65B params) on many benchmarks. Phi-1.5 (1.3B params) trained on textbook-quality data approached 7B model performance. FineWeb-Edu (HuggingFace): aggressive quality filtering of Common Crawl produces data that's 2–4× more efficient than raw web text. Data quality, deduplication, and domain balance matter enormously."
+    }
+  ],
+  "deepDiveIntro": [
+    "Causal LM pre-training loss: L = −(1/T) Σₜ log p_θ(wₜ|w₁,...,wₜ₋₁). This is the cross-entropy between the true next token (one-hot) and the model's predicted distribution at each position. Perplexity = exp(L) — lower perplexity means the model is less surprised by the next token on average. Pre-training minimises this loss over a corpus of N tokens: L_total = −(1/N) Σₙ log p_θ(wₙ|w₁,...,wₙ₋₁). [1]",
+    "Chinchilla scaling law (Hoffmann et al., 2022): for a compute budget C (in FLOPs), the optimal number of parameters N and training tokens D satisfy N ≈ D ≈ C^0.5. More precisely: N_opt ≈ G/2 · (C/6)^0.5 where G ≈ 10. This overturned GPT-3's approach of prioritising model size — smaller models trained on more data are more compute-efficient. LLaMA-65B was trained on more tokens than Chinchilla-optimal to produce a smaller but capable model useful for inference. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Causal Language Modelling",
+      "body": "Training: given sequence w₁,...,w_T, compute logits for positions 1,...,T−1: l_t = model(w₁,...,w_t) ∈ ℝ^V. Loss: L = −(1/(T−1)) Σₜ₌₁^{T-1} log softmax(l_t)[w_{t+1}]. At inference: generate autoregressively by sampling wₜ₊₁ ~ p(·|w₁,...,wₜ). Temperature T_sample controls randomness: p(wₜ₊₁) = softmax(l_t/T_sample). A decoder-only transformer processes all positions in parallel during training via causal masking (lower-triangular attention mask). [1]",
+      "formula": "L = −(1/T) Σₜ log p_θ(wₜ | w₁,...,wₜ₋₁)"
+    },
+    {
+      "heading": "Data Pipeline and Tokenisation",
+      "body": "Typical pre-training data pipeline: (1) Raw text collection (Common Crawl, Wikipedia, Books, GitHub, StackExchange). (2) Deduplication (MinHash LSH, exact match). (3) Quality filtering (perplexity-based, classifier-based, heuristics). (4) Tokenisation (BPE/SentencePiece, vocab 32K–100K). (5) Packing: concatenate documents to fill context window (2048–128K tokens). LLaMA tokeniser: BPE, vocab=32K. GPT-4: cl100k_base, vocab=100K. Tokenisation choice affects language coverage and efficiency for code. [1]"
+    },
+    {
+      "heading": "Chinchilla Scaling Laws",
+      "body": "Hoffmann et al. (2022): loss L(N, D) = E + A/N^α + B/D^β where E ≈ 1.62 (irreducible entropy), A=406.4, B=410.7, α=0.336, β=0.283. For fixed compute C = 6ND (FLOPs ≈ 6 × params × tokens for a transformer): optimal N ∝ C^0.5, D ∝ C^0.5. Rule of thumb: train ~20 tokens per parameter. LLaMA-7B: 7B params × 1T tokens = 143 tokens/param — over-trained vs Chinchilla for inference efficiency. Over-training reduces inference cost: a smaller, better-trained model is cheaper to deploy than a larger, under-trained one. [2]",
+      "formula": "Optimal: N_opt ∝ C^0.5, D_opt ∝ C^0.5 (Chinchilla)"
+    }
+  ],
+  "youtubeLabel": "How LLMs Are Pre-trained — Andrej Karpathy",
+  "youtubeUrl": "https://www.youtube.com/embed/l8pRSuU81PU",
+  "takeaways": [
+    "L = −(1/T)Σ log p_θ(wₜ|w₁,...,wₜ₋₁) — next-token cross-entropy over all positions. [1]",
+    "Chinchilla: optimal N=D ∝ C^0.5; train ~20 tokens per parameter for best compute-loss tradeoff. [2]",
+    "CLM (GPT-style) has won over MLM (BERT) for generality and generation capability. [1]",
+    "Data quality > quantity: filtering, deduplication, and domain balance matter enormously. [1]",
+    "Pre-training cost: $1M–$100M+; produces reusable foundation for cheap fine-tuning. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why do LLMs use byte-pair encoding (BPE) tokenisation and not character-level or word-level?",
+      "a": "Word-level: fixed vocabulary, OOV (out-of-vocabulary) problem for rare words, morphological inflections. Character-level: no OOV, but sequences are very long (GPT-2 level: 4–5× longer), attention cost scales as O(T²). BPE (Sennrich et al., 2016): starts from characters, iteratively merges frequent pairs. Balances vocabulary coverage with sequence length. Common words become single tokens (economy=1 token); rare words decompose into subwords (unhappinesses = un + happi + ness + es). Vocabulary size 32K–100K achieves 2–4 characters per token on average. SentencePiece is a language-agnostic BPE implementation that handles multilingual text naturally."
+    },
+    {
+      "q": "What happens at the end of the token budget during pre-training?",
+      "a": "Pre-training typically uses a fixed token budget (e.g., 1T tokens for LLaMA-7B). At the end: (1) the learning rate has been cosine-decayed to η_min ≈ 0.1·η_max; (2) the model has 'seen' all training data once or multiple times if repeating. For large models and quality data, repeating data (2–4 epochs) doesn't hurt much. For smaller models and large datasets, one epoch is standard. After pre-training, the model checkpoint is saved and fine-tuning begins. Continued pre-training (adding more domain-specific data after initial pre-training) is a common way to adapt foundation models for specialized domains (medicine, law, code)."
+    }
+  ],
+  "sources": [
+    { "label": "Brown et al. (2020) — Language Models are Few-Shot Learners (GPT-3) arXiv:2005.14165", "url": "https://arxiv.org/abs/2005.14165" },
+    { "label": "Hoffmann et al. (2022) — Training Compute-Optimal Large Language Models (Chinchilla) arXiv:2203.15556", "url": "https://arxiv.org/abs/2203.15556" }
+  ]
+}
