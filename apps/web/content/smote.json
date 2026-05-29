@@ -1,0 +1,68 @@
+{
+  "visualizationType": "chart",
+  "codeSnapshot": {
+    "label": "smote.py",
+    "code": "import pandas as pd\nimport numpy as np\nfrom imblearn.over_sampling import SMOTE, BorderlineSMOTE, ADASYN, SVMSMOTE\nfrom imblearn.combine import SMOTETomek, SMOTEENN\nfrom imblearn.pipeline import Pipeline as ImbPipeline\nfrom sklearn.ensemble import GradientBoostingClassifier\nfrom sklearn.model_selection import StratifiedKFold, cross_val_score\nfrom sklearn.metrics import classification_report\n\nX, y = df.drop('target', axis=1), df['target']\nprint('Class distribution:', y.value_counts().to_dict())\n# {0: 9500, 1: 500}  → 19:1 imbalance\n\n# ── 1. Basic SMOTE ──\nsmote = SMOTE(\n    sampling_strategy=0.5,  # minority:majority ratio after oversampling\n    k_neighbors=5,           # k nearest minority neighbours for interpolation\n    random_state=42\n)\nX_res, y_res = smote.fit_resample(X, y)\nprint('After SMOTE:', pd.Series(y_res).value_counts().to_dict())\n# {0: 9500, 1: 4750}  (sampling_strategy=0.5 → minority = 50% of majority)\n\n# ── 2. Variants ──\n# Borderline-SMOTE: only oversample minority instances near the decision boundary\nborder_smote = BorderlineSMOTE(kind='borderline-1', k_neighbors=5, random_state=42)\n\n# ADASYN: adaptive — generates more synthetic samples in harder-to-learn regions\nadasyn = ADASYN(sampling_strategy=0.5, n_neighbors=5, random_state=42)\n\n# ── 3. Combination: SMOTE + cleaning ──\n# SMOTETomek: oversample minority, then remove Tomek links (boundary noise)\nsmote_tomek = SMOTETomek(random_state=42)\nX_res2, y_res2 = smote_tomek.fit_resample(X, y)\n\n# ── 4. Correct: SMOTE inside CV (not before) ──\n# WRONG: smote outside cross-validation leaks synthetic samples\n# X_res, y_res = smote.fit_resample(X, y); cross_val_score(..., X_res, y_res)\n\n# CORRECT: use imblearn Pipeline\npipeline = ImbPipeline([\n    ('smote', SMOTE(sampling_strategy=0.5, random_state=42)),\n    ('clf', GradientBoostingClassifier(n_estimators=200, random_state=42))\n])\ncv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)\nscores = cross_val_score(pipeline, X, y, cv=cv, scoring='f1')\nprint('CV F1:', scores.mean().round(3), '±', scores.std().round(3))"
+  },
+  "eli3": [
+    "When one class is much rarer than the other (e.g., 1% fraud, 99% normal), a model can get 99% accuracy by predicting 'normal' for everything — it's learned nothing about fraud. SMOTE (Synthetic Minority Over-sampling Technique) creates new synthetic examples of the minority class to help the model learn from it.",
+    "SMOTE doesn't duplicate existing minority examples (which would just reinforce the same points). Instead, it picks a minority example and one of its nearest neighbours, then creates a new point somewhere on the line between them. This populates the minority class's neighbourhood in feature space, helping the model draw better decision boundaries.",
+    "SMOTE is not always the right answer. For tree-based models (XGBoost, LightGBM), adjusting class weights is often simpler and equally effective. SMOTE is most beneficial for distance-based models (k-NN, SVM) and neural networks. And critically: SMOTE must only be applied to training data, never to validation or test data."
+  ],
+  "whenWhy": [
+    {
+      "title": "Fraud detection and rare event prediction",
+      "body": "Class imbalance is the default in fraud detection (0.1–5% fraud rate), medical diagnosis (rare disease), and anomaly detection. Without intervention, most classifiers are biased toward the majority class. SMOTE (or class weighting) shifts the decision boundary toward better coverage of the minority class, improving recall for the rare event at some cost to precision."
+    },
+    {
+      "title": "Small minority class with distance-based models",
+      "body": "k-NN and SVM are most sensitive to class imbalance because they make decisions based on local neighbourhood composition. A k-NN classifier in a 1:99 imbalanced dataset will almost always return the majority class for any query, since the k neighbours are predominantly majority-class. SMOTE increases the density of minority examples in feature space, improving neighbourhood composition."
+    },
+    {
+      "title": "When to avoid SMOTE",
+      "body": "SMOTE is unnecessary or counterproductive when: (1) Using XGBoost/LightGBM with scale_pos_weight (class weights) — these models handle imbalance natively and efficiently. (2) The minority class is very small AND high-dimensional — SMOTE interpolates in d-dimensional space, and in high d the interpolated points may lie in low-probability regions. (3) The minority class forms isolated clusters — SMOTE generates points that connect clusters, creating unrealistic synthetic samples. Visualize the data with UMAP/t-SNE before applying SMOTE."
+    }
+  ],
+  "deepDiveIntro": [
+    "Chawla et al. (2002) introduced SMOTE. Algorithm: for each minority sample xᵢ, find its k nearest minority neighbours. For each synthetic sample to generate: (1) Pick a random neighbour xₙₙ from the k neighbours. (2) Generate a synthetic point: x_syn = xᵢ + λ·(xₙₙ − xᵢ), where λ ~ Uniform(0,1). This creates points on the line segment between xᵢ and xₙₙ. The sampling_strategy parameter controls how many synthetic points to generate: strategy = minority_count_target / majority_count. [1]",
+    "Borderline-SMOTE (Han et al., 2005) identifies minority samples near the decision boundary (DANGER region: more than half of their k nearest neighbours are majority class) and applies SMOTE only to those. Samples well inside the minority cluster (SAFE) are not oversampled — they're already well-represented. ADASYN (He et al., 2008) takes a different approach: samples harder to classify (those with more majority neighbours) receive proportionally more synthetic samples, adaptively focusing oversampling where the model most needs help. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "SMOTE Algorithm",
+      "body": "For minority class M with |M| = n_min samples. Target: generate N_syn = sampling_strategy × n_maj − n_min synthetic samples. For each minority sample xᵢ: compute k-NN among M. Randomly pick neighbour xₙₙ. Generate: x_syn = xᵢ + λ·(xₙₙ − xᵢ), λ ~ Uniform(0,1). Properties: (1) Synthetic points are convex combinations of real minority points — lie on line segments between nearest neighbours. (2) k_neighbors controls locality of interpolation: smaller k → more concentrated near existing samples, larger k → more spread. (3) For categorical features: SMOTE cannot interpolate (intermediate category values are meaningless). Solution: SMOTE-NC (Nominal-Continuous) selects the most frequent category value among the k neighbours for categorical features. [1]",
+      "formula": "x_syn = xᵢ + λ·(x_nn − xᵢ),   λ ~ Uniform(0,1)"
+    },
+    {
+      "heading": "SMOTE + Cleaning Combinations",
+      "body": "SMOTE alone may introduce noise: synthetic points near the class boundary may be mislabelled or in ambiguous regions. Cleaning methods remove noisy examples after oversampling. (1) Tomek Links: a Tomek link is a pair (x_min, x_maj) where each is the nearest neighbour of the other. Such pairs are borderline ambiguous. SMOTETomek removes the majority-class member of each Tomek link after oversampling, cleaning the boundary. (2) Edited Nearest Neighbours (ENN): removes any sample whose class label disagrees with the majority label among its k nearest neighbours. SMOTEENN applies SMOTE then ENN on both classes. These combinations typically improve classifier performance over SMOTE alone. [2]"
+    },
+    {
+      "heading": "The SMOTE CV Leakage Trap",
+      "body": "If SMOTE is applied before cross-validation, synthetic minority samples derived from training data contaminate the validation folds — the model is validated on points it effectively 'trained on' (or near). This inflates CV metrics. Correct approach: apply SMOTE inside each CV fold (only to the training portion). imblearn's Pipeline (not sklearn's Pipeline) correctly applies the resampler only during fit, not during transform. Always use imblearn.pipeline.Pipeline when using imbalanced-learn resamplers with cross-validation. [1]"
+    }
+  ],
+  "youtubeLabel": "SMOTE for Imbalanced Data — StatQuest",
+  "youtubeUrl": "https://www.youtube.com/embed/FheTDyCwRdE",
+  "takeaways": [
+    "SMOTE: x_syn = xᵢ + λ·(x_nn − xᵢ), λ ~ Uniform(0,1). Interpolates between minority nearest neighbours. [1]",
+    "Borderline-SMOTE: oversample only DANGER region (near boundary). ADASYN: adaptive — more samples in harder-to-classify regions. [2]",
+    "SMOTETomek / SMOTEENN: combine oversampling with boundary cleaning. Better than SMOTE alone in most benchmarks. [2]",
+    "SMOTE must be applied inside CV (use imblearn.pipeline.Pipeline). Applying before CV inflates metrics via leakage. [1]",
+    "For tree models (XGBoost, LightGBM): scale_pos_weight or class_weight is usually simpler and equally effective. Use SMOTE for k-NN, SVM, neural networks. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Does SMOTE work with mixed numeric and categorical features?",
+      "a": "Standard SMOTE interpolates between feature vectors using Euclidean distance and linear interpolation — both meaningless for categorical features. SMOTE-NC (Nominal-Continuous) extends SMOTE: for categorical features, the synthetic value is selected as the mode (most frequent value) among the k nearest minority neighbours rather than interpolation. SMOTE-N handles purely nominal data using a distance metric based on value frequencies (Value Difference Metric). In practice: encode all categoricals as ordinal integers before applying SMOTE (imperfect but works empirically for tree models downstream), or use SMOTE-NC with explicit categorical column indices, or prefer class-weight balancing which has no interpolation step."
+    },
+    {
+      "q": "How much should you oversample? What is the optimal class ratio after SMOTE?",
+      "a": "There is no universally optimal ratio — it depends on the dataset, model, and metric. Guidelines: (1) Start with sampling_strategy=0.1 (minority = 10% of majority) and compare to no resampling and to 0.5, 1.0 (balanced). Tune via cross-validation on the metric that matters (F1, PR-AUC). (2) Avoid going to fully balanced (1:1) for extreme imbalance (1:1000+) — the model then treats both classes as equally common at inference, causing massive over-prediction of the minority. A 1:5 or 1:10 ratio after resampling is often better than 1:1. (3) Combine with threshold tuning on the classifier's predict_proba output to find the operating point that matches the desired precision-recall trade-off on the real distribution."
+    }
+  ],
+  "sources": [
+    { "label": "Chawla, N.V. et al. — SMOTE: Synthetic Minority Over-sampling Technique, JAIR 16, 2002", "url": "https://doi.org/10.1613/jair.953" },
+    { "label": "He, H. et al. — ADASYN: Adaptive Synthetic Sampling Approach, IEEE IJCNN 2008", "url": "https://doi.org/10.1109/IJCNN.2008.4633969" }
+  ]
+}

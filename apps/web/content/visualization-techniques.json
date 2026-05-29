@@ -1,0 +1,67 @@
+{
+  "visualizationType": "chart",
+  "codeSnapshot": {
+    "label": "visualization_techniques.py",
+    "code": "import pandas as pd\nimport numpy as np\nimport matplotlib.pyplot as plt\nimport seaborn as sns\n\ndf = pd.read_csv('data.csv')\n\n# ── 1. Distribution plots ──\nfig, axes = plt.subplots(1, 3, figsize=(15, 4))\ndf['income'].hist(bins=40, ax=axes[0]); axes[0].set_title('Histogram')\nsns.boxplot(x=df['income'], ax=axes[1]); axes[1].set_title('Box Plot')\nsns.violinplot(x=df['income'], ax=axes[2]); axes[2].set_title('Violin Plot')\n\n# ── 2. Scatter plot with regression line ──\nfig, ax = plt.subplots(figsize=(8, 5))\nsns.regplot(x='age', y='income', data=df, scatter_kws={'alpha': 0.2, 's': 10}, ax=ax)\nax.set_title('Age vs Income with Regression Line')\n\n# ── 3. Heatmap (correlation) ──\ncorr = df.select_dtypes('number').corr()\nsns.heatmap(corr, annot=True, fmt='.2f', cmap='coolwarm', center=0,\n            mask=np.triu(np.ones_like(corr, dtype=bool)))\nplt.title('Correlation Heatmap')\n\n# ── 4. Pair plot ──\nsns.pairplot(df[['age', 'income', 'spend', 'churn']], hue='churn',\n             plot_kws={'alpha': 0.4, 's': 10})\n\n# ── 5. Categorical plots ──\nfig, axes = plt.subplots(1, 2, figsize=(14, 5))\nsns.countplot(x='country', data=df, ax=axes[0], order=df['country'].value_counts().index)\nsns.barplot(x='country', y='income', data=df, ax=axes[1], ci='sd')\n\n# ── 6. Interactive plot (Plotly) ──\nimport plotly.express as px\nfig = px.scatter(\n    df, x='age', y='income', color='churn',\n    hover_data=['user_id', 'country'],\n    title='Age vs Income (interactive)',\n    opacity=0.5\n)\nfig.show()  # opens in browser\n\n# ── 7. Time series ──\ndf['date'] = pd.to_datetime(df['date'])\ndf.set_index('date')['revenue'].resample('W').sum().plot(\n    figsize=(12, 4), title='Weekly Revenue'\n)"
+  },
+  "eli3": [
+    "Data visualization turns numbers into pictures that humans can interpret at a glance. A table of 10,000 numbers tells you almost nothing; a histogram of the same numbers immediately shows you the shape of the distribution, whether it's symmetric, where the bulk of values lie, and whether there are outliers.",
+    "Different chart types answer different questions. Histograms and box plots show distribution shape. Scatter plots show relationships between two numeric variables. Heatmaps show correlation matrices. Bar charts compare counts or averages across categories. Line charts show trends over time. Picking the wrong chart type makes the data harder to read, not easier.",
+    "The goal of visualization during EDA is discovery, not presentation. EDA plots don't need to be beautiful — they need to reveal patterns quickly. Once you're communicating findings to stakeholders, you invest in clear labels, accessible color palettes, and narrative structure."
+  ],
+  "whenWhy": [
+    {
+      "title": "EDA: pattern discovery before modelling",
+      "body": "Visualization is the fastest tool for discovering: unexpected distributions (bimodal → two populations mixed), data quality issues (a suspicious spike at 999 or 0, impossible values), feature-target relationships (non-linear curves suggest polynomial features or tree models), and outliers. A single seaborn pairplot on the numeric columns often reveals 80% of what matters in the dataset in seconds."
+    },
+    {
+      "title": "Model diagnostics and residual analysis",
+      "body": "After fitting a regression model: plot residuals vs fitted values (checks homoscedasticity — residuals should be randomly scattered around zero with constant spread), residuals vs each predictor (checks for missed non-linearity), and a Q-Q plot of residuals (checks normality assumption for confidence intervals). These diagnostic plots are how you know if your model assumptions are violated."
+    },
+    {
+      "title": "Communicating results to stakeholders",
+      "body": "Model outputs need to be translated into business-readable visuals: feature importance bar charts, ROC curves, calibration curves, actual-vs-predicted scatter plots, or confusion matrices with colour coding. Plotly and Altair generate interactive charts suitable for dashboards. The grammar of graphics principle — mapping data attributes to visual channels (position, colour, size, shape) — guides chart design."
+    }
+  ],
+  "deepDiveIntro": [
+    "Wilkinson (2005) formalized the Grammar of Graphics: a visualization is a mapping from data variables to aesthetic channels (x position, y position, colour, size, shape, opacity). The ggplot2 library (R) implements this directly; Python's Altair is the closest equivalent. Understanding the grammar lets you construct any chart systematically: data + geometric objects (geom) + aesthetic mappings + scales + coordinate system + facets. [1]",
+    "Effective visual encoding depends on perceptual accuracy of different channels. Cleveland & McGill (1984) ranked channels by accuracy: position on aligned scale (most accurate) > length > angle > area > color saturation > color hue (least accurate). This ranking explains why bar charts (position) outperform pie charts (angle/area) for comparing quantities, and why position should encode the most important variable. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Chart Type Selection Guide",
+      "body": "Distribution of one numeric variable: histogram (shape), box plot (five-number summary + outliers), violin plot (distribution shape + summary). One numeric vs one categorical: grouped box/violin plots, strip/swarm plots. Two numeric variables: scatter plot (relationship shape), hexbin/2D KDE (for large n with overplotting). Many numeric variables: pair plot (all pairwise scatters), correlation heatmap (overview). One categorical variable: bar chart (counts or mean of y). Categorical × numeric over time: line chart with colour per category. Avoid: pie charts (hard to compare non-adjacent slices), 3D plots (depth perception distorts), dual y-axes (misleading scale alignment). [1]"
+    },
+    {
+      "heading": "Matplotlib vs Seaborn vs Plotly",
+      "body": "Matplotlib: low-level, full control, verbose API. Every element (axis, tick, label) must be set explicitly. Best for custom or publication-quality figures. Seaborn: high-level wrapper around Matplotlib. Statistical plot vocabulary (boxplot, violinplot, pairplot, heatmap, regplot, lmplot) with sensible defaults. Best for EDA — least code for maximum insight. Plotly: interactive, browser-rendered. Hover tooltips, zoom, filter. Best for dashboards (Dash) and stakeholder presentations. Altair: declarative, Grammar-of-Graphics-based, excellent for linked/brushed interactive plots. Plotnine: ggplot2 syntax for Python (Grammar of Graphics). [1]"
+    },
+    {
+      "heading": "Colour and Accessibility",
+      "body": "Colour choice matters: (1) Sequential colormaps (viridis, plasma) for numeric gradients — avoid rainbow (jet) which has perceptual non-linearity and is problematic for colour-blind readers. (2) Diverging colormaps (coolwarm, RdBu) for data centred around zero (correlation matrices, signed deviations). (3) Qualitative colormaps (tab10, Set2) for categorical groups — limit to ≤8 categories (human perception limit for distinguishing colours). Colour-blind accessibility: approximately 8% of males have red-green colour blindness. Use the colourblind-friendly palettes (ColorBrewer, seaborn's 'colorblind') or reinforce colour with shape (marker style) and pattern. [2]"
+    }
+  ],
+  "youtubeLabel": "Python Data Visualization — Corey Schafer",
+  "youtubeUrl": "https://www.youtube.com/embed/UO98U4PKQ48",
+  "takeaways": [
+    "Grammar of Graphics: visualization = data + geometry + aesthetic mapping (position, color, size, shape) + scales + facets. [1]",
+    "Perceptual accuracy ranking: position > length > angle > area > color hue. Bar charts beat pie charts for comparisons. [2]",
+    "Seaborn: best for EDA (high-level, statistical vocabulary). Matplotlib: custom/publication figures. Plotly: interactive dashboards. [1]",
+    "Pair plots + correlation heatmaps reveal most dataset structure in seconds — run these before any other analysis. [1]",
+    "Sequential colormaps (viridis): numeric gradients. Diverging (RdBu): centred data. Qualitative (tab10): ≤8 categories. Avoid rainbow/jet. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "How do you handle overplotting in scatter plots with large datasets (n > 100k)?",
+      "a": "Overplotting (points obscure each other) occurs for n > 10k in most scatter plots. Solutions in order of effectiveness: (1) Reduce alpha (opacity): scatter(alpha=0.05) shows density via darkness. (2) Hexbin plot: hexagonal bins counted and colour-mapped by count — plt.hexbin() or sns.jointplot(kind='hex'). (3) 2D KDE: sns.kdeplot(x, y, fill=True) shows the density estimate as contours or filled areas. (4) Sample: randomly sample 5–10k points for the scatter; compute statistics on the full data. (5) Datashader (Python library): rasterizes millions of points efficiently using aggregation before rendering. The rule: always set alpha < 0.1 for n > 50k in scatter plots."
+    },
+    {
+      "q": "What makes a visualization misleading, and how do you avoid it?",
+      "a": "Common misleading techniques: (1) Truncated y-axis: starting at a value other than 0 exaggerates differences between bars. Fix: always start bar charts at 0; for line charts, show the full range or annotate the axis break. (2) Cherry-picked time ranges: selecting a range that makes a trend look better than the full history. Fix: show the full time range and annotate any interventions. (3) Dual y-axes: independently scaled y-axes make arbitrary relationships look correlated. Avoid; use separate panels (facets) instead. (4) Area charts for non-cumulative data: area encodes quantity — only use for part-of-whole or cumulative data. (5) Pie charts with many slices: readers can't compare non-adjacent slices accurately. Replace with sorted bar charts."
+    }
+  ],
+  "sources": [
+    { "label": "Wilkinson, L. — The Grammar of Graphics, 2nd Ed. (Springer, 2005)", "url": "https://link.springer.com/book/10.1007/0-387-28695-0" },
+    { "label": "Cleveland, W.S. & McGill, R. — Graphical Perception: Theory, Experimentation, and Application, JASA 79(387), 1984", "url": "https://doi.org/10.2307/2288400" }
+  ]
+}

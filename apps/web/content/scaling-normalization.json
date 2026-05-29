@@ -1,0 +1,68 @@
+{
+  "visualizationType": "chart",
+  "codeSnapshot": {
+    "label": "scaling_normalization.py",
+    "code": "import pandas as pd\nimport numpy as np\nfrom sklearn.preprocessing import (\n    StandardScaler, MinMaxScaler, RobustScaler,\n    MaxAbsScaler, Normalizer, PowerTransformer, QuantileTransformer\n)\n\nX = df[['age', 'income', 'spend']].values\n\n# ── 1. Standardization (Z-score) ──\n# Centers to mean=0, scales to std=1\n# Required by: linear/logistic regression, SVM, PCA, neural networks, k-NN\nscaler_std = StandardScaler()\nX_std = scaler_std.fit_transform(X)\nprint('Mean:', X_std.mean(axis=0))  # ≈ [0, 0, 0]\nprint('Std:', X_std.std(axis=0))    # ≈ [1, 1, 1]\n\n# ── 2. Min-Max Scaling (normalization to [0, 1]) ──\n# Maps: x_scaled = (x - min) / (max - min)\n# Required by: neural networks with bounded activation, image pixels\nscaler_mm = MinMaxScaler(feature_range=(0, 1))\nX_mm = scaler_mm.fit_transform(X)\n\n# ── 3. Robust Scaler (IQR-based, outlier-resistant) ──\n# Centers to median, scales by IQR\n# Use when: data has significant outliers\nscaler_rob = RobustScaler()  # default: center=Q2, scale=IQR(Q1,Q3)\nX_rob = scaler_rob.fit_transform(X)\n\n# ── 4. Log Transform (right-skewed distributions) ──\n# Apply before StandardScaler for income, transaction amounts\nX_log = np.log1p(X[:, 1])  # log(1+x) avoids log(0) for zero values\n\n# ── 5. Power Transform (Box-Cox / Yeo-Johnson) ──\n# Yeo-Johnson works with zero and negative values; Box-Cox requires positive\npt = PowerTransformer(method='yeo-johnson')  # or 'box-cox' for positive-only\nX_power = pt.fit_transform(X)\n\n# ── 6. Normalizer (row-wise L2 norm, not column-wise) ──\n# Scales each sample (row) to unit L2 norm\n# Use for: text TF-IDF vectors, cosine similarity computations\nnorm = Normalizer(norm='l2')\nX_norm = norm.fit_transform(X)\n\n# IMPORTANT: always fit on training data only\n# scaler.fit_transform(X_train) → scaler.transform(X_test)"
+  },
+  "eli3": [
+    "Different features in a dataset often live on completely different scales: age ranges from 18–90, income from $20,000–$1,000,000, and a binary flag is just 0 or 1. Many ML algorithms treat larger-magnitude features as more important, even when that's not justified. Scaling brings all features to a comparable range so the algorithm focuses on the pattern, not the units.",
+    "Standardization (z-score scaling) transforms each feature to have mean = 0 and standard deviation = 1. It's the most common choice for linear models, SVM, PCA, and neural networks. Min-max scaling maps everything to [0, 1] — useful when you need bounded values (pixel intensities, bounded activation functions).",
+    "The critical rule: always fit the scaler on training data only. Computing the mean and standard deviation on the full dataset (including test) is data leakage — your model has 'seen' test data statistics during training, inflating validation performance in a way that collapses at real deployment."
+  ],
+  "whenWhy": [
+    {
+      "title": "Algorithms that require scaling",
+      "body": "Linear regression and logistic regression: gradient descent converges much faster with standardized features (elliptical loss contours become circular). SVM and k-NN: distance-based algorithms where a feature with range [0, 1000] dominates distance calculations over one with range [0, 1]. PCA: maximizes variance — unscaled features with larger ranges dominate the principal components. Neural networks: large input magnitudes cause large activations and unstable gradients. All of these require scaling."
+    },
+    {
+      "title": "Algorithms that do NOT require scaling",
+      "body": "Tree-based algorithms (Decision Tree, Random Forest, XGBoost, LightGBM): splits are based on rank/threshold, not distance. Scaling does not change rank order and therefore has zero effect on tree predictions. Naive Bayes: estimates per-feature distributions independently; scale doesn't matter. Applying StandardScaler to tree models is harmless but pointless. Understanding this saves preprocessing time for tree pipelines."
+    },
+    {
+      "title": "Log transform for skewed features",
+      "body": "Right-skewed features (income, transaction amounts, page views, time spent) violate the normality assumption of linear regression and create optimization difficulties for neural networks. Log or sqrt transforms compress the right tail, making distributions more symmetric before applying StandardScaler. np.log1p(x) (log(1+x)) is preferred over np.log(x) because it handles x=0 gracefully. After fitting the model, inverse transform predictions: np.expm1(y_pred)."
+    }
+  ],
+  "deepDiveIntro": [
+    "Standardization: x_std = (x − μ) / σ, where μ and σ are estimated from training data. The resulting feature has zero mean and unit variance. This does not constrain the range — extreme values (outliers) remain extreme in standardized form, just measured in units of standard deviation. MinMax: x_mm = (x − x_min) / (x_max − x_min) ∈ [0, 1]. Sensitive to outliers: a single extreme outlier defines x_max, compressing all other values into a small range. RobustScaler: x_rob = (x − median) / IQR — uses quantiles (Q1, Q3) which are robust to outliers. [1]",
+    "Box-Cox transform: y = (x^λ − 1)/λ for λ ≠ 0, log(x) for λ = 0. Requires x > 0. The parameter λ is estimated by maximum likelihood to maximize normality of the transformed variable. Yeo-Johnson extends Box-Cox to handle zero and negative values. PowerTransformer in sklearn implements both and estimates λ automatically. These transforms are stronger than log for making heavily skewed distributions normal-shaped. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "StandardScaler vs MinMaxScaler vs RobustScaler",
+      "body": "StandardScaler: x_std = (x − μ̂)/σ̂. Preserves outliers in standardized form. Appropriate for approximately normal features. MinMaxScaler: x_mm = (x − min)/(max − min). Sensitive to min/max outliers — a single outlier can compress 99% of values into [0, 0.01]. Use only when the range is bounded and meaningful (pixel intensities [0, 255], probabilities). RobustScaler: x_rob = (x − median)/IQR. Outliers influence neither the center (median) nor the scale (IQR). Best when significant outliers are present but you don't want to remove them. MaxAbsScaler: x_mabs = x / |max(x)| — preserves sparsity (useful for sparse matrices from OHE), no centering. [1]",
+      "formula": "StandardScaler: x' = (x − μ)/σ;  MinMax: x' = (x−min)/(max−min);  RobustScaler: x' = (x−median)/IQR"
+    },
+    {
+      "heading": "Normalizer: Row-Wise vs Column-Wise",
+      "body": "StandardScaler/MinMaxScaler/RobustScaler scale column-wise: each feature independently. Normalizer scales row-wise: each sample vector is scaled to unit norm (L1, L2, or max norm). x_norm = x / ||x||_p. Use case: TF-IDF text vectors (row L2 norm makes cosine similarity equal to dot product), image histogram descriptors, or any context where the direction of a feature vector matters more than its magnitude. In sklearn, Normalizer transforms each row: important to not confuse it with column scalers. [1]"
+    },
+    {
+      "heading": "Leakage from Incorrect Scaling",
+      "body": "Data leakage via scaling: fitting scaler on train+test data incorporates test statistics (mean, min, max) into the scaler parameters, which then propagate into training features. The model has been trained on features contaminated with test information → inflated validation performance. Prevention: always use Pipeline (sklearn) so fit_transform runs only on training data, and transform runs on test data. Pipeline.fit(X_train, y_train) correctly fits all transformers on training data; Pipeline.predict(X_test) applies trained transformers to test data. [2]"
+    }
+  ],
+  "youtubeLabel": "Feature Scaling Explained — StatQuest",
+  "youtubeUrl": "https://www.youtube.com/embed/0MrNi93qG9c",
+  "takeaways": [
+    "StandardScaler (z-score): required for linear models, SVM, PCA, k-NN, neural networks. Has no effect on tree models. [1]",
+    "MinMaxScaler: maps to [0,1], sensitive to outliers. Use when range is bounded (pixels, probabilities). [1]",
+    "RobustScaler: median + IQR, resistant to outliers. Best when outliers exist and you want to preserve them. [1]",
+    "Always fit_transform on training data, transform on test data. Use sklearn Pipeline to enforce this. [2]",
+    "Log/Yeo-Johnson transforms correct right skew before scaling. np.log1p(x) handles zeros; PowerTransformer estimates optimal λ automatically. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "What happens if you scale the target variable (y) in regression?",
+      "a": "Scaling X features is standard. Scaling y (target) is optional but sometimes useful: if y spans many orders of magnitude (e.g., house prices from $50k to $50M), log(y) or StandardScaler(y) can stabilize gradient descent and make residuals more homoscedastic. Critically: you must inverse-transform predictions before evaluating against original y. If you use a Pipeline, the y transform must be applied manually or via TransformedTargetRegressor(regressor, transformer=StandardScaler()), which handles the inverse transform automatically in predict(). Never scale binary classification targets — logistic regression loss functions assume 0/1."
+    },
+    {
+      "q": "How do you handle scaling in cross-validation to prevent leakage?",
+      "a": "Incorrect approach: fit scaler on all training data, then cross_val_score(estimator, X_scaled, y). This fits the scaler on the full training set — including the cross-validation 'test' fold — so CV folds are not independent. Correct approach: wrap scaler and estimator in a Pipeline, then call cross_val_score(pipeline, X_unscaled, y). During each CV fold, Pipeline.fit() fits the scaler on only the training portion of that fold and applies it to the validation fold. This simulates the real deployment scenario where the scaler is never exposed to future data."
+    }
+  ],
+  "sources": [
+    { "label": "Geron, A. — Hands-On Machine Learning, 3rd Ed., Ch. 2 (O'Reilly, 2022)", "url": "https://www.oreilly.com/library/view/hands-on-machine-learning/9781098125967/" },
+    { "label": "sklearn Preprocessing Documentation — StandardScaler, PowerTransformer", "url": "https://scikit-learn.org/stable/modules/preprocessing.html" }
+  ]
+}

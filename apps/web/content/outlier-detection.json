@@ -1,0 +1,69 @@
+{
+  "visualizationType": "chart",
+  "codeSnapshot": {
+    "label": "outlier_detection.py",
+    "code": "import numpy as np\nimport pandas as pd\nfrom scipy import stats\nfrom sklearn.ensemble import IsolationForest\nfrom sklearn.covariance import EllipticEnvelope\n\nX = df[['age', 'income', 'spend']].values\n\n# ── Univariate: IQR method ──\nQ1 = df['income'].quantile(0.25)\nQ3 = df['income'].quantile(0.75)\nIQR = Q3 - Q1\nlower, upper = Q1 - 1.5 * IQR, Q3 + 1.5 * IQR\noutliers_iqr = df[(df['income'] < lower) | (df['income'] > upper)]\nprint(f'IQR outliers: {len(outliers_iqr)}')\n\n# ── Univariate: Z-score (assumes normality) ──\nz_scores = np.abs(stats.zscore(df['income'].dropna()))\noutliers_z = df[z_scores > 3]  # |z| > 3 ≈ 0.27% false-positive rate for normal data\n\n# ── Multivariate: Mahalanobis distance ──\ncov = np.cov(X.T)\nVI = np.linalg.pinv(cov)  # inverse covariance\ndiff = X - X.mean(axis=0)\nmahal = np.sqrt(np.einsum('ij,jk,ik->i', diff, VI, diff))\n# Under multivariate normal, D² ~ Chi²(d); threshold: chi2.ppf(0.975, df=3)\nfrom scipy.stats import chi2\nthreshold = np.sqrt(chi2.ppf(0.975, df=X.shape[1]))\noutliers_mahal = np.where(mahal > threshold)[0]\n\n# ── Multivariate: Isolation Forest ──\nisoforest = IsolationForest(contamination=0.05, random_state=42)\nlabels = isoforest.fit_predict(X)  # -1 = outlier, 1 = inlier\noutliers_if = df[labels == -1]\nprint(f'Isolation Forest outliers: {len(outliers_if)}')\n\n# ── Robust covariance (EllipticEnvelope) ──\nenv = EllipticEnvelope(contamination=0.05, random_state=42)\nenv.fit(X)\nlabels_env = env.predict(X)"
+  },
+  "eli3": [
+    "An outlier is a data point that is far from the rest — an unusually high income, a transaction amount that is 100× the typical value, a sensor reading from a broken instrument. Outliers can be real signal (a genuine unusual case) or data errors (typos, sensor malfunctions, ETL bugs).",
+    "Why does it matter? Outliers inflate the mean and standard deviation, distort linear model coefficients (a single extreme point can move a regression line substantially), and confuse distance-based algorithms like k-NN and k-means. Whether to remove, transform, or preserve outliers depends on understanding why they exist.",
+    "Detection methods range from simple rules (this value is more than 3 standard deviations from the mean) to sophisticated algorithms (Isolation Forest, which detects outliers by measuring how easily a point is isolated from the rest). The right method depends on dimensionality and whether outliers are isolated points or small clusters."
+  ],
+  "whenWhy": [
+    {
+      "title": "Data cleaning before model training",
+      "body": "Outlier detection is a standard preprocessing step before fitting linear models, k-NN, and k-means. These methods are sensitive to extreme values: one outlier can shift a linear regression coefficient substantially. For tree-based models (Random Forest, XGBoost), outliers have less impact since splits are based on rank, not magnitude. Always examine flagged outliers manually before deleting — many 'outliers' are legitimate extreme cases."
+    },
+    {
+      "title": "Anomaly detection as a ML task",
+      "body": "Fraud detection, network intrusion detection, and manufacturing defect detection treat outlier identification as the primary task, not preprocessing. Here the 'outlier' is the signal. Algorithms: Isolation Forest (fast, works in high dimensions), Local Outlier Factor (density-based, detects contextual anomalies), Autoencoders (reconstruct normal patterns; high reconstruction error = anomaly). See the anomaly detection ML category for the full treatment."
+    },
+    {
+      "title": "Robust statistics and feature engineering",
+      "body": "Rather than removing outliers, you can use robust statistics: median instead of mean, IQR instead of standard deviation, robust scalers (RobustScaler in sklearn uses Q1/Q3). Log-transforming right-skewed distributions (income, transaction amounts) reduces the influence of extreme values without deletion. Winsorizing (capping values at the 1st/99th percentile) preserves all rows while limiting outlier leverage."
+    }
+  ],
+  "deepDiveIntro": [
+    "Chandola, Banerjee & Kumar (2009) distinguish three outlier types: (1) Point outliers — an individual observation deviates significantly from the rest (a single transaction of $1,000,000 in a dataset where the 99th percentile is $500). (2) Contextual (conditional) outliers — a value is anomalous in context but not globally (30°C is normal in July but anomalous in January for the same location). (3) Collective outliers — a group of observations is anomalous together (a sequence of HTTP requests forming a port scan, where each individual request is normal). [1]",
+    "Detection methods divide by dimensionality. Univariate: IQR rule (box-plot whiskers at Q1 − 1.5·IQR, Q3 + 1.5·IQR) and Z-score (|z| > 3). Both assume roughly symmetric distributions; for skewed data, apply log-transform first or use the modified Z-score with median absolute deviation (MAD). Multivariate: Mahalanobis distance accounts for correlations between features; Isolation Forest is distribution-free and scales to high dimensions. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "IQR and Z-Score Methods",
+      "body": "IQR method: define outlier as any point outside [Q1 − 1.5·IQR, Q3 + 1.5·IQR]. The 1.5 multiplier comes from Tukey (1977): for a normal distribution it flags ~0.7% of points as outliers. The 3.0 multiplier (extreme outliers) flags ~0.01%. The IQR method is non-parametric — no distributional assumption. Z-score: z = (x − μ) / σ; |z| > 3 is the standard threshold (flags 0.27% under normality). Both methods are strictly univariate — they examine one variable at a time and miss multivariate outliers (a point that is normal on each axis individually but anomalous in the joint space). [2]",
+      "formula": "IQR = Q3 − Q1;  lower = Q1 − 1.5·IQR;  upper = Q3 + 1.5·IQR"
+    },
+    {
+      "heading": "Mahalanobis Distance",
+      "body": "For a point x with population mean μ and covariance Σ, the Mahalanobis distance is D_M(x) = √((x−μ)ᵀ Σ⁻¹ (x−μ)). It measures how many standard deviations x is from μ in the direction of x, accounting for correlations. Under multivariate normality, D_M² follows a chi-squared distribution with d degrees of freedom. Threshold: D_M > √χ²_{0.975, d} (the 97.5th percentile). Limitation: Σ⁻¹ is distorted by outliers themselves (masking effect). Solution: use the Minimum Covariance Determinant (MCD) robust estimator via sklearn's EllipticEnvelope. [2]",
+      "formula": "D_M(x) = √((x−μ)ᵀ Σ⁻¹ (x−μ));   D_M² ~ χ²(d) under multivariate normality"
+    },
+    {
+      "heading": "Isolation Forest",
+      "body": "Algorithm: build an ensemble of random decision trees, each constructed by recursively selecting a random feature and a random split point. Outliers — being rare and different — require fewer splits to isolate than normal points. The anomaly score is the average path length to isolation across trees, normalized to [0, 1]. Threshold via contamination parameter: fraction of expected outliers. Properties: O(n·t·ψ) time where t = number of trees, ψ = subsample size (default 256). Works well in high dimensions; does not require an assumed distribution. Original paper: Liu, Ting & Zhou, ICDM 2008. [1]"
+    }
+  ],
+  "youtubeLabel": "Outlier Detection — StatQuest",
+  "youtubeUrl": "https://www.youtube.com/embed/USmMEhwHaBE",
+  "takeaways": [
+    "Three outlier types: point, contextual, collective. Choose detection method based on type and dimensionality. [1]",
+    "IQR (non-parametric, univariate): lower = Q1 − 1.5·IQR, upper = Q3 + 1.5·IQR. Z-score (parametric, univariate): |z| > 3. [2]",
+    "Mahalanobis distance (multivariate, parametric): D_M² ~ χ²(d). Use EllipticEnvelope for outlier-robust covariance estimation. [2]",
+    "Isolation Forest: distribution-free, scales to high dimensions, O(n·t·ψ). Score ≈ average path length to isolation. [1]",
+    "Before deleting outliers: verify they're errors, not genuine extreme cases. For skewed data, log-transform or winsorize rather than delete. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "What is the masking effect in outlier detection, and how do you address it?",
+      "a": "Masking occurs when multiple outliers influence the sample mean and covariance, making each other appear less extreme than they truly are. Example: if 5% of data are outliers clustered together, the sample mean shifts toward them, reducing their z-scores. Classical Z-score and Mahalanobis with sample covariance both suffer from masking. Solutions: (1) Minimum Covariance Determinant (MCD) estimator — finds the h-subset (h ≈ 0.75n) that minimizes the determinant of the covariance matrix, giving a robust estimate. sklearn's EllipticEnvelope uses MCD. (2) Sequential outlier removal: flag and remove one outlier at a time, refit statistics, repeat. Computationally expensive but effective."
+    },
+    {
+      "q": "Should you remove outliers for tree-based models?",
+      "a": "Generally, no. Decision trees split on thresholds and are not affected by the magnitude of values — only whether a point falls above or below the split threshold. XGBoost and Random Forest have similar robustness. An outlier in a tree model simply gets placed in the correct leaf without influencing other predictions. Removing outliers before tree-based models can actually hurt performance if those outliers are genuine observations the model should learn to predict. Exception: target variable (y) outliers — a single extremely high y value dominates squared-error loss in regression. Log-transforming the target (predict log(y), exponentiate) or using Huber loss (robust to outliers) is more principled than deletion."
+    }
+  ],
+  "sources": [
+    { "label": "Chandola, V., Banerjee, A. & Kumar, V. — Anomaly Detection: A Survey, ACM CSUR 41(3), 2009", "url": "https://doi.org/10.1145/1541880.1541882" },
+    { "label": "Aggarwal, C.C. — Outlier Analysis, 2nd Ed. (Springer, 2017)", "url": "https://link.springer.com/book/10.1007/978-3-319-47578-3" }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "visualizationType": "table",
+  "codeSnapshot": {
+    "label": "data_sources.py",
+    "code": "import pandas as pd\nimport requests\nimport sqlite3\n\n# 1. Structured — CSV\ndf_csv = pd.read_csv('sales.csv')\n\n# 2. Structured — relational DB\nconn = sqlite3.connect('warehouse.db')\ndf_sql = pd.read_sql('SELECT * FROM orders WHERE year = 2024', conn)\n\n# 3. Semi-structured — JSON from REST API\nresp = requests.get('https://api.example.com/events', headers={'Authorization': 'Bearer TOKEN'})\ndf_api = pd.json_normalize(resp.json()['data'])\n\n# 4. Semi-structured — nested JSON / Parquet\ndf_parquet = pd.read_parquet('events.parquet')  # columnar, efficient\n\n# 5. Unstructured — text files\nwith open('user_reviews.txt') as f:\n    texts = f.readlines()\n\n# 6. Synthetic data (for testing / augmentation)\nfrom sklearn.datasets import make_classification\nX, y = make_classification(\n    n_samples=10_000,\n    n_features=20,\n    n_informative=10,\n    n_classes=2,\n    random_state=42\n)\n\nprint(f'CSV shape: {df_csv.shape}')\nprint(f'SQL shape: {df_sql.shape}')\nprint(f'API shape: {df_api.shape}')"
+  },
+  "eli3": [
+    "Data sources are the places where raw information lives before you do anything with it. Think of them like different kinds of libraries: some are very organized (spreadsheets and databases), some are loosely organized (JSON files, emails), and some have no structure at all (raw text, images, audio).",
+    "Machine learning models need data to learn from. The quality, quantity, and type of your data source often matter more than the model you choose. Garbage in, garbage out — a perfect algorithm on bad data produces bad results.",
+    "Practically, data sources split into internal (your company's databases, logs, CRM) and external (public datasets, third-party APIs, web scraping). The choice of source affects cost, freshness, legal compliance, and how much cleaning you'll need to do."
+  ],
+  "whenWhy": [
+    {
+      "title": "Scoping a new ML project",
+      "body": "Before building any model, you need to audit what data exists. Typical sources: transactional databases (SQL), event logs (JSON/Parquet), user-generated content (text/image), third-party APIs (weather, financial, social), and open datasets (Kaggle, UCI ML Repository, Hugging Face datasets). Source choice determines feasibility: a churn prediction model needs at minimum 12–18 months of historical signals, so you must verify your database retention policy before committing to the project."
+    },
+    {
+      "title": "Data freshness and pipeline design",
+      "body": "Some applications need real-time data (fraud detection at transaction time), others can tolerate daily batch pulls (monthly reporting). Identifying whether the source supports streaming (Kafka topics, webhooks, change data capture) or only batch exports (nightly CSV dumps) directly drives architecture choices downstream."
+    },
+    {
+      "title": "Combining heterogeneous sources",
+      "body": "Production ML systems usually join multiple source types: a structured customer table + unstructured support tickets + time-series clickstream events. Joining sources requires matching keys, aligning timestamps, and handling schema drift when source systems change. Early source documentation prevents brittle pipelines."
+    }
+  ],
+  "deepDiveIntro": [
+    "Data sources are typically classified along two orthogonal axes: structure (structured / semi-structured / unstructured) and origin (primary / secondary / synthetic). Structured data conforms to a predefined schema — relational tables, CSV with a fixed header — and can be directly queried with SQL. Semi-structured data has schema embedded within the data itself (JSON, XML, Parquet) but allows flexible or nested fields. Unstructured data (raw text, images, audio, video) carries no schema and requires preprocessing to extract features. [1]",
+    "A second taxonomy distinguishes primary data (collected directly for your purpose: surveys, instrumented apps, A/B experiments) from secondary data (collected by someone else: census data, financial market feeds, social media APIs). Synthetic data is programmatically generated to augment small datasets or stress-test pipelines. Each category has different freshness, cost, and legal characteristics. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Structured Sources",
+      "body": "Relational databases (PostgreSQL, MySQL, Snowflake) store data in normalized tables with defined types and foreign-key constraints. They support ACID transactions and rich SQL queries. For ML, you typically run analytical queries (GROUP BY, window functions, JOINs across multiple tables) and export results to a flat DataFrame. Key concern: production DBs are optimized for transactional throughput (OLTP), not analytical scans. Reading large analytical queries directly against a production replica can cause lock contention — prefer a read replica or a separate OLAP warehouse. [1]"
+    },
+    {
+      "heading": "Semi-Structured Sources",
+      "body": "JSON and Parquet are the dominant semi-structured formats. JSON is human-readable but parsing is slow and nested structures require normalization (pd.json_normalize). Parquet is a columnar binary format optimized for analytical workloads: predicate pushdown means the engine reads only the columns you request, reducing I/O by 10–100× vs row-oriented CSV. Parquet also stores schema metadata, which prevents type inference errors on read. Apache Arrow provides zero-copy in-memory representation compatible with both Pandas and Spark. [2]"
+    },
+    {
+      "heading": "Unstructured Sources and Synthetic Data",
+      "body": "Unstructured sources (text, images, audio) require domain-specific preprocessing before ML: tokenization and embeddings for text, resizing and normalization for images, spectrogram extraction for audio. Synthetic data generation — using sklearn.datasets, Faker (for tabular), or generative models (GANs, diffusion) — is valuable for: testing pipelines without production data, augmenting rare classes, generating privacy-safe surrogates. Caution: models trained on synthetic data can fail when the synthetic distribution diverges from production (covariate shift). [1]"
+    }
+  ],
+  "youtubeLabel": "Data Engineering Fundamentals — Zach Wilson",
+  "youtubeUrl": "https://www.youtube.com/embed/lG-GFoOmToU",
+  "takeaways": [
+    "Structured (SQL/CSV) → schema-on-write, fast queries; semi-structured (JSON/Parquet) → schema-on-read, flexible; unstructured (text/image) → requires feature extraction. [1]",
+    "Parquet is preferred over CSV for large datasets: columnar storage enables predicate pushdown, 5–10× compression, and typed schema. [2]",
+    "Internal sources (DBs, logs) are more reliable but may have retention limits; external sources (APIs, scraping) require access management and robustness to schema changes. [1]",
+    "Synthetic data is useful for testing and class augmentation but carries covariate shift risk when the generation process doesn't match production distributions. [1]",
+    "Source documentation (what, how fresh, who owns it, legal constraints) should be produced before pipeline design — late discovery of retention or licensing issues kills projects. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "When should you prefer Parquet over CSV?",
+      "a": "Always prefer Parquet for datasets larger than ~100MB or when the data is queried repeatedly. Parquet's columnar storage means that a SELECT of 5 columns out of 100 reads only ~5% of the bytes; a CSV read always scans the entire file. Parquet also stores the schema, eliminating the 'all columns read as strings' problem common with CSV. The only time CSV wins: human-readable files shared with non-technical stakeholders, or when writing a one-off small dataset."
+    },
+    {
+      "q": "What is change data capture (CDC) and when do you need it?",
+      "a": "CDC captures row-level inserts, updates, and deletes from a database's write-ahead log (WAL) and streams them to downstream consumers in near real-time — without polling the source table. Tools: Debezium (open source, supports PostgreSQL/MySQL/MongoDB), AWS DMS, Airbyte. CDC is essential when: (1) you need sub-minute data freshness, (2) reading the source DB for deltas would be expensive, or (3) you need to capture UPDATE and DELETE events (which a batch 'SELECT WHERE updated_at > last_run' query misses if the timestamp column is not reliably maintained)."
+    }
+  ],
+  "sources": [
+    { "label": "Kleppmann, M. — Designing Data-Intensive Applications, Ch. 1–3 (O'Reilly, 2017)", "url": "https://dataintensive.net/" },
+    { "label": "McKinney, W. — Python for Data Analysis, 3rd Ed., Ch. 6 (O'Reilly, 2022)", "url": "https://wesmckinney.com/book/" }
+  ]
+}

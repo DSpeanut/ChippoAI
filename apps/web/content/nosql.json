@@ -1,0 +1,68 @@
+{
+  "visualizationType": "table",
+  "codeSnapshot": {
+    "label": "nosql_examples.py",
+    "code": "# ── 1. Document store: MongoDB ──\nfrom pymongo import MongoClient\n\nclient = MongoClient('mongodb://localhost:27017/')\ndb = client['ecommerce']\n\n# Insert document (flexible schema — no fixed columns)\ndb.users.insert_one({\n    'user_id': 'u123',\n    'name': 'Alice',\n    'address': {'street': '123 Main St', 'city': 'NYC'},  # nested\n    'tags': ['premium', 'mobile'],                         # array\n    'last_orders': [{'id': 'o1', 'amount': 99.0}]         # embedded docs\n})\n\n# Query with filter\nresult = db.users.find({'address.city': 'NYC', 'tags': 'premium'})\n\n# ── 2. Key-Value store: Redis ──\nimport redis\nr = redis.Redis(host='localhost', port=6379, db=0)\n\nr.set('user:u123:session', 'eyJhbGci...', ex=3600)  # expire in 1 hour\ntoken = r.get('user:u123:session')\n\n# Feature store: pre-computed ML features\nr.hset('user:u123:features', mapping={\n    'spend_30d': 450.0,\n    'order_count': 8,\n    'tier': 'gold'\n})\nfeatures = r.hgetall('user:u123:features')\n\n# Atomic increment (no locks needed)\nr.incr('event:page_view:count')\n\n# ── 3. Column-family store: Cassandra ──\n# from cassandra.cluster import Cluster\n# cluster = Cluster(['127.0.0.1'])\n# session = cluster.connect('analytics')\n#\n# CREATE TABLE events (\n#     user_id  UUID,\n#     event_ts TIMESTAMP,\n#     event_type TEXT,\n#     properties MAP<TEXT, TEXT>,\n#     PRIMARY KEY (user_id, event_ts)  -- partition by user_id, cluster by event_ts\n# ) WITH CLUSTERING ORDER BY (event_ts DESC);\n#\n# Designed for: write-heavy time-series events per user\n# Query: 'last 100 events for user X' is a single partition read\n\n# ── 4. Graph database: Neo4j ──\n# from neo4j import GraphDatabase\n# driver = GraphDatabase.driver('bolt://localhost:7687')\n# Cypher query: friends-of-friends recommendation\n# MATCH (u:User {id: 'u123'})-[:FOLLOWS]->(friend)-[:FOLLOWS]->(fof)\n# WHERE NOT (u)-[:FOLLOWS]->(fof) AND u <> fof\n# RETURN fof.name, COUNT(friend) AS mutual_friends\n# ORDER BY mutual_friends DESC LIMIT 10"
+  },
+  "eli3": [
+    "NoSQL databases are alternatives to relational (SQL) databases, designed for use cases where the rigid table structure of SQL is a poor fit: storing JSON documents with variable schemas, caching millions of key-value pairs per second, writing billions of time-series events, or traversing complex graphs of relationships.",
+    "There are four main types: document stores (MongoDB) store flexible JSON objects; key-value stores (Redis) store arbitrary values by a key, extremely fast; column-family stores (Cassandra) store rows but are optimized for writing and reading large numbers of rows with a specific partition key; graph databases (Neo4j) store nodes and relationships for traversal queries.",
+    "NoSQL databases typically trade ACID guarantees for performance and scale. Instead of ACID, they offer BASE: Basically Available, Soft state, Eventually consistent. The CAP theorem (Brewer, 2000) formalizes this: a distributed database can guarantee at most two of Consistency, Availability, and Partition tolerance simultaneously."
+  ],
+  "whenWhy": [
+    {
+      "title": "Document stores for flexible ML metadata",
+      "body": "MongoDB is commonly used to store ML experiment metadata (hyperparameters, metrics, run metadata) where the schema varies by model type — a CNN's config has different fields than a gradient boosting model's. Its flexible document model (no ALTER TABLE needed to add a field) accommodates evolving schemas naturally. Also used for storing raw event data with nested structures before schema normalization."
+    },
+    {
+      "title": "Redis for feature store and caching",
+      "body": "Redis is the standard online feature store backend for real-time ML serving. Pre-computed features (spend_30d, user_tier, risk_score) are stored as Redis Hashes keyed by entity_id. At inference time, a single HGETALL retrieves all features for an entity in <1ms. Redis also enables session storage, rate limiting (INCR with TTL), and pub/sub for real-time event streaming. Its sub-millisecond latency is unmatched by relational databases for key-based lookups."
+    },
+    {
+      "title": "Cassandra for high-volume event logging",
+      "body": "Cassandra is designed for massive write throughput and time-series data. Its primary key structure (partition key + clustering key) determines physical storage layout: all rows with the same partition key are co-located on the same node. Choosing partition by user_id and clustering by event_timestamp allows 'get last 100 events for user X' to be a single-disk-seek sequential read. Used for: clickstream data, sensor telemetry, IoT events, application logs."
+    }
+  ],
+  "deepDiveIntro": [
+    "Fowler & Sadalage (2012) categorized NoSQL databases into four types: (1) Key-Value: GET/SET by a single key. No schema, values are opaque blobs or typed structures. O(1) lookup. (2) Document: store structured JSON/BSON documents with nested fields and arrays. Support queries on nested fields. No fixed schema — different documents can have different fields. (3) Column-Family (Wide-Column): rows have a primary key and a dynamic set of named columns. Data is stored by column (fast column aggregations, can omit nulls). (4) Graph: nodes + edges with properties. Optimized for traversal queries (shortest path, neighbourhood, subgraph matching) via index-free adjacency — each node directly references its neighbours. [1]",
+    "CAP theorem (Brewer, 2000): in a distributed system experiencing a network partition (nodes can't communicate), you must choose between Consistency (every read returns the most recent write) and Availability (every request receives a response, though possibly stale). Partition tolerance is not optional in a distributed system — network failures are unavoidable. Cassandra and DynamoDB choose Availability (AP): reads may return stale data, but the system never rejects requests. MongoDB and HBase can be configured for Consistency (CP). [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "CAP Theorem and BASE",
+      "body": "CAP formally: a distributed data store can satisfy at most two of C (Consistency: all nodes return the same value after a write), A (Availability: all requests receive a response), P (Partition Tolerance: the system operates despite node-to-node message loss). In practice, P is always required in real networks. So the real choice is between CP and AP. CP systems (HBase, Zookeeper): reject requests to unavailable partitions, preserving consistency. AP systems (Cassandra, DynamoDB, CouchDB): serve stale data rather than returning an error. BASE: Basically Available (system works despite partial failures), Soft state (data may be temporarily inconsistent), Eventually consistent (given no new writes, all replicas converge to the same value). Tunable consistency: Cassandra lets you choose consistency level per query — QUORUM (majority of replicas must agree) is a common compromise. [2]",
+      "formula": "CAP: at most 2 of {Consistency, Availability, Partition Tolerance} simultaneously"
+    },
+    {
+      "heading": "Cassandra Data Modelling",
+      "body": "Cassandra's primary key = (partition_key, clustering_key). Partition key determines the node (via consistent hashing of the token ring). All rows with the same partition key are stored contiguously on disk — fetching all rows for a partition is a sequential read. Clustering key sorts rows within a partition. Design principle: model tables around queries (not entities). If you need 'all events for user X ordered by time', create a table with partition key = user_id, clustering key = event_timestamp DESC. Anti-patterns: large partitions (>100MB) cause hot spots; allow filtering queries force full cluster scans; secondary indexes are implemented as distributed scatter-gather — avoid for high-cardinality columns. [1]"
+    },
+    {
+      "heading": "When to Choose SQL vs NoSQL",
+      "body": "Use SQL (PostgreSQL, MySQL) when: (1) Data is relational with many JOINs. (2) ACID transactions are required (financial transactions, inventory management). (3) Schema is stable. (4) Team has SQL expertise. Use NoSQL when: (1) Schema is variable (document store). (2) Write throughput > millions of ops/second (Cassandra). (3) Sub-millisecond key-value lookups (Redis). (4) Graph traversal queries (Neo4j). (5) Horizontal scale-out is required and partition tolerance > consistency. Common mistake: using MongoDB as a general-purpose SQL replacement because its flexible schema seems easier. Flexible schema often becomes a liability: no referential integrity, no JOIN support, inconsistent data formats across documents. Prefer SQL unless there's a specific reason for NoSQL. [2]"
+    }
+  ],
+  "youtubeLabel": "NoSQL Database Types Explained — Fireship",
+  "youtubeUrl": "https://www.youtube.com/embed/W2Z7fbCLSTw",
+  "takeaways": [
+    "4 NoSQL types: Key-Value (Redis: O(1) lookup), Document (MongoDB: flexible JSON), Column-Family (Cassandra: time-series, write-heavy), Graph (Neo4j: traversals). [1]",
+    "CAP theorem: choose at most 2 of {Consistency, Availability, Partition Tolerance}. Real choice: CP (HBase) vs AP (Cassandra, DynamoDB). [2]",
+    "Cassandra: partition key = hash routing + co-location. Model tables around queries, not entities. Avoid large partitions. [1]",
+    "Redis: standard online feature store backend for real-time ML serving. HGETALL for feature lookup in <1ms. [1]",
+    "Use SQL by default; choose NoSQL for specific requirements (throughput, flexibility, traversal). Flexible schema is often a liability. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "How does eventual consistency in Cassandra affect ML feature serving?",
+      "a": "Cassandra's AP design means a QUORUM-level read (majority of replicas) may return a slightly stale feature value if a recent write hasn't fully propagated. For ML feature serving, this is usually acceptable: a feature value 1-2 seconds stale (spend_30d) won't meaningfully affect fraud detection or recommendation quality. Where it matters: if a feature represents a hard constraint (user is blocked / is not blocked), serving a stale 'not blocked' value could be a security issue. In this case: (1) Use Cassandra with QUORUM/LOCAL_QUORUM consistency (stronger guarantee), or (2) Use Redis (which is single-leader by default, no replication staleness) as the online store for latency-critical, consistency-sensitive features."
+    },
+    {
+      "q": "Can you use MongoDB for relational data that requires JOINs?",
+      "a": "MongoDB supports $lookup (equivalent to LEFT JOIN) in aggregation pipelines, but at much higher cost than a relational JOIN — lookups are not optimized the way B-tree joins in PostgreSQL are. For data with complex relationships and frequent multi-entity queries, MongoDB is the wrong tool: (1) No referential integrity — nothing prevents an order document referencing a non-existent user_id. (2) No JOIN optimization (query planner cannot choose join order, use indexes across collections efficiently). (3) Embedding related data (denormalization) avoids JOINs but causes update anomalies — when a user's name changes, every order document must be updated. MongoDB is excellent for: event logs, product catalogues with variable attributes, CMS content, session storage. It's a poor fit for: financial systems, inventory, anything requiring multi-table consistency."
+    }
+  ],
+  "sources": [
+    { "label": "Fowler, M. & Sadalage, P. — NoSQL Distilled (Addison-Wesley, 2012)", "url": "https://www.amazon.com/NoSQL-Distilled-Emerging-Polyglot-Persistence/dp/0321826620" },
+    { "label": "Kleppmann, M. — Designing Data-Intensive Applications, Ch. 2 & 9 (O'Reilly, 2017)", "url": "https://dataintensive.net/" }
+  ]
+}

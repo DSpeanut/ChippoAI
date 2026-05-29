@@ -1,0 +1,68 @@
+{
+  "visualizationType": "table",
+  "codeSnapshot": {
+    "label": "deduplication.py",
+    "code": "import pandas as pd\nfrom thefuzz import fuzz, process  # fuzzy string matching\n\ndf = pd.read_csv('customers.csv')\n\n# ── 1. Exact deduplication ──\n# Drop exact duplicate rows\ndf_dedup = df.drop_duplicates()  # all columns must match\ndf_dedup = df.drop_duplicates(subset=['email'])  # key-based\n# Keep last occurrence (e.g., most recent record)\ndf_dedup = df.drop_duplicates(subset=['user_id'], keep='last')\n\nprint(f'Rows before: {len(df)}, after: {len(df_dedup)}')\n\n# ── 2. Fuzzy deduplication (record linkage) ──\n# Example: 'John Smith' vs 'Jon Smyth'\n\ndef deduplicate_names(names: list[str], threshold: int = 85) -> list[tuple]:\n    \"\"\"Find pairs of similar names above a similarity threshold.\"\"\"\n    duplicates = []\n    for i, name1 in enumerate(names):\n        for j, name2 in enumerate(names):\n            if i >= j:\n                continue\n            score = fuzz.token_sort_ratio(name1, name2)\n            if score >= threshold:\n                duplicates.append((name1, name2, score))\n    return duplicates\n\nnames = df['company_name'].unique().tolist()\npairs = deduplicate_names(names, threshold=88)\n\n# ── 3. Blocking — reduce comparison space ──\n# Only compare records with the same first 3 chars of last_name\n# Instead of O(n²) comparisons → O(n²/k) where k = number of blocks\nblocks = df.groupby(df['last_name'].str[:3])\nfor block_key, block_df in blocks:\n    dupes = deduplicate_names(block_df['full_name'].tolist())\n    # ... resolve duplicates within block\n\n# ── 4. Hashing for large-scale deduplication ──\nimport hashlib\ndf['row_hash'] = df.apply(\n    lambda row: hashlib.md5(\n        '|'.join(str(v) for v in row.values).encode()\n    ).hexdigest(),\n    axis=1\n)\ndf = df.drop_duplicates(subset=['row_hash'])"
+  },
+  "eli3": [
+    "Data deduplication means removing records that represent the same real-world entity. Exact duplicates are easy to find — identical rows. The hard problem is near-duplicates: 'John Smith, 123 Main St' and 'Jon Smythe, 123 Main Street' are the same person spelled differently or with a typo.",
+    "Duplicates enter datasets through system merges (two CRM systems, pre- and post-acquisition), form submissions (user submitted twice), data ingestion bugs (a daily import that accidentally runs twice), and human error. They inflate counts, distort statistics, and cause train-test data leakage when the same entity appears in both splits.",
+    "The computational challenge: checking every pair of n records is O(n²) comparisons — infeasible at scale. The practical solution is blocking: first group records into candidate buckets (same ZIP code, same first three letters of last name) and only compare within blocks. This reduces comparisons from O(n²) to O(n²/k) where k is the number of blocks."
+  ],
+  "whenWhy": [
+    {
+      "title": "CRM and customer data consolidation",
+      "body": "After a company acquisition or CRM migration, two customer databases are merged. The result: the same customer appears multiple times with slight name/address variations. Deduplication — finding and merging these records — is the core of the Master Data Management (MDM) problem. Record linkage tools like Splink (open-source, probabilistic) or commercial MDM platforms handle this at enterprise scale."
+    },
+    {
+      "title": "ML training data quality",
+      "body": "Duplicates in ML datasets inflate sample counts (a model trains on the same example multiple times, effectively up-weighting it), bias evaluation metrics (if the same record appears in train and test, test performance is inflated), and distort class distributions. Deduplication before train/test split is essential for reliable evaluation."
+    },
+    {
+      "title": "Web crawl and document deduplication",
+      "body": "Web-scraped corpora contain massive near-duplication: syndicated articles, boilerplate text, template pages. MinHash / Locality-Sensitive Hashing (LSH) enables efficient approximate deduplication at billion-document scale. LLM pretraining pipelines (C4, The Pile, RedPajama) deduplicate aggressively: near-duplicate paragraphs in training data cause models to memorize text rather than generalize."
+    }
+  ],
+  "deepDiveIntro": [
+    "Christen (2012) classifies the deduplication task as record linkage (cross-dataset matching) or deduplication (within-dataset). The pipeline has three stages: (1) Blocking — partition records into candidate sets to avoid O(n²) all-pairs comparison. (2) Comparison — compute similarity scores between candidate pairs across multiple fields (string similarity, phonetic codes, numeric distance). (3) Classification — decide if a pair is a match, non-match, or possible match (for human review). The Fellegi-Sunter (1969) probabilistic record linkage model formalizes this as a classification problem with match weights derived from field agreement rates. [1]",
+    "String similarity metrics: Levenshtein edit distance (number of single-character edits to transform one string into another), Jaro-Winkler (designed for short strings like names, weights prefix agreement more heavily), and token-based metrics (Jaccard on character n-grams, fuzz.token_sort_ratio). For large-scale deduplication, exact string matching on normalized keys (lowercase, remove punctuation, standardize addresses) combined with phonetic encoding (Soundex, Metaphone) enables fast blocking before fuzzy comparison. [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Blocking Strategies",
+      "body": "Naive all-pairs comparison: O(n²) — infeasible for n > 10,000. Blocking partitions records into groups such that duplicates are likely in the same group. Standard blocking: group by an exact key (ZIP code, first three characters of surname). Window blocking (sorted neighbourhood method): sort records by a blocking key, compare within a sliding window of size w. Cost: O(n·w). Trade-off: smaller blocks → faster, but higher risk of missing true matches that differ in the blocking key (false negatives). Solution: multiple blocking passes with different keys (disjunctive blocking), then take the union of candidate pairs. [1]"
+    },
+    {
+      "heading": "MinHash and LSH for Scalable Near-Duplicate Detection",
+      "body": "MinHash approximates Jaccard similarity between two sets (e.g., character n-gram sets of two documents) using random hash functions. For k hash functions: signature(A) = [min_h1(A), min_h2(A), ..., min_hk(A)]. The probability that two signatures agree at position i equals the Jaccard similarity J(A, B). Locality-Sensitive Hashing (LSH) partitions the signature matrix into b bands of r rows; two documents are candidate duplicates if they hash to the same bucket in at least one band. Probability of being a candidate: P = 1 − (1 − J^r)^b. Choosing b and r controls the precision-recall trade-off. Used in C4, RedPajama, and other LLM training datasets at trillion-token scale. [2]",
+      "formula": "P(candidate) = 1 − (1 − J(A,B)^r)^b"
+    },
+    {
+      "heading": "Resolution: Merging Duplicate Records",
+      "body": "Once duplicates are identified, they must be merged (resolved) into a single canonical record. Strategies: (1) Keep most recent record (highest timestamp wins). (2) Field-level fusion: take the most complete value per field — if record A has email and record B has phone, the merged record has both. (3) Probabilistic fusion: weight each source by its reliability score. (4) Cluster and vote: for a cluster of k duplicates, take the majority value or the most frequent non-null value per field. Splink, the open-source probabilistic linkage library, handles all three stages (blocking, comparison, resolution) with a Fellegi-Sunter model trained via expectation-maximization. [1]"
+    }
+  ],
+  "youtubeLabel": "Record Linkage & Deduplication — Rob Reider",
+  "youtubeUrl": "https://www.youtube.com/embed/dTFhFcmovmo",
+  "takeaways": [
+    "Exact deduplication: drop_duplicates() on key columns. Keep='last' for most-recent-wins semantics. [1]",
+    "Fuzzy deduplication: string similarity (Levenshtein, Jaro-Winkler, fuzz.token_sort_ratio) + blocking to reduce O(n²) comparisons. [1]",
+    "MinHash + LSH: scales to billions of documents for near-duplicate detection. P(candidate) = 1 − (1 − J^r)^b. [2]",
+    "Blocking key failure → false negatives (missed duplicates). Use multiple blocking passes (disjunctive blocking) to increase recall. [1]",
+    "Deduplication before train/test split is essential — duplicates across the split inflate test performance. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "How do you detect duplicates when there is no reliable unique key?",
+      "a": "When no guaranteed unique key exists (no email, no SSN, no product SKU), use composite blocking: create a blocking key from multiple normalized fields (e.g., first_name_soundex + birth_year + city). Then compute pairwise similarity scores across multiple fields with different weights (name similarity × 0.4 + address similarity × 0.3 + DOB exact match × 0.3). Classify pairs above a threshold as matches. The Fellegi-Sunter model learns optimal field weights from labelled match/non-match pairs (or via EM on unlabelled data). Always include a 'possible match' category for human-in-the-loop review of ambiguous cases."
+    },
+    {
+      "q": "What is the difference between deduplication and entity resolution?",
+      "a": "Deduplication removes exact or near-exact duplicate rows within a single dataset. Entity resolution (also called record linkage) matches records across two or more different datasets that refer to the same real-world entity. Example: matching a hospital's patient database against an insurance claims database to find common patients. Entity resolution is harder because schemas differ, fields have different formats, and there is no shared key. Both problems use the same techniques (blocking + similarity scoring + classification), but entity resolution additionally requires schema alignment and cross-database normalization."
+    }
+  ],
+  "sources": [
+    { "label": "Christen, P. — Data Matching: Concepts and Techniques for Record Linkage, Entity Resolution, and Duplicate Detection (Springer, 2012)", "url": "https://link.springer.com/book/10.1007/978-3-642-31164-2" },
+    { "label": "Broder, A.Z. — On the Resemblance and Containment of Documents, Compression and Complexity of Sequences 1997 (MinHash)", "url": "https://www.cs.princeton.edu/courses/archive/spring13/cos598C/broder97resemblance.pdf" }
+  ]
+}

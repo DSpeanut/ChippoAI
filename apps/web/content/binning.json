@@ -1,0 +1,67 @@
+{
+  "visualizationType": "chart",
+  "codeSnapshot": {
+    "label": "binning.py",
+    "code": "import pandas as pd\nimport numpy as np\nfrom sklearn.tree import DecisionTreeClassifier\nfrom sklearn.preprocessing import KBinsDiscretizer\n\ndf = pd.read_csv('data.csv')\n\n# ── 1. Fixed-width binning (equal-width) ──\ndf['age_bin_eq'] = pd.cut(\n    df['age'],\n    bins=[0, 18, 35, 55, 100],  # explicit edges\n    labels=['teen', 'young_adult', 'adult', 'senior'],\n    right=True  # (0,18], (18,35], ...\n)\n# Or auto-compute k equal-width bins:\ndf['income_bin_eq'] = pd.cut(df['income'], bins=5)  # 5 equal-width bins\n\n# ── 2. Quantile binning (equal-frequency) ──\n# Each bin has approximately the same number of observations\ndf['income_bin_q'] = pd.qcut(\n    df['income'],\n    q=4,  # quartiles: Q1, Q2, Q3, Q4\n    labels=['Q1', 'Q2', 'Q3', 'Q4'],\n    duplicates='drop'  # handle ties\n)\n\n# ── 3. Sklearn KBinsDiscretizer ──\nkbd = KBinsDiscretizer(\n    n_bins=5,\n    encode='ordinal',    # 'ordinal' = integers; 'onehot' = sparse OHE\n    strategy='quantile'  # 'uniform'=equal-width, 'kmeans'=k-means cluster centres\n)\ndf[['income_disc', 'age_disc']] = kbd.fit_transform(df[['income', 'age']])\n\n# ── 4. Decision-tree supervised binning ──\n# Let a shallow tree find the optimal split points w.r.t. target\ntree = DecisionTreeClassifier(max_leaf_nodes=5, random_state=42)\ntree.fit(df[['income']], df['target'])\nbins_dt = np.sort(tree.tree_.threshold[tree.tree_.threshold > 0])\nprint('Data-driven split points:', bins_dt)\ndf['income_bin_dt'] = pd.cut(df['income'], bins=[-np.inf] + list(bins_dt) + [np.inf])"
+  },
+  "eli3": [
+    "Binning (discretization) converts a continuous number into a category: age 25 becomes 'young adult', income $55,000 becomes 'middle income'. Instead of treating age as an exact number, the model learns patterns per age group.",
+    "Why would you deliberately lose precision? Because sometimes the exact value isn't what matters — what matters is which range the value falls in. A linear model assumes a straight-line relationship between age and risk; binning allows the model to learn a different effect for each age group, capturing non-linearity without adding polynomial terms.",
+    "The tricky part is choosing where to draw the bin boundaries. Equal-width bins (every bin spans 10 years) are intuitive but can put almost all data in one bin for skewed distributions. Equal-frequency bins (each bin has the same number of data points) are more balanced but harder to interpret. Supervised binning (using a decision tree) finds boundaries that best predict your target."
+  ],
+  "whenWhy": [
+    {
+      "title": "Adding non-linearity to linear models",
+      "body": "Linear models assume a constant marginal effect: each additional unit of income increases churn probability by the same amount. This is often wrong — the effect might be strong at low incomes and plateau at high incomes. Binning income into quintiles and one-hot encoding the bins lets the model fit a different coefficient to each quintile, effectively learning a step function. This captures threshold effects, saturation, and U-shaped relationships without adding interaction terms."
+    },
+    {
+      "title": "Handling outliers without deletion",
+      "body": "Wide bins absorb outliers: an income of $1,000,000 falls into the 'top quintile' bucket alongside $200,000 — both treated identically. This prevents a single extreme value from distorting the model's estimates. Winsorizing achieves a similar effect (capping at the 99th percentile) but preserves the continuous scale. Binning is more aggressive: it treats any value above the boundary as equivalent."
+    },
+    {
+      "title": "Feature engineering for interaction terms",
+      "body": "Binned features simplify interaction engineering: age_group × income_quartile creates a cross-product of two categorical features with a manageable number of combinations. Continuous interactions (age × income) have interpretation difficulties; binned interactions produce readable counts per group. Binned features are also more stable across time — a 20-point income shift doesn't change group membership much, making models more robust to distribution shift."
+    }
+  ],
+  "deepDiveIntro": [
+    "Three binning strategies: (1) Equal-width (uniform): bin boundaries are evenly spaced across [min, max]. Sensitive to outliers that expand the range; most bins may have few observations for skewed distributions. (2) Equal-frequency (quantile): each bin contains approximately n/k observations. More robust for skewed data, but bin widths are unequal and can be hard to interpret. (3) Supervised (data-driven): use a shallow decision tree to find split points that best separate classes — the threshold values in the tree are the bin boundaries. Supervised binning finds the most predictive boundaries but risks overfitting to the training data. [1]",
+    "Information loss vs noise reduction: binning always loses information (exact value → group membership). The benefit is noise reduction: random fluctuations within a bin are smoothed away. This bias-variance trade-off depends on the signal-to-noise ratio of the continuous variable. For noisy features, binning can improve model stability. For clean, strongly predictive features, binning discards signal. Empirically test with cross-validation before committing. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Equal-Width vs Equal-Frequency Binning",
+      "body": "Equal-width: pd.cut(x, bins=k) creates k bins of equal width = (max−min)/k. Problem: for a right-skewed income distribution where 90% of values are below $100k and a few reach $1M, bin boundaries might be [0, 200k, 400k, 600k, 800k, 1M] — but 90% of data is in the first bin and the rest are nearly empty. Equal-frequency: pd.qcut(x, q=k) creates k bins each containing n/k observations. Boundaries are the k-th percentiles (Q1, Q2, ..., Q_{k-1}). More statistically balanced but the bin ranges are uneven, making labelling harder. For skewed distributions (income, spend, counts), quantile binning is almost always preferred. [1]"
+    },
+    {
+      "heading": "Decision Tree Supervised Binning",
+      "body": "A depth-limited decision tree trained on a single feature finds the split thresholds that maximize information gain (for classification) or variance reduction (for regression) with respect to the target. The tree's internal node thresholds become the bin boundaries. Advantages: (1) Boundaries are optimal w.r.t. target — better predictive power than heuristic bins. (2) The tree determines the number of bins automatically (via max_leaf_nodes). Risks: overfitting to training data → evaluate with cross-validation. Implementation: DecisionTreeClassifier(max_leaf_nodes=5).fit(X_1d, y); extract thresholds from tree.tree_.threshold. [2]"
+    },
+    {
+      "heading": "Interaction with Downstream Models",
+      "body": "Binned features encoded as ordinals work directly in tree models without further transformation. For linear models, bin labels should be one-hot encoded (each bin becomes a dummy variable), allowing a different coefficient per bin. This is equivalent to fitting a piecewise constant function — a step function approximation to a non-linear effect. Regularization (L1/L2) across the dummy coefficients encourages adjacent bins to have similar coefficients (smoothness). Alternatively, spline features (sklearn.preprocessing.SplineTransformer) provide a smooth, differentiable piecewise polynomial — often better than step-function bins for linear models. [2]"
+    }
+  ],
+  "youtubeLabel": "Discretization & Binning — Kaggle Feature Engineering",
+  "youtubeUrl": "https://www.youtube.com/embed/Vu3HJz3u_Ec",
+  "takeaways": [
+    "Equal-width binning: intuitive boundaries, poor for skewed data. Equal-frequency: balanced counts, unequal widths. Supervised: optimal w.r.t. target, overfitting risk. [1]",
+    "Binning adds non-linearity to linear models (step function) without polynomial terms. Trade-off: information loss vs noise reduction. [2]",
+    "Outliers absorbed into end bins — a form of implicit Winsorization. Useful when extreme values would otherwise distort model estimates. [1]",
+    "For linear models: OHE the binned column to allow different coefficient per bin. For trees: ordinal integers work directly. [2]",
+    "SplineTransformer is often better than binning for linear models: smooth, differentiable piecewise polynomials preserve more information. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "How does binning affect model interpretability?",
+      "a": "Binning significantly simplifies interpretation: instead of 'each $1 increase in income reduces churn by 0.00003%', you get 'income quartile 4 customers have 15% lower churn than quartile 1 customers'. This is easier to communicate to business stakeholders. However, interpretability comes at the cost of granularity — within-bin variation is invisible to the model. For linear models in regulated industries (credit scoring, insurance), binned features with separate coefficients per bin (scorecard format) are the standard: each bin earns points, and the total points determine the outcome. This is fully auditable and compliant with adverse action requirements."
+    },
+    {
+      "q": "What is the optimal number of bins, and how do you choose it?",
+      "a": "There is no universal rule. Guidelines: (1) For interpretability: 3–7 bins are human-readable (low/medium/high, deciles). (2) For predictive power with a linear model: cross-validate with 5, 10, 15, 20 bins. Test on held-out data. (3) For supervised binning: let max_leaf_nodes or depth control it; typically 3–10 bins for a single feature. (4) Information-theoretic approaches: minimize MDL (minimum description length) — the number of bits needed to encode the binned feature plus the encoding of which bin values map to which targets. sklearn's KBinsDiscretizer with strategy='kmeans' uses k-means to find natural cluster boundaries — useful for multimodal features."
+    }
+  ],
+  "sources": [
+    { "label": "Han, J., Kamber, M. & Pei, J. — Data Mining: Concepts and Techniques, 3rd Ed., Ch. 3 (Morgan Kaufmann, 2011)", "url": "https://www.sciencedirect.com/book/9780123814791/data-mining-concepts-and-techniques" },
+    { "label": "Geron, A. — Hands-On Machine Learning, 3rd Ed., Ch. 2 (O'Reilly, 2022)", "url": "https://www.oreilly.com/library/view/hands-on-machine-learning/9781098125967/" }
+  ]
+}

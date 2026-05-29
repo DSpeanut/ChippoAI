@@ -1,0 +1,67 @@
+{
+  "visualizationType": "table",
+  "codeSnapshot": {
+    "label": "data_warehouse.sql",
+    "code": "-- ── Star Schema: Fact + Dimension tables ──\n-- Fact table: transactional events (large, narrow columns)\nCREATE TABLE fact_orders (\n    order_sk        BIGINT,         -- surrogate key\n    user_sk         BIGINT,         -- FK to dim_users\n    product_sk      BIGINT,         -- FK to dim_products\n    date_sk         INT,            -- FK to dim_date\n    amount_usd      DECIMAL(12,2),\n    quantity        INT,\n    discount_pct    DECIMAL(5,2)\n) DISTKEY(user_sk) SORTKEY(date_sk);  -- Redshift distribution + sorting\n\n-- Dimension table: descriptive attributes (small, wide columns)\nCREATE TABLE dim_users (\n    user_sk         BIGINT PRIMARY KEY,\n    user_nk         VARCHAR(50),    -- natural key (original ID)\n    email           VARCHAR(255),\n    country         VARCHAR(50),\n    tier            VARCHAR(20),\n    valid_from      DATE,\n    valid_to        DATE,           -- SCD Type 2: tracks history\n    is_current      BOOLEAN\n);\n\n-- ── OLAP Query: revenue by country and tier ──\nSELECT\n    u.country,\n    u.tier,\n    d.year,\n    d.quarter,\n    SUM(f.amount_usd)   AS revenue,\n    COUNT(DISTINCT f.user_sk) AS unique_customers,\n    AVG(f.amount_usd)   AS avg_order_value\nFROM fact_orders f\nJOIN dim_users u    ON f.user_sk = u.user_sk AND u.is_current = TRUE\nJOIN dim_date  d    ON f.date_sk = d.date_sk\nWHERE d.year = 2024\nGROUP BY u.country, u.tier, d.year, d.quarter\nORDER BY revenue DESC;\n\n-- ── Columnar storage advantage: ──\n-- Query only needs amount_usd, user_sk, date_sk columns\n-- Columnar storage reads ONLY those 3 columns (vs row-oriented: reads ALL columns)\n-- For 100 columns, columnar reads ~3% of the data → 30× less I/O\n\n-- ── Partitioning and clustering (BigQuery) ──\nCREATE TABLE `project.dataset.orders`\nPARTITION BY DATE(created_at)    -- pruning: scan only relevant partitions\nCLUSTER BY country, user_id;    -- co-locate rows for efficient range scans"
+  },
+  "eli3": [
+    "A data warehouse is a database optimized for analytical queries — answering questions like 'What was revenue by country last quarter?' or 'Which customer segments had the highest churn rate?' It's separate from the operational database (which handles live transactions) because analytical queries scan millions of rows and would slow down the transaction system.",
+    "The key innovation is columnar storage: instead of storing all columns of a row together (row-oriented, like PostgreSQL), a columnar store saves all values of each column together. When you query only 3 out of 100 columns, a columnar store reads only 3% of the data — making analytical queries 10–100× faster with far less disk I/O.",
+    "Modern cloud data warehouses (Snowflake, BigQuery, Redshift) separate storage from compute: data lives in cheap object storage (S3/GCS), and compute clusters can scale up for big queries and back to zero when idle. This makes analytical compute essentially pay-per-query — a major cost advantage over always-on traditional warehouses."
+  ],
+  "whenWhy": [
+    {
+      "title": "ML training data assembly",
+      "body": "The data warehouse is where historical training data lives: all transactions, events, labels, and features from the past 2–5 years. ML engineers query the warehouse to extract labelled training examples, compute features via SQL window functions, and join multiple tables (orders, users, products, events) into a flat training dataset. BigQuery, Snowflake, and Redshift all support exporting query results directly to GCS/S3 as Parquet for Spark or pandas consumption."
+    },
+    {
+      "title": "Business intelligence and reporting",
+      "body": "BI tools (Looker, Tableau, Power BI, Metabase) connect to data warehouses to power dashboards. A star schema (fact + dimension tables) is designed for BI queries: fast aggregations on the fact table (JOIN to a few dimension tables) and drill-down by dimension attributes (country, segment, date). The dimensional modelling methodology (Kimball) specifies how to design these schemas for BI performance and usability."
+    },
+    {
+      "title": "dbt + warehouse: the ELT transform layer",
+      "body": "dbt models run entirely inside the warehouse using SQL. The result is a layered architecture: raw layer (ingested data, no transforms), staging layer (cleaned and typed), marts layer (business-logic aggregations — revenue_by_segment, customer_lifetime_value, churn_predictions_vs_actuals). All layers are versioned in Git, tested with dbt assertions, and documented. This makes the warehouse the single source of truth for all analytical and ML use cases."
+    }
+  ],
+  "deepDiveIntro": [
+    "Columnar storage: in a row-oriented store (PostgreSQL, MySQL), all columns of a row are stored contiguously. Reading column A requires scanning all rows and skipping to column A's offset — reads all data. In a column-oriented store (Parquet, ORC, Redshift, BigQuery), all values of column A are stored together. A SELECT on columns A, B, C reads only those columns — typically 3–10% of total data for wide tables. Additional benefit: values of the same column compress much better (similar values, sorted) — 5–10× compression ratios vs 1.5–2× for row-oriented. [1]",
+    "The star schema has one central fact table (grain: one row per transaction or event) and multiple dimension tables (one row per entity). No normalization beyond this structure — dimension tables are deliberately denormalized (country name in the dim_users table rather than a country_id FK to a countries table) to avoid JOINs in analytical queries. Snowflake schema adds normalization to dimension tables for storage efficiency at some query complexity cost. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Columnar Storage and Compression",
+      "body": "Parquet and ORC are columnar file formats; BigQuery and Redshift use proprietary columnar storage internally. Compression advantages: (1) Run-length encoding: a sorted column with value 'US' repeated 10,000 times stores as (US, 10000) rather than 10,000 strings. (2) Dictionary encoding: replace each unique string value with an integer code (similar to pandas Categorical). (3) Delta encoding: for sorted integers, store differences (1000, 1, 1, 1, ...) instead of absolute values — very compact. Predicate pushdown: the query engine reads metadata (min/max of each row group) to skip entire blocks — a WHERE date > '2024-01-01' with sorted date reads only the relevant row groups. [1]"
+    },
+    {
+      "heading": "Distribution and Sort Keys (Redshift)",
+      "body": "Redshift is a massively parallel processing (MPP) database: data is distributed across multiple nodes. Distribution key (DISTKEY): determines which node stores each row. Choose the column most frequently used in JOIN conditions — ensures rows being joined are co-located on the same node (no network shuffle). Poor choice → distributed join requires shuffling all data across nodes (N² data transfer). Sort key (SORTKEY): data is stored sorted by this column on disk. A WHERE date_sk BETWEEN X AND Y skips unsorted blocks. Choose the most common range filter column. For analytics queries dominated by date ranges and user-level aggregations: DISTKEY=user_sk, SORTKEY=date_sk is the canonical choice. [2]"
+    },
+    {
+      "heading": "Slowly Changing Dimensions (SCD)",
+      "body": "Dimension attributes change over time (customer tier changes from bronze to gold). Three SCD types: Type 1: overwrite — current value only, no history. Simple, cannot answer 'what tier was the customer when they placed this order?' Type 2: add a new row for each change, with valid_from, valid_to, and is_current columns. Full history, correct point-in-time joins. Storage: O(n_changes) rows per entity. Type 3: add a 'previous value' column. Simple, supports current and one previous value only. For ML: SCD Type 2 is required for point-in-time correct feature computation — join dimension at valid_from ≤ event_date < valid_to to get the attribute value as of the event. [2]"
+    }
+  ],
+  "youtubeLabel": "Data Warehouse Concepts — Kimball Group",
+  "youtubeUrl": "https://www.youtube.com/embed/lWPiSZf7-uQ",
+  "takeaways": [
+    "Columnar storage reads only queried columns — 3–10% of data for wide tables. 5–10× compression ratios enable fast analytical queries. [1]",
+    "Star schema: fact table (one row per event) + dimension tables (one row per entity). Denormalized for JOIN efficiency in OLAP queries. [2]",
+    "SCD Type 2: new row per change with valid_from/valid_to. Required for point-in-time correct ML feature computation. [2]",
+    "Redshift: DISTKEY for co-located JOINs, SORTKEY for range filter pushdown. Critical for MPP query performance. [2]",
+    "Cloud warehouses (BigQuery, Snowflake): separate storage (S3/GCS) from compute. Pay-per-query; scale compute clusters independently. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "When should you use a data warehouse vs a data lake for ML training data?",
+      "a": "Data warehouse: structured data with a stable schema, SQL is the query language, BI + ML users share data, governance and access controls are important. Best for: historical transaction data, customer attributes, product catalogues. Data lake: semi-structured or unstructured data, variable schema, read by Spark/Python directly (no SQL server required), cheap storage at petabyte scale. Best for: raw event logs, text/image/audio data, ML training datasets that don't need SQL access. Data lakehouse (Databricks Delta Lake, Apache Iceberg): adds ACID transactions, schema enforcement, time travel (query data as of a past timestamp), and SQL support to a data lake — combining warehouse features with lake scale. Increasingly, the lakehouse is the default architecture for ML-heavy organizations."
+    },
+    {
+      "q": "How do you optimize a slow analytical query in Snowflake or BigQuery?",
+      "a": "Step 1: EXPLAIN / Query Profile — identify the most expensive operations (large row counts, partitions scanned). Step 2: Partitioning — if filtering by date, ensure the table is partitioned by date and the WHERE clause uses the partition column. BigQuery shows 'partitions scanned' in query info. Step 3: Clustering (BigQuery) or Sort Key (Redshift) — for common non-partition filters (country, user_id), cluster/sort by those columns. Step 4: Materialized views — pre-aggregate expensive GROUP BY queries and refresh on a schedule. Step 5: Table statistics — run ANALYZE (Redshift) or let BigQuery auto-collect statistics to improve query planner accuracy. Step 6: Avoid SELECT * on large tables — only select needed columns to leverage columnar storage."
+    }
+  ],
+  "sources": [
+    { "label": "Kimball, R. & Ross, M. — The Data Warehouse Toolkit, 3rd Ed. (Wiley, 2013)", "url": "https://www.kimballgroup.com/data-warehouse-business-intelligence-resources/books/data-warehouse-dw-toolkit/" },
+    { "label": "Kleppmann, M. — Designing Data-Intensive Applications, Ch. 3 (O'Reilly, 2017)", "url": "https://dataintensive.net/" }
+  ]
+}

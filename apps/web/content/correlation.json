@@ -1,0 +1,69 @@
+{
+  "visualizationType": "chart",
+  "codeSnapshot": {
+    "label": "correlation.py",
+    "code": "import pandas as pd\nimport numpy as np\nimport seaborn as sns\nimport matplotlib.pyplot as plt\nfrom scipy import stats\nfrom sklearn.linear_model import LinearRegression\nfrom statsmodels.stats.outliers_influence import variance_inflation_factor\n\ndf = pd.read_csv('data.csv')\nnumeric_cols = df.select_dtypes(include='number')\n\n# ── 1. Pearson correlation matrix ──\ncorr_pearson = numeric_cols.corr(method='pearson')\n\n# ── 2. Spearman correlation (robust, monotone) ──\ncorr_spearman = numeric_cols.corr(method='spearman')\n\n# ── 3. Heatmap visualization ──\nfig, axes = plt.subplots(1, 2, figsize=(16, 6))\nfor ax, corr, title in zip(axes, [corr_pearson, corr_spearman], ['Pearson', 'Spearman']):\n    mask = np.triu(np.ones_like(corr, dtype=bool))  # upper triangle\n    sns.heatmap(corr, mask=mask, annot=True, fmt='.2f',\n                cmap='coolwarm', vmin=-1, vmax=1, center=0, ax=ax)\n    ax.set_title(f'{title} Correlation')\nplt.tight_layout()\n\n# ── 4. Significance test for each correlation ──\ndef corr_pvalue_matrix(df: pd.DataFrame) -> pd.DataFrame:\n    cols = df.columns\n    p_matrix = pd.DataFrame(index=cols, columns=cols, dtype=float)\n    for c1 in cols:\n        for c2 in cols:\n            _, p = stats.pearsonr(df[c1].dropna(), df[c2].dropna())\n            p_matrix.loc[c1, c2] = p\n    return p_matrix\n\np_vals = corr_pvalue_matrix(numeric_cols)\n\n# ── 5. Variance Inflation Factor (multicollinearity) ──\nX = numeric_cols.drop(columns=['target']).dropna()\nvif_data = pd.DataFrame({\n    'feature': X.columns,\n    'VIF': [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]\n}).sort_values('VIF', ascending=False)\nprint(vif_data)\n# VIF > 10 → strong multicollinearity, consider removing or combining"
+  },
+  "eli3": [
+    "Correlation measures how much two variables move together. If income and education both tend to be high or low for the same people, they are positively correlated. If one goes up while the other goes down, they are negatively correlated. If there's no systematic pattern, correlation is near zero.",
+    "The famous rule: correlation does not imply causation. Just because ice cream sales and drowning deaths both peak in summer doesn't mean ice cream causes drowning — a third variable (hot weather) drives both. Correlation is symmetric (X correlates with Y just as much as Y correlates with X), while causation has a direction.",
+    "In ML, correlation is used for two things: finding features that predict the target (high |correlation| with target is good), and detecting multicollinearity (two features that correlate strongly with each other are redundant — keeping both confuses linear models)."
+  ],
+  "whenWhy": [
+    {
+      "title": "Feature selection before model training",
+      "body": "High |Pearson r| between a feature and the binary target (or high point-biserial correlation) suggests the feature is likely predictive. This is a fast, univariate filter before more expensive feature selection methods. Caveat: zero correlation doesn't mean zero predictive power — a feature with non-linear or interaction effects can have near-zero marginal correlation but high conditional importance."
+    },
+    {
+      "title": "Diagnosing multicollinearity in linear models",
+      "body": "In multiple linear regression, multicollinear predictors (|r| > 0.9 between two features) cause inflated coefficient standard errors and near-singular design matrices. Individual coefficient estimates become highly sensitive to small data changes (high variance), making interpretation unreliable. The Variance Inflation Factor (VIF) quantifies this: VIF_j = 1/(1 − R²_j), where R²_j is R² from regressing feature j on all others. VIF > 10 (or > 5 conservative) signals problematic multicollinearity."
+    },
+    {
+      "title": "EDA correlation heatmap",
+      "body": "A Pearson correlation heatmap over all numeric features is a standard EDA output. It reveals: feature-target relationships (which features correlate with what you want to predict), feature-feature redundancy (candidates for removal or PCA), and data quality issues (a feature that correlates at |r| = 0.99 with the target in training data is a leakage red flag — check if it's derived from the target)."
+    }
+  ],
+  "deepDiveIntro": [
+    "Pearson correlation coefficient r = Cov(X,Y)/(σ_X σ_Y) is the normalized covariance. It measures the degree of linear association in [−1, 1]: r = 1 is perfect positive linear, r = −1 perfect negative linear, r = 0 is no linear association. Under bivariate normality and H₀: ρ = 0, the statistic t = r√(n−2)/√(1−r²) follows a t-distribution with n−2 degrees of freedom — used to test significance. [1]",
+    "Spearman's ρ = 1 − 6Σd²ᵢ/(n(n²−1)) (for no ties), where dᵢ = rank(Xᵢ) − rank(Yᵢ), measures monotone (not necessarily linear) association. It is the Pearson correlation of the ranks. Kendall's τ = (C − D) / (n(n−1)/2) counts concordant pairs C minus discordant pairs D normalized by total pairs. Kendall's τ is more robust to outliers and more appropriate for small samples with many ties. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Pearson, Spearman, Kendall: Which to Use",
+      "body": "Pearson r: assumes both variables are continuous, ideally normally distributed, and the relationship is linear. Sensitive to outliers. Use when: both variables are numeric, relationship appears linear in scatter plot, no extreme outliers. Spearman ρ: non-parametric, assumes monotone relationship. Use when: outliers are present, data is ordinal, or scatter plot suggests monotone but non-linear relationship. Kendall τ: non-parametric, based on concordant/discordant pairs. More interpretable (τ = 0.4 means 40% more concordant pairs than discordant). Better for small samples with many ties. For most ML feature analysis, Spearman is the practical default: robust and correlation coefficients are easily interpreted. [2]",
+      "formula": "Pearson r = Cov(X,Y)/(σ_X σ_Y);  Spearman ρ = 1 − 6Σdᵢ²/(n(n²−1))"
+    },
+    {
+      "heading": "Variance Inflation Factor (VIF)",
+      "body": "VIF for predictor j = 1/(1 − R²_j), where R²_j is the coefficient of determination from regressing X_j on all other predictors. Interpretation: VIF = 1 → no multicollinearity (X_j is uncorrelated with others); VIF = 5 → X_j can be predicted from others with R² = 0.8; VIF = 10 → R² = 0.9 (90% variance explained by other predictors). VIF > 10 is conventionally considered problematic. Resolution: drop one of the correlated pair, combine them (PCA, sum), or use regularization (Ridge regression shrinks collinear coefficients jointly). [1]",
+      "formula": "VIF_j = 1 / (1 − R²_j)"
+    },
+    {
+      "heading": "Spurious Correlation and Confounding",
+      "body": "Spurious correlation: two variables appear correlated due to a shared confounder (third variable). Per-capita cheese consumption correlates r ≈ 0.95 with deaths by bedsheet tangling (Tyler Vigen, 2015) — both are driven by economic/temporal trends, not causality. In ML contexts, spurious correlations in training data become learned model associations that fail at deployment when the confounder is absent. Detection: check if the correlation persists when controlling for candidate confounders (partial correlation) or after stratifying. The correct remedy is understanding the data-generating process, not statistics alone. [1]"
+    }
+  ],
+  "youtubeLabel": "Correlation — StatQuest",
+  "youtubeUrl": "https://www.youtube.com/embed/xZ_z8KWkhXE",
+  "takeaways": [
+    "Pearson r = Cov(X,Y)/(σ_X σ_Y) ∈ [−1,1]; measures linear association. t = r√(n−2)/√(1−r²) ~ t(n−2) for significance testing. [1]",
+    "Spearman ρ: rank-based, robust to outliers, measures monotone association. Kendall τ: concordant-discordant pair ratio, best for small samples with ties. [2]",
+    "VIF_j = 1/(1−R²_j): quantifies multicollinearity. VIF > 10 → problem; consider dropping, combining, or switching to Ridge regression. [1]",
+    "Correlation ≠ causation: a confounder drives both. Partial correlation (controlling for Z) tests whether X-Y correlation persists after removing Z's influence. [1]",
+    "High |r| with target at training time is a leakage red flag — verify the feature is computed purely from information available before the target event. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "How can two variables have zero Pearson correlation but be statistically dependent?",
+      "a": "Pearson r only measures linear association. Example: X ~ Uniform(−1, 1) and Y = X². Cov(X, Y) = E[X³] − E[X]E[X²] = 0 (by symmetry), so r = 0 — even though Y is a deterministic function of X. Spearman ρ also fails here: the relationship is non-monotone. Detection: scatter plot immediately reveals the parabola. Statistical tests: Mutual Information I(X;Y) > 0 for any dependence (not just linear/monotone), Distance Correlation (dCor) = 0 iff X and Y are independent (Székely et al., 2007). sklearn's mutual_info_regression estimates I(X;Y) from data."
+    },
+    {
+      "q": "What is partial correlation and when should you use it?",
+      "a": "Partial correlation between X and Y controlling for Z is the Pearson correlation between the residuals of X~Z and Y~Z. It measures the association between X and Y after removing the linear effects of Z. r_{XY.Z} = (r_{XY} − r_{XZ}·r_{YZ}) / √((1−r²_{XZ})(1−r²_{YZ})). Use when: you suspect a confounder Z is inflating the observed correlation between X and Y. Example: price and quality both increase with brand reputation (Z). Partial correlation removes the brand effect to reveal the direct price-quality relationship. In regression, the standardized coefficient β_j is equivalent to the partial correlation between X_j and Y after removing all other predictors."
+    }
+  ],
+  "sources": [
+    { "label": "Freedman, D., Pisani, R. & Purves, R. — Statistics, 4th Ed. (W.W. Norton, 2007)", "url": "https://www.amazon.com/Statistics-4th-David-Freedman/dp/0393929728" },
+    { "label": "Conover, W.J. — Practical Nonparametric Statistics, 3rd Ed. (Wiley, 1999)", "url": "https://www.wiley.com/en-us/Practical+Nonparametric+Statistics%2C+3rd+Edition-p-9780471160687" }
+  ]
+}

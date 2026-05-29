@@ -1,0 +1,68 @@
+{
+  "visualizationType": "flow-diagram",
+  "codeSnapshot": {
+    "label": "api_ingestion.py",
+    "code": "import requests\nimport time\nfrom typing import Iterator\n\n# ── Paginated REST API with cursor ──\ndef fetch_all_events(base_url: str, api_key: str) -> Iterator[dict]:\n    headers = {'Authorization': f'Bearer {api_key}'}\n    cursor = None\n\n    while True:\n        params = {'limit': 200}\n        if cursor:\n            params['cursor'] = cursor\n\n        resp = requests.get(f'{base_url}/events', headers=headers, params=params)\n        resp.raise_for_status()\n        data = resp.json()\n\n        yield from data['results']  # stream records to caller\n\n        cursor = data.get('next_cursor')\n        if not cursor:  # last page\n            break\n\n        time.sleep(0.1)  # stay under rate limit\n\n# ── Retry with exponential backoff ──\nimport random\n\ndef get_with_retry(url: str, headers: dict, max_retries: int = 5) -> requests.Response:\n    for attempt in range(max_retries):\n        try:\n            resp = requests.get(url, headers=headers, timeout=10)\n            if resp.status_code == 429:  # rate limited\n                retry_after = int(resp.headers.get('Retry-After', 2 ** attempt))\n                time.sleep(retry_after + random.uniform(0, 1))\n                continue\n            resp.raise_for_status()\n            return resp\n        except requests.ConnectionError:\n            time.sleep(2 ** attempt + random.uniform(0, 1))\n    raise RuntimeError(f'Max retries exceeded for {url}')\n\n# ── Webhook receiver (FastAPI) ──\n# from fastapi import FastAPI, Request, Header\n# import hmac, hashlib\n# app = FastAPI()\n# @app.post('/webhook')\n# async def receive_event(request: Request, x_signature: str = Header(...)):\n#     body = await request.body()\n#     expected = hmac.new(SECRET.encode(), body, hashlib.sha256).hexdigest()\n#     if not hmac.compare_digest(expected, x_signature):\n#         raise HTTPException(403)\n#     event = await request.json()\n#     # enqueue to Kafka / write to DB\n#     return {'status': 'ok'}"
+  },
+  "eli3": [
+    "An API (Application Programming Interface) is a structured way for two programs to exchange data. Instead of downloading an entire website, you send a specific request — 'give me all sales from last week' — and receive a clean, structured response (usually JSON). APIs are the preferred way to ingest third-party data: they're stable, documented, and designed for programmatic access.",
+    "Most ML data pipelines consume REST APIs: you hit an endpoint like /api/events?date=2024-01-01, get back a JSON array, and repeat for the next page. Rate limits govern how many requests you can make per minute or day — exceeding them returns HTTP 429 and your IP may get temporarily blocked.",
+    "There are two ingestion modes: polling (you request data on a schedule) and push/webhooks (the source sends you data when it changes). Polling is simpler to build; webhooks are more efficient for high-volume, real-time data since they avoid unnecessary requests."
+  ],
+  "whenWhy": [
+    {
+      "title": "Ingesting third-party data at scale",
+      "body": "APIs power most external data ingestion: financial market data (Bloomberg, Polygon.io), social media (Twitter/X API v2), weather (OpenWeatherMap), and CRM data (Salesforce REST API). Building a robust client requires: pagination handling (offset, cursor, or link-header patterns), retry logic with exponential backoff, and request deduplication to avoid double-counting records on retry."
+    },
+    {
+      "title": "Real-time event ingestion via webhooks",
+      "body": "Payment processors (Stripe), e-commerce platforms (Shopify), and CI/CD systems (GitHub) use webhooks to push events to your endpoint as they happen. Your server receives an HTTP POST with the event payload. Best practice: verify the HMAC signature (the sender signs the payload with your shared secret), acknowledge with 200 immediately, and enqueue to Kafka/SQS for asynchronous processing. This decouples ingestion from processing and handles bursts."
+    },
+    {
+      "title": "GraphQL APIs for nested ML features",
+      "body": "GraphQL lets you request exactly the fields you need in a single query, including nested related objects — reducing over-fetching that is common with REST (fetching a full user object when you only need three fields). Useful when building ML feature tables that join user, product, and transaction data: a single GraphQL query can return a pre-joined structure that would require multiple REST calls."
+    }
+  ],
+  "deepDiveIntro": [
+    "REST (Representational State Transfer) is the dominant API paradigm: resources are identified by URLs, HTTP methods (GET, POST, PUT, DELETE) express intent, and JSON is the de facto response format. Pagination patterns vary: offset-based (?page=2&limit=100) is simple but has inconsistency on concurrent writes; cursor-based (?after=xyz) is more robust for large, frequently-updated datasets. Rate limits are enforced at the HTTP layer — HTTP 429 Too Many Requests with a Retry-After header. Resilient clients use exponential backoff: delay = min(max_delay, base * 2^attempt) + jitter. [1]",
+    "Authentication: API keys (simple, sent in header or query param), OAuth 2.0 (delegated user permissions, token refresh), and JWT (stateless tokens with embedded claims). For ML pipelines, service accounts with API keys are standard — store keys in environment variables or a secret manager (AWS Secrets Manager, HashiCorp Vault), never in source code. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Pagination Patterns",
+      "body": "Three common patterns: (1) Offset pagination: GET /items?offset=200&limit=100. Simple but problematic — if items are inserted while you paginate, you skip or duplicate rows. (2) Cursor pagination: GET /items?after=eyJpZCI6MTAwfQ== (a base64-encoded pointer to the last seen record). Stable under concurrent writes; cursors expire, requiring handling of 410 Gone responses. (3) Link-header pagination (GitHub API style): the response headers include Link: <https://api.github.com/repos?page=2>; rel=\"next\". Parse the next URL from the Link header until rel=\"last\" is absent. [1]"
+    },
+    {
+      "heading": "Rate Limiting and Backoff",
+      "body": "Rate limits are typically enforced as requests-per-minute or tokens-per-day. Exceeding them returns HTTP 429. Robust handling: (1) Check X-RateLimit-Remaining and X-RateLimit-Reset headers before each request and preemptively sleep if remaining < threshold. (2) On 429, read Retry-After header and sleep for that duration. (3) Exponential backoff with jitter: delay = min(cap, base * 2^attempt) + random.uniform(0, base). Jitter prevents the 'thundering herd' problem where many retrying clients all hit the server simultaneously. [1]",
+      "formula": "delay = min(cap, base × 2^attempt) + Uniform(0, base)"
+    },
+    {
+      "heading": "Webhooks vs Polling",
+      "body": "Polling: your pipeline queries the API on a schedule (every 5 minutes). Simple but wastes requests when there is no new data. Webhooks: the source POSTs to your endpoint when events occur. More efficient for high-frequency events, but requires: a public HTTPS endpoint, HMAC signature verification (prevent spoofing), idempotent processing (events can be delivered more than once — use event_id deduplication), and a dead-letter queue for events your server missed (server was down). Stripe, GitHub, Twilio all use webhooks. For ML pipelines, webhooks feed Kafka topics; consumers process asynchronously. [2]"
+    }
+  ],
+  "youtubeLabel": "REST APIs Explained — Traversy Media",
+  "youtubeUrl": "https://www.youtube.com/embed/Q-BpqyOT3a8",
+  "takeaways": [
+    "REST APIs return structured JSON; use cursor-based pagination for large, mutable datasets to avoid skipping/duplicating records. [1]",
+    "Exponential backoff + jitter on 429: delay = min(cap, base × 2^attempt) + Uniform(0, base). [1]",
+    "Never store API keys in code; use environment variables or a secrets manager. OAuth 2.0 for user-delegated access. [2]",
+    "Webhooks push events to you in real-time; verify HMAC signatures, acknowledge immediately, process asynchronously via a queue. [2]",
+    "GraphQL reduces over-fetching when you need nested, multi-entity data in a single round-trip. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "How do you handle API schema changes in a production pipeline?",
+      "a": "APIs change without notice: fields are renamed, new fields appear, types change. Defensive strategies: (1) Use flexible deserialization — parse only the fields you need, ignore extras (don't fail if an unknown field appears). (2) Schema validation on ingestion: use Pydantic models or Great Expectations to assert expected fields/types; alert on validation failures rather than silently corrupting downstream tables. (3) Version your pipeline contract: if the API offers versioning (v1, v2), pin to a version and migrate deliberately. (4) Contract tests: mock the API response in tests and add an integration test against the live API in a staging environment."
+    },
+    {
+      "q": "What is the difference between REST and GraphQL for ML data ingestion?",
+      "a": "REST: multiple endpoints, each returns a fixed resource shape. To build a feature row joining user + orders + products, you make 3 API calls and join client-side — 3× latency, over-fetching (full user object when you need 3 fields). GraphQL: one endpoint, you specify exactly the fields you need, including nested relations, in a single query. Response matches your query shape. For ML pipelines that need highly-specific feature subsets, GraphQL can reduce ingestion code complexity and network overhead significantly. Trade-off: GraphQL queries are harder to cache (POST requests), and not all APIs offer GraphQL."
+    }
+  ],
+  "sources": [
+    { "label": "Richardson, L. & Amundsen, M. — RESTful Web APIs (O'Reilly, 2013)", "url": "https://www.oreilly.com/library/view/restful-web-apis/9781449359713/" },
+    { "label": "Kleppmann, M. — Designing Data-Intensive Applications, Ch. 4 (O'Reilly, 2017)", "url": "https://dataintensive.net/" }
+  ]
+}

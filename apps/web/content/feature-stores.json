@@ -1,0 +1,67 @@
+{
+  "visualizationType": "flow-diagram",
+  "codeSnapshot": {
+    "label": "feature_store.py",
+    "code": "# ── Feature Store: concept overview ──\n# Problem: Without a feature store, teams recompute the same features independently,\n# and training features often differ from serving features (training-serving skew).\n\n# ── Feast example (open-source feature store) ──\nfrom feast import FeatureStore, FeatureView, Entity, Field, FileSource\nfrom feast.types import Float64, Int64\nfrom datetime import timedelta\n\n# 1. Define feature source (historical data)\ncustomer_stats_source = FileSource(\n    path='s3://feature-data/customer_stats/*.parquet',\n    timestamp_field='event_timestamp',\n)\n\n# 2. Define entity (what are features about?)\ncustomer = Entity(name='customer_id', join_keys=['customer_id'])\n\n# 3. Define feature view (group of features + source)\ncustomer_stats_fv = FeatureView(\n    name='customer_stats',\n    entities=[customer],\n    ttl=timedelta(days=30),\n    schema=[\n        Field(name='spend_30d', dtype=Float64),\n        Field(name='order_count_30d', dtype=Int64),\n        Field(name='avg_order_value', dtype=Float64),\n    ],\n    source=customer_stats_source,\n)\n\n# 4. Materialize: compute and store in online store (Redis)\n# feast materialize-incremental $(date -u +\"%Y-%m-%dT%H:%M:%S\")\n\n# 5. TRAINING: point-in-time correct historical features\nstore = FeatureStore(repo_path='.')\ntraining_df = store.get_historical_features(\n    entity_df=entity_df,  # DataFrame with customer_id + event_timestamp\n    features=['customer_stats:spend_30d',\n              'customer_stats:order_count_30d',\n              'customer_stats:avg_order_value'],\n).to_df()\n\n# 6. SERVING: low-latency online features at inference time\nfeature_vector = store.get_online_features(\n    features=['customer_stats:spend_30d', 'customer_stats:order_count_30d'],\n    entity_rows=[{'customer_id': 12345}],\n).to_dict()\nprint(feature_vector)  # Retrieved from Redis in <5ms"
+  },
+  "eli3": [
+    "A feature store is a centralized system for storing, managing, and serving machine learning features. Without it, different teams compute the same features independently (waste, inconsistency), and the features computed during model training differ from those computed at inference time — causing 'training-serving skew' that degrades model performance in production.",
+    "Think of a feature store like a library for features. ML engineers deposit computed features (30-day spend, number of logins last week, user tier) once. Any model or team can reuse them. The store has two parts: an offline store (historical features for training, stored in a data warehouse or Parquet) and an online store (current features for inference, stored in a fast database like Redis, served in milliseconds).",
+    "The hardest problem a feature store solves is point-in-time correctness: when you train a model using data from six months ago, you must use the feature values as they existed six months ago — not their current values. If you accidentally use today's feature values for historical training examples, your model leaks future information and will fail in production."
+  ],
+  "whenWhy": [
+    {
+      "title": "Eliminating training-serving skew",
+      "body": "Training-serving skew is one of the most common causes of model performance degradation. It occurs when the feature computation logic differs between training (Python/Spark batch job) and serving (Java API or different Python service). A feature store enforces consistency: the same SQL/Spark code defines features for both training retrieval and serving materialization. Both training and inference paths read from the same feature store — no divergence possible."
+    },
+    {
+      "title": "Feature reuse across teams and models",
+      "body": "In large ML organizations, multiple teams build models that use similar features (30-day spend, recency, user segment). Without a feature store, each team reimplements these, introducing subtle inconsistencies and wasted compute. A feature store is the single source of truth: features are computed once, registered with metadata (description, owner, data type, lineage), and reused. New models can be built faster by assembling features from the catalog rather than writing new pipelines."
+    },
+    {
+      "title": "Low-latency serving for real-time ML",
+      "body": "Real-time fraud detection, recommendation, and pricing models need features in <10ms at inference time. A real-time pipeline computing '30-day rolling spend' on demand for every inference call is infeasible. A feature store materializes pre-computed features to an online store (Redis, DynamoDB, Bigtable) during a batch or streaming job. At inference time, the model fetches features from the online store in a single key-value lookup — single-digit millisecond latency."
+    }
+  ],
+  "deepDiveIntro": [
+    "The feature store architecture consists of four components: (1) Feature registry — metadata catalog mapping feature names to definitions, source code, owners, and schema. (2) Offline store — historical feature values for training, stored in S3/GCS as Parquet or in a data warehouse. Supports point-in-time retrieval: given (entity_id, timestamp), return the feature values as they existed at that timestamp. (3) Online store — current feature values for serving, stored in a low-latency key-value store (Redis, DynamoDB). Updated by a materialization job (batch or streaming). (4) Feature pipeline — code that computes features from raw data and populates both stores. [1]",
+    "Point-in-time correct retrieval: for each (entity, timestamp) in the entity DataFrame, look up the most recent feature value with event_timestamp ≤ entity_timestamp and event_timestamp > entity_timestamp − TTL. This is equivalent to an AS OF join in SQL (not natively supported by most databases — Feast implements it by sorting and merging). Failure to do this correctly results in label leakage: future feature values predict past labels. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Offline Store and Point-in-Time Joins",
+      "body": "The offline store answers: 'what were the feature values for entity X at time T?' For training dataset creation, the entity DataFrame contains (entity_id, event_timestamp) for each training example. Point-in-time join selects the most recent feature row for each entity with timestamp ≤ event_timestamp. Algorithm: sort feature rows by (entity_id, event_timestamp); for each training example, binary search for the latest feature row with matching entity and timestamp ≤ target. Feast implements this on Pandas, Spark, and BigQuery. Common bug: using the feature row exactly at event_timestamp (same instant) may include features derived from the label event itself — ensure the feature timestamp is strictly before the label event. [2]"
+    },
+    {
+      "heading": "Online Store Materialization",
+      "body": "Materialization writes the latest feature values for each entity to the online store. Batch materialization: a Spark/Pandas job reads from the offline store (up to current time), writes one record per entity to Redis. Run on a schedule (hourly, daily) depending on staleness tolerance. Streaming materialization: a Kafka consumer updates the online store as new events arrive — enables sub-minute feature freshness. TTL (time-to-live) on online store entries prevents serving stale features for entities that haven't been seen recently. Feast's materialization-incremental command only processes new data since the last materialization, reducing compute cost. [1]"
+  ],
+    {
+      "heading": "Feature Store vs Data Warehouse vs Feature Pipeline",
+      "body": "Data warehouse: stores raw and transformed data for analytics. No point-in-time retrieval, no online serving layer, no ML-specific metadata. Feature pipeline (standalone): a Spark/Airflow job that computes features and writes to a table. Fragile — multiple teams maintain separate pipelines, inconsistency risk. Feature store: adds the registry (discoverability and governance), point-in-time correctness for training, and the online store for serving — addressing the limitations of both. Trade-off: feature stores add operational complexity. For small teams (<3 ML engineers), starting with point-in-time correct Parquet files and a Redis serving layer may be sufficient before adopting a full feature store. [1]"
+    }
+  ],
+  "youtubeLabel": "Feature Stores Explained — Tecton",
+  "youtubeUrl": "https://www.youtube.com/embed/ywG0GGpCgzs",
+  "takeaways": [
+    "Feature store = registry + offline store (historical features for training) + online store (current features for serving). [1]",
+    "Point-in-time correct retrieval: for each (entity, timestamp), return the most recent feature with event_timestamp ≤ target. Prevents future data leakage. [2]",
+    "Training-serving skew is eliminated by sharing the same feature definition between offline and online stores. [1]",
+    "Online store (Redis/DynamoDB): pre-computed feature lookup in <10ms. Enables real-time ML serving. [1]",
+    "For small teams: a well-organized Parquet/S3 offline store + Redis online store may suffice before adopting Feast/Tecton. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "What is the difference between batch and streaming feature computation in a feature store?",
+      "a": "Batch features: computed periodically (nightly or hourly) from historical data. Examples: 30-day rolling spend, customer lifetime value. High accuracy, some staleness. Streaming features: computed from event streams in near-real-time (Kafka → Flink). Examples: transactions-in-last-5-minutes (fraud signal), items-viewed-in-current-session (recommendation signal). Low latency, potentially noisier. Feature stores like Tecton and Fennel support both: batch features from Spark, streaming features from Flink/Kafka Streams, both served through the same online store with a unified API. The model fetches all features from one endpoint, agnostic to whether they were batch- or stream-computed."
+    },
+    {
+      "q": "How do you handle feature versioning when a feature definition changes?",
+      "a": "Changing a feature definition (e.g., changing the rolling window from 30d to 90d) creates a breaking change: historical training data computed with the old definition differs from new online features computed with the new definition. Best practices: (1) Version features explicitly (customer_stats_v2 vs customer_stats_v1). The old model continues using v1 features; the new model uses v2. (2) Backfill: recompute historical values under the new definition back to the training data cutoff date before deploying the new model. (3) Shadow mode: run the new feature computation alongside the old, compare distributions, ensure consistency before switching. Feature store registries should track which model versions use which feature versions for governance."
+    }
+  ],
+  "sources": [
+    { "label": "Feast Documentation — feast.dev", "url": "https://docs.feast.dev/" },
+    { "label": "Kleppmann, M. — Designing Data-Intensive Applications, Ch. 10–11 (O'Reilly, 2017)", "url": "https://dataintensive.net/" }
+  ]
+}

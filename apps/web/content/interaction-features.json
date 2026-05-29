@@ -1,0 +1,68 @@
+{
+  "visualizationType": "table",
+  "codeSnapshot": {
+    "label": "interaction_features.py",
+    "code": "import pandas as pd\nimport numpy as np\nfrom sklearn.preprocessing import PolynomialFeatures\nfrom sklearn.linear_model import Ridge\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.model_selection import cross_val_score\n\nX = df[['age', 'income', 'tenure']].copy()\n\n# ── 1. Manual domain-driven interactions ──\n# Example: income-to-age ratio (income relative to career stage)\nX['income_per_age'] = X['income'] / (X['age'] + 1)\n# income × tenure (long-term, high-income customers are more valuable)\nX['income_x_tenure'] = X['income'] * X['tenure']\n# ratio: recent behaviour vs historical\nX['spend_ratio'] = df['spend_30d'] / (df['spend_90d'] + 1)\n\n# ── 2. Polynomial features (automated) ──\n# degree=2: generates x₁, x₂, x₃, x₁², x₂², x₃², x₁x₂, x₁x₃, x₂x₃, 1\npoly = PolynomialFeatures(degree=2, interaction_only=False, include_bias=False)\nX_poly = poly.fit_transform(X[['age', 'income']])\nprint('Feature names:', poly.get_feature_names_out())\nprint('Shape:', X_poly.shape)  # 2 features → 5 (2 + 2 squares + 1 cross-term)\n\n# interaction_only=True: only cross-terms, no squares\npoly_int = PolynomialFeatures(degree=2, interaction_only=True, include_bias=False)\nX_int = poly_int.fit_transform(X[['age', 'income', 'tenure']])\n# 3 features → 3 original + C(3,2)=3 cross-terms = 6 features\n\n# ── 3. Regularized linear model with polynomial features ──\n# Ridge prevents overfitting when interaction features explode\npipeline = Pipeline([\n    ('poly', PolynomialFeatures(degree=2, include_bias=False)),\n    ('model', Ridge(alpha=10.0))\n])\nscores = cross_val_score(pipeline, X, df['target'], cv=5, scoring='r2')\nprint('CV R²:', scores.mean().round(3))\n\n# ── 4. Feature importance to prune interactions ──\nfrom sklearn.ensemble import RandomForestRegressor\nrf = RandomForestRegressor(n_estimators=100, random_state=42)\nrf.fit(X_poly, df['target'])\nimportances = pd.Series(rf.feature_importances_,\n    index=poly.get_feature_names_out()).sort_values(ascending=False)\nprint(importances.head(10))"
+  },
+  "eli3": [
+    "Interaction features capture the combined effect of two (or more) variables that a model can't detect from each variable alone. Example: income and education level both predict loan default independently, but the combination matters — a high-income person with no education degree is very different from a high-income person with a PhD. Multiplying the two features creates an 'income × education' feature that the model can learn from directly.",
+    "Linear models can only learn: 'when X₁ goes up by 1 unit, Y changes by β₁'. They cannot learn 'the effect of X₁ depends on X₂'. Adding an X₁×X₂ interaction term gives the model the freedom to learn conditional effects. Tree models (Random Forest, XGBoost) discover interactions automatically — but only approximately, since they build one split at a time.",
+    "The danger: with p features, the number of possible pairwise interactions is p(p−1)/2 — for 100 features, that's 4950 interaction terms. Adding all of them causes overfitting. Use domain knowledge to pick interactions that make business sense, or use regularization (Ridge/Lasso) to shrink unimportant ones."
+  ],
+  "whenWhy": [
+    {
+      "title": "Linear models: capturing conditional effects",
+      "body": "A linear model with terms β₁X₁ + β₂X₂ assumes the effect of X₁ on Y is β₁ — constant regardless of X₂. Adding an interaction term β₃(X₁·X₂) relaxes this: the marginal effect of X₁ is now β₁ + β₃X₂, which depends on X₂. Example in credit scoring: the effect of income on default probability might differ between employed and self-employed borrowers. A binary is_employed × income interaction captures this. Use when domain knowledge suggests the effect of one variable changes depending on another."
+    },
+    {
+      "title": "Feature engineering for ratio features",
+      "body": "Ratio and difference features are a natural form of interaction: spend / visit_count = spend per visit, revenue_this_month / revenue_last_month = month-over-month ratio, (price − cost) / price = margin. These encode domain knowledge directly: the absolute spend and absolute visit count matter less than their ratio. Ratios often have lower variance and better cross-company generalization than raw product features."
+    },
+    {
+      "title": "Kaggle competitions and tabular NNs",
+      "body": "Feature engineering with hand-crafted interactions is a primary tool in tabular ML competitions. Top solutions often combine: (1) domain-driven ratios and products, (2) automated polynomial features (degree 2 or 3, pruned by importance), (3) target-encoded interactions (target mean per two-way category cross). Tabular neural networks (TabNet, FT-Transformer) learn interactions implicitly but benefit from good hand-crafted features as additional inputs."
+    }
+  ],
+  "deepDiveIntro": [
+    "For a linear model y = Xβ, the model assumes additivity and linearity: the effect of X_j on y is β_j regardless of all other features. Interaction terms relax additivity. Adding X_j·X_k adds a term β_jk(X_j·X_k), making the marginal effect of X_j equal to β_j + β_jk·X_k — it now depends on X_k. Polynomial features (degree d) expand the feature space to include all monomials of degree ≤ d: {x^α : |α| ≤ d}. For p features and degree 2, this gives C(p+2,2) − 1 features (including bias). For p=10 features, degree 2 yields 65 features; degree 3 yields 285. [1]",
+    "The bias-variance trade-off dominates interaction feature engineering. Adding interactions increases model flexibility (lower bias), but also increases the number of parameters relative to data size (higher variance → overfitting). Mitigations: (1) Regularization — Ridge shrinks all coefficients toward zero, Lasso selects a sparse subset. (2) Feature selection — fit an L1-regularized model and keep only features with nonzero coefficients. (3) Domain knowledge — pre-select interactions that have theoretical or empirical support. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Polynomial Features: Counting and Managing Growth",
+      "body": "PolynomialFeatures(degree=2) for p features generates: p original + p squared + C(p,2) pairwise products = p + p + p(p−1)/2 = p(p+3)/2 features. For p=20: 20 + 20 + 190 = 230 features. Degree 3: O(p³/6) features. Growth is polynomial in p — manageable for small p but explodes for large p. Practical strategies: (1) interaction_only=True: skip squared terms, generate only cross-products. (2) Pre-select the top-k most important features (by RF importance or correlation with target), then apply PolynomialFeatures only to those k. (3) Prune: fit Ridge with many interactions, remove those whose coefficient is near zero. [1]",
+      "formula": "Features for degree 2: p_new = p + p + p(p−1)/2 = p(p+3)/2"
+    },
+    {
+      "heading": "Detecting Missing Interactions",
+      "body": "How do you know an interaction is missing? (1) Partial dependence plots (PDP) and individual conditional expectation (ICE) plots: if the ICE lines are not parallel (the PDP is not a single line), the variable's effect depends on another variable — an interaction is present. (2) Tree-based interaction detection: SHAP interaction values (shap.TreeExplainer) decompose each feature's Shapley value into a main effect and pairwise interaction effects. Large SHAP interaction values identify candidate interaction pairs. (3) H-statistic (Friedman & Popescu, 2008): measures the fraction of variance explained by interaction between features i and j — H² = 0 means no interaction, H² = 1 means fully interactive. [2]"
+    },
+    {
+      "heading": "Regularization for Interaction Terms",
+      "body": "Ridge regression with interaction features: all β_jk are penalized equally toward zero by ||β||² term in the loss. Lasso (L1 penalty): induces sparsity — selects a small subset of interactions with nonzero coefficients. Elastic Net: combination of L1 and L2, selecting sparse interactions while handling correlated interaction terms (highly correlated monomials like x₁·x₂ and x₁·x₃ are correlated if x₂ and x₃ correlate). For high-degree polynomial features, Ridge is usually preferred: Lasso is unstable when many features are correlated (which is inevitable for polynomial expansions). [2]"
+    }
+  ],
+  "youtubeLabel": "Feature Engineering Interactions — Kaggle",
+  "youtubeUrl": "https://www.youtube.com/embed/3ZWuPVWq7p4",
+  "takeaways": [
+    "Interaction term X_j·X_k allows linear models to learn conditional effects: marginal effect of X_j = β_j + β_jk·X_k. [1]",
+    "Degree-2 PolynomialFeatures for p features → p(p+3)/2 features. Grows fast — pre-select features before expanding. [1]",
+    "Ratio features (X₁/X₂) are a natural, interpretable form of interaction. Prefer domain-driven ratios over automated polynomial expansion when possible. [2]",
+    "Detect interactions with SHAP interaction values or H-statistic. PDP/ICE non-parallelism signals interaction. [2]",
+    "Regularize interaction-heavy models with Ridge (stability) or Lasso (sparsity). Avoid high-degree polynomials without regularization. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "When should you use interaction features vs simply using a tree model that discovers interactions automatically?",
+      "a": "Tree models (Random Forest, XGBoost) discover interactions automatically by building sequences of splits. For many practical problems, they outperform linear models + manual interactions without any feature engineering. Use manual interaction features when: (1) The underlying model must be linear (regulatory requirement, interpretability mandate). (2) You have strong domain knowledge about a specific interaction that the tree might miss with limited data. (3) You're using neural networks for tabular data — they benefit from explicit interaction features that reduce the network's learning burden. (4) You have very small datasets where tree models overfit but a targeted linear model with one key interaction is stable."
+    },
+    {
+      "q": "How do you prevent target leakage when creating ratio features?",
+      "a": "Leakage risk is highest for features computed using information from after the prediction time point. Example: total_lifetime_spend / total_orders — if total_lifetime_spend includes the transaction being predicted, it encodes the outcome. Prevention: use only information strictly before the event time (point-in-time features): spend in the 90 days BEFORE the observation date, order count BEFORE the date. For ratio features, also guard against division by zero (divide by (denominator + ε) or use np.where(denominator > 0, num/denom, np.nan)). Time-based train/test splits (by date, not random) are the essential complement to feature engineering discipline."
+    }
+  ],
+  "sources": [
+    { "label": "Hastie, T., Tibshirani, R. & Friedman, J. — The Elements of Statistical Learning, 2nd Ed., Ch. 5 (Springer, 2009; free PDF)", "url": "https://hastie.su.domains/ElemStatLearn/" },
+    { "label": "Friedman, J.H. & Popescu, B.E. — Predictive Learning via Rule Ensembles, Annals of Applied Statistics 2(3), 2008", "url": "https://doi.org/10.1214/07-AOAS148" }
+  ]
+}

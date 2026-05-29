@@ -1,0 +1,67 @@
+{
+  "visualizationType": "flow-diagram",
+  "codeSnapshot": {
+    "label": "web_scraping.py",
+    "code": "import requests\nfrom bs4 import BeautifulSoup\nimport time\nimport random\n\n# ── Polite scraping: respect robots.txt + rate-limit ──\nSESSION = requests.Session()\nSESSION.headers.update({'User-Agent': 'MyResearchBot/1.0 (contact@example.com)'})\n\ndef scrape_page(url: str) -> dict:\n    resp = SESSION.get(url, timeout=10)\n    resp.raise_for_status()  # 4xx/5xx → exception\n    soup = BeautifulSoup(resp.text, 'html.parser')\n\n    return {\n        'title': soup.find('h1').get_text(strip=True),\n        'paragraphs': [p.get_text(strip=True) for p in soup.find_all('p')],\n        'links': [a['href'] for a in soup.find_all('a', href=True)],\n    }\n\nurls = ['https://example.com/page1', 'https://example.com/page2']\n\nresults = []\nfor url in urls:\n    try:\n        data = scrape_page(url)\n        results.append(data)\n    except requests.HTTPError as e:\n        print(f'HTTP error {e.response.status_code} for {url}')\n    # Polite delay: 1–3 seconds between requests\n    time.sleep(random.uniform(1.0, 3.0))\n\n# ── Scrapy (production-grade): spider skeleton ──\n# class ArticleSpider(scrapy.Spider):\n#     name = 'articles'\n#     start_urls = ['https://news.example.com']\n#\n#     custom_settings = {\n#         'DOWNLOAD_DELAY': 2,\n#         'AUTOTHROTTLE_ENABLED': True,\n#         'ROBOTSTXT_OBEY': True,\n#     }\n#\n#     def parse(self, response):\n#         for article in response.css('article'):\n#             yield {\n#                 'title': article.css('h2::text').get(),\n#                 'url': article.css('a::attr(href)').get(),\n#             }\n#         next_page = response.css('a.next::attr(href)').get()\n#         if next_page:\n#             yield response.follow(next_page, self.parse)"
+  },
+  "eli3": [
+    "Web scraping is automated downloading and extraction of data from websites. Instead of manually copying information, you write code that sends HTTP requests (like a browser would), downloads the HTML, and parses out the pieces you want — prices, headlines, addresses, links.",
+    "Scraping is useful when data exists on the web but has no official API. The challenge is that HTML is designed for browsers, not machines: pages are inconsistent, JavaScript renders some content dynamically (requiring Selenium or Playwright instead of simple requests), and sites can detect and block scrapers.",
+    "Ethically and legally, scraping sits in a grey area. Always check a site's robots.txt (which specifies what crawlers may access), respect rate limits to avoid overloading servers, and review the site's Terms of Service. In the EU, GDPR adds additional constraints around personal data. Courts have repeatedly ruled on scraping legality — outcomes vary by jurisdiction and data type."
+  ],
+  "whenWhy": [
+    {
+      "title": "Building datasets where no API exists",
+      "body": "Many valuable data sources — job postings, real estate listings, product reviews, sports statistics — have no public API. Scraping is the only automated extraction path. Production scrapers use Scrapy or Playwright (for JS-heavy sites) combined with proxy rotation, retry logic, and storage to S3 or a database. Always check robots.txt first: disallowed paths are legally and ethically off-limits."
+    },
+    {
+      "title": "Monitoring and price intelligence",
+      "body": "E-commerce companies scrape competitor prices and availability at regular intervals (price intelligence). Financial data providers scrape news sites and SEC filings for sentiment signals. These use cases require reliable scheduling (Airflow/cron), structured output schemas, and change detection to alert when page layout changes break the parser."
+    },
+    {
+      "title": "Academic and research datasets",
+      "body": "Social science and NLP researchers scrape Reddit, Wikipedia, or academic paper repositories to build training corpora. Wikipedia specifically is designed for this — data dumps are published monthly (far better than scraping). Reddit provides the Pushshift API (now restricted). Always prefer official data dumps over live scraping when they exist."
+    }
+  ],
+  "deepDiveIntro": [
+    "A scraping pipeline has four stages: (1) Fetch — send an HTTP GET request and receive HTML/JSON. (2) Parse — extract structured fields from raw HTML using CSS selectors or XPath. (3) Store — write to a database, CSV, or object store. (4) Schedule — run on a cron schedule and handle failures. The requests + BeautifulSoup stack handles simple static sites. For JavaScript-rendered content (React/Angular SPAs), the HTML returned by requests is a skeleton — actual content loads via JavaScript after initial page load. Tools like Playwright and Selenium drive a real browser engine, wait for JavaScript execution, and then extract the rendered DOM. [1]",
+    "robots.txt is a text file at the root of every domain (e.g., https://example.com/robots.txt) that specifies crawl rules. Disallow: / means no automated access is permitted. Respecting robots.txt is expected of polite crawlers and has legal weight in the US (hiQ v. LinkedIn, 2022, complicates this for publicly accessible data — but sites on private intranets or behind logins have stronger protections). Rate limiting — sleeping between requests — prevents IP bans and avoids degrading the target server. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "HTML Parsing: CSS Selectors vs XPath",
+      "body": "BeautifulSoup supports both CSS selectors (soup.select('div.article h2')) and tag/attribute navigation (soup.find('div', class_='article').find('h2')). CSS selectors are more readable for web developers; XPath is more powerful for complex traversals (parent axis, text() nodes, positional indexing). lxml is a faster parser backend than Python's built-in html.parser — use BeautifulSoup(html, 'lxml') for large-volume scraping. For reliability, prefer structural selectors (data-testid attributes, semantic HTML tags) over positional ones (nth-child) since layout changes break positional selectors first. [1]"
+    },
+    {
+      "heading": "JavaScript-Rendered Pages",
+      "body": "Single-page applications (React, Angular, Vue) serve a minimal HTML shell; content is injected by JavaScript after load. requests.get() captures only the shell. Solutions: (1) Playwright (async-first, faster) or Selenium — launch a headless browser, wait for a CSS selector to appear (page.wait_for_selector()), then extract. (2) Reverse-engineer the underlying API: open browser DevTools → Network → XHR and look for the JSON fetch that actually delivers the data. Option 2 is far faster and more stable when feasible. [1]"
+    },
+    {
+      "heading": "Robustness and Production Concerns",
+      "body": "Production scrapers must handle: (1) Anti-bot measures — IP bans, CAPTCHAs, browser fingerprinting. Mitigations: rotate proxies (residential proxy pools), set realistic headers, avoid high-frequency bursts, use stealth Playwright plugins. (2) Schema drift — sites redesign layouts, breaking CSS selectors. Mitigation: comprehensive parsing tests, alerting on field null rates. (3) Rate limits and retries — use exponential backoff with jitter: wait = min(cap, base * 2^attempt + random.uniform(0, 1)). Scrapy's AutoThrottle middleware adjusts delay automatically based on server response latency. [2]"
+    }
+  ],
+  "youtubeLabel": "Web Scraping with Python — Corey Schafer",
+  "youtubeUrl": "https://www.youtube.com/embed/ng2o98k983k",
+  "takeaways": [
+    "Static pages: requests + BeautifulSoup (CSS selectors or XPath). JS-rendered pages: Playwright/Selenium, or reverse-engineer the underlying JSON API. [1]",
+    "Always check robots.txt; respect Disallow rules. Rate-limit with 1–3s delays or use Scrapy's AutoThrottle. [2]",
+    "Prefer official data dumps (Wikipedia, Reddit Pushshift archives) over live scraping when they exist — more stable and legally cleaner. [2]",
+    "For production: Scrapy framework handles concurrency, retries, pipelines, and robots.txt obedience out of the box. Use Playwright for JS-heavy targets. [1]",
+    "Schema drift is the main operational risk: monitor field null rates and alert when parsers break. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "How do you handle pagination in scrapers?",
+      "a": "Three common patterns: (1) Numeric offset — URL contains ?page=1, ?page=2 etc. Iterate while results are non-empty or while page ≤ max_pages. (2) Cursor/token — API returns a next_cursor field; request next_cursor until it's null. (3) 'Load More' button — JavaScript appends content via a POST/GET to an API endpoint. Capture this in DevTools Network tab and call the API directly with incrementing offsets. Scrapy's CrawlSpider with follow=True handles link-based pagination automatically."
+    },
+    {
+      "q": "What is the legal status of scraping public data?",
+      "a": "The US hiQ v. LinkedIn (9th Cir. 2022) decision held that scraping publicly accessible data does not violate the Computer Fraud and Abuse Act (CFAA). However: (1) Terms of Service violations can lead to civil claims; (2) EU GDPR restricts processing of personal data regardless of public accessibility; (3) Copyright applies to creative content (articles, photos) even if publicly visible. Safe practice: scrape aggregated/statistical data, not personal records; respect robots.txt; avoid login-gated content; consult legal counsel for commercial applications."
+    }
+  ],
+  "sources": [
+    { "label": "Mitchell, R. — Web Scraping with Python, 2nd Ed. (O'Reilly, 2018)", "url": "https://www.oreilly.com/library/view/web-scraping-with/9781491985564/" },
+    { "label": "Scrapy Documentation — scrapy.org", "url": "https://docs.scrapy.org/en/latest/" }
+  ]
+}

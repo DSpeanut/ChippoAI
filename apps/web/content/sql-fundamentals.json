@@ -1,0 +1,67 @@
+{
+  "visualizationType": "table",
+  "codeSnapshot": {
+    "label": "sql_fundamentals.sql",
+    "code": "-- ── Core SQL: SELECT, JOIN, GROUP BY, window functions ──\n\n-- 1. Basic SELECT with filtering\nSELECT user_id, amount, status\nFROM orders\nWHERE status = 'completed'\n  AND amount > 100\n  AND created_at >= '2024-01-01'\nORDER BY amount DESC\nLIMIT 100;\n\n-- 2. Aggregation + GROUP BY + HAVING\nSELECT\n    country,\n    COUNT(*)              AS order_count,\n    SUM(amount)           AS total_revenue,\n    AVG(amount)           AS avg_order,\n    PERCENTILE_CONT(0.5)\n        WITHIN GROUP (ORDER BY amount) AS median_order\nFROM orders\nWHERE status = 'completed'\nGROUP BY country\nHAVING COUNT(*) > 100       -- filter AFTER aggregation (HAVING, not WHERE)\nORDER BY total_revenue DESC;\n\n-- 3. JOINs\nSELECT o.order_id, u.email, o.amount, p.name AS product_name\nFROM orders o\nINNER JOIN users u    ON o.user_id = u.id     -- only matching rows\nLEFT JOIN  products p ON o.product_id = p.id  -- all orders, NULL if no product\nWHERE o.created_at >= '2024-01-01';\n\n-- 4. Window functions (OLAP analytics)\nSELECT\n    user_id,\n    order_date,\n    amount,\n    SUM(amount)   OVER (PARTITION BY user_id ORDER BY order_date\n                        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)\n                              AS cumulative_spend,\n    ROW_NUMBER()  OVER (PARTITION BY user_id ORDER BY amount DESC)\n                              AS rank_by_spend,\n    LAG(amount, 1) OVER (PARTITION BY user_id ORDER BY order_date)\n                              AS prev_order_amount\nFROM orders;\n\n-- 5. CTE (Common Table Expression) for readable complex queries\nWITH monthly_revenue AS (\n    SELECT DATE_TRUNC('month', created_at) AS month,\n           SUM(amount)                      AS revenue\n    FROM orders\n    GROUP BY 1\n),\ngrowth AS (\n    SELECT month, revenue,\n           LAG(revenue) OVER (ORDER BY month) AS prev_revenue\n    FROM monthly_revenue\n)\nSELECT month,\n       revenue,\n       ROUND((revenue - prev_revenue) / prev_revenue * 100, 2) AS mom_growth_pct\nFROM growth\nORDER BY month;"
+  },
+  "eli3": [
+    "SQL (Structured Query Language) is the standard language for querying relational databases. Almost all ML data — user profiles, transactions, product information, events — lives in SQL databases before you pull it for training. Understanding SQL is non-negotiable for data scientists and ML engineers.",
+    "The core operations are: SELECT (choose columns), WHERE (filter rows), GROUP BY + aggregate functions (COUNT, SUM, AVG) to compute summaries, and JOIN to combine data from multiple tables. These four operations cover 80% of real-world data extraction queries.",
+    "Window functions are the most powerful SQL feature for ML: they compute aggregates over a sliding window of rows within a partition (e.g., the running sum of spend per user, ordered by date), without collapsing rows. This is how you compute lag features and rolling aggregates directly in SQL — without pulling data into Python first."
+  ],
+  "whenWhy": [
+    {
+      "title": "Extracting training data",
+      "body": "SQL is the first step of nearly every ML pipeline: write a query to pull labelled training examples from a database. Efficiency matters: a poorly written query full of correlated subqueries can take hours on a 100M-row table; the same query with a proper window function runs in minutes. Understanding query plans (EXPLAIN ANALYZE) and index usage is essential for production-grade data extraction."
+    },
+    {
+      "title": "Feature engineering in the database",
+      "body": "Many features can be computed entirely in SQL using window functions: 30-day rolling spend (SUM OVER PARTITION BY user_id, window of 30 days), days since last purchase (DATEDIFF on LAG(order_date)), rank within segment (ROW_NUMBER OVER PARTITION BY segment). Computing these in SQL keeps data in the database — avoiding the overhead of pulling raw rows into Python, which may not even fit in memory."
+    },
+    {
+      "title": "Data quality validation",
+      "body": "SQL is the natural language for data quality checks: SELECT COUNT(*) FROM table WHERE column IS NULL (null rates), SELECT COUNT(*) - COUNT(DISTINCT id) FROM table (duplicates), SELECT MIN(date), MAX(date) FROM events (date range validation). Tools like dbt tests run SQL assertions as part of the ELT pipeline — automatically checking data quality constraints after each load."
+    }
+  ],
+  "deepDiveIntro": [
+    "SQL execution order differs from write order: FROM/JOIN → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT. This determines what aliases and aggregates are available at each stage. Common mistake: using a SELECT alias in a WHERE clause — it's not available yet (WHERE runs before SELECT). Use a CTE or subquery to reference the alias. HAVING filters after GROUP BY — it can reference aggregate functions like COUNT(*); WHERE cannot. [1]",
+    "ACID properties govern relational database transactions: Atomicity (all-or-nothing — a transaction either completes fully or not at all), Consistency (every transaction brings the DB from one valid state to another), Isolation (concurrent transactions see each other as if they executed sequentially), Durability (committed transactions survive crashes via write-ahead logging). These properties make relational databases reliable for operational (OLTP) workloads but come with performance overhead that columnar OLAP stores sacrifice for analytical query speed. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Window Functions",
+      "body": "Window functions compute an aggregate over a window of rows related to the current row, without collapsing rows into groups (unlike GROUP BY). Syntax: FUNCTION() OVER (PARTITION BY col ORDER BY col2 ROWS/RANGE BETWEEN ... AND ...). Key functions: ROW_NUMBER() (unique sequential rank), RANK() (rank with gaps for ties), DENSE_RANK() (rank without gaps), LAG(expr, n) (value n rows before), LEAD(expr, n) (value n rows after), SUM/AVG/COUNT/MIN/MAX (running or windowed aggregates). Window frame: ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW = cumulative; ROWS BETWEEN 6 PRECEDING AND CURRENT ROW = 7-day rolling (including current). [1]"
+    },
+    {
+      "heading": "Query Optimization: Indexes and Execution Plans",
+      "body": "A B-tree index on a column allows O(log n) lookups instead of O(n) full table scans. Index usage: WHERE col = value (equality lookup), WHERE col BETWEEN a AND b (range scan), ORDER BY col (avoids sort). Indexes hurt INSERT/UPDATE/DELETE performance (index must be updated). Partial indexes: CREATE INDEX ON orders (user_id) WHERE status = 'completed' — covers a common filter condition. EXPLAIN ANALYZE: shows the query execution plan with actual row counts and times. Key signals: Seq Scan (no index, O(n)) vs Index Scan (O(log n)), large row estimate errors (stale statistics → ANALYZE table), nested loop vs hash join. [2]"
+    },
+    {
+      "heading": "CTEs, Subqueries, and Materialisation",
+      "body": "A CTE (WITH ... AS (...)) names a subquery for reuse within a single SQL statement. CTEs improve readability and enable recursive queries (WITH RECURSIVE for hierarchical data like org charts or BOM). Performance: in most databases, CTEs are either inlined (treated as a subquery, no materialisation) or materialised (computed once, results cached). PostgreSQL uses inlining by default (v12+); explicit WITH name AS MATERIALIZED (...) forces materialisation. When a CTE is referenced multiple times in the main query, materialisation avoids redundant computation. Subquery vs CTE: functionally equivalent for single-use queries; CTEs are preferred for readability and multi-use. [1]"
+    }
+  ],
+  "youtubeLabel": "SQL Tutorial for Data Scientists — Alex the Analyst",
+  "youtubeUrl": "https://www.youtube.com/embed/HXV3zeQKqGY",
+  "takeaways": [
+    "SQL execution order: FROM → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT. Aliases are not available in WHERE. [1]",
+    "Window functions: FUNCTION() OVER (PARTITION BY ... ORDER BY ... ROWS ...) — aggregate without collapsing rows. LAG, LEAD, ROW_NUMBER, RANK, SUM over window. [1]",
+    "HAVING filters after GROUP BY; WHERE filters before. HAVING can reference aggregates; WHERE cannot. [1]",
+    "B-tree index: O(log n) lookup. Check execution plan with EXPLAIN ANALYZE — Seq Scan on large tables is usually wrong. [2]",
+    "ACID: Atomicity, Consistency, Isolation, Durability. Ensures correctness under failures and concurrent access. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "How do NULLs behave in SQL aggregations and comparisons?",
+      "a": "NULL represents an unknown value — it is not zero, not empty string. Key behaviors: (1) Comparisons: x = NULL is always NULL (not TRUE or FALSE); use IS NULL / IS NOT NULL instead. (2) Aggregations: COUNT(*) counts all rows including NULLs; COUNT(col) counts only non-NULL values. SUM, AVG, MIN, MAX ignore NULLs. This can produce unexpected results: AVG(col) when 50% of col is NULL computes the average of only non-null values, not the average of the full distribution. (3) ORDER BY: NULLs sort last in ascending, first in descending order by default (varies by database). Use NULLS FIRST / NULLS LAST for explicit control. (4) Joins: NULL != NULL, so NULLs in join keys produce no match — NULL rows are dropped in INNER JOINs."
+    },
+    {
+      "q": "What is the N+1 query problem and how do you avoid it?",
+      "a": "The N+1 problem: an application runs 1 query to fetch N records, then runs N additional queries to fetch related data for each record — total N+1 queries. Example: fetch 100 orders, then for each order run SELECT user FROM users WHERE id = order.user_id — 101 queries instead of 1 JOIN. In data pipelines, this can manifest as a Python loop calling a database. Solution: use a JOIN to fetch all related data in a single query, or use an IN clause (SELECT * FROM users WHERE id IN (select user_id from orders)) to batch the lookups. In ORM contexts (SQLAlchemy, Django ORM), use eager loading (.options(joinedload(Order.user))) to generate a single JOIN instead of per-row SELECT."
+    }
+  ],
+  "sources": [
+    { "label": "Ramakrishnan, R. & Gehrke, J. — Database Management Systems, 3rd Ed. (McGraw-Hill, 2002)", "url": "https://www.amazon.com/Database-Management-Systems-Raghu-Ramakrishnan/dp/0072465638" },
+    { "label": "PostgreSQL Documentation — Query Planning, Window Functions, Indexes", "url": "https://www.postgresql.org/docs/current/" }
+  ]
+}

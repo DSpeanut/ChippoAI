@@ -1,0 +1,67 @@
+{
+  "visualizationType": "chart",
+  "codeSnapshot": {
+    "label": "undersampling.py",
+    "code": "import pandas as pd\nfrom imblearn.under_sampling import (\n    RandomUnderSampler, TomekLinks,\n    NearMiss, EditedNearestNeighbours,\n    CondensedNearestNeighbour, ClusterCentroids\n)\nfrom imblearn.combine import SMOTETomek\nfrom imblearn.pipeline import Pipeline as ImbPipeline\nfrom sklearn.ensemble import RandomForestClassifier\nfrom sklearn.model_selection import StratifiedKFold, cross_val_score\n\nX, y = df.drop('target', axis=1), df['target']\nprint('Before:', y.value_counts().to_dict())  # {0: 9500, 1: 500}\n\n# ── 1. Random Undersampling ──\nrus = RandomUnderSampler(\n    sampling_strategy=0.5,  # minority:majority after undersampling\n    random_state=42,\n    replacement=False\n)\nX_res, y_res = rus.fit_resample(X, y)\nprint('After random US:', y_res.value_counts().to_dict())\n# {0: 1000, 1: 500} (minority = 50% of majority → majority down to 1000)\n\n# ── 2. Tomek Links (boundary cleaning only) ──\n# Removes majority samples in Tomek pairs (not aggressive reduction)\ntomek = TomekLinks()\nX_res2, y_res2 = tomek.fit_resample(X, y)\nprint('After Tomek:', y_res2.value_counts().to_dict())  # mild reduction\n\n# ── 3. NearMiss variants ──\n# NearMiss-1: keep majority samples whose avg distance to k nearest minority is smallest\n# NearMiss-2: keep majority samples whose avg distance to k farthest minority is smallest\n# NearMiss-3: keep majority samples near each minority sample (one-sided)\nnm1 = NearMiss(version=1, n_neighbors=3)\nX_nm, y_nm = nm1.fit_resample(X, y)\n\n# ── 4. Edited Nearest Neighbours ──\n# Remove majority samples misclassified by k-NN among their neighbours\nenn = EditedNearestNeighbours(n_neighbors=3, kind_sel='all')\nX_enn, y_enn = enn.fit_resample(X, y)\n\n# ── 5. Combined: Random undersampling inside CV Pipeline ──\npipeline = ImbPipeline([\n    ('undersample', RandomUnderSampler(sampling_strategy=0.5, random_state=42)),\n    ('clf', RandomForestClassifier(n_estimators=200, class_weight='balanced',\n                                   random_state=42))\n])\ncv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)\nscores = cross_val_score(pipeline, X, y, cv=cv, scoring='average_precision')\nprint('CV PR-AUC:', scores.mean().round(3))"
+  },
+  "eli3": [
+    "Undersampling is the opposite of SMOTE: instead of creating more minority examples, you remove some majority examples so the classes become more balanced. If you have 9,500 normal transactions and 500 fraud cases, random undersampling might keep only 1,000 normal transactions, giving you a 2:1 ratio.",
+    "The obvious cost: you're throwing away real data. With 9,500 normal transactions, you have 8,500 cases' worth of information about what 'normal' looks like — and random undersampling discards most of it. Smarter methods (Tomek Links, NearMiss) try to remove the majority samples that are least informative, preserving the most useful ones.",
+    "Undersampling is often faster than oversampling because it reduces dataset size (less training time). It works well when you have abundant majority data and the minority class pattern is the primary challenge. For very large datasets where training time is the bottleneck, undersampling is often the first choice."
+  ],
+  "whenWhy": [
+    {
+      "title": "Large datasets with abundant majority class",
+      "body": "When the majority class has millions of examples and the minority has thousands, random undersampling to a 5:1 or 10:1 ratio often improves model performance without much information loss — there are diminishing returns to seeing the 10 millionth normal transaction. Additionally, undersampling reduces training set size, dramatically speeding up models with quadratic training complexity (SVM, certain neural networks)."
+    },
+    {
+      "title": "Tomek Links for boundary cleaning",
+      "body": "Tomek Links are pairs of opposite-class samples that are each other's nearest neighbour — they sit on or very close to the decision boundary and are often noisy or mislabelled. Removing the majority sample from each Tomek pair (leaving the minority sample) cleans the boundary without aggressively reducing the majority class. This is often used as a light-touch cleaning step after SMOTE (SMOTETomek) or alone when you want minimal reduction."
+    },
+    {
+      "title": "EasyEnsemble and BalancedBagging",
+      "body": "A principled approach: train multiple classifiers, each on a randomly undersampled version of the data, and combine by voting (EasyEnsemble) or averaging (BalancedBaggingClassifier). This uses all majority data across the ensemble without any single model seeing all majority examples. BalancedRandomForestClassifier and EasyEnsembleClassifier in imblearn implement this. Often outperforms both oversampling and single-model undersampling because variance reduction from the ensemble compensates for bias from undersampling."
+  ]
+  },
+  "deepDiveIntro": [
+    "Random undersampling samples n_minority × (1/sampling_strategy) majority examples uniformly at random (without replacement), discarding the rest. This is the simplest method but introduces high variance in which majority examples are included — different random seeds give different models. NearMiss addresses this by selecting majority examples that are most relevant to the decision boundary (those closest to the minority class). Three variants by He et al. (2009): NearMiss-1 selects majority samples with the smallest average distance to their k nearest minority neighbours; NearMiss-2 selects those with smallest average distance to the k farthest minority neighbours; NearMiss-3 retains majority samples close to at least one minority sample. [1]",
+    "Edited Nearest Neighbours (ENN) removes any sample (from the majority class, or both classes) whose class label disagrees with the majority vote of its k nearest neighbours. This cleans boundary noise rather than balancing class counts — ENN alone rarely achieves the desired class ratio but is useful as a post-processing step after oversampling to remove noisy synthetic samples introduced by SMOTE. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Information Loss in Random Undersampling",
+      "body": "Information loss from undersampling: the majority class model (P(features | majority)) is estimated from n_kept < n_majority samples. If the majority class has complex, high-variance structure (many modes), undersampling to a small fraction may miss subpopulations. For tree-based models with ensemble variance reduction (Random Forest, XGBoost), this is mitigated: XGBoost's scale_pos_weight effectively learns the same decision boundary as undersampling without discarding data, while using all majority samples to estimate the majority class distribution. Rule of thumb: if n_majority > 10 × required_samples_for_stable_estimate, undersampling is safe. [1]"
+    },
+    {
+      "heading": "NearMiss Variants",
+      "body": "NearMiss-1: for each majority sample x_maj, compute the average distance to its k nearest minority neighbours. Keep majority samples with smallest average distance (closest to the minority class — most borderline). NearMiss-2: compute distance to k farthest minority neighbours. Keeps majority samples close to small minority clusters. NearMiss-3: for each minority sample, keep the m nearest majority neighbours. Ensures majority coverage around each minority sample. NearMiss-3 is generally most stable. All variants are sensitive to k — cross-validate k choice. NearMiss is more principled than random but computationally expensive (O(n_maj × n_min)) for large datasets. [2]"
+    },
+    {
+      "heading": "BalancedBagging and EasyEnsemble",
+      "body": "BalancedBaggingClassifier: trains T base estimators, each on a bootstrap sample of n_minority majority + n_minority minority samples (balanced). Predictions are averaged. Uses all majority data across the ensemble; each model sees 1/T of the majority data. Expected diversity: different models specialize on different majority subregions. EasyEnsembleClassifier (Liu et al., 2009): similar to AdaBoost + undersampling. T independent balanced subsets → T AdaBoost classifiers → ensemble by averaging. Both outperform single-model undersampling or SMOTE on most benchmarks because ensemble variance reduction compensates for individual-model information loss. [1]"
+    }
+  ],
+  "youtubeLabel": "Imbalanced Learning — Undersampling — Rob Mulla",
+  "youtubeUrl": "https://www.youtube.com/embed/Xl0nL1b0Tqs",
+  "takeaways": [
+    "Random undersampling: fast, simple, works for very large datasets. Discards data — use when majority is abundant (n_maj >> n_min). [1]",
+    "Tomek Links: removes boundary-noise majority samples. Light-touch cleaning, minimal data loss. [2]",
+    "NearMiss-3: keeps majority samples near minority clusters. Most stable NearMiss variant. O(n_maj × n_min) cost. [2]",
+    "ENN: removes misclassified samples from boundary. Use as cleaning after SMOTE (SMOTEENN) to remove noisy synthetic points. [2]",
+    "BalancedBagging / EasyEnsemble: train ensemble on multiple undersampled subsets. Best of both worlds — all data used, each model is balanced. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "How does undersampling affect class probability calibration?",
+      "a": "Undersampling changes the training class distribution. A model trained on a 1:1 resampled dataset (originally 1:100) will output predict_proba values calibrated to the resampled 50% prior — not the real 1% prior. Calibration fix: for logistic regression with undersampling ratio r = n_kept_majority / n_original_majority and class ratio imbalance ρ = n_minority / n_original: apply prior correction to logit scores: logit_corrected = logit_predicted − log(r/ρ). For tree models, apply Platt scaling or isotonic regression calibration using holdout data from the original (non-resampled) distribution. BalancedBaggingClassifier's predict_proba requires similar correction."
+    },
+    {
+      "q": "When should you prefer undersampling over SMOTE or class weights?",
+      "a": "Prefer undersampling when: (1) Training time is the bottleneck — undersampling reduces dataset size, making all subsequent training faster (especially for neural networks with quadratic or super-linear complexity). (2) The majority class is very abundant (n_maj > 100k with n_min < 1k) — you have enough majority data after undersampling. (3) Computational resources are limited. Prefer SMOTE when: the minority class has few examples and you want to increase minority coverage in feature space for distance-based models. Prefer class weights when: using tree models that support them natively (XGBoost scale_pos_weight, sklearn class_weight='balanced') — equivalent decision boundary with no data loss or addition."
+    }
+  ],
+  "sources": [
+    { "label": "He, H. & Garcia, E.A. — Learning from Imbalanced Data, IEEE TKDE 21(9), 2009", "url": "https://doi.org/10.1109/TKDE.2008.239" },
+    { "label": "Liu, X-Y., Wu, J. & Zhou, Z-H. — Exploratory Undersampling for Class-Imbalance Learning, IEEE SMC-B 39(2), 2009", "url": "https://doi.org/10.1109/TSMCB.2008.2007853" }
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "visualizationType": "table",
+  "codeSnapshot": {
+    "label": "one_hot_encoding.py",
+    "code": "import pandas as pd\nimport numpy as np\nfrom sklearn.preprocessing import OneHotEncoder, OrdinalEncoder, LabelEncoder\nfrom category_encoders import TargetEncoder\n\ndf = pd.DataFrame({\n    'color': ['red', 'blue', 'green', 'red', 'blue'],\n    'size':  ['S', 'M', 'L', 'XL', 'M'],\n    'price': [10, 20, 15, 25, 18],\n    'target': [1, 0, 1, 0, 0]\n})\n\n# ── 1. One-Hot Encoding (nominal: no natural order) ──\nohe = OneHotEncoder(drop='first', sparse_output=False, handle_unknown='ignore')\nX_ohe = ohe.fit_transform(df[['color']])\nprint(pd.DataFrame(X_ohe, columns=ohe.get_feature_names_out()))\n# drop='first' avoids dummy variable trap (k-1 columns for k categories)\n# Result: color_blue, color_green (red is the dropped reference)\n\n# ── 2. Ordinal Encoding (nominal with natural order) ──\nord_enc = OrdinalEncoder(categories=[['S', 'M', 'L', 'XL']])\ndf['size_enc'] = ord_enc.fit_transform(df[['size']])  # S=0, M=1, L=2, XL=3\n\n# ── 3. Target Encoding (high cardinality) ──\nte = TargetEncoder(smoothing=10)  # smoothing blends category mean with global mean\ndf['color_te'] = te.fit_transform(df['color'], df['target'])\n# CRITICAL: fit on training data only to avoid leakage\n\n# ── 4. Binary / Hash encoding (very high cardinality) ──\n# For 1000 unique categories:\n# OHE → 1000 sparse columns; hashing → log2(1000) ≈ 10 columns\nfrom sklearn.feature_extraction import FeatureHasher\nhasher = FeatureHasher(n_features=16, input_type='string')\nX_hashed = hasher.transform([[cat] for cat in df['color']])\n\n# ── 5. pandas get_dummies (quick EDA) ──\ndf_dummies = pd.get_dummies(df[['color']], drop_first=True, dtype=float)\nprint(df_dummies)"
+  },
+  "eli3": [
+    "Most ML models can only work with numbers, but real datasets have text categories like 'red', 'blue', 'green' or 'S', 'M', 'L'. Encoding converts categories into numbers so models can process them.",
+    "One-hot encoding creates a separate binary column for each category. 'Color = red' becomes three columns: color_red=1, color_blue=0, color_green=0. 'Color = blue' becomes color_red=0, color_blue=1, color_green=0. Each row has exactly one 1 and the rest 0s. This works great for small numbers of categories but explodes in size for high-cardinality columns like country or product ID.",
+    "Ordinal encoding works when categories have a natural order (S < M < L < XL), assigning integers 0, 1, 2, 3. It's wrong for nominal categories without order (color, country) because it implies red < blue < green, which is meaningless and can mislead linear models."
+  ],
+  "whenWhy": [
+    {
+      "title": "Nominal categoricals in linear models and neural networks",
+      "body": "Linear regression, logistic regression, and neural networks cannot process raw strings. One-hot encoding creates a numeric representation where no false ordering is implied. Use drop='first' in sklearn to drop one column per categorical (the reference category) and avoid the dummy variable trap — collinearity in linear models where the K columns sum to 1. Tree-based models (XGBoost, LightGBM, Random Forest) do not need one-hot encoding and handle integers natively; OHE adds noise and increases sparsity."
+    },
+    {
+      "title": "Ordinal encoding for size/rank columns",
+      "body": "Education level (high school < bachelor < master < PhD), clothing size (S < M < L < XL), or satisfaction rating (low < medium < high) have a meaningful order. Assigning integers 0, 1, 2, 3 preserves this order and allows models to learn monotone relationships. For tree models, ordinal integers enable correct splits (> 1 = 'M or larger'). OHE for ordinal data wastes information by discarding the ordering."
+    },
+    {
+      "title": "Target encoding for high-cardinality categoricals",
+      "body": "Columns with hundreds or thousands of unique values (city, product SKU, user ID) cannot be one-hot encoded — the resulting DataFrame becomes too wide and sparse. Target encoding replaces each category with its smoothed conditional mean of the target: TE(c) = (n_c · mean_c + m · global_mean) / (n_c + m), where n_c is the count of category c, mean_c is its target mean, and m is a smoothing parameter. Always fit on training data only to prevent target leakage."
+    }
+  ],
+  "deepDiveIntro": [
+    "Encoding strategies divide by cardinality and presence of ordering. Low-cardinality nominal (2–20 categories): one-hot encoding, drop='first' for linear models, drop=None for trees (but trees rarely need OHE). Low-cardinality ordinal (S/M/L, 1–5 stars): ordinal encoding with explicit category ordering. High-cardinality nominal (cities, product IDs, user IDs): target encoding, feature hashing, or learned embeddings. Binary categoricals: binary encoding (0/1 in a single column) or leave as boolean. [1]",
+    "The dummy variable trap: if K categories are encoded as K binary columns, they are perfectly collinear — each row's columns sum to 1. This makes the design matrix X rank-deficient: X^T X is singular, so (X^T X)^{-1} does not exist. Linear regression has no unique solution. Dropping one category (the reference/baseline) resolves this. Interpretation: every coefficient is then relative to the reference category. sklearn's drop='first' implements this; drop='if_binary' is more targeted. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Dummy Variable Trap",
+      "body": "For a categorical with K levels encoded as K binary columns: Σⱼ x_j = 1 for every row — a perfect linear dependency. In matrix form, [1, c_1, c_2, ..., c_{K-1}, c_K] is linearly dependent because c_K = 1 − c_1 − ... − c_{K-1}. Dropping the Kth column removes the collinearity. The dropped category becomes the reference: its effect is absorbed into the intercept. All other category coefficients represent the estimated effect relative to the reference. Practical note: tree models are not affected by the dummy variable trap — they don't invert a design matrix. OHE with K columns (no drop) is fine, and sometimes improves tree model performance by preserving symmetry. [2]"
+    },
+    {
+      "heading": "Target Encoding",
+      "body": "For category c with n_c observations and target mean ȳ_c, and global mean ȳ, smoothed target encoding: TE(c) = (n_c · ȳ_c + m · ȳ) / (n_c + m), where m controls smoothing strength (m=10 means a category needs 10 observations to deviate from the global mean by half the difference). Without smoothing, rare categories receive their exact observed mean — noisy and overfit. With cross-validation target encoding (fit per fold, predict out-of-fold), leakage is further reduced. The category_encoders library provides TargetEncoder with both smoothing and cross-validation. [1]",
+      "formula": "TE(c) = (n_c · ȳ_c + m · ȳ) / (n_c + m)"
+    },
+    {
+      "heading": "Feature Hashing",
+      "body": "Feature hashing (hashing trick) maps each category to a fixed-size integer vector using a hash function. For category c and n_features bins: index = hash(c) % n_features. Benefits: O(1) computation, fixed output size regardless of cardinality, handles unseen categories gracefully (they hash to some bucket, no errors). Drawback: hash collisions — different categories mapping to the same bucket confound the signal. With n_features = 2^k, collision probability decreases. Used in online learning (Vowpal Wabbit) and very-high-cardinality features. sklearn's FeatureHasher implements this. [2]"
+    }
+  ],
+  "youtubeLabel": "Feature Encoding for ML — Abhishek Thakur",
+  "youtubeUrl": "https://www.youtube.com/embed/589nCGeWG1w",
+  "takeaways": [
+    "Nominal (no order): one-hot encoding with drop='first' for linear models. Ordinal (ordered): ordinal encoding with explicit category ordering. [1]",
+    "Dummy variable trap: K OHE columns are collinear (sum = 1). Drop one reference category for linear models. Tree models can use all K. [2]",
+    "Target encoding: TE(c) = (n_c·ȳ_c + m·ȳ)/(n_c+m). Always fit on training data only to prevent target leakage. [1]",
+    "High cardinality (>50 categories): prefer target encoding or feature hashing over OHE. OHE creates prohibitively wide sparse matrices. [1]",
+    "Tree models (XGBoost, LightGBM): ordinal-encoded integers work natively; OHE often unnecessary and can hurt. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "How should you handle unseen categories at inference time (categories not in training data)?",
+      "a": "OHE with handle_unknown='ignore' (sklearn default) maps unseen categories to an all-zeros vector — the model treats them as 'none of the known categories', equivalent to predicting with only the intercept for that feature. With handle_unknown='infrequent_if_exist', sklearn groups rare training categories into an 'infrequent' bucket; unseen test categories also map there. For target encoding: unseen categories should map to the global mean (the prior). Ensure your encoder's transform method handles None/NaN gracefully — production data often has categories that didn't exist at training time (new product SKUs, new countries)."
+    },
+    {
+      "q": "What is mean encoding leakage and how do you prevent it?",
+      "a": "Target (mean) encoding computes category means from the training target. If you use the same fold's target values to encode features AND evaluate predictions, you're using the target to predict itself — inflated performance that collapses on new data. Prevention: (1) K-fold cross encoding: split training data into K folds, compute category means on K−1 folds, apply to the held-out fold. Each row's encoding uses only other rows' targets. (2) Leave-one-out encoding (LOO): for row i, compute the category mean excluding row i's target. (3) Smoothing: shrinks rare-category means toward the global mean, reducing overfitting to noise. The category_encoders library implements all three."
+    }
+  ],
+  "sources": [
+    { "label": "Geron, A. — Hands-On Machine Learning with Scikit-Learn, Keras, and TensorFlow, 3rd Ed., Ch. 2 (O'Reilly, 2022)", "url": "https://www.oreilly.com/library/view/hands-on-machine-learning/9781098125967/" },
+    { "label": "sklearn Preprocessing Documentation — OneHotEncoder, OrdinalEncoder", "url": "https://scikit-learn.org/stable/modules/preprocessing.html" }
+  ]
+}

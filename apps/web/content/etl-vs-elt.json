@@ -1,0 +1,67 @@
+{
+  "visualizationType": "flow-diagram",
+  "codeSnapshot": {
+    "label": "etl_vs_elt.py",
+    "code": "# ── ETL: Extract → Transform → Load ──\n# Traditional approach: transform BEFORE loading into warehouse\n\nimport pandas as pd\nfrom sqlalchemy import create_engine\n\ndef etl_pipeline(source_conn: str, dest_conn: str, date: str) -> None:\n    # 1. EXTRACT from source (operational DB)\n    src_engine = create_engine(source_conn)\n    raw = pd.read_sql(\n        f\"SELECT * FROM orders WHERE date = '{date}'\",\n        src_engine\n    )\n\n    # 2. TRANSFORM outside of warehouse (in Python/Spark)\n    transformed = (\n        raw\n        .dropna(subset=['user_id', 'amount'])\n        .assign(\n            amount_usd=lambda df: df['amount'] / df['exchange_rate'],\n            user_tier=lambda df: pd.cut(df['amount_usd'],\n                bins=[0, 50, 200, float('inf')],\n                labels=['low', 'mid', 'high'])\n        )\n        [['user_id', 'amount_usd', 'user_tier', 'date']]\n    )\n\n    # 3. LOAD transformed data into warehouse\n    dest_engine = create_engine(dest_conn)\n    transformed.to_sql('orders_clean', dest_engine, if_exists='append', index=False)\n\n\n# ── ELT: Extract → Load → Transform ──\n# Modern approach: load raw data first, transform using warehouse SQL (e.g., dbt)\n\n# EXTRACT + LOAD: Fivetran / Airbyte does this automatically\n# Raw data lands in: warehouse.raw.orders\n\n# TRANSFORM: dbt SQL models run inside BigQuery / Snowflake / Redshift\n# models/staging/stg_orders.sql:\n'''\nSELECT\n    user_id,\n    amount / exchange_rate   AS amount_usd,\n    CASE\n        WHEN amount / exchange_rate < 50  THEN 'low'\n        WHEN amount / exchange_rate < 200 THEN 'mid'\n        ELSE 'high'\n    END AS user_tier,\n    date\nFROM {{ source('raw', 'orders') }}\nWHERE user_id IS NOT NULL\n  AND amount   IS NOT NULL\n'''\n\n# dbt run  →  materializes the SQL model as a table in warehouse\n# dbt test →  runs data quality assertions (not null, unique, etc.)"
+  },
+  "eli3": [
+    "ETL stands for Extract, Transform, Load: pull data from a source, reshape it into the format you need, then store it in a database. The transformation happens before the data enters the warehouse — in a separate Python or Spark process.",
+    "ELT stands for Extract, Load, Transform: pull data from a source, store it raw in the warehouse first, then transform it using SQL inside the warehouse. This is the modern approach, made practical by cloud data warehouses (Snowflake, BigQuery, Redshift) that can run complex SQL transformations very cheaply on massive data.",
+    "The key difference: in ETL, the transformation is the bottleneck (a dedicated transform server must handle all logic). In ELT, you offload transformation to the warehouse engine, which is massively scalable. ELT also preserves raw data — if your transformation logic is wrong, you can rerun it without re-extracting from the source."
+  ],
+  "whenWhy": [
+    {
+      "title": "ETL: legacy systems and sensitive data",
+      "body": "ETL is appropriate when: (1) The destination warehouse cannot run complex transformations efficiently (older on-premise systems). (2) You need to anonymize or mask sensitive data (PII, PCI data) before it ever lands in the warehouse — ETL is the only model where data never exists in the warehouse in raw form. (3) Source system exports are small enough for in-memory Python processing. Traditional ETL tools: Informatica, Talend, Apache NiFi."
+    },
+    {
+      "title": "ELT: modern cloud-native analytics",
+      "body": "ELT is the dominant pattern for modern data teams. Ingestion tools (Fivetran, Airbyte, Stitch) automatically replicate source data to a cloud warehouse. Transformation is handled by dbt (data build tool), which runs SQL models directly in the warehouse with dependency management, testing, documentation, and incremental loading. The raw data is always available for reprocessing — schema evolution in source systems is handled by updating dbt models, not rebuilding ingestion pipelines."
+    },
+    {
+      "title": "ML training data pipelines",
+      "body": "ML feature pipelines are typically ELT: raw events land in a data lake (S3/GCS), Spark or dbt transforms them into feature tables in a warehouse or feature store. The raw layer is preserved for retraining with different feature definitions. The transformation layer is versioned (dbt models in Git), making pipelines reproducible: checkout commit → run dbt → identical features."
+    }
+  ],
+  "deepDiveIntro": [
+    "Kimball & Ross (2002) formalized the data warehouse architecture that ETL serves: operational source systems feed a staging area (raw extract), where data is cleaned and conformed, then loaded into a dimensional model (star schema: fact tables + dimension tables). This was the dominant pattern for on-premise warehouses where loading was expensive — transforming before loading minimized warehouse storage and computation costs. [1]",
+    "The ELT shift was enabled by two developments: (1) Columnar cloud data warehouses (Redshift 2012, BigQuery 2011, Snowflake 2014) that can scan and transform billions of rows with massive parallelism at low cost. (2) dbt (data build tool, 2016) that brought software engineering practices (version control, testing, documentation, modularity) to SQL transformations. dbt models are SELECT statements that compile to CREATE TABLE AS SELECT (CTAS) in the warehouse. The 'T' in ELT moved from Python/Spark to SQL in the warehouse. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "dbt: Transformation as Code",
+      "body": "A dbt model is a .sql file containing a SELECT statement. dbt compiles it to CREATE TABLE AS SELECT ... or INSERT OVERWRITE ... depending on materialization strategy (table, view, incremental, ephemeral). Dependencies between models are declared with {{ ref('model_name') }}, allowing dbt to build a DAG and run models in dependency order. Incremental models (materialization='incremental') add only new/changed rows since the last run, avoiding full-table rewrites. dbt test adds data quality assertions: not_null, unique, accepted_values, referential_integrity — equivalent to unit tests for data pipelines. [2]"
+    },
+    {
+      "heading": "Slowly Changing Dimensions and Point-in-Time Correctness",
+      "body": "Dimension tables (customer, product) change over time: a customer's address changes, a product's price changes. Slowly Changing Dimensions (SCD) track history. Type 1: overwrite — no history. Type 2: add new row with valid_from, valid_to dates — full history preserved. Point-in-time correctness: features computed for ML training must use dimension values as they were at prediction time, not current values. A customer who was in tier 'bronze' at the time of the loan application must be joined to the bronze-tier row, not the current 'gold' row. This requires SCD Type 2 joins with date range conditions — the primary source of data leakage in ML feature pipelines. [1]"
+    },
+    {
+      "heading": "Change Data Capture (CDC) in ELT",
+      "body": "Batch ELT (nightly Fivetran sync) introduces data latency. For near-real-time pipelines, Change Data Capture streams row-level changes from the source database's transaction log (PostgreSQL WAL, MySQL binlog) to the warehouse. Tools: Debezium (open-source, Kafka sink), AWS DMS, Fivetran for streaming. Change events (INSERT/UPDATE/DELETE) land in Kafka topics, consumed by Flink or Spark Streaming to update analytical tables continuously. This achieves sub-minute latency from source operation to queryable analytical table — blurring the boundary between streaming and batch architectures. [1]"
+    }
+  ],
+  "youtubeLabel": "dbt and the Modern Data Stack — dbt Labs",
+  "youtubeUrl": "https://www.youtube.com/embed/M8oi7nSaWps",
+  "takeaways": [
+    "ETL: transform before loading. Best for PII masking, legacy warehouses, small data. Python/Spark handles transformation. [1]",
+    "ELT: load raw first, transform in warehouse using dbt SQL. Best for cloud warehouses (Snowflake, BigQuery, Redshift), scalable, raw data preserved. [2]",
+    "dbt: SELECT statements compile to CTAS. Dependency DAG via ref(). Incremental materialization. Data quality tests. [2]",
+    "SCD Type 2 + point-in-time joins: critical for correct ML features — join dimension tables at the time of the event, not current values. [1]",
+    "CDC (Debezium, DMS): streams row-level changes from transaction logs to warehouse in near-real-time. Enables sub-minute analytical latency. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "How does dbt handle schema changes in source systems?",
+      "a": "When a source system adds/removes/renames columns, the raw table in the warehouse changes. dbt staging models (stg_*.sql) serve as the schema normalization layer: they select specific columns by name, rename, cast types, and isolate downstream models from source schema changes. If a source column is renamed, only the staging model needs to be updated; all other models reference the standardized staging columns via {{ ref('stg_orders') }}. dbt's source freshness tests alert when source tables haven't been updated as expected (e.g., daily ingestion is 2 days stale). dbt Codegen can generate staging model boilerplate from source table schemas automatically."
+    },
+    {
+      "q": "What is the difference between ETL/ELT and a streaming pipeline?",
+      "a": "ETL/ELT are batch-oriented: data is processed in micro-batches or daily runs. Streaming pipelines process each event as it arrives (millisecond to second latency). The choice depends on freshness requirements: reporting and ML training (daily batch is sufficient) → ELT. Fraud detection at transaction time, real-time recommendations → streaming (Kafka + Flink). The Lambda Architecture combines both: streaming for real-time approximate results, batch for complete accurate results. The Kappa Architecture uses only streaming, replaying history via Kafka offset replay. Modern systems increasingly use streaming as the primary pattern (Kappa) with the warehouse consuming Kafka topics directly (Confluent/Snowflake Kafka Connector)."
+    }
+  ],
+  "sources": [
+    { "label": "Kimball, R. & Ross, M. — The Data Warehouse Toolkit, 3rd Ed. (Wiley, 2013)", "url": "https://www.kimballgroup.com/data-warehouse-business-intelligence-resources/books/data-warehouse-dw-toolkit/" },
+    { "label": "dbt Documentation — dbt Labs", "url": "https://docs.getdbt.com/" }
+  ]
+}

@@ -1,0 +1,69 @@
+{
+  "visualizationType": "chart",
+  "codeSnapshot": {
+    "label": "univariate_analysis.py",
+    "code": "import pandas as pd\nimport numpy as np\nimport matplotlib.pyplot as plt\nimport seaborn as sns\nfrom scipy import stats\n\ndf = pd.read_csv('data.csv')\n\n# ── 1. Summary statistics (numeric) ──\nprint(df['income'].describe())\n# count, mean, std, min, 25%, 50%, 75%, max\n\n# Additional stats\nprint('skewness:', df['income'].skew())\nprint('kurtosis:', df['income'].kurtosis())  # excess kurtosis\nprint('IQR:', df['income'].quantile(0.75) - df['income'].quantile(0.25))\n\n# ── 2. Frequency table (categorical) ──\nprint(df['country'].value_counts())\nprint(df['country'].value_counts(normalize=True))  # proportions\n\n# ── 3. Histogram ──\nfig, axes = plt.subplots(1, 2, figsize=(12, 4))\ndf['income'].hist(bins=50, ax=axes[0], edgecolor='white')\naxes[0].set_title('Income Distribution')\n\n# Log-transform for right-skewed data\nnp.log1p(df['income']).hist(bins=50, ax=axes[1], color='steelblue', edgecolor='white')\naxes[1].set_title('log(1 + Income) Distribution')\nplt.tight_layout()\n\n# ── 4. Box plot ──\nsns.boxplot(x=df['income'])\n# Shows: median (line), IQR (box), 1.5×IQR whiskers, outliers (dots)\n\n# ── 5. Q-Q plot: test normality assumption ──\nstats.probplot(df['income'], dist='norm', plot=plt)\nplt.title('Q-Q Plot: Income vs Normal')\nplt.show()\n\n# ── 6. Bar chart for categorical ──\ndf['status'].value_counts().plot(kind='bar', rot=45)\nplt.title('Customer Status Counts')"
+  },
+  "eli3": [
+    "Univariate analysis means studying one variable at a time. Before building any model, you need to understand the shape of each column: what's the typical value, how spread out are the values, are there outliers, is the distribution symmetric or skewed? These answers determine which models are appropriate and which transformations are needed.",
+    "For a numeric column, univariate analysis produces: the mean, median, standard deviation, min/max, and a histogram showing the shape. For a categorical column, it produces a frequency count: how many times each category appears, and whether some categories are extremely rare.",
+    "Q-Q plots (quantile-quantile plots) are a diagnostic tool: they plot your data's quantiles against what you'd expect from a normal distribution. If the points fall on a straight diagonal line, the data is approximately normal. Heavy tails or skew show up as curves at the ends."
+  ],
+  "whenWhy": [
+    {
+      "title": "First step of any EDA",
+      "body": "Univariate analysis is the mandatory first step after loading data. It answers: Do I have the expected number of rows? Are there obvious data quality issues (all zeros in a column, impossible values like age=999)? Which columns are numeric vs categorical? Which distributions are heavily skewed and will need log-transforming before use in linear models? Tools: df.describe() for numeric, df.value_counts() for categorical."
+    },
+    {
+      "title": "Choosing preprocessing transforms",
+      "body": "Right-skewed distributions (income, transaction amount, page views) violate the normality assumption of linear regression and inflate the influence of large values on tree splits. Log or sqrt transformations correct skew. Bimodal distributions suggest the column conflates two distinct populations and may need to be split or used with a mixture model. Heavy kurtosis (fat tails) suggests the presence of outliers that may affect gradient descent."
+    },
+    {
+      "title": "Checking target variable distribution",
+      "body": "For regression, check if the target (y) is skewed — log(y) is often better-behaved. For classification, check class balance: a 99:1 imbalance means accuracy is a misleading metric. For time series, check for trend and seasonality via time-indexed plots. Target variable analysis directly informs the choice of loss function and evaluation metric."
+    }
+  ],
+  "deepDiveIntro": [
+    "Tukey (1977) coined the term Exploratory Data Analysis (EDA) to describe data-driven, graphical discovery of structure before formal inference. Univariate EDA characterizes the marginal distribution of each variable. The five-number summary (min, Q1, median, Q3, max) underpins the box plot. The sample mean and standard deviation characterize the distribution under normality assumptions; for skewed data, the median and IQR are more robust alternatives. [1]",
+    "Two moments characterize shape beyond mean and variance: skewness and kurtosis. Skewness = E[(X−μ)³]/σ³: zero for symmetric, positive for right-skewed (long right tail), negative for left-skewed. Excess kurtosis = E[(X−μ)⁴]/σ⁴ − 3: zero for normal, positive for leptokurtic (fat tails, peaky centre), negative for platykurtic (thin tails, flat). A Q-Q plot provides a visual normality test: deviations at the tails indicate heavy-tailedness or skew. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Summary Statistics",
+      "body": "For numeric variables: mean, median, mode, standard deviation, variance, skewness, excess kurtosis, min/max, percentiles (5th, 25th, 75th, 95th), and IQR. The coefficient of variation (CV = σ/μ) is a dimensionless measure of relative variability — useful for comparing spread across variables with different scales. For categorical variables: cardinality (number of unique values), mode (most common category), and frequency table with counts and proportions. High-cardinality categoricals (free-text, user IDs) are not suitable for standard encoding and need special treatment (embeddings, hashing). [1]",
+      "formula": "Skewness = E[(X−μ)³] / σ³;   Excess Kurtosis = E[(X−μ)⁴] / σ⁴ − 3"
+    },
+    {
+      "heading": "Histogram vs KDE",
+      "body": "A histogram divides the data into bins and counts observations per bin. Bin width is the key parameter: too wide → hides structure; too narrow → noisy, dominated by sampling variation. Sturges' rule: k = ⌈log₂(n)⌉ + 1 bins; Scott's rule: bin width = 3.49σ/n^(1/3). A KDE (Kernel Density Estimate) is a smooth histogram: f̂(x) = (1/nh) Σᵢ K((x − xᵢ)/h), where K is a kernel (typically Gaussian) and h is the bandwidth. KDEs are better for comparing distributions across groups (overlapping KDEs are clearer than overlapping histograms). KDE bandwidth selection (Scott's or Silverman's rule) carries the same bias-variance trade-off as histogram bin width. [2]",
+      "formula": "KDE: f̂(x) = (1/nh) Σᵢ K((x − xᵢ)/h)"
+    },
+    {
+      "heading": "Q-Q Plot: Visual Normality Test",
+      "body": "A Q-Q (quantile-quantile) plot compares the sample quantiles of a variable against the theoretical quantiles of a reference distribution (usually normal). Plot the sorted sample values on the y-axis against the corresponding theoretical quantiles Φ⁻¹((i − 0.375)/(n + 0.25)) on the x-axis (Filliben approximation). If the data is drawn from the reference distribution, the points lie on a straight y = x line. Systematic deviations: S-shape → skewness; heavy tails → points curve away at both ends; one outlying point → isolated deviation at one extreme. For formal testing, use Shapiro-Wilk (n < 5000) or Kolmogorov-Smirnov. [2]"
+    }
+  ],
+  "youtubeLabel": "Exploratory Data Analysis — StatQuest",
+  "youtubeUrl": "https://www.youtube.com/embed/xKMd6bVxMd4",
+  "takeaways": [
+    "Always run df.describe() + df.value_counts() + histograms before any modelling — these reveal data quality issues and distribution shapes. [1]",
+    "Skewness = E[(X−μ)³]/σ³: right-skewed data needs log/sqrt transforms for linear models. [2]",
+    "IQR and median are robust to outliers; mean and std are not. Use median/IQR for skewed distributions. [1]",
+    "Q-Q plot: straight line = approximately normal. S-shape = skew; tail curves = heavy/light tails. [2]",
+    "For ML: check target distribution (skew → log(y)), class balance (imbalanced → precision-recall metrics), and cardinality (high → embeddings or hashing). [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "What does it mean if a variable has zero variance, and how should you handle it?",
+      "a": "Zero variance (constant column) means every row has the same value — the column carries no information for a model. It's either a data bug (imputation gone wrong, a flag that was never set) or a legitimate constant (a dataset filtered to a single country). sklearn's VarianceThreshold transformer removes columns below a variance threshold (default 0 removes constants only). Near-zero variance (very low variance, dominated by one category in 99%+ of rows) is also often uninformative and increases overfitting risk. Use VarianceThreshold with a small threshold, or check value_counts() for near-constant categoricals before modelling."
+    },
+    {
+      "q": "How do you analyze a bimodal distribution, and what does it imply for modelling?",
+      "a": "Bimodal distributions (two peaks in the histogram) suggest the data is a mixture of two subpopulations — for example, a 'spend' column that has one peak at $0 (non-buyers) and another at $50 (buyers). Implications: (1) Mean is not representative — it falls between the peaks. (2) A single Gaussian model will be misspecified. Approaches: identify the grouping variable that separates the modes (e.g., is_buyer flag) and model them separately, or use a Gaussian Mixture Model. For feature engineering, the mode membership can itself be a useful binary feature."
+    }
+  ],
+  "sources": [
+    { "label": "Tukey, J.W. — Exploratory Data Analysis (Addison-Wesley, 1977)", "url": "https://www.amazon.com/Exploratory-Data-Analysis-John-Tukey/dp/0201076160" },
+    { "label": "Freedman, D., Pisani, R. & Purves, R. — Statistics, 4th Ed. (W.W. Norton, 2007)", "url": "https://www.amazon.com/Statistics-4th-David-Freedman/dp/0393929728" }
+  ]
+}

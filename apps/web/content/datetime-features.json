@@ -1,0 +1,68 @@
+{
+  "visualizationType": "table",
+  "codeSnapshot": {
+    "label": "datetime_features.py",
+    "code": "import pandas as pd\nimport numpy as np\n\ndf['timestamp'] = pd.to_datetime(df['timestamp'], utc=True)\n\n# ── 1. Calendar decomposition ──\ndf['year']        = df['timestamp'].dt.year\ndf['month']       = df['timestamp'].dt.month        # 1–12\ndf['day_of_week'] = df['timestamp'].dt.dayofweek    # 0=Monday, 6=Sunday\ndf['day_of_month']= df['timestamp'].dt.day          # 1–31\ndf['hour']        = df['timestamp'].dt.hour         # 0–23\ndf['quarter']     = df['timestamp'].dt.quarter      # 1–4\ndf['is_weekend']  = (df['day_of_week'] >= 5).astype(int)\n\n# ── 2. Cyclical encoding (prevent edge discontinuity) ──\n# Month 12 and month 1 are adjacent — treating month as integer implies\n# |12 - 1| = 11 (far apart), but they are only 1 month apart cyclically\ndf['month_sin'] = np.sin(2 * np.pi * df['month'] / 12)\ndf['month_cos'] = np.cos(2 * np.pi * df['month'] / 12)\ndf['dow_sin']   = np.sin(2 * np.pi * df['day_of_week'] / 7)\ndf['dow_cos']   = np.cos(2 * np.pi * df['day_of_week'] / 7)\ndf['hour_sin']  = np.sin(2 * np.pi * df['hour'] / 24)\ndf['hour_cos']  = np.cos(2 * np.pi * df['hour'] / 24)\n\n# ── 3. Lag features (for time series / sequential data) ──\ndf = df.sort_values(['user_id', 'timestamp'])\ndf['spend_lag_1d']  = df.groupby('user_id')['spend'].shift(1)   # previous day\ndf['spend_lag_7d']  = df.groupby('user_id')['spend'].shift(7)   # 1 week ago\ndf['days_since_last_purchase'] = (\n    df.groupby('user_id')['timestamp']\n    .diff()  # timedelta\n    .dt.days\n)\n\n# ── 4. Rolling window aggregates ──\ndf = df.sort_values(['user_id', 'timestamp'])\ndf['spend_7d_sum']  = df.groupby('user_id')['spend'].transform(\n    lambda x: x.shift(1).rolling(7).sum()  # shift(1): exclude current row\n)\ndf['spend_30d_mean'] = df.groupby('user_id')['spend'].transform(\n    lambda x: x.shift(1).rolling(30).mean()\n)\n\n# ── 5. Elapsed time since reference event ──\ndf['account_age_days'] = (df['timestamp'] - df['signup_date']).dt.days\ndf['days_to_deadline'] = (df['deadline'] - df['timestamp']).dt.days"
+  },
+  "eli3": [
+    "Dates and timestamps contain rich information, but a raw date like '2024-06-15' is just a string — a model can't automatically know it's a Saturday in June. Date/time feature engineering extracts useful signals: which day of the week, which hour, is it a weekend, how many days since the last purchase?",
+    "A tricky problem: cyclical features. Month 12 (December) and month 1 (January) are one month apart, but as integers they're 11 apart. Using month as a raw number tells the model they're far apart, which is wrong. The solution is to encode cyclical features as sine and cosine pairs, which wraps the scale so that December and January are correctly represented as adjacent.",
+    "For sequential data (user transactions over time), lag features and rolling window aggregates are the most powerful date-based features: how much did this user spend in the last 7 days? How many days since their last purchase? These features capture recency and frequency signals — key in churn prediction, fraud detection, and recommendation."
+  ],
+  "whenWhy": [
+    {
+      "title": "Time series forecasting",
+      "body": "For forecasting sales, energy demand, or traffic, temporal features encode seasonality: month captures annual seasonality, day-of-week captures weekly patterns, hour captures intraday patterns. Together with lag features (value yesterday) and rolling averages (value averaged over last week), they provide the temporal context the model needs. Libraries like Prophet and statsmodels encode seasonality implicitly; for custom models (LightGBM on tabular format), you build these features manually."
+    },
+    {
+      "title": "User behaviour modelling",
+      "body": "Churn prediction, credit scoring, and fraud detection use recency-frequency-monetary (RFM) features — all derived from timestamps: days since last purchase (recency), number of purchases in last 90 days (frequency), total spend in last 90 days (monetary). These are among the most predictive features in most B2C ML applications. Rolling window aggregates (shift(1).rolling(k)) compute these correctly without looking into the future."
+    },
+    {
+      "title": "Event timing features",
+      "body": "Elapsed time since a reference event is often highly predictive: account age (days since signup → new vs established user), days since last login (engagement signal), days remaining until contract renewal (upsell window). These are computed as timestamp differences using pd.Timedelta and .dt.days. Business events (product launches, marketing campaigns, holidays) can be encoded as binary 'in-campaign' flags."
+    }
+  ],
+  "deepDiveIntro": [
+    "Cyclical encoding uses two features to represent a periodic variable t with period T: sin_enc = sin(2πt/T), cos_enc = cos(2πt/T). These two features jointly encode position on a circle — sin²(·) + cos²(·) = 1. The angle θ = 2πt/T uniquely identifies position within the cycle. This preserves the topology of cyclical data: t=0 and t=T−1 have Euclidean distance |sin(0)−sin(2π(T−1)/T)|² + |cos(0)−cos(2π(T−1)/T)|² ≈ 0 (very small), correctly representing adjacency. Raw integer encoding gives distance (T−1)², incorrectly large. [1]",
+    "Lag and rolling features compute temporal aggregates. Lag-k: x_{t−k} (the value k steps before). Rolling mean of lag-1 window k: (1/k)·Σ_{j=1}^{k} x_{t−j}. Critical requirement: shift(1) before rolling to ensure the feature at time t uses only data before time t. Failing to shift leaks the current value into its own lag, creating a perfect predictor and inflating performance metrics — a form of target leakage. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Cyclical Encoding: Why and How",
+      "body": "A raw integer encoding of hour (0–23) implies: hour 23 is 23 units from hour 0 (midnight). But 11pm and midnight are one hour apart cyclically. A model learning from integer hours will incorrectly penalize large integer differences between time-adjacent hours. Cyclical encoding: hour_sin = sin(2π·hour/24), hour_cos = cos(2π·hour/24). The pair (sin, cos) represents a point on the unit circle at angle 2π·hour/24. Distance between points is measured by Euclidean distance on the circle, which correctly handles wrap-around. For tree models (which split on thresholds), cyclical encoding matters less — a tree can discover that hour=23 and hour=0 are adjacent by making two separate splits. For linear/distance-based models, cyclical encoding is essential. [1]",
+      "formula": "sin_enc = sin(2πt/T);   cos_enc = cos(2πt/T);   sin²+cos² = 1"
+    },
+    {
+      "heading": "Lag and Rolling Window Features",
+      "body": "Lag features capture persistence: x_{t−1} is the best predictor of x_t for stationary processes (correlation ≈ autocorrelation at lag 1). Multiple lags (1, 7, 14, 28 days) capture different temporal patterns. Rolling window features capture trends and smooth noise: rolling(k).mean() averages k past values, reducing variance. Exponential moving average (EMA): EMA_t = α·x_t + (1−α)·EMA_{t−1} weights recent observations more heavily. Implementation note: always sort by (entity_id, timestamp) before groupby().shift() to ensure correct lag alignment. Use .transform() to preserve index alignment when adding lag columns back to the DataFrame. [2]"
+    },
+    {
+      "heading": "Avoiding Leakage in Temporal Features",
+      "body": "Target leakage in temporal features: (1) Rolling without shift: rolling(7).mean() at time t includes x_t itself. Use shift(1).rolling(7).mean() to exclude the current value. (2) Using future data in lag: if sorting is incorrect, x_{t+1} may appear as a lag of x_t. Always sort by timestamp before computing lags. (3) Leaking target into features: if the target is derived from a future timestamp, any feature that uses data from that future period leaks the target. (4) Global statistics computed on full data: mean of a rolling feature over the full dataset includes future observations. Use expanding().mean() for true historical cumulative mean. [2]"
+    }
+  ],
+  "youtubeLabel": "Time Series Feature Engineering — Rob Mulla",
+  "youtubeUrl": "https://www.youtube.com/embed/f6_kBPQAl8I",
+  "takeaways": [
+    "Cyclical encoding: sin(2πt/T) and cos(2πt/T) pair. Preserves wrap-around topology. Essential for linear/distance models; less critical for trees. [1]",
+    "Lag features: x_{t−k} captures persistence. Rolling aggregates: shift(1).rolling(k).mean() captures local trends. shift(1) prevents leakage. [2]",
+    "RFM features (recency, frequency, monetary) from timestamps are among the strongest predictors in user behaviour modelling. [2]",
+    "Elapsed time: (timestamp − reference).dt.days gives account age, time since last event, time to deadline. [1]",
+    "Critical: sort by (entity_id, timestamp) before lag/rolling. Use time-based train/test splits to prevent future data from influencing training. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "How do you handle daylight saving time (DST) and time zone conversion in datetime features?",
+      "a": "Store all timestamps in UTC — DST transitions (when clocks spring forward or fall back) create ambiguous local times. If your data source provides local times, convert to UTC at ingestion time: pd.to_datetime(col, utc=True) or .dt.tz_localize('America/New_York').dt.tz_convert('UTC'). For feature extraction: compute hour/day-of-week from local time in the user's time zone (users behave according to local time, not UTC). Use .dt.tz_convert('America/New_York').dt.hour to get local hour. Never compute time differences or rolling windows on tz-naive timestamps — subtract first, then extract .dt.days or .dt.total_seconds()."
+    },
+    {
+      "q": "How do you create temporal features for non-uniform time series (events don't occur at regular intervals)?",
+      "a": "For irregular event streams (transactions, clicks, support tickets), timestamps are not on a regular grid. Two strategies: (1) Reindex to a regular grid — resample to daily/hourly with .resample().agg() — filling gaps with 0 or NaN. This converts to regular time series and enables standard lag/rolling features. (2) Event-based features — for each event, compute: days since last event of same type, count of events in last [7, 30, 90] days, rate of events per day over last period. These don't require resampling and are robust to irregular spacing. The correct approach depends on whether you need time-series models (ARIMA, Transformer-TS — needs regular grid) or tabular ML (LightGBM, XGBoost — event-based features work directly)."
+    }
+  ],
+  "sources": [
+    { "label": "Hyndman, R.J. & Athanasopoulos, G. — Forecasting: Principles and Practice, 3rd Ed. (OTexts, 2021; free online)", "url": "https://otexts.com/fpp3/" },
+    { "label": "McKinney, W. — Python for Data Analysis, 3rd Ed., Ch. 11 (O'Reilly, 2022)", "url": "https://wesmckinney.com/book/" }
+  ]
+}

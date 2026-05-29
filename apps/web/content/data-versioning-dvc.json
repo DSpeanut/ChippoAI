@@ -1,0 +1,67 @@
+{
+  "visualizationType": "flow-diagram",
+  "codeSnapshot": {
+    "label": "dvc_workflow.sh",
+    "code": "# ── DVC (Data Version Control) Workflow ──\n# Git tracks code; DVC tracks data and models.\n# DVC stores file hashes in Git; actual file contents in remote storage (S3, GCS).\n\n# ── Installation and initialization ──\npip install dvc[s3]  # install with S3 support\ngit init\ndvc init           # creates .dvc/ directory (add to Git)\ngit add .dvc .dvcignore\ngit commit -m 'Initialize DVC'\n\n# ── Track a dataset ──\ndvc add data/raw/customers.csv\n# Creates: data/raw/customers.csv.dvc (tracked by Git; actual data not in Git)\ngit add data/raw/customers.csv.dvc data/raw/.gitignore\ngit commit -m 'Add raw customers dataset'\n\n# ── Configure remote storage ──\ndvc remote add -d myremote s3://my-bucket/dvc-store\ndvc push  # upload data to S3\n\n# ── Reproduce with DVC pipelines ──\n# dvc.yaml defines the pipeline DAG\n# stages:\n#   preprocess:\n#     cmd: python src/preprocess.py\n#     deps:\n#       - src/preprocess.py\n#       - data/raw/customers.csv\n#     outs:\n#       - data/processed/features.parquet\n#   train:\n#     cmd: python src/train.py\n#     deps:\n#       - src/train.py\n#       - data/processed/features.parquet\n#     outs:\n#       - models/churn_model.pkl\n#     metrics:\n#       - metrics/eval.json:  # tracked but not cached\n#           cache: false\n\ndvc repro           # runs only changed stages\ndvc dag             # visualize pipeline DAG\ndvc metrics show    # display tracked metrics\ndvc metrics diff HEAD~1  # compare metrics to previous commit\n\n# ── Experiment tracking ──\ndvc exp run --set-param train.lr=0.01 --set-param train.n_estimators=200\ndvc exp show        # table of all experiments with metrics and params\ndvc exp apply <exp-id>  # apply best experiment's params to workspace\n\n# ── Fetch data for a specific commit ──\ngit checkout v1.2.0\ndvc pull  # downloads the exact dataset version that produced v1.2.0"
+  },
+  "eli3": [
+    "Git is great for tracking code changes, but it can't track large data files or model binaries — a 1GB dataset would bloat the repository and make every git operation slow. DVC (Data Version Control) solves this: it stores large files in a separate remote storage (S3, GCS) and puts only a small pointer file (the hash of the data) in Git.",
+    "With DVC, every git commit represents not just a code snapshot but also a specific version of the data and model. Checking out an old git commit and running 'dvc pull' restores exactly the data files that existed at that point — full reproducibility. You can go back to the version that produced a specific model and re-run it with confidence.",
+    "DVC also provides pipeline management: you define your data processing and training steps in a YAML file. DVC tracks which inputs and outputs each step uses, builds a dependency graph (DAG), and only reruns steps whose inputs have changed — like a build system for ML pipelines."
+  ],
+  "whenWhy": [
+    {
+      "title": "ML experiment reproducibility",
+      "body": "Without data versioning, this common scenario is unrecoverable: 'model v3 outperformed v4 in production — we need to revert'. Reverting code is easy (git checkout), but the training data may have changed, so rerunning the v3 code no longer produces the v3 model. With DVC, git checkout + dvc pull restores both code and data to their exact state at v3, enabling true reproducibility."
+    },
+    {
+      "title": "Dataset and model lineage tracking",
+      "body": "DVC provides lineage: for any model file, you can trace back to the exact training data version, the preprocessing code version, and the training configuration used. This answers the question 'what data was this model trained on?' — critical for ML audits, regulatory compliance, and debugging model failures in production."
+    },
+    {
+      "title": "Collaborative ML development",
+      "body": "In multi-engineer ML teams, different team members may preprocess data differently, creating inconsistency. DVC's tracked outputs ensure everyone uses the same preprocessed dataset for training — dvc pull retrieves the canonical preprocessed features. New team members onboard by running git clone + dvc pull, immediately having all the code and data without manual file sharing."
+    }
+  ],
+  "deepDiveIntro": [
+    "DVC tracks files using content-addressed storage: the .dvc file for a tracked dataset contains the MD5 hash of the file content, not the file itself. The remote storage (S3, GCS, Azure Blob) stores the file at a path derived from the hash. When you dvc pull, DVC computes the hash expected from the .dvc file and downloads the matching content from remote storage. This is identical in concept to Git's object store — both use content-addressing for immutability and deduplication. [1]",
+    "DVC pipelines (dvc.yaml) define a DAG of stages, each with deps (input files) and outs (output files). DVC detects when an output is stale (any dep has changed since the last run) and reruns only stale stages. This is equivalent to a build system (Make, Bazel) applied to ML workflows. dvc repro traverses the DAG and rebuilds what's necessary. dvc run creates individual stages imperatively. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "DVC File Storage and Hashing",
+      "body": "When you dvc add data/raw/dataset.csv: (1) DVC computes MD5(data/raw/dataset.csv) = abc123. (2) Copies dataset.csv to the local DVC cache (.dvc/cache/ab/c123). (3) Creates data/raw/dataset.csv.dvc containing {md5: abc123, size: 1234567, path: dataset.csv}. (4) Adds dataset.csv to .gitignore (so Git ignores the large file). (5) The .dvc file is added to Git. When you dvc push: uploads cache contents to remote storage at s3://bucket/dvc-store/ab/c123. When collaborator runs dvc pull: downloads s3://bucket/dvc-store/ab/c123 → .dvc/cache → data/raw/dataset.csv. Deduplication: if two datasets have the same hash, they share one copy in remote storage. [1]"
+    },
+    {
+      "heading": "Pipeline DAG and Selective Re-execution",
+      "body": "dvc.yaml defines stages as: {cmd, deps, outs, metrics, params}. DVC builds a DAG: stage outputs become the deps of downstream stages. Stage execution: dvc repro checks if any dep has changed (hash changed) since the last run. If not, the stage is considered up-to-date and skipped. If yes, the stage (and all downstream stages) are re-executed. This selective re-execution makes iterative experiments efficient: change only the training hyperparameter file → only the train stage re-runs; preprocessing is cached. dvc.lock records the exact input/output hashes after each run — Git-tracked and auditable. [2]"
+    },
+    {
+      "heading": "Experiment Tracking with DVC",
+      "body": "dvc exp run creates a lightweight Git branch (not committed) for each experiment, varying params.yaml values. dvc exp show displays a table comparing metrics across all experiments on the current branch and their params — similar to MLflow experiments but Git-native. dvc exp apply <exp-id> applies the best experiment's params and metrics to the current workspace. dvc exp push/pull shares experiments with teammates via the remote. Unlike MLflow (a separate server), DVC experiments live in Git history — reproducible, no additional server required. Best for small-medium teams that prefer Git-centric workflows over a dedicated ML experiment tracking server. [1]"
+    }
+  ],
+  "youtubeLabel": "DVC Tutorial — Iterative.ai",
+  "youtubeUrl": "https://www.youtube.com/embed/kLKBcPonMYw",
+  "takeaways": [
+    "DVC stores file hash pointers in Git; actual data/models in remote storage (S3/GCS). Content-addressed — immutable by design. [1]",
+    "git checkout <commit> + dvc pull = full reproducibility of code + data + models at any historical commit. [1]",
+    "dvc repro: rebuilds only changed pipeline stages. Efficient for iterative experimentation — caches unchanged intermediate outputs. [2]",
+    "dvc exp run/show: Git-native experiment tracking without a separate server. Comparable to MLflow Tracking for param/metric logging. [1]",
+    "For large ML teams: DVC + MLflow (for richer UI and centralized tracking) is a common combination. DVC handles data/pipeline; MLflow handles experiment logging. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "How does DVC handle large datasets that change frequently?",
+      "a": "DVC stores the full file for each version — no delta/diff storage. For a 100GB dataset updated daily, each version costs 100GB of remote storage. Mitigations: (1) Track at the directory level (dvc add data/partitions/) with file-level hashing — DVC deduplicates unchanged files across versions, so only changed partitions consume new storage. (2) Use incremental data patterns: track only daily partition files (date=2024-01-01/), each version is only the new partition, not the full history. (3) Remote storage lifecycle rules: auto-archive or delete DVC cache files older than N months to manage costs. DVC does not yet support binary delta compression (only content-addressed full-file storage)."
+    },
+    {
+      "q": "When should you use DVC vs MLflow vs W&B for ML experiment tracking?",
+      "a": "DVC: Git-native, tracks data + pipeline + experiments. Best when: you want full reproducibility (code + data), your team prefers Git-centric workflows, no dedicated server budget. MLflow: broader ML lifecycle (tracking, model registry, serving). Best when: you need a rich UI for comparing many experiments, multiple teams share a tracking server, model registry and deployment integration are important. Weights & Biases (W&B): cloud-hosted, excellent visualizations (interactive charts, image logging), strong for deep learning with GPU training logs. Best when: training large neural networks, research environments, rich per-step logging is valuable. Common pattern: DVC for data versioning and pipelines + MLflow or W&B for experiment tracking and model registry."
+    }
+  ],
+  "sources": [
+    { "label": "DVC Documentation — dvc.org", "url": "https://dvc.org/doc" },
+    { "label": "Huyen, C. — Designing Machine Learning Systems, Ch. 6 (O'Reilly, 2022)", "url": "https://www.oreilly.com/library/view/designing-machine-learning/9781098107956/" }
+  ]
+}

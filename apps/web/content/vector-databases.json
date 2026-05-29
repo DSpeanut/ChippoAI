@@ -1,0 +1,68 @@
+{
+  "visualizationType": "network-diagram",
+  "codeSnapshot": {
+    "label": "vector_databases.py",
+    "code": "import numpy as np\nfrom sentence_transformers import SentenceTransformer\n\n# ── 1. FAISS: local, CPU/GPU, no server required ──\nimport faiss\n\ndocs = ['The Fed raised interest rates.', 'Bitcoin price surged today.',\n        'New machine learning paper on transformers.', 'Federal Reserve cuts rates.']\n\nmodel = SentenceTransformer('all-MiniLM-L6-v2')  # 384-dim embeddings\nembeddings = model.encode(docs).astype(np.float32)  # shape: (4, 384)\n\n# Build FAISS index\nd = embeddings.shape[1]  # dimension\n\n# Flat L2: exact search, brute force — accurate but O(n*d)\nindex_flat = faiss.IndexFlatL2(d)\nindex_flat.add(embeddings)\n\n# IVF: approximate search — partition vectors into Voronoi cells\nnlist = 2  # number of cells (use sqrt(n) in practice)\nquantizer = faiss.IndexFlatL2(d)\nindex_ivf = faiss.IndexIVFFlat(quantizer, d, nlist)\nindex_ivf.train(embeddings)  # required for IVF\nindex_ivf.add(embeddings)\nindex_ivf.nprobe = 1  # number of cells to search (speed-accuracy tradeoff)\n\n# HNSW: hierarchical graph, fast approximate search\nindex_hnsw = faiss.IndexHNSWFlat(d, 32)  # M=32 connections per node\nindex_hnsw.add(embeddings)\n\n# Query\nquery = model.encode(['Central bank monetary policy']).astype(np.float32)\nk = 2  # retrieve top-2\ndistances, indices = index_flat.search(query, k)\nprint('Nearest docs:', [docs[i] for i in indices[0]])\n\n# ── 2. Pinecone (managed): production vector DB ──\n# import pinecone\n# pc = pinecone.Pinecone(api_key='YOUR_API_KEY')\n# index = pc.Index('my-index')\n# index.upsert(vectors=[(str(i), emb.tolist()) for i, emb in enumerate(embeddings)])\n# results = index.query(vector=query[0].tolist(), top_k=3, include_metadata=True)\n\n# ── 3. ChromaDB (local, lightweight) ──\n# import chromadb\n# client = chromadb.Client()\n# collection = client.create_collection('docs')\n# collection.add(documents=docs, ids=[str(i) for i in range(len(docs))])\n# results = collection.query(query_texts=['monetary policy'], n_results=2)"
+  },
+  "eli3": [
+    "A vector database stores and searches through high-dimensional number vectors (embeddings) — not text or structured rows. When you convert documents, images, or user behaviour into embeddings using a neural network, you get a vector like [0.12, -0.34, 0.78, ...] with hundreds of dimensions. A vector database can find the most similar vectors to a query in milliseconds, even across billions of stored vectors.",
+    "This is the backbone of Retrieval-Augmented Generation (RAG): store all your documents as embeddings in a vector database. When a user asks a question, embed the question, find the 5 most similar document embeddings, retrieve those documents, and give them to the LLM as context. The LLM answers based on your specific documents, not just its training data.",
+    "The challenge: finding the nearest vector in a database of 1 billion 1024-dimensional vectors by brute force would require computing 10^12 multiplications per query — too slow. Approximate Nearest Neighbour (ANN) algorithms like HNSW and IVF trade a small amount of accuracy for 1000× faster search."
+  ],
+  "whenWhy": [
+    {
+      "title": "RAG (Retrieval-Augmented Generation) pipelines",
+      "body": "RAG is the dominant pattern for LLM applications that need to reason over custom knowledge bases. Step 1: embed all documents and store in a vector database (Pinecone, Weaviate, Chroma, FAISS). Step 2: at query time, embed the user's question. Step 3: retrieve top-k similar documents from the vector DB. Step 4: concatenate retrieved documents as context and call the LLM. The vector DB replaces fine-tuning for knowledge injection — cheaper, updatable without retraining."
+    },
+    {
+      "title": "Semantic search and recommendation",
+      "body": "Traditional keyword search (BM25, Elasticsearch) matches query terms exactly. Semantic search embeds both the query and documents and retrieves by vector similarity — finding conceptually similar content even without shared keywords. 'Fed monetary policy' retrieves 'Central bank interest rate decision'. Recommendation: embed users and items; find the k items with highest cosine similarity to the user's embedding. Vector DBs enable this at scale."
+    },
+    {
+      "title": "Long-term memory for AI agents",
+      "body": "LLM context windows are finite (~128k tokens). Agents with long-term memory store conversation history, tool outputs, and facts as embeddings in a vector database. At each turn, the agent retrieves the most relevant historical context and includes it in the prompt. This provides effectively unlimited memory: the agent can recall relevant facts from months of prior conversations without them all fitting in a single prompt."
+    }
+  ],
+  "deepDiveIntro": [
+    "Approximate Nearest Neighbour (ANN) search is the core algorithmic challenge. Exact k-NN requires computing the distance from the query to every stored vector — O(n·d) — infeasible for n=10^9, d=1024. ANN trades recall for speed: find vectors that are very likely to be among the k-nearest without checking all vectors. Three main ANN families: (1) Graph-based (HNSW): build a navigable small-world graph; search by greedy traversal. (2) Inverted File Index (IVF): cluster vectors into Voronoi cells; search only cells close to the query. (3) LSH (Locality-Sensitive Hashing): hash similar vectors to the same bucket. HNSW achieves the best recall-speed trade-off in practice. [1]",
+    "Distance metrics: cosine similarity (angle between vectors, standard for text embeddings normalized to unit norm), dot product (= cosine × magnitudes, standard for recommendation), Euclidean (L2) distance (standard for image embeddings). For normalized vectors, cosine similarity = dot product. FAISS supports L2 and inner product; most vector DBs support all three. ANN index choice matters less than the quality of embeddings: bad embeddings give bad retrieval regardless of index type. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "HNSW: Hierarchical Navigable Small World",
+      "body": "Malkov & Yashunin (2020) introduced HNSW. Construction: build a multi-layer graph. Layer 0 has all vectors; each higher layer has a random subset (exponentially decreasing size). Within each layer, connect each node to its M nearest neighbours. Search: start at the top layer, greedily traverse to the nearest neighbour to the query, descend to the next layer, repeat. This multi-layer structure (like a skip list) avoids getting trapped in local minima. Parameters: M (connections per node) controls memory and accuracy; ef_construction (beam width during build) controls recall vs build time; ef_search controls recall vs query time. HNSW achieves ~99% recall at 100× speedup vs brute force for 1M vectors in 128 dimensions. [1]",
+      "formula": "Layer probability: P(insert into layer i) = exp(−i/ln(M)), so higher layers are sparser"
+    },
+    {
+      "heading": "FAISS Index Types",
+      "body": "FAISS (Johnson et al., 2019) is Meta's library for billion-scale ANN. IndexFlatL2: exact brute-force L2 search — accurate but O(n·d). Use as a baseline or for small n (<100k). IndexIVFFlat: cluster vectors into nlist Voronoi cells using k-means. At query time, search nprobe closest cells. Speed: nlist/nprobe × faster than flat. Recall: increases with nprobe. IndexIVFPQ: add Product Quantisation (PQ) — compress vectors by splitting into sub-vectors and quantizing each separately. Reduces memory 4–16× at some recall cost. IndexHNSWFlat: best recall-speed trade-off for moderate n. GPU-accelerated versions (GpuIndexFlatL2) for extreme throughput. Rule of thumb: n < 10k → Flat; 10k–1M → IVFFlat or HNSW; > 1M → IVFPQ or HNSW+PQ. [1]"
+    },
+    {
+      "heading": "Managed Vector Databases",
+      "body": "Production RAG systems need metadata filtering, real-time upserts, multi-tenancy, and managed scaling — FAISS alone doesn't provide these. Managed options: Pinecone: fully managed, multi-region, metadata filtering (filter by category before ANN search), real-time upserts with no reindexing delay. Weaviate: open-source with cloud hosting, supports hybrid search (BM25 + vector), GraphQL API. Chroma: lightweight, embedded Python, excellent for prototyping. Qdrant: Rust-based, high performance, supports dense + sparse (SPLADE) vectors for hybrid search. PGvector: PostgreSQL extension — adds vector column type and HNSW/IVF index. Avoids adding a new database if your data is already in PostgreSQL. [2]"
+    }
+  ],
+  "youtubeLabel": "Vector Databases Explained — Fireship",
+  "youtubeUrl": "https://www.youtube.com/embed/klTvEwg3oJ4",
+  "takeaways": [
+    "ANN algorithms (HNSW, IVF) trade small recall loss for 100–1000× speed vs exact k-NN. HNSW has best recall-speed trade-off in practice. [1]",
+    "Distance metrics: cosine (text, unit-norm embeddings), dot product (recommendation), L2 (image embeddings). For normalized vectors: cosine = dot product. [2]",
+    "FAISS: IndexFlatL2 (exact), IndexIVFFlat (ANN), IndexHNSWFlat (best recall/speed), IndexIVFPQ (compressed, billion-scale). [1]",
+    "Managed DBs: Pinecone (fully managed), Weaviate (open-source, hybrid search), Chroma (lightweight), PGvector (PostgreSQL plugin). [2]",
+    "RAG pattern: embed documents → store in vector DB → embed query → ANN retrieval → LLM with retrieved context. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "How do you handle stale embeddings when the embedding model is updated?",
+      "a": "When you update the embedding model (e.g., from text-embedding-ada-002 to text-embedding-3-large), all stored embeddings become incompatible — the new model maps text to a different vector space. Mitigation: (1) Re-embed all documents with the new model — batch embedding and upsert. For large corpora, this is a background job. (2) Versioned indexes: maintain two separate indexes (old model, new model) during migration, routing queries to both and merging results. (3) Zero-downtime migration: use the new model for new documents; re-embed old documents incrementally over days/weeks. (4) Use model-agnostic retrieval: store both the raw text and the embedding. At query time, you can switch models and reindex without data loss. Operational lesson: the cost of re-embedding is predictable and worth budgeting for — embedding model updates are similar to database schema migrations."
+    },
+    {
+      "q": "What is hybrid search and when should you use it over pure vector search?",
+      "a": "Hybrid search combines dense vector search (semantic similarity) with sparse keyword search (BM25, TF-IDF). A query like 'HMRC self-assessment deadline 2024' has both a semantic meaning (tax filing) and specific keywords ('HMRC', '2024') that vector search may not retrieve well — vector similarity finds conceptually related documents, but may miss the specific year or agency. Hybrid search weights both scores: score_hybrid = α·score_dense + (1−α)·score_sparse. α is tuned on a validation set. When to use: (1) Queries contain specific entity names, dates, or codes that must match exactly. (2) Domain-specific terminology that the general embedding model doesn't encode well. (3) Legal, medical, or technical documents where precise term matching is critical. Most modern vector DBs (Weaviate, Qdrant) support hybrid search natively."
+    }
+  ],
+  "sources": [
+    { "label": "Malkov, Y.A. & Yashunin, D.A. — Efficient and Robust Approximate Nearest Neighbor Search Using Hierarchical Navigable Small World Graphs, IEEE TPAMI, 2020", "url": "https://arxiv.org/abs/1603.09320" },
+    { "label": "Johnson, J., Douze, M. & Jégou, H. — Billion-scale Similarity Search with GPUs, IEEE Big Data, 2021 (FAISS)", "url": "https://arxiv.org/abs/1702.08734" }
+  ]
+}

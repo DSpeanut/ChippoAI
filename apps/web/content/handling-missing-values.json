@@ -1,0 +1,68 @@
+{
+  "visualizationType": "table",
+  "codeSnapshot": {
+    "label": "missing_values.py",
+    "code": "import pandas as pd\nimport numpy as np\nfrom sklearn.impute import SimpleImputer, KNNImputer\nfrom sklearn.experimental import enable_iterative_imputer  # noqa\nfrom sklearn.impute import IterativeImputer\n\ndf = pd.read_csv('data.csv')\n\n# 1. Audit missingness\nprint(df.isnull().sum() / len(df))  # fraction missing per column\n\n# 2. MCAR test (quick heuristic): missingness in col A correlated with col B?\ndf['age_missing'] = df['age'].isnull().astype(int)\nprint(df.groupby('age_missing')[['income', 'score']].mean())\n# If means differ significantly → likely MAR, not MCAR\n\n# 3a. Mean/median imputation (MCAR or for tree-based models)\nimp_median = SimpleImputer(strategy='median')\ndf[['age']] = imp_median.fit_transform(df[['age']])\n\n# 3b. KNN imputation (MAR, assumes metric space)\nimp_knn = KNNImputer(n_neighbors=5)\ndf_knn = pd.DataFrame(imp_knn.fit_transform(df), columns=df.columns)\n\n# 3c. MICE / IterativeImputer (MAR, multivariate)\nimp_mice = IterativeImputer(max_iter=10, random_state=42)\ndf_mice = pd.DataFrame(imp_mice.fit_transform(df), columns=df.columns)\n\n# 4. Add missingness indicator (preserves MNAR signal)\ndf['age_was_missing'] = df['age'].isnull().astype(int)\n\n# 5. Listwise deletion (MCAR only, small missingness)\ndf_dropped = df.dropna(subset=['critical_label_col'])"
+  },
+  "eli3": [
+    "Missing values are gaps in your data — cells where no measurement was recorded. Nearly every real dataset has them. The danger is not the gap itself but what you do about it: wrong choices introduce bias that silently corrupts model predictions.",
+    "Not all missing data is the same. If values disappear randomly (like a scale that occasionally glitches), you can fill in the gaps with the average and move on. But if values go missing for a reason — wealthier people skip the income question on a survey — filling with the average gives a biased estimate of the true value.",
+    "The three strategies are: delete rows with missing values (only safe when gaps are truly random and rare), fill in (impute) with a guess based on other data, or keep the gap and add a 'this was missing' flag column so the model can learn that the absence itself is informative."
+  ],
+  "whenWhy": [
+    {
+      "title": "Preprocessing before any supervised ML model",
+      "body": "Most sklearn estimators (LinearRegression, SVC, XGBoost when not using its native missing handling) raise ValueError on NaN inputs. Missing value handling is therefore a mandatory preprocessing step. The choice of strategy must be made in the training phase only — imputer statistics (mean, KNN neighbors) are fit on training data and applied identically to validation/test splits to prevent data leakage."
+    },
+    {
+      "title": "Feature selection — which columns to keep vs drop",
+      "body": "Columns with >50–70% missingness are usually not worth imputing: the imputed values will be nearly identical to the column mean/median, adding noise rather than signal. Audit the missing fraction per column first. If a column is critical and highly missing, investigate the data pipeline — the missingness might be a bug."
+    },
+    {
+      "title": "MNAR: when the missing value carries the signal",
+      "body": "Missing Not At Random (MNAR) — where the probability of missingness depends on the unobserved value itself — is the hardest case. Example: patients with severe symptoms often don't have lab tests recorded (they were too ill to be tested). Imputing with the population mean gives a dangerously incorrect value. The correct approach: add a binary indicator column ('lab_test_missing = 1') and let the model learn the association between missingness and the outcome. Tree-based models (XGBoost with native missing handling) treat NaN as a distinct split direction, which is often the best approach for MNAR data."
+    }
+  ],
+  "deepDiveIntro": [
+    "Little & Rubin (1987) introduced the canonical taxonomy of missing data mechanisms. MCAR (Missing Completely At Random): the probability of missingness is independent of both observed and unobserved values. P(missing | X_obs, X_mis) = P(missing). Complete-case analysis (listwise deletion) is unbiased under MCAR, but rarely data is truly MCAR. MAR (Missing At Random): the probability of missingness depends only on observed values, not on the missing value itself. P(missing | X_obs, X_mis) = P(missing | X_obs). Imputation from observed data is valid under MAR. MNAR (Missing Not At Random): missingness depends on the unobserved value. No imputation method can recover unbiased estimates without modelling the missingness mechanism explicitly. [1]",
+    "Multiple Imputation by Chained Equations (MICE / IterativeImputer): imputes each missing variable using a regression model fit on all other variables, cycles through all incomplete columns multiple times (hence 'chained'), and produces multiple complete datasets to propagate imputation uncertainty. Valid under MAR. sklearn's IterativeImputer implements this. van Buuren (2018) provides the statistical foundation. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Simple Imputation Methods",
+      "body": "Mean/median/mode imputation fills each missing value with the column's summary statistic. Advantages: trivial to implement, fast, no leakage risk when applied post-train/test split. Disadvantages: (1) Artificially reduces variance — the imputed column's distribution is sharper than the true distribution. (2) Distorts correlations between variables — if income and age are correlated, filling missing ages with the mean breaks that correlation in the training set. (3) Invalid when the mechanism is MAR or MNAR. Median imputation is preferred over mean for skewed distributions (outliers inflate the mean). [1]"
+    },
+    {
+      "heading": "KNN Imputation",
+      "body": "KNNImputer finds the k nearest neighbors of a missing row (using Euclidean distance over non-missing features) and fills each missing feature with the weighted mean of the k neighbors' values. More accurate than mean imputation for MAR data — it preserves local correlations. Computational cost: O(n²·d) — infeasible for large n. Scale all features before KNN imputation, since features with large ranges dominate the distance metric. Fit on training data, transform both train and test. [1]"
+    },
+    {
+      "heading": "MICE (Multiple Imputation by Chained Equations)",
+      "body": "Algorithm: (1) Initialize all missing values with column means. (2) For each incomplete column X_j: fit a regression/classification model f_j(X_j | X_{-j}) on the rows where X_j is observed. Predict X_j for missing rows using the fitted model. (3) Repeat step 2 for all columns in sequence. (4) Iterate for max_iter cycles until convergence. The final imputed values incorporate uncertainty about the imputation. IterativeImputer uses sklearn estimators as the inner models (default: BayesianRidge). Best imputation strategy for MAR data when computational cost allows. [2]",
+      "formula": "X̂ⱼ(miss) = f_j(X_{-j}; θ̂_j), where θ̂_j fitted on observed rows of X_j"
+    }
+  ],
+  "youtubeLabel": "Handling Missing Data — StatQuest",
+  "youtubeUrl": "https://www.youtube.com/embed/rN9HUnHWqBk",
+  "takeaways": [
+    "Three mechanisms: MCAR (impute freely), MAR (impute from observed data — valid), MNAR (imputation is biased; add missingness indicator instead). [1]",
+    "Mean/median imputation: fast, reduces variance, breaks inter-feature correlations. Use only as baseline or for MCAR data. [1]",
+    "KNN imputation: preserves local correlations, O(n²) cost, requires feature scaling before use. [1]",
+    "MICE (IterativeImputer): best statistical approach for MAR data; iteratively regresses each missing column on all others. [2]",
+    "Always fit imputer on training data only; apply to test data to prevent data leakage. Add binary indicator columns for MNAR features. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "XGBoost and LightGBM claim to handle missing values natively — do you still need to impute?",
+      "a": "For tree-based models with native missing-value handling (XGBoost, LightGBM, CatBoost): no imputation is required, and imputation can actually hurt. XGBoost learns the optimal default split direction for missing values — left or right subtree — during training. This is equivalent to learning the best imputation strategy from the data itself. Imputing before XGBoost (e.g., with mean) replaces informative NaN with a value that may obscure the MNAR signal. However, for linear models, SVMs, neural networks, and k-NN, imputation is mandatory since they cannot handle NaN."
+    },
+    {
+      "q": "How do you prevent data leakage when imputing?",
+      "a": "Always fit the imputer (compute mean/median, fit MICE models, find KNN neighbors) on training data only. Apply the fitted imputer (transform, not fit_transform) to validation and test data. A common mistake: calling fit_transform on the full dataset before train/test split. This leaks test-set statistics into the imputer parameters — the model 'sees' test data during training, inflating validation metrics. In sklearn Pipelines, the imputer is automatically fit only on training data when using cross_val_score or Pipeline.fit()."
+    }
+  ],
+  "sources": [
+    { "label": "Little, R.J.A. & Rubin, D.B. — Statistical Analysis with Missing Data, 3rd Ed. (Wiley, 2019)", "url": "https://www.wiley.com/en-us/Statistical+Analysis+with+Missing+Data%2C+3rd+Edition-p-9780470526798" },
+    { "label": "van Buuren, S. — Flexible Imputation of Missing Data, 2nd Ed. (Chapman & Hall, 2018; free online)", "url": "https://stefvanbuuren.name/fimd/" }
+  ]
+}

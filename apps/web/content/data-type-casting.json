@@ -1,0 +1,67 @@
+{
+  "visualizationType": "table",
+  "codeSnapshot": {
+    "label": "data_type_casting.py",
+    "code": "import pandas as pd\nimport numpy as np\n\ndf = pd.read_csv('transactions.csv')\n\n# ── 1. Audit dtypes ──\nprint(df.dtypes)\nprint(df.memory_usage(deep=True).sum() / 1e6, 'MB')\n\n# ── 2. Common type coercions ──\n# String → numeric (coerce turns unparseable values to NaN)\ndf['amount'] = pd.to_numeric(df['amount'], errors='coerce')\n\n# String → datetime\ndf['created_at'] = pd.to_datetime(df['created_at'], format='%Y-%m-%d %H:%M:%S', utc=True)\n\n# String → categorical (reduces memory for low-cardinality columns)\ndf['country'] = df['country'].astype('category')   # e.g., 200 unique values\ndf['status'] = pd.Categorical(df['status'],\n    categories=['pending', 'active', 'churned'], ordered=True)\n\n# ── 3. Downcast numeric types to save memory ──\n# int64 (8 bytes) → int16 (2 bytes) if values fit in [-32768, 32767]\ndf['age'] = pd.to_numeric(df['age'], downcast='integer')   # auto-downcast\ndf['score'] = df['score'].astype(np.float32)  # float64 → float32 (4 bytes)\n\n# Convenience: downcast all numeric columns\nfor col in df.select_dtypes(include='integer'):\n    df[col] = pd.to_numeric(df[col], downcast='integer')\nfor col in df.select_dtypes(include='float'):\n    df[col] = pd.to_numeric(df[col], downcast='float')\n\nprint('After optimization:', df.memory_usage(deep=True).sum() / 1e6, 'MB')\n\n# ── 4. Boolean columns ──\ndf['is_fraud'] = df['is_fraud'].astype(bool)  # 1/0 → True/False\n\n# ── 5. Checking for silent type errors ──\n# pd.read_csv infers types — '3.0' may be read as float when int is correct\n# '2024-01-01' stays as object unless you specify parse_dates\ndf2 = pd.read_csv('data.csv',\n    dtype={'user_id': str, 'amount': float},\n    parse_dates=['created_at'],\n    date_format='%Y-%m-%d')"
+  },
+  "eli3": [
+    "Every column in a dataset has a type: a number, a category, a date, or free text. Data type casting means converting a column from the type it was read in as to the type it actually should be. The most common problem is that CSV files have no type system — everything arrives as text — so pandas has to guess, and guesses can be wrong.",
+    "A phone number read as an integer is a bug: leading zeros vanish, arithmetic makes no sense. A column of 'yes'/'no' stored as a string wastes 5× more memory than it needs to and prevents logical operations. A date stored as a string can't be sorted correctly or have time-delta computations applied to it.",
+    "Beyond correctness, type casting dramatically reduces memory usage. Storing age (values 0–120) as int64 (8 bytes) instead of int8 (1 byte) wastes 8× memory. On a 100-million-row dataset this matters a lot: it can mean the difference between fitting the data in RAM and having to use chunked processing."
+  ],
+  "whenWhy": [
+    {
+      "title": "Post-ingestion data validation",
+      "body": "Raw CSV/JSON data lands in pandas with inferred types, often incorrectly. Standard first step after reading: audit dtypes with df.dtypes, check for object columns that should be numeric or datetime, and apply explicit casts. Always cast at ingestion time, not downstream — silent type mismatches (a string 'N/A' in a numeric column read as NaN only after coerce) propagate as data quality bugs."
+    },
+    {
+      "title": "Memory optimization for large datasets",
+      "body": "Pandas defaults to int64 and float64 for all numeric columns. Downcasting to the smallest type that can hold the data range can reduce DataFrame memory 2–4×. For a 10-column, 50M-row DataFrame with all int64 columns: 50M × 10 × 8 bytes = 4GB. Downcasting to int16 where possible: ~1GB. This often makes the difference between fitting in RAM and hitting a memory limit in a notebook or pipeline."
+    },
+    {
+      "title": "Enabling type-specific operations",
+      "body": "Pandas datetime64[ns] columns enable vectorized time operations: df['created_at'].dt.year, df.resample('M'), pd.Grouper(freq='W'). Categorical dtype enables ordered comparison (df[df['status'] > 'pending']), memory efficiency (stores integer codes internally), and fast groupby. Neither is available if the column is stored as object (string). Correct typing unlocks the full pandas API."
+    }
+  ],
+  "deepDiveIntro": [
+    "Pandas stores data in numpy arrays internally. The dtype governs memory layout, missing value representation, and available operations. Object dtype is a dtype of last resort: it stores Python object references (pointers), not values directly — so even a column of short strings uses ~50+ bytes per element rather than the string length. Switching a string column to category dtype stores the unique values once and uses integer codes (1–2 bytes) per row, giving 10–100× memory savings for low-cardinality columns. [1]",
+    "Type inference on CSV read is heuristic: pandas reads up to 100 rows, guesses the type, and applies it to all rows. Common failures: (1) A numeric column with a single 'N/A' string → entire column is object. (2) An integer column with occasional floats → entire column is float64. (3) A date column in an unusual format → stored as object. Mitigation: always specify dtype and parse_dates arguments in pd.read_csv() for production pipelines. [1]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Numeric Type Hierarchy and Downcasting",
+      "body": "Pandas numeric types (ascending size): int8 (1B, range ±127), int16 (2B, ±32767), int32 (4B, ±2·10⁹), int64 (8B, ±9·10¹⁸); float16 (2B, ~3 significant digits), float32 (4B, ~7 significant digits), float64 (8B, ~15 significant digits). pd.to_numeric(series, downcast='integer') automatically selects the smallest integer type that can represent all values. Warning: float16 has very limited precision — avoid for financial amounts or ML model inputs where numerical precision matters. float32 is generally safe for ML features; float64 is needed for gradient computations. [1]"
+    },
+    {
+      "heading": "Categorical Dtype",
+      "body": "Categorical dtype stores a column as: (1) an array of integer codes (int8 or int16) and (2) an index of unique categories. Memory savings: n_rows × (1–2 bytes) + n_unique_values × value_size, vs n_rows × value_size for object. For a column with 1M rows and 200 unique string categories averaging 10 chars each: object = 1M × 50 bytes = 50MB; categorical = 1M × 1 byte + 200 × 10 bytes = ~1MB. Ordered categoricals (pd.Categorical with ordered=True) enable comparison operators (<, >, between). Both groupby and sort operations are faster on categorical vs object columns. [1]"
+    },
+    {
+      "heading": "DateTime Handling",
+      "body": "Pandas datetime64[ns] stores timestamps as 64-bit nanosecond integers since Unix epoch. Parsing: pd.to_datetime() with explicit format is 10–20× faster than auto-inference. Time zones: store all timestamps in UTC (utc=True on parse), convert to local time only for display. Common mistakes: (1) Mixing timezone-aware and timezone-naive timestamps causes TypeError. (2) Storing dates as strings — sort order is lexicographic, not chronological, for non-ISO formats. (3) Using Python datetime objects instead of numpy datetime64 — vectorized operations are not available. pd.Timestamp is the scalar equivalent of datetime64[ns] and is timezone-aware. [1]"
+    }
+  ],
+  "youtubeLabel": "Pandas Data Types & Memory Optimization — Keith Galli",
+  "youtubeUrl": "https://www.youtube.com/embed/zmdjNSmRXF4",
+  "takeaways": [
+    "pandas defaults to object (string), int64, float64 — always audit dtypes after read and apply explicit casts. [1]",
+    "Categorical dtype: 10–100× memory savings for low-cardinality string columns; enables fast groupby and ordered comparisons. [1]",
+    "pd.to_numeric(series, downcast='integer'/'float'): auto-selects smallest safe type. float32 is generally sufficient for ML features. [1]",
+    "Specify dtype dict and parse_dates in pd.read_csv() for production pipelines — never rely on type inference. [1]",
+    "datetime64[ns]: store in UTC, parse with explicit format string for 10–20× faster parsing vs auto-inference. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "How do you handle mixed-type columns (e.g., a column with both strings and numbers)?",
+      "a": "Mixed-type columns (object dtype) arise when a numeric column contains sentinel strings like 'N/A', '-', or 'unknown'. pd.to_numeric(col, errors='coerce') converts parseable values to numeric and turns everything else into NaN. After coercion, audit the resulting NaN positions: if they correlate with a specific value pattern, you've discovered a non-standard missing value encoding that needs cleaning. pd.read_csv(na_values=['-', 'N/A', 'unknown', '?']) handles this at read time. For multiple sentinel values, pass na_values per column using a dict."
+    },
+    {
+      "q": "When should you use nullable integer types (pd.Int64Dtype()) vs numpy int64?",
+      "a": "Standard numpy int64 cannot represent NaN — it's a floating-point concept. If a column has missing integers, pandas converts the entire column to float64 (to accommodate NaN), losing int semantics. pandas nullable integer types (Int8, Int16, Int32, Int64 — capital I) use a separate boolean mask for missingness, allowing integer arrays with NaN values. Use nullable integers when: (1) You need to preserve integer dtype through missing value operations, (2) You use pandas' groupby/merge and need correct integer joins without float precision issues. Downside: nullable integers are slower than numpy int64 for arithmetic (~2× slower in benchmarks), so prefer numpy types when there are no missing values."
+    }
+  ],
+  "sources": [
+    { "label": "McKinney, W. — Python for Data Analysis, 3rd Ed., Ch. 7 & Appendix A (O'Reilly, 2022)", "url": "https://wesmckinney.com/book/" },
+    { "label": "pandas documentation — Categorical Data, Time Series, Nullable Integer", "url": "https://pandas.pydata.org/docs/user_guide/categorical.html" }
+  ]
+}

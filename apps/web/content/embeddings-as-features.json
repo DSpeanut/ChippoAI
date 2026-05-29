@@ -1,0 +1,68 @@
+{
+  "visualizationType": "network-diagram",
+  "codeSnapshot": {
+    "label": "embeddings_as_features.py",
+    "code": "import pandas as pd\nimport numpy as np\nfrom sentence_transformers import SentenceTransformer\nfrom sklearn.decomposition import PCA\nfrom sklearn.ensemble import GradientBoostingClassifier\nfrom sklearn.pipeline import Pipeline\n\n# ── 1. Text embeddings as tabular features ──\n# Encode free-text descriptions into dense vectors\nmodel = SentenceTransformer('all-MiniLM-L6-v2')  # 384-dim embeddings\ndf = pd.read_csv('products.csv')  # has 'description' column\n\ntext_embeddings = model.encode(\n    df['description'].tolist(),\n    batch_size=64,\n    show_progress_bar=True\n)  # shape: (n_products, 384)\n\n# Concatenate with other tabular features\nX_text = pd.DataFrame(text_embeddings,\n    columns=[f'emb_{i}' for i in range(text_embeddings.shape[1])])\nX = pd.concat([df[['price', 'category_enc', 'rating']], X_text], axis=1)\n\n# ── 2. Dimensionality reduction before downstream model ──\npca = PCA(n_components=50, random_state=42)  # 384 → 50 dims\nX_pca = pca.fit_transform(X_text)\nprint(f'Variance explained by 50 PCs: {pca.explained_variance_ratio_.sum():.2%}')\n\n# ── 3. Entity embeddings for high-cardinality categoricals ──\n# Train embedding lookup table as part of a neural network\n# (pseudo-code; use PyTorch or Keras)\n# embedding_layer = nn.Embedding(num_categories, embedding_dim=16)\n# category_ids = torch.LongTensor(df['category_id'].values)\n# category_emb = embedding_layer(category_ids)  # shape: (n, 16)\n\n# ── 4. Use embeddings in a gradient boosting model ──\nfrom xgboost import XGBClassifier\nclf = XGBClassifier(n_estimators=300, tree_method='hist', random_state=42)\nclf.fit(X_pca, df['target'])\n\n# ── 5. Similarity-based features from embeddings ──\nfrom sklearn.metrics.pairwise import cosine_similarity\n# For each user, compute similarity to their historical items\nuser_hist_emb = text_embeddings[df['user_hist_idx'].values]  # embedding of their history\ncurrent_item_emb = text_embeddings  # embedding of current item\nsimilarity = np.einsum('ij,ij->i', user_hist_emb, current_item_emb)  # dot product (if normalized)\ndf['user_item_similarity'] = similarity"
+  },
+  "eli3": [
+    "An embedding is a dense numeric vector that represents an object — a word, a sentence, a product, a user, or a category. Neural networks learn these representations by training on large amounts of data. The key idea: semantically similar things have numerically similar embeddings (close vectors in space).",
+    "Embeddings can be used as input features for any ML model — not just neural networks. If you have a product description column, you can convert each description to a 384-dimensional vector using a pre-trained language model (like BERT or sentence-transformers), then pass those 384 numbers to XGBoost or LightGBM as tabular features. The model now has access to the semantic content of the text.",
+    "Entity embeddings are a special case: instead of one-hot encoding a categorical with 1,000 categories (1,000 sparse columns), you learn a compact dense representation (e.g., 16 dimensions) during neural network training. These 16 numbers capture relationships between categories — 'Monday' and 'Tuesday' would be similar; 'Monday' and 'December' would not be."
+  ],
+  "whenWhy": [
+    {
+      "title": "Adding unstructured data to tabular models",
+      "body": "When your dataset has free-text columns (product descriptions, customer reviews, support ticket text, news articles), one-hot encoding or TF-IDF gives sparse, high-dimensional vectors. Pre-trained sentence embeddings (sentence-transformers, OpenAI text-embedding-ada-002) encode semantic meaning into dense 256–1536 dimensional vectors. After optional PCA to 20–50 dimensions, these can be concatenated with structured features and fed to LightGBM or XGBoost. This is the standard approach for hybrid text+tabular classification."
+    },
+    {
+      "title": "Entity embeddings for high-cardinality categoricals",
+      "body": "A product category with 50,000 SKUs cannot be one-hot encoded efficiently. Options: (1) Target encoding (collapses rich structure to one number). (2) Entity embeddings: train a neural network with an Embedding layer that maps each SKU ID to a dense vector. The embedding is jointly learned with the prediction task — similar SKUs get similar embeddings. Guo & Berkhahn (2016) showed entity embeddings outperform one-hot and label encoding for high-cardinality categoricals in tabular settings."
+    },
+    {
+      "title": "Similarity features for recommendation and search",
+      "body": "User-item similarity: embed users and items into the same vector space (matrix factorization, two-tower models). The cosine similarity between a user embedding and an item embedding is a powerful feature for ranking and recommendation. In fraud detection, the embedding of a merchant category can be compared to the embedding of a user's typical merchant — low similarity flags suspicious activity. This provides richer signal than a raw category match."
+    }
+  ],
+  "deepDiveIntro": [
+    "Embeddings map discrete entities (words, items, categories) to continuous vector spaces ℝᵈ where distance/similarity has semantic meaning. Word2Vec (Mikolov et al., 2013) learns word embeddings from co-occurrence statistics using a shallow neural network — the skipgram objective: maximize the probability of context words given a centre word. The resulting geometry captures analogies: king − man + woman ≈ queen. Sentence-level embeddings (BERT, sentence-transformers) use transformer models and produce a single fixed-length vector per sentence by pooling token representations. [1]",
+    "For tabular ML, pre-trained embeddings provide a form of transfer learning: the embedding model has been trained on orders-of-magnitude more data than your task-specific dataset. Using pre-trained embeddings as features is often better than training embeddings from scratch on small tabular datasets. The trade-off: pre-trained embeddings are general-purpose, not task-specific; fine-tuning on your data can improve them but requires more complexity. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Dimensionality Reduction of Embedding Features",
+      "body": "Raw embeddings from modern models are 256–3072 dimensional. Passing 1024 embedding dimensions as tabular features to LightGBM is often wasteful: (1) High-dimensional features increase model complexity and training time. (2) Many embedding dimensions are correlated — PCA finds the principal axes of variation. (3) Tree models may not efficiently use 1024 near-collinear features. Strategy: apply PCA to retain 95–99% of explained variance, usually reducing to 20–100 dimensions for most text domains. Alternatively: use an autoencoder (nn.Linear → ReLU → nn.Linear) to learn a lower-dimensional encoding that's task-specific (trained jointly with the prediction head). [2]"
+    },
+    {
+      "heading": "Entity Embeddings for Categorical Features",
+      "body": "Architecture: an Embedding layer is a lookup table — for category i, return the i-th row of a learned matrix W ∈ ℝ^{n_categories × d}. During training, gradients flow back through the embedding and update W, so similar categories (those that appear in similar contexts or have similar target distributions) converge to similar vectors. Embedding dimension d: rule of thumb is min(50, (n_categories+1)//2). Guo & Berkhahn (2016): trained entity embeddings on categorical features of a large retail dataset, extracted the learned embeddings, and used them as features in a gradient-boosted model — outperforming OHE and label encoding. [1]",
+      "formula": "Entity embedding: Eᵢ = W[i], W ∈ ℝ^{K×d}, d = min(50, ⌈(K+1)/2⌉)"
+    },
+    {
+      "heading": "Frozen vs Fine-Tuned Embeddings",
+      "body": "Two strategies: (1) Frozen embeddings: compute embeddings from a pre-trained model offline (batch encoding), save to disk, use as fixed features. Fast, no gradient through the encoder. Works when pre-trained features are general enough for your task. (2) Fine-tuned embeddings: include the encoder in the neural network graph and allow gradients to flow back through it. More task-specific but requires more data, compute, and careful learning-rate scheduling (low LR for encoder, higher for prediction head). For small datasets (< 10k examples), frozen pre-trained embeddings almost always outperform fine-tuned due to overfitting risk. [2]"
+    }
+  ],
+  "youtubeLabel": "Embeddings in Machine Learning — Andrej Karpathy",
+  "youtubeUrl": "https://www.youtube.com/embed/wjZofJX0v4M",
+  "takeaways": [
+    "Text embeddings (sentence-transformers/BERT): dense semantic vectors that can replace TF-IDF as tabular features. Apply PCA (→20–100 dims) before passing to tree models. [2]",
+    "Entity embeddings: W ∈ ℝ^{K×d}, d ≈ min(50, K//2). Learned jointly with prediction task. Outperform OHE for high-cardinality categoricals. [1]",
+    "Pre-trained embeddings = transfer learning for text/image features. Often superior to task-specific embeddings trained from scratch on small tabular datasets. [2]",
+    "Similarity features: cosine_similarity(user_emb, item_emb) is a powerful ranking signal for recommendations and fraud detection. [1]",
+    "Frozen embeddings (precompute offline) for small datasets. Fine-tuned embeddings for larger datasets with domain shift from pre-training corpus. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "How do you choose which pre-trained embedding model to use for a tabular task?",
+      "a": "Key factors: (1) Domain: for financial text, use domain-adapted models (FinBERT, EDGAR-BERT). For general product descriptions, all-MiniLM-L6-v2 (sentence-transformers) is fast and strong. For code, use CodeBERT. (2) Computational budget: all-MiniLM-L6-v2 (384-dim, fast) vs all-mpnet-base-v2 (768-dim, better). OpenAI text-embedding-3-large (3072-dim) is very strong but costs per API call. (3) Task: information retrieval / semantic similarity → use models trained with contrastive objectives (sentence-transformers). Classification → BERT-family models with fine-tuned [CLS] tokens. (4) Language: multilingual tasks require multilingual models (multilingual-E5, mBERT, paraphrase-multilingual-MiniLM)."
+    },
+    {
+      "q": "What is the curse of dimensionality for embedding features in tree models?",
+      "a": "Tree models split on one feature at a time. In high-dimensional embedding spaces, the meaning of a concept is distributed across many dimensions — no single dimension captures it cleanly. A 768-dim BERT embedding might encode 'sentiment' as a complex combination of 50+ dimensions, making it hard for any individual split to capture. Implications: (1) PCA to 20–100 dims often helps by surfacing the most informative axes of variation. (2) Concatenating embedding dimensions with other features can dilute tree splits toward the embedding dimensions (more features → higher chance of random splits on them). Balance by normalizing feature importances or using feature subsampling (colsample_bytree in XGBoost). (3) For pure text tasks: fine-tune a transformer end-to-end rather than extracting features — it better captures the distributed nature of meaning."
+    }
+  ],
+  "sources": [
+    { "label": "Mikolov, T. et al. — Efficient Estimation of Word Representations in Vector Space, arXiv:1301.3781", "url": "https://arxiv.org/abs/1301.3781" },
+    { "label": "Guo, C. & Berkhahn, F. — Entity Embeddings of Categorical Variables, arXiv:1604.06737", "url": "https://arxiv.org/abs/1604.06737" }
+  ]
+}

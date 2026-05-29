@@ -1,0 +1,68 @@
+{
+  "visualizationType": "flow-diagram",
+  "codeSnapshot": {
+    "label": "data_lake.py",
+    "code": "# ── Data Lake architecture with Delta Lake (Bronze/Silver/Gold) ──\nfrom pyspark.sql import SparkSession\nfrom pyspark.sql import functions as F\nfrom pyspark.sql.types import StructType, StructField, StringType, DoubleType\nfrom delta import configure_spark_with_delta_pip\n\nbuilder = SparkSession.builder.appName('DataLake') \\\n    .config('spark.sql.extensions', 'io.delta.sql.DeltaSparkSessionExtension') \\\n    .config('spark.sql.catalog.spark_catalog', 'org.apache.spark.sql.delta.catalog.DeltaCatalog')\n\nspark = configure_spark_with_delta_pip(builder).getOrCreate()\n\n# ── BRONZE: raw ingestion — no transforms, preserve original ──\nraw_events = spark.read.json('s3://data-lake/raw/events/date=2024-01-15/')\nraw_events.write.format('delta').mode('append').save('s3://data-lake/bronze/events/')\n\n# ── SILVER: clean and type ──\nbronze_df = spark.read.format('delta').load('s3://data-lake/bronze/events/')\nsilver_df = (\n    bronze_df\n    .filter(F.col('user_id').isNotNull())\n    .filter(F.col('amount') > 0)\n    .withColumn('amount', F.col('amount').cast(DoubleType()))\n    .withColumn('event_ts', F.to_timestamp('event_ts', 'yyyy-MM-dd HH:mm:ss'))\n    .dropDuplicates(['event_id'])\n)\nsilver_df.write.format('delta').mode('overwrite') \\\n    .partitionBy('date') \\\n    .option('overwriteSchema', 'true') \\\n    .save('s3://data-lake/silver/events/')\n\n# ── GOLD: business-logic aggregates (ML training features) ──\nsilver_events = spark.read.format('delta').load('s3://data-lake/silver/events/')\ngold_features = (\n    silver_events\n    .groupBy('user_id')\n    .agg(\n        F.sum('amount').alias('total_spend'),\n        F.count('event_id').alias('event_count'),\n        F.countDistinct('product_id').alias('unique_products'),\n        F.max('event_ts').alias('last_event_ts'),\n    )\n    .withColumn('days_since_last_event',\n        F.datediff(F.current_date(), F.to_date('last_event_ts')))\n)\ngold_features.write.format('delta').mode('overwrite') \\\n    .save('s3://data-lake/gold/user_features/')\n\n# ── Delta Lake: time travel ──\n# Read data as it existed at a specific version or timestamp\ndf_v1 = spark.read.format('delta').option('versionAsOf', 1) \\\n    .load('s3://data-lake/silver/events/')\ndf_yesterday = spark.read.format('delta') \\\n    .option('timestampAsOf', '2024-01-14') \\\n    .load('s3://data-lake/silver/events/')\n\n# ── Delta Lake: MERGE (upsert) ──\nfrom delta.tables import DeltaTable\ndelta_table = DeltaTable.forPath(spark, 's3://data-lake/silver/events/')\ndelta_table.alias('target').merge(\n    source=updates_df.alias('source'),\n    condition='target.event_id = source.event_id'\n).whenMatchedUpdateAll() \\\n .whenNotMatchedInsertAll() \\\n .execute()"
+  },
+  "eli3": [
+    "A data lake is a centralized repository that stores all your data in its raw format — structured, semi-structured, and unstructured — at any scale. Unlike a data warehouse (which requires data to be shaped into tables before loading), a data lake stores everything as-is: raw JSON logs, CSV files, images, videos, and Parquet files all living in the same storage (usually S3 or GCS).",
+    "The classic joke is that data lakes become 'data swamps' — dumps of unstructured data that no one can find or trust. The solution is the medallion architecture: organize data into Bronze (raw, exact copy of source), Silver (cleaned, validated, typed), and Gold (aggregated, business-ready) layers. Each layer adds quality and value.",
+    "The modern evolution is the data lakehouse — data lake storage (S3/GCS, cheap) with warehouse-grade features added by table formats like Delta Lake, Apache Iceberg, or Apache Hudi. These add ACID transactions, versioning, schema enforcement, and SQL support to the lake — combining the cost efficiency of object storage with the reliability of a warehouse."
+  ],
+  "whenWhy": [
+    {
+      "title": "ML training data at scale",
+      "body": "Data lakes are the primary storage layer for ML training datasets: raw text for LLM pretraining (hundreds of terabytes), image/video datasets, historical event logs for recommendation models. Parquet on S3/GCS is the standard format: columnar, compressed (5–10×), typed, compatible with Spark, pandas, PyArrow, DuckDB, and BigQuery. S3's virtually unlimited storage and low per-GB cost (~$0.023/GB/month) make it the default choice for ML data at any scale."
+    },
+    {
+      "title": "Unstructured and semi-structured data",
+      "body": "A data warehouse requires a predefined schema. A data lake accepts anything: raw server logs (JSON), sensor data (CSV), customer emails (text), product images (JPEG), audio recordings (WAV). The schema is applied at read time (schema-on-read) rather than write time. For ML, this is crucial: the raw text or image must be preserved so different preprocessing pipelines can be applied later without re-ingestion."
+    },
+    {
+      "title": "Cost efficiency for long-retention data",
+      "body": "Relational databases and traditional warehouses charge for storage by the GB/month at premium rates. S3 Glacier (cold storage) costs $0.004/GB/month — 50× cheaper than database storage. For training data that must be retained for years (regulatory compliance, model audit, retraining), data lakes on object storage are the economical choice. Delta Lake vacuum command manages old file retention, balancing storage cost against time-travel capability."
+    }
+  ],
+  "deepDiveIntro": [
+    "The medallion architecture (Databricks, 2020) defines three layers: Bronze (raw ingestion — exact replica of source, immutable), Silver (cleaned and validated — nulls handled, duplicates removed, types cast, schema enforced), Gold (aggregated — user features, KPIs, ML training tables). Each layer is append-only or MERGE-capable via Delta Lake. This structure separates concerns: Bronze preserves source fidelity; Silver ensures data quality; Gold serves analytical and ML consumers. Re-running a Silver → Gold job with updated logic is safe — Bronze is always available for reprocessing. [1]",
+    "Apache Iceberg (Netflix, 2018) and Delta Lake (Databricks, 2019) are competing open table formats for data lakehouses. Both add: ACID transactions (concurrent writes safe), schema evolution (add/drop/rename columns without rewriting data), time travel (query data as of past versions), partition pruning (metadata tracks which files belong to which partitions). Key difference: Iceberg has broader multi-engine support (Spark, Flink, Presto, Trino, Hive); Delta Lake integrates most deeply with Databricks and PySpark. Apache Hudi is a third option focused on upserts and incremental processing. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Bronze / Silver / Gold Medallion Layers",
+      "body": "Bronze: raw data from source systems, written as-is. No transforms, no filtering. File format: typically the source format (JSON, CSV) or Parquet. Retention: indefinite — this is the source of truth for all reprocessing. Silver: cleaned, typed, deduplicated. Apply schema enforcement (null checks, type casts, range validations). Write as Parquet partitioned by date. The silver layer answers 'what events actually happened?' Gold: business-logic aggregates, ML features, KPIs. Multiple gold tables can exist for different consumers: gold/user_features (for ML), gold/revenue_by_region (for BI), gold/model_inputs (for specific model). Gold is compute-expensive to produce — materialize on a schedule. [1]"
+    },
+    {
+      "heading": "Delta Lake: ACID on Object Storage",
+      "body": "Delta Lake adds a transaction log (_delta_log/ directory) to a Parquet table. Every operation (INSERT, UPDATE, DELETE, MERGE) appends a JSON commit file with: (1) list of Parquet files added, (2) list of files removed, (3) schema at that version. Reading a Delta table: read the transaction log to determine the current set of valid files; read those Parquet files. ACID properties: Atomicity — either all files from a MERGE are committed or none. Consistency — the schema is enforced at write time. Isolation — concurrent readers see the committed snapshot; writers use optimistic concurrency control. Durability — S3 provides 11-nines durability. Time travel: read an old version by reading the transaction log up to that commit number. [2]",
+      "formula": "Delta version N = files in commits 0..N (added − removed)"
+    },
+    {
+      "heading": "Apache Iceberg: Engine-Agnostic Table Format",
+      "body": "Iceberg uses a three-level metadata structure: (1) Catalog pointer → snapshot file, (2) Snapshot → manifest list, (3) Manifest list → manifest files → data files. Each level is immutable — updates create new metadata files. This enables: hidden partitioning (partition columns not exposed in queries; Iceberg handles the routing), partition evolution (change partitioning scheme without rewriting data), row-level deletes (mark rows as deleted in a delete file, applied at read time — enables GDPR right-to-erasure). Iceberg's catalog abstraction (AWS Glue, Hive Metastore, Nessie) enables the same table to be queried by Spark, Flink, Trino, and DuckDB without data format translation. [2]"
+    }
+  ],
+  "youtubeLabel": "Data Lakehouse Architecture — Databricks",
+  "youtubeUrl": "https://www.youtube.com/embed/fqzPCdBFEno",
+  "takeaways": [
+    "Data lake: schema-on-read, all data types (raw JSON/CSV/Parquet/images), cheap object storage (S3/GCS). Bronze/Silver/Gold medallion architecture. [1]",
+    "Delta Lake: ACID on Parquet via transaction log. Time travel: read version N = commits 0..N applied. MERGE = upsert. [2]",
+    "Iceberg: engine-agnostic (Spark, Flink, Trino, DuckDB). Hidden partitioning, partition evolution, row-level deletes for GDPR. [2]",
+    "Data lakehouse = data lake storage + ACID + schema enforcement + SQL + versioning. Combines warehouse reliability with lake cost/scale. [1]",
+    "DuckDB: embeds in Python, can query Parquet files on S3 directly with SQL — no cluster needed for <100GB analytical queries. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "What is the small files problem in data lakes, and how do you solve it?",
+      "a": "Data lakes on HDFS/S3 suffer from performance degradation when a table consists of many small files (< 10MB each). Causes: streaming ingestion writes many small files per minute; incremental Spark jobs write one file per partition per run. Costs: (1) Metadata overhead — each Parquet file requires a metadata read (S3 list object + open + read footer). Thousands of small files → thousands of metadata requests, slow query start. (2) JVM overhead — each Spark task reads one file; thousands of tasks × JVM overhead = slow. Solutions: (1) Compact (merge) files periodically using OPTIMIZE command (Delta Lake) or Iceberg's bin-packing rewrite. (2) Configure Spark to coalesce small files before writing: df.repartition(n).write.parquet(...). (3) Use Z-ordering (Delta OPTIMIZE ZORDER BY col) to co-locate related data in fewer, larger files, also improving query pruning."
+    },
+    {
+      "q": "How do you implement GDPR right-to-erasure (right to be forgotten) in a data lake?",
+      "a": "Traditional Parquet files are immutable — you cannot delete individual rows without rewriting the entire file. Solutions: (1) Apache Iceberg row-level deletes: write a delete file marking specific row IDs as deleted; at read time, Iceberg filters out those rows. No file rewrite needed. Periodic compaction (rewrite_data_files) materializes the deletes into new Parquet files. (2) Delta Lake DELETE: writes new Parquet files with the deleted rows removed; old files are tombstoned in the transaction log. vacuum command eventually deletes the old files after the retention period expires. (3) Pseudonymization: replace PII with a surrogate key at ingestion; a deletion only requires removing one row from the key-mapping table. The data lake itself never contains PII. For ML: after GDPR deletion, models trained on the deleted user's data must be evaluated — if the model has 'memorized' the deleted data (possible for LLMs), retraining without that data may be required."
+    }
+  ],
+  "sources": [
+    { "label": "Delta Lake Documentation and Architecture — delta.io", "url": "https://docs.delta.io/" },
+    { "label": "Apache Iceberg Documentation — iceberg.apache.org", "url": "https://iceberg.apache.org/docs/latest/" }
+  ]
+}

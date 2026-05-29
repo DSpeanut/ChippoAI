@@ -1,0 +1,67 @@
+{
+  "visualizationType": "flow-diagram",
+  "codeSnapshot": {
+    "label": "airflow_dag.py",
+    "code": "# ── Apache Airflow: DAG definition ──\nfrom datetime import datetime, timedelta\nfrom airflow import DAG\nfrom airflow.operators.python import PythonOperator\nfrom airflow.operators.bash import BashOperator\nfrom airflow.providers.amazon.aws.operators.glue import GlueJobOperator\nfrom airflow.providers.slack.operators.slack_webhook import SlackWebhookOperator\n\ndefault_args = {\n    'owner': 'ml-team',\n    'depends_on_past': False,\n    'start_date': datetime(2024, 1, 1),\n    'email_on_failure': True,\n    'retries': 2,\n    'retry_delay': timedelta(minutes=5),\n    'retry_exponential_backoff': True,\n}\n\nwith DAG(\n    dag_id='daily_feature_pipeline',\n    default_args=default_args,\n    schedule='0 6 * * *',    # 6am UTC daily (cron syntax)\n    catchup=False,            # don't backfill missed runs\n    tags=['ml', 'features'],\n) as dag:\n\n    # Task 1: ingest raw data\n    ingest = BashOperator(\n        task_id='ingest_events',\n        bash_command='python /pipelines/ingest.py --date {{ ds }}',\n        # {{ ds }} = DAG run date, e.g., '2024-01-15'\n    )\n\n    # Task 2: compute features (AWS Glue Spark job)\n    compute_features = GlueJobOperator(\n        task_id='compute_features',\n        job_name='customer-features-glue',\n        script_args={'--date': '{{ ds }}'},\n    )\n\n    # Task 3: validate feature quality\n    validate = PythonOperator(\n        task_id='validate_features',\n        python_callable=run_great_expectations,\n        op_kwargs={'date': '{{ ds }}'},\n    )\n\n    # Task 4a + 4b run in parallel\n    train_model = BashOperator(\n        task_id='train_model',\n        bash_command='python /pipelines/train.py --date {{ ds }}'\n    )\n    update_feature_store = BashOperator(\n        task_id='materialize_feature_store',\n        bash_command='feast materialize-incremental {{ ts }}'\n    )\n\n    # Notify on completion\n    notify = SlackWebhookOperator(\n        task_id='notify_slack',\n        message='Feature pipeline for {{ ds }} completed.',\n    )\n\n    # DAG dependency: ingest → compute → validate → [train, materialize] → notify\n    ingest >> compute_features >> validate >> [train_model, update_feature_store] >> notify"
+  },
+  "eli3": [
+    "Workflow orchestration is the automated scheduling and coordination of a sequence of data processing steps. Instead of manually running Python scripts in order, an orchestrator like Apache Airflow runs them on a schedule, tracks which steps succeeded or failed, retries failed steps automatically, and notifies you when something goes wrong.",
+    "The core concept is a DAG (Directed Acyclic Graph): a graph where each node is a task (run a Python function, execute a SQL query, submit a Spark job) and the edges show dependencies ('run task B only after task A succeeds'). The orchestrator executes tasks in topological order, running independent tasks in parallel where possible.",
+    "In ML, orchestration is used for: nightly feature computation pipelines, scheduled model retraining, data quality validation, and inference batch jobs. Without orchestration, these would be fragile cron jobs with no retry logic, no monitoring, and no dependency management."
+  ],
+  "whenWhy": [
+    {
+      "title": "Production ML pipelines with dependencies",
+      "body": "A typical ML feature pipeline has dependencies: ingest raw data → validate data quality → compute features → materialize to feature store → trigger model retraining. Each step must complete before the next starts. Airflow defines these dependencies with >> operators and handles failures: if feature computation fails, model retraining is automatically skipped (downstream tasks wait for their dependencies). Without an orchestrator, this would require brittle shell scripts with no dependency tracking."
+    },
+    {
+      "title": "Scheduled retraining and monitoring",
+      "body": "ML models must be retrained periodically as production data distributions drift. Airflow can schedule weekly model retraining DAGs: pull recent data, compute evaluation metrics, compare to the current production model's metrics, and deploy the new model if it improves. SLA (Service Level Agreement) monitoring alerts if a DAG misses its expected completion time — critical when downstream systems depend on fresh features or model updates."
+    },
+    {
+      "title": "Backfilling and historical reprocessing",
+      "body": "When a feature computation bug is discovered, you need to recompute all historical features. Airflow's catchup=True mode (and the backfill command) re-runs the DAG for each missed historical execution date, using {{ ds }} (the logical date) to parameterize the job. Each historical run processes only its date's data, allowing parallel backfilling. This is how ELT pipelines and feature stores are rebuilt after a logic bug."
+    }
+  ],
+  "deepDiveIntro": [
+    "Apache Airflow (Airbnb, 2015) is the dominant open-source workflow orchestrator. Key components: (1) DAG: Python file defining tasks and dependencies. (2) Scheduler: scans DAG files, triggers task runs when their schedule is due and dependencies are met. (3) Workers: execute tasks (Celery or Kubernetes executor for distributed execution). (4) Metadata database (PostgreSQL): stores task states, DAG runs, logs. (5) Web UI: monitor DAG runs, trigger manually, view logs. Competitors: Prefect (Python-native, cloud-hosted, better developer experience), Dagster (data-aware, integrated asset tracking), Apache Argo (Kubernetes-native, YAML-defined), Temporal (workflow-as-code, strong for long-running workflows). [1]",
+    "The critical difference between orchestrators and streaming frameworks: orchestrators schedule and coordinate batch jobs that run periodically. Streaming frameworks (Kafka, Flink) process events continuously. An orchestrator runs 'once per day'; a streaming pipeline processes events as they arrive. Modern pipelines use both: an orchestrator schedules the batch feature computation and model training; a streaming pipeline maintains real-time features. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Airflow Core Concepts",
+      "body": "DAG run: one execution instance of a DAG for a specific logical_date (previously called execution_date). Task instance: one execution of a specific task within a DAG run. Task state machine: scheduled → queued → running → success / failed / retry. DAG scheduling: cron expression (schedule='0 6 * * *' = daily at 6am UTC) or timedelta (schedule=timedelta(hours=4)). Jinja templating: {{ ds }} is the DAG run date (YYYY-MM-DD), {{ ts }} is the ISO timestamp. This lets tasks parameterize SQL queries, file paths, or script arguments by date without hardcoding. XCom (cross-communication): tasks share small values between them via the metadata database. Not for large data — use S3/GCS for data handoff. [1]"
+    },
+    {
+      "heading": "Executors: Local, Celery, Kubernetes",
+      "body": "Airflow's executor determines how tasks run. LocalExecutor: tasks run as processes on the scheduler machine — simple, for development or small loads. CeleryExecutor: tasks are dispatched as messages to a Celery queue (Redis/RabbitMQ), consumed by worker machines. Horizontal scaling: add more Celery workers. Most common production deployment. KubernetesExecutor: each task spawns a new Kubernetes pod, executes, and terminates. Total isolation between tasks (no shared state, different Docker images per task). Best for: tasks with different resource requirements (CPU-heavy tasks get large pods, light tasks get small), or environments where Celery cluster management overhead is undesirable. [1]"
+    },
+    {
+      "heading": "Prefect and Dagster: Modern Alternatives",
+      "body": "Airflow's pain points: YAML/Python DAG files are not easily testable locally; the scheduler is complex to operate; global variables in DAG files can cause subtle bugs. Prefect: DAGs are Python functions decorated with @flow and @task. Native async support, cloud-hosted orchestration layer (Prefect Cloud), local testing is natural (just call the flow function). Dagster: asset-centric orchestration — instead of defining task steps, you define Software-Defined Assets (data assets) and their computation logic. Dagster understands data lineage, materializes assets, and tracks freshness. Best for data engineering teams that want strong data observability and lineage. [2]"
+    }
+  ],
+  "youtubeLabel": "Apache Airflow Tutorial — Marc Lamberti",
+  "youtubeUrl": "https://www.youtube.com/embed/AHgxKpNiMiQ",
+  "takeaways": [
+    "DAG (Directed Acyclic Graph): tasks = nodes, dependencies = edges. Tasks execute in topological order; independent tasks run in parallel. [1]",
+    "Airflow: tasks use >> to define dependencies. {{ ds }} Jinja template injects the DAG run date into task commands. [1]",
+    "Executors: Local (dev), Celery (horizontal scaling), Kubernetes (pod-per-task isolation, heterogeneous resources). [1]",
+    "catchup=False: run only from now. backfill CLI: re-runs historical dates. Critical for reprocessing after a data pipeline bug. [1]",
+    "Prefect: Python-native, testable flows. Dagster: asset-centric with lineage. Both address Airflow's operational complexity trade-offs. [2]"
+  ],
+  "edgeCases": [
+    {
+      "q": "How do you handle failures in a DAG with many downstream dependencies?",
+      "a": "When a task fails, all downstream tasks automatically move to 'upstream_failed' state and are not executed. Configuration options: (1) retries: integer — the scheduler will retry the failed task up to this many times before marking it as failed. (2) retry_delay + retry_exponential_backoff: waits before retrying, with increasing delays. (3) on_failure_callback: call a Python function (Slack/PagerDuty alert) when a task fails. (4) trigger_rule: by default, a task runs when ALL upstream tasks succeed. Change to trigger_rule='all_done' to run cleanup tasks even if upstream tasks failed. (5) SLA alerts: configure SLA (service_level_agreement=timedelta(hours=2)) on a task — Airflow alerts if the task hasn't completed within 2 hours of the DAG run start time."
+    },
+    {
+      "q": "What is the difference between Airflow and a streaming pipeline like Apache Flink?",
+      "a": "Airflow orchestrates batch jobs: it triggers a Python function or Spark job at a scheduled time (e.g., 6am daily), waits for it to complete, then triggers the next. The pipeline is discrete and time-triggered. Apache Flink processes a continuous stream of events as they arrive — it never 'finishes', it runs indefinitely. An Airflow DAG might include a task that submits a Flink job and waits for it to process a bounded historical window; Flink itself is not an orchestrator. The distinction: orchestration = scheduling and dependency management for batch workflows. Streaming = continuous event processing. Production ML systems typically use both: Airflow for batch training pipelines, Flink/Kafka for real-time feature computation."
+    }
+  ],
+  "sources": [
+    { "label": "Apache Airflow Documentation — airflow.apache.org", "url": "https://airflow.apache.org/docs/" },
+    { "label": "Kleppmann, M. — Designing Data-Intensive Applications, Ch. 10 (O'Reilly, 2017)", "url": "https://dataintensive.net/" }
+  ]
+}

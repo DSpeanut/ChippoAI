@@ -1,0 +1,66 @@
+{
+  "visualizationType": "flow-diagram",
+  "codeSnapshot": {
+    "label": "streaming_vs_batch.py",
+    "code": "# ── BATCH: process historical data once ──\nimport pandas as pd\n\ndef batch_feature_pipeline(date: str) -> pd.DataFrame:\n    \"\"\"Run nightly: compute features for all users active today.\"\"\"\n    orders = pd.read_parquet(f's3://data/orders/date={date}/')\n    users = pd.read_parquet('s3://data/users/snapshot.parquet')\n\n    features = (\n        orders\n        .groupby('user_id')\n        .agg(\n            order_count=('order_id', 'count'),\n            total_spend=('amount', 'sum'),\n            avg_spend=('amount', 'mean'),\n        )\n        .join(users.set_index('user_id')[['age', 'country']], how='left')\n    )\n    features.to_parquet(f's3://features/date={date}/user_features.parquet')\n    return features\n\n# ── STREAMING: process each event as it arrives ──\n# Apache Kafka + Flink (pseudo-code)\n#\n# KafkaSource: topic='order_events'\n#   → parse JSON event: {user_id, amount, timestamp}\n#   → keyed window: tumbling 1-hour window per user_id\n#   → aggregate: count, sum, mean of amount\n#   → sink to Redis feature store (low-latency read)\n#\n# Python Kafka consumer (simple example):\nfrom kafka import KafkaConsumer\nimport json\n\nconsumer = KafkaConsumer(\n    'order_events',\n    bootstrap_servers='kafka:9092',\n    value_deserializer=lambda m: json.loads(m.decode('utf-8')),\n    group_id='feature-pipeline',\n    auto_offset_reset='latest',\n)\n\nfor message in consumer:\n    event = message.value  # {'user_id': 123, 'amount': 49.99, ...}\n    # update running aggregate in Redis\n    # r.incrbyfloat(f'user:{event[\"user_id\"]}:total_spend', event['amount'])\n    pass"
+  },
+  "eli3": [
+    "Batch processing means collecting a pile of data, waiting until the pile is big enough (hourly, daily, weekly), and then processing it all at once. It's like doing laundry once a week — efficient, but you might run out of clean socks before washing day.",
+    "Stream processing means handling each piece of data the moment it arrives, one event at a time. It's like washing each item of clothing immediately after you take it off — always fresh, but higher overhead per item.",
+    "The choice between batch and streaming is really a latency vs. complexity trade-off. Most systems start with batch (simpler) and introduce streaming only for specific use cases that require near-real-time results, like fraud detection, personalization, or monitoring."
+  ],
+  "whenWhy": [
+    {
+      "title": "Batch for training and historical feature computation",
+      "body": "ML model training is inherently a batch operation: you collect all training examples, run gradient descent over multiple epochs, and produce a model artifact. Feature engineering for training data — computing 30-day rolling spend, historical click rates, customer tenure — is likewise batch: run nightly over the full dataset and store in a feature store. Batch jobs are simple to debug (re-run with the same input), cheap (spot instances, off-peak compute), and amenable to parallelism via Spark or Dask."
+    },
+    {
+      "title": "Streaming for real-time inference features",
+      "body": "Fraud detection, real-time recommendation, and dynamic pricing all need features computed within milliseconds of an event. A transaction fraud model needs the user's spend-in-last-60-seconds — impossible to provide from a nightly batch job. Here, a Kafka topic captures each transaction, Flink computes sliding window aggregates (sum, count), and writes them to a low-latency store (Redis, DynamoDB) for the inference service to read synchronously."
+    },
+    {
+      "title": "Lambda architecture: both simultaneously",
+      "body": "Many production systems combine both: a speed layer (streaming, low latency, approximate or partial results) plus a batch layer (complete, accurate, periodic recomputation). The serving layer merges both views. The canonical reference is Kleppmann's DDIA Ch. 12 and Nathan Marz's original Lambda Architecture paper. Kappa architecture (stream-only, reprocess historical data by replaying Kafka offsets) is a simpler alternative gaining traction."
+    }
+  ],
+  "deepDiveIntro": [
+    "Batch processing reads a bounded, static input (a file or a snapshot of a table), processes it, and writes a bounded output. Time-to-result is measured in minutes to hours. Latency is unimportant; throughput is maximised. The canonical system is MapReduce (Hadoop) and its successors Apache Spark and Dask. Spark's Resilient Distributed Dataset (RDD) abstraction lets a batch job process petabytes across a cluster with fault tolerance via lineage recomputation. [1]",
+    "Stream processing treats data as an unbounded, continuously-arriving sequence of events. Each event is processed with low latency (milliseconds to seconds). Core concepts: event time vs processing time, watermarks (how late can an event arrive before it's dropped), windowing (tumbling, sliding, session windows), and stateful aggregation (maintaining per-key counts/sums across events). Apache Flink, Apache Kafka Streams, and Spark Structured Streaming are the main frameworks. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Windowing in Stream Processing",
+      "body": "Windows define how events are grouped for aggregation. Three types: (1) Tumbling window — non-overlapping fixed-size windows (e.g., count events per 1-hour bucket). Each event belongs to exactly one window. (2) Sliding window — overlapping windows (e.g., sum of last 60 minutes, updated every 5 minutes). Each event belongs to multiple windows. (3) Session window — variable-length windows closed by inactivity (e.g., close a user session after 30 minutes of no activity). Event time vs processing time: event time uses the timestamp embedded in the event (correct, but late arrivals complicate things); processing time uses the wall clock when the event arrives (simpler, but affected by network delays). Watermarks trigger window closure: a watermark at T means 'all events with event_time < T have arrived.' [2]"
+    },
+    {
+      "heading": "Exactly-Once Semantics",
+      "body": "Stream systems offer three delivery guarantees: at-most-once (may lose messages), at-least-once (may duplicate), exactly-once (no loss, no duplication). Exactly-once is expensive: it requires idempotent producers and transactional commits. Kafka supports exactly-once semantics (EOS) since version 0.11: producers use idempotence (sequence numbers) and transactions (atomic multi-partition writes). Flink achieves exactly-once via distributed snapshots (Chandy-Lamport algorithm): checkpoint state to durable storage, on failure roll back to last checkpoint and replay from Kafka offset. The result: consistent state despite failures. [2]"
+    },
+    {
+      "heading": "Micro-batch as a Middle Ground",
+      "body": "Spark Structured Streaming uses micro-batch processing: it accumulates events in a very small window (100ms–1s), then processes them as a mini-batch. This reuses Spark's mature batch optimizer (Catalyst), provides exactly-once semantics, and achieves sub-second latency — sufficient for most 'near real-time' use cases. True streaming (Flink) achieves sub-100ms latency with more complex stateful event-by-event processing. For ML inference pipelines where 1-second latency is acceptable, Spark Structured Streaming is often preferred over full streaming due to operational simplicity. [1]"
+  ],
+  "youtubeLabel": "Batch vs Stream Processing — Databricks",
+  "youtubeUrl": "https://www.youtube.com/embed/nkq_9RpGkgU",
+  "takeaways": [
+    "Batch: bounded input, high throughput, minutes-hours latency, simple to debug. Use for model training, nightly feature computation, reporting. [1]",
+    "Streaming: unbounded input, low latency (ms–s), stateful aggregation with windowing. Use for fraud detection, real-time recommendations, monitoring. [2]",
+    "Three window types: tumbling (non-overlapping), sliding (overlapping), session (inactivity-closed). Event time vs processing time: event time is more correct but requires watermarks. [2]",
+    "Exactly-once in Kafka: idempotent producers + transactions. In Flink: Chandy-Lamport distributed snapshots + Kafka offset replay. [2]",
+    "Spark Structured Streaming (micro-batch): sub-second latency with simpler operations — the practical choice when true streaming latency isn't needed. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "How do you handle late-arriving events in stream processing?",
+      "a": "Events arrive late due to network delays, mobile clients going offline, or clock skew. Strategy: (1) Set a watermark — a threshold of how late events can arrive and still be included in their window. Flink example: watermark = max_event_time_seen - 10_minutes. Events arriving more than 10 minutes late are dropped or sent to a side output for separate handling. (2) Allowed lateness: Spark/Flink can hold window state open for a specified period after the watermark passes, emitting updated results as late events arrive. Trade-off: longer allowed lateness increases memory for maintained window state. For ML features, a small amount of lateness is usually acceptable; the real risk is systematic lateness that biases feature values."
+    },
+    {
+      "q": "What is the Kappa Architecture and when does it replace Lambda?",
+      "a": "Lambda Architecture maintains two codebases: a batch layer (Hadoop/Spark) for accurate historical results and a streaming layer (Flink/Kafka Streams) for real-time approximations. Kappa Architecture eliminates the batch layer entirely: historical reprocessing is done by replaying Kafka (which retains messages for a configurable retention period, potentially years) through the same streaming pipeline. Kappa is simpler (one codebase) but requires: (1) Kafka with long retention for full history, (2) the streaming pipeline to be fast enough for catch-up reprocessing, and (3) idempotent sinks to handle replay. Kappa works when your stream processing framework (Flink) is performant enough for both real-time and batch-speed historical recomputation."
+    }
+  ],
+  "sources": [
+    { "label": "Kleppmann, M. — Designing Data-Intensive Applications, Ch. 10–11 (O'Reilly, 2017)", "url": "https://dataintensive.net/" },
+    { "label": "Apache Flink Documentation — Windowing, Event Time, Watermarks", "url": "https://nightlies.apache.org/flink/flink-docs-stable/" }
+  ]
+}

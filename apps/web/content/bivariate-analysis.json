@@ -1,0 +1,70 @@
+{
+  "visualizationType": "chart",
+  "codeSnapshot": {
+    "label": "bivariate_analysis.py",
+    "code": "import pandas as pd\nimport numpy as np\nimport matplotlib.pyplot as plt\nimport seaborn as sns\nfrom scipy import stats\n\ndf = pd.read_csv('data.csv')\n\n# ── Numeric vs Numeric: scatter + regression line ──\nfig, ax = plt.subplots(figsize=(8, 5))\nax.scatter(df['age'], df['income'], alpha=0.3, s=10)\n# Add lowess (locally weighted scatterplot smoothing) trend line\nfrom statsmodels.nonparametric.smoothers_lowess import lowess\nsmoothed = lowess(df['income'], df['age'], frac=0.3)\nax.plot(smoothed[:, 0], smoothed[:, 1], color='red', lw=2)\nax.set(xlabel='Age', ylabel='Income', title='Age vs Income')\n\n# ── Numeric vs Categorical: box + violin ──\nfig, axes = plt.subplots(1, 2, figsize=(12, 5))\nsns.boxplot(x='country', y='income', data=df, ax=axes[0])\nsns.violinplot(x='country', y='income', data=df, ax=axes[1])\n\n# ── Categorical vs Categorical: cross-tabulation + chi-square ──\nct = pd.crosstab(df['gender'], df['churn'], margins=True)\nprint(ct)\n# Chi-square test of independence\nchi2, p_val, dof, expected = stats.chi2_contingency(\n    pd.crosstab(df['gender'], df['churn'])\n)\nprint(f'Chi2={chi2:.2f}, p={p_val:.4f}, df={dof}')\n# If p < 0.05: reject H0 that variables are independent\n\n# ── Numeric vs Binary target: point-biserial correlation ──\n# Equivalent to Pearson r between numeric X and 0/1 y\nr, p = stats.pointbiserialr(df['income'], df['churn'])\nprint(f'Point-biserial r={r:.3f}, p={p:.4f}')\n\n# ── Pair plot: all pairwise numeric combinations ──\nsns.pairplot(df[['age', 'income', 'spend', 'churn']], hue='churn', plot_kws={'alpha': 0.4})\nplt.show()"
+  },
+  "eli3": [
+    "Bivariate analysis studies the relationship between two variables at a time. The key questions are: Do they move together? When one is high, is the other also high (positive correlation) or low (negative)? Is the relationship linear or curved? Does one variable predict the other?",
+    "The analysis method depends on the types of the two variables: two numerics → scatter plot + correlation. One numeric, one categorical → box plot or violin plot per category. Two categoricals → cross-tabulation (contingency table) + chi-square test.",
+    "Bivariate analysis identifies which features are likely to be useful predictors of the target before any model is trained. It also flags multicollinearity (two features that are nearly identical) — keeping both just adds noise and makes model interpretation harder."
+  ],
+  "whenWhy": [
+    {
+      "title": "Feature selection — finding predictors of the target",
+      "body": "Before training, compute the bivariate relationship between each feature and the target: scatter plots, box plots per class, or cross-tabulations. Features with no bivariate relationship to the target are likely uninformative (though tree models can still find interactions). Computing correlation coefficients or running one-way ANOVA quickly ranks features by their marginal predictive power — a useful first filter before multivariate analysis."
+    },
+    {
+      "title": "Detecting multicollinearity",
+      "body": "Highly correlated features (|Pearson r| > 0.9) carry redundant information. In linear regression, multicollinearity inflates coefficient standard errors and makes individual coefficients uninterpretable (even if the model's predictions are stable). Bivariate correlation heatmaps identify collinear pairs. The formal multivariate measure is VIF (Variance Inflation Factor) — but the bivariate heatmap is the practical first step."
+    },
+    {
+      "title": "Non-linear relationships: scatter + LOWESS",
+      "body": "Pearson correlation only detects linear relationships. A scatter plot with a LOWESS (locally weighted scatterplot smoothing) or spline overlay reveals non-linearity: U-shaped relationships, threshold effects, or interactions. Finding that income has a non-linear U-shape relationship with churn suggests adding a squared term or bin-based feature before fitting a linear model."
+    }
+  ],
+  "deepDiveIntro": [
+    "The bivariate analysis method is determined by the scale of measurement of each variable. Nominal × Nominal: cross-tabulation + chi-square test of independence; effect size via Cramér's V. Nominal × Continuous: box plots per group + one-way ANOVA (or Kruskal-Wallis for non-normal data); effect size via Cohen's d or η². Continuous × Continuous: scatter plot + Pearson/Spearman/Kendall correlation coefficient; regression line or LOWESS smooth. [1]",
+    "Pearson correlation r measures linear association and is defined as r = Cov(X,Y)/(σ_X σ_Y). It is bounded in [−1, 1], is not robust to outliers (a single extreme point can change r from near 0 to near 1), and is undefined for non-numeric data. Spearman's ρ is the Pearson correlation of the ranks of X and Y — monotone but not necessarily linear association. Kendall's τ counts concordant minus discordant pairs and is more robust for small samples with many ties. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "Numeric vs Numeric: Correlation and Scatter Plots",
+      "body": "For two continuous variables X and Y: (1) Scatter plot reveals the shape of the relationship (linear, curved, heteroscedastic). (2) Pearson r: measures linear correlation. (3) Spearman ρ: measures monotone correlation (rank-based, robust to outliers and non-normality). (4) LOWESS line: non-parametric smooth that follows the local conditional mean E[Y|X=x] — reveals non-linearity without assuming a functional form. Anscombe's quartet (1973) famously demonstrated that four datasets with identical summary statistics (mean, variance, correlation) have completely different scatter plot shapes — emphasizing that plots are essential and summary statistics alone are insufficient. [1]",
+      "formula": "Pearson r = Cov(X,Y) / (σ_X σ_Y) = Σ(xᵢ−x̄)(yᵢ−ȳ) / √[Σ(xᵢ−x̄)² Σ(yᵢ−ȳ)²]"
+    },
+    {
+      "heading": "Numeric vs Categorical: Group Comparison",
+      "body": "Box plots show the distribution of a numeric variable within each category — median, IQR, whiskers, outliers. Violin plots add a KDE mirrored on each side, showing the full distribution shape (bimodality, skew) that box plots hide. Strip plots (jittered scatter) are better for small samples where a box plot is overconfident about distribution shape. For formal testing: one-way ANOVA tests H₀ that all group means are equal (assumes normality, equal variance). Kruskal-Wallis is the non-parametric alternative (rank-based). Effect size for group comparisons: Cohen's d = (μ₁ − μ₂) / σ_pooled for two groups; η² = SS_between / SS_total for ANOVA. [2]",
+      "formula": "Cohen's d = (μ₁ − μ₂) / σ_pooled;   η² = SS_between / SS_total"
+    },
+    {
+      "heading": "Categorical vs Categorical: Cross-Tabulation and Chi-Square",
+      "body": "A cross-tabulation (contingency table) counts observations for each combination of category values. The chi-square test of independence tests H₀: the two variables are independent. Statistic: χ² = Σ (O − E)² / E, where O = observed count and E = expected count under independence (row_total × col_total / grand_total). Under H₀, χ² ~ χ²((r−1)(c−1)) for an r×c table. Effect size: Cramér's V = √(χ²/(n·min(r−1,c−1))) ∈ [0,1], where 0 is independence and 1 is perfect association. Small cells (E < 5) require Fisher's exact test instead. [2]",
+      "formula": "χ² = Σᵢⱼ (Oᵢⱼ − Eᵢⱼ)² / Eᵢⱼ;   Cramér's V = √(χ² / (n · min(r−1, c−1)))"
+    }
+  ],
+  "youtubeLabel": "Bivariate Analysis — Data School",
+  "youtubeUrl": "https://www.youtube.com/embed/OjDXREalYB8",
+  "takeaways": [
+    "Method depends on types: Numeric×Numeric → scatter + Pearson/Spearman; Numeric×Categorical → box/violin + ANOVA/Kruskal-Wallis; Categorical×Categorical → cross-tab + chi-square. [1]",
+    "Pearson r measures linear association; Spearman ρ measures monotone association (rank-based, robust to outliers). [2]",
+    "Always plot scatter diagrams — identical Pearson r can correspond to completely different relationships (Anscombe's quartet). [1]",
+    "Cohen's d measures group difference in standard deviation units; Cramér's V measures categorical association strength ∈ [0,1]. [2]",
+    "LOWESS overlays reveal non-linearity without assuming a functional form — essential for detecting threshold effects or U-shapes. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "When should you use Spearman correlation instead of Pearson?",
+      "a": "Spearman's ρ is preferred over Pearson r when: (1) The relationship is monotone but not linear (e.g., salary and years of experience show diminishing returns — monotone but curved). (2) The data has significant outliers that would distort Pearson r. (3) The variables are ordinal (e.g., Likert scale ratings 1–5) — Pearson r is not appropriate for ordinal data. (4) Normality assumption is violated and the sample is small. For large samples (n > 500), Pearson and Spearman usually give similar results even with mild non-normality, because the CLT makes the sampling distribution of r approximately normal. Kendall's τ is more robust than Spearman with many ties and is better for small samples."
+    },
+    {
+      "q": "How do you detect non-linear bivariate relationships that correlation misses?",
+      "a": "Zero or near-zero Pearson/Spearman correlation does not mean there is no relationship — only that there is no linear (or monotone) relationship. Approaches: (1) Always plot: scatter plots + LOWESS immediately reveal U-shapes, threshold effects, or sinusoidal patterns that correlation masks. (2) Mutual information: I(X; Y) = Σ p(x,y) log(p(x,y)/p(x)p(y)) measures any statistical dependency, not just linear. sklearn's mutual_info_regression/mutual_info_classif estimates this from data using k-NN density estimation. (3) Maximum Information Coefficient (MIC): a normalized measure of mutual information that is close to 1 for any strong non-linear relationship and near 0 for noise (minepy library)."
+    }
+  ],
+  "sources": [
+    { "label": "Tukey, J.W. — Exploratory Data Analysis (Addison-Wesley, 1977)", "url": "https://www.amazon.com/Exploratory-Data-Analysis-John-Tukey/dp/0201076160" },
+    { "label": "Agresti, A. — An Introduction to Categorical Data Analysis, 3rd Ed. (Wiley, 2018)", "url": "https://www.wiley.com/en-us/An+Introduction+to+Categorical+Data+Analysis%2C+3rd+Edition-p-9781119405269" }
+  ]
+}

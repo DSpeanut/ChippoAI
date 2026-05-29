@@ -1,0 +1,69 @@
+{
+  "visualizationType": "chart",
+  "codeSnapshot": {
+    "label": "evaluation_imbalance.py",
+    "code": "import pandas as pd\nimport numpy as np\nfrom sklearn.metrics import (\n    accuracy_score, f1_score, precision_score, recall_score,\n    roc_auc_score, average_precision_score,\n    confusion_matrix, classification_report,\n    matthews_corrcoef, balanced_accuracy_score\n)\nfrom sklearn.calibration import calibration_curve\nimport matplotlib.pyplot as plt\n\n# Simulate: 1% minority (100 positives, 9900 negatives)\ny_true = np.array([0]*9900 + [1]*100)\n\n# Naive model: predict 0 always\ny_pred_naive = np.zeros(10000, dtype=int)\nprint('Naive accuracy:', accuracy_score(y_true, y_pred_naive))  # 0.99 — misleading!\nprint('Naive F1:', f1_score(y_true, y_pred_naive))              # 0.0 — truth revealed\n\n# Good model\ny_pred_good = np.array([0]*9800 + [1]*100 + [0]*100)  # simplified\ny_proba_good = np.random.beta(2, 8, 10000)\ny_proba_good[y_true == 1] = np.random.beta(8, 2, 100)  # minority has higher scores\n\n# ── 1. Confusion matrix ──\ny_pred = (y_proba_good > 0.5).astype(int)\nprint(confusion_matrix(y_true, y_pred))\nprint(classification_report(y_true, y_pred, target_names=['negative', 'positive']))\n\n# ── 2. Threshold-independent metrics ──\nprint('ROC-AUC:', roc_auc_score(y_true, y_proba_good))\nprint('PR-AUC (average_precision):', average_precision_score(y_true, y_proba_good))\n\n# ── 3. Threshold-dependent metrics ──\nprint('F1 @0.5:', f1_score(y_true, y_proba_good > 0.5))\nprint('F1 @0.1:', f1_score(y_true, y_proba_good > 0.1))\n\n# ── 4. MCC: handles imbalance well ──\nprint('MCC:', matthews_corrcoef(y_true, y_proba_good > 0.5))\n\n# ── 5. Balanced accuracy: mean recall per class ──\nprint('Balanced accuracy:', balanced_accuracy_score(y_true, y_proba_good > 0.5))\n\n# ── 6. Precision-Recall curve + threshold tuning ──\nfrom sklearn.metrics import precision_recall_curve\nprecisions, recalls, thresholds = precision_recall_curve(y_true, y_proba_good)\nf1_per_threshold = 2 * precisions * recalls / (precisions + recalls + 1e-9)\nbest_thresh = thresholds[f1_per_threshold[:-1].argmax()]\nprint(f'Best F1 threshold: {best_thresh:.3f}')\nprint(f'Best F1: {f1_per_threshold.max():.3f}')"
+  },
+  "eli3": [
+    "When a dataset is highly imbalanced (1% minority), accuracy is a trap: a model that predicts the majority class 100% of the time achieves 99% accuracy while completely failing at its purpose. Better metrics focus on what the model does with the rare class: precision (of all the times I said 'fraud', how often was I right?) and recall (of all actual fraud cases, how many did I catch?).",
+    "The F1 score is the harmonic mean of precision and recall — it's high only when both are high. Area under the precision-recall curve (PR-AUC) summarizes F1 performance across all possible decision thresholds and is the standard metric for highly imbalanced classification. ROC-AUC is also useful but less informative under extreme imbalance.",
+    "After training a model on imbalanced data, you tune the decision threshold: instead of classifying as 'fraud' when P(fraud)>0.5, maybe you should use P(fraud)>0.1. The threshold controls the precision-recall trade-off: lower threshold → more positives predicted → higher recall but lower precision. The right threshold depends on business costs (how expensive is a missed fraud vs a false alarm?)."
+  ],
+  "whenWhy": [
+    {
+      "title": "Replacing accuracy as the primary metric",
+      "body": "Accuracy is useless for evaluating models on imbalanced data. For a 99:1 imbalanced dataset, a classifier predicting the majority class always achieves 99% accuracy — the best possible accuracy without any learning. Replace accuracy with: F1 score (if there's one target class), macro-average F1 (treats all classes equally), PR-AUC (summarizes precision-recall across thresholds), or MCC (Matthews Correlation Coefficient — symmetric, handles class imbalance correctly)."
+    },
+    {
+      "title": "Choosing between ROC-AUC and PR-AUC",
+      "body": "ROC-AUC measures the ability to discriminate between classes across all thresholds. It is invariant to class imbalance in the sense that it doesn't change if you add many negative examples. But this is also its weakness: in highly imbalanced settings (1:1000), a model that is nearly useless on the minority class can still achieve ROC-AUC = 0.95, because the false positive rate denominator (n_true_negatives) is huge. PR-AUC directly measures minority class performance: precision and recall both only count the minority class, so PR-AUC is much more sensitive to imbalance."
+    },
+    {
+      "title": "Threshold selection for business decisions",
+      "body": "ML classifiers output a probability, not a binary decision. The threshold converts probability to class. Default threshold 0.5 is rarely optimal under imbalance. Business-driven threshold selection: compute the precision-recall curve across all thresholds, define the cost ratio (cost of false negative / cost of false positive), and select the threshold that minimizes expected cost: E[cost] = FN_rate × C_FN + FP_rate × C_FP. For fraud detection, C_FN (missed fraud) >> C_FP (investigating a legitimate transaction), so a low threshold (high recall, lower precision) is optimal."
+    }
+  ],
+  "deepDiveIntro": [
+    "The confusion matrix is the foundation: TP (true positives), FP (false positives), TN (true negatives), FN (false negatives). From this: precision = TP/(TP+FP), recall = TP/(TP+FN), specificity = TN/(TN+FP). F1 = 2PR/(P+R) = 2TP/(2TP+FP+FN) — the harmonic mean of precision and recall. MCC = (TP·TN − FP·FN)/√((TP+FP)(TP+FN)(TN+FP)(TN+FN)): a balanced measure even when classes are very different sizes. MCC ∈ [−1, 1], with 1 = perfect prediction, 0 = no better than random, −1 = perfect inverse. [1]",
+    "ROC curve: plot TPR = TP/(TP+FN) vs FPR = FP/(FP+TN) as the threshold varies. ROC-AUC = probability that the model ranks a random positive example higher than a random negative example. PR curve: plot Precision vs Recall as threshold varies. PR-AUC (Average Precision) = Σₙ (Rₙ − Rₙ₋₁)·Pₙ — the area under the curve, approximated as a weighted average of precisions at each threshold. Saito & Rehmsmeier (2015) showed PR-AUC is a more informative metric than ROC-AUC under imbalance. [2]"
+  ],
+  "deepDive": [
+    {
+      "heading": "F1 Score and Its Variants",
+      "body": "F1 = 2·Precision·Recall / (Precision + Recall) = 2TP / (2TP + FP + FN). The harmonic mean penalizes extreme imbalance between P and R — a model with P=1.0, R=0.01 has F1=0.02, not 0.5. Binary F1 evaluates only the minority class. For multiclass: macro F1 = mean(F1_per_class) — treats all classes equally regardless of frequency. Weighted F1 = weighted mean by class support — dominated by the majority class, less useful for imbalance evaluation. F_β score generalizes: F_β = (1+β²)·P·R / (β²·P + R). β > 1 weights recall more (cost of FN > FP); β < 1 weights precision more. [1]",
+      "formula": "F1 = 2TP/(2TP+FP+FN);   F_β = (1+β²)·P·R/(β²·P+R)"
+    },
+    {
+      "heading": "PR-AUC vs ROC-AUC Under Imbalance",
+      "body": "Consider a 1:1000 dataset. A model that flags nothing positive: TP=0, FP=0, FN=1000, TN=999000. ROC-AUC of a random classifier on this dataset: 0.5. A slightly better random classifier with very low TPR=0.01 and FPR=0.001 achieves ROC-AUC ≈ 0.504 — looks close to useless. PR-AUC: precision = 0/(0+1) → undefined for 0 positives; AP is extremely low for any classifier without meaningful recall. The key difference: ROC-AUC's FPR denominator is TN+FP = n_negative (large), so small absolute FP counts look small as a fraction. PR's precision = TP/(TP+FP) uses only predicted positives — a model that predicts 1000 positives (10 TP, 990 FP) has precision 0.01, brutally penalized. [2]",
+      "formula": "AP = Σₙ (Rₙ−Rₙ₋₁)·Pₙ;   MCC = (TP·TN−FP·FN)/√((TP+FP)(TP+FN)(TN+FP)(TN+FN))"
+    },
+    {
+      "heading": "Threshold Optimization",
+      "body": "Decision threshold θ: predict positive if P̂(y=1|x) > θ. At θ=0.5 (default): balanced P/R for equal misclassification costs. For asymmetric costs C_FN and C_FP: optimal threshold = C_FP/(C_FN + C_FP). For binary classifiers, optimal threshold given cost ratio: threshold* = 1/(1 + (C_FN/C_FP)·(n_neg/n_pos)). Practical approach: compute precision_recall_curve; select threshold maximizing F_β (β = sqrt(C_FN/C_FP)) or minimizing total expected cost. Apply selected threshold on held-out test data — do not tune threshold on test data. [1]"
+    }
+  ],
+  "youtubeLabel": "ROC and PR Curves Explained — StatQuest",
+  "youtubeUrl": "https://www.youtube.com/embed/4jRBRDbJemM",
+  "takeaways": [
+    "Accuracy is useless for imbalanced data. Replace with F1 (minority class), PR-AUC, or MCC — all are sensitive to minority class performance. [1]",
+    "ROC-AUC: probability a random positive ranks above a random negative. Insensitive to class imbalance. PR-AUC: directly measures minority class precision-recall trade-off — use for highly imbalanced data. [2]",
+    "MCC = (TP·TN−FP·FN)/√(...): symmetric, handles imbalance correctly. MCC=0 → random; MCC=1 → perfect. [1]",
+    "F_β score: β>1 weights recall more (FN costly); β<1 weights precision more (FP costly). F_2 is standard in fraud detection. [1]",
+    "Threshold tuning: select θ* on validation set that minimizes business cost or maximizes F_β. Never tune on test set. [1]"
+  ],
+  "edgeCases": [
+    {
+      "q": "Why can ROC-AUC be misleading for very extreme imbalance?",
+      "a": "ROC-AUC = P(score_positive > score_negative) over random (positive, negative) pairs. For 1:1000 imbalance, TN+FP ≈ n_negative = 1000n_positive. A model that flags 1000 examples as positive (all false positives) has FPR = 1000/1000000 = 0.001 — looks very low on the ROC curve. The AUC from FPR=0 to FPR=0.001 looks negligible, but in absolute terms 1000 false positives per true positive is catastrophic. PR-AUC reveals this: precision = 0/(0+1000) = 0. Use PR-AUC when the cost of false positives is meaningful and n_negative >> n_positive. A good rule: if imbalance > 1:10, report PR-AUC as the primary metric; ROC-AUC as secondary."
+    },
+    {
+      "q": "How do you evaluate an imbalanced model in production when labels arrive slowly?",
+      "a": "Online evaluation of rare events (fraud, defaults, medical diagnoses) is challenging because ground truth labels are delayed and sparse. Approaches: (1) Rolling window metrics: compute precision, recall, F1 over a sliding window of the last N confirmed cases. Track trends over time. (2) Calibration monitoring: monitor predicted probability distributions — systematic drift signals model degradation before labels arrive. (3) Proxy metrics: for fraud, transaction review outcomes (confirmed vs dismissed), chargeback rates, or investigator feedback provide faster signal than waiting for official labels. (4) Population stability index (PSI): monitor feature distribution drift — if input features shift significantly, model performance likely degrades even before label-based evaluation confirms it."
+    }
+  ],
+  "sources": [
+    { "label": "Saito, T. & Rehmsmeier, M. — The Precision-Recall Plot Is More Informative than the ROC Plot When Evaluating Binary Classifiers on Imbalanced Datasets, PLOS ONE, 2015", "url": "https://doi.org/10.1371/journal.pone.0118432" },
+    { "label": "He, H. & Garcia, E.A. — Learning from Imbalanced Data, IEEE TKDE 21(9), 2009", "url": "https://doi.org/10.1109/TKDE.2008.239" }
+  ]
+}

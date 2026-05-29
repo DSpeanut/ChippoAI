@@ -661,6 +661,51 @@ export const mockEntries: WikiEntry[] = [
   { id: "e366", title: "Bayesian Optimization", slug: "bayesian-optimization-hpo", difficulty: "advanced" as const, status: "published" as const, subcategoryId: "7-8", tags: ["bayesian-optimization", "gaussian-process", "acquisition-function", "ei", "tpe"] },
   { id: "e367", title: "AutoML", slug: "automl", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "7-8", tags: ["automl", "cash", "auto-sklearn", "autogluon", "ensemble"] },
   { id: "e368", title: "Neural Architecture Search", slug: "neural-architecture-search", difficulty: "advanced" as const, status: "published" as const, subcategoryId: "7-8", tags: ["nas", "darts", "one-shot", "weight-sharing", "efficientnet"] },
+
+  // Data — 3-1 Data Collection & Ingestion (e369–e372)
+  { id: "e369", title: "Data Sources", slug: "data-sources", difficulty: "beginner" as const, status: "published" as const, subcategoryId: "3-1", tags: ["data-sources", "structured", "semi-structured", "unstructured", "synthetic"] },
+  { id: "e370", title: "Web Scraping", slug: "web-scraping", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "3-1", tags: ["web-scraping", "beautifulsoup", "scrapy", "playwright", "robots-txt"] },
+  { id: "e371", title: "APIs for Data Ingestion", slug: "apis-data-ingestion", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "3-1", tags: ["rest-api", "pagination", "rate-limiting", "webhooks", "oauth"] },
+  { id: "e372", title: "Streaming vs Batch Ingestion", slug: "streaming-vs-batch", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "3-1", tags: ["streaming", "batch", "kafka", "flink", "lambda-architecture"] },
+
+  // Data — 3-2 Data Cleaning (e373–e376)
+  { id: "e373", title: "Handling Missing Values", slug: "handling-missing-values", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "3-2", tags: ["missing-values", "imputation", "mcar", "mar", "mnar", "mice"] },
+  { id: "e374", title: "Outlier Detection", slug: "outlier-detection", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "3-2", tags: ["outliers", "iqr", "z-score", "mahalanobis", "isolation-forest"] },
+  { id: "e375", title: "Data Deduplication", slug: "data-deduplication", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "3-2", tags: ["deduplication", "record-linkage", "fuzzy-matching", "minhash", "lsh"] },
+  { id: "e376", title: "Data Type Casting", slug: "data-type-casting", difficulty: "beginner" as const, status: "published" as const, subcategoryId: "3-2", tags: ["dtypes", "pandas", "categorical", "datetime", "memory-optimization"] },
+
+  // Data — 3-3 Exploratory Data Analysis (e377–e380)
+  { id: "e377", title: "Univariate Analysis", slug: "univariate-analysis", difficulty: "beginner" as const, status: "published" as const, subcategoryId: "3-3", tags: ["eda", "histogram", "boxplot", "skewness", "kurtosis", "qq-plot"] },
+  { id: "e378", title: "Bivariate Analysis", slug: "bivariate-analysis", difficulty: "beginner" as const, status: "published" as const, subcategoryId: "3-3", tags: ["eda", "scatter-plot", "correlation", "crosstab", "chi-square", "anova"] },
+  { id: "e379", title: "Correlation", slug: "correlation", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "3-3", tags: ["pearson", "spearman", "kendall", "vif", "multicollinearity", "spurious-correlation"] },
+  { id: "e380", title: "Visualization Techniques", slug: "visualization-techniques", difficulty: "beginner" as const, status: "published" as const, subcategoryId: "3-3", tags: ["matplotlib", "seaborn", "plotly", "heatmap", "pairplot", "grammar-of-graphics"] },
+
+  // Data — 3-4 Feature Engineering (e381–e386)
+  { id: "e381", title: "One-Hot Encoding", slug: "one-hot-encoding", difficulty: "beginner" as const, status: "published" as const, subcategoryId: "3-4", tags: ["one-hot-encoding", "target-encoding", "ordinal-encoding", "dummy-variable-trap", "high-cardinality"] },
+  { id: "e382", title: "Scaling & Normalization", slug: "scaling-normalization", difficulty: "beginner" as const, status: "published" as const, subcategoryId: "3-4", tags: ["standardscaler", "minmax", "robust-scaler", "log-transform", "power-transform"] },
+  { id: "e383", title: "Binning", slug: "binning", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "3-4", tags: ["binning", "discretization", "quantile-binning", "decision-tree-binning", "kbinsdiscretizer"] },
+  { id: "e384", title: "Interaction Features", slug: "interaction-features", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "3-4", tags: ["interaction-features", "polynomial-features", "ratio-features", "shap-interaction", "ridge"] },
+  { id: "e385", title: "Date/Time Features", slug: "datetime-features", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "3-4", tags: ["datetime", "cyclical-encoding", "lag-features", "rolling-window", "rfm"] },
+  { id: "e386", title: "Embeddings as Features", slug: "embeddings-as-features", difficulty: "advanced" as const, status: "published" as const, subcategoryId: "3-4", tags: ["embeddings", "sentence-transformers", "entity-embeddings", "pca", "transfer-learning"] },
+
+  // Data — 3-5 Data Imbalance (e387–e390)
+  { id: "e387", title: "SMOTE", slug: "smote", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "3-5", tags: ["smote", "oversampling", "borderline-smote", "adasyn", "imbalanced-learn"] },
+  { id: "e388", title: "Undersampling", slug: "undersampling", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "3-5", tags: ["undersampling", "tomek-links", "nearmiss", "enn", "balanced-bagging"] },
+  { id: "e389", title: "Class Weights", slug: "class-weights", difficulty: "beginner" as const, status: "published" as const, subcategoryId: "3-5", tags: ["class-weights", "scale-pos-weight", "balanced", "sample-weight", "imbalance"] },
+  { id: "e390", title: "Evaluation under Imbalance", slug: "evaluation-under-imbalance", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "3-5", tags: ["f1-score", "pr-auc", "roc-auc", "mcc", "threshold-tuning", "imbalance"] },
+
+  // Data — 3-6 Data Pipelines (e391–e394)
+  { id: "e391", title: "ETL vs ELT", slug: "etl-vs-elt", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "3-6", tags: ["etl", "elt", "dbt", "cdc", "scd-type-2", "data-pipeline"] },
+  { id: "e392", title: "Feature Stores", slug: "feature-stores", difficulty: "advanced" as const, status: "published" as const, subcategoryId: "3-6", tags: ["feature-store", "feast", "offline-store", "online-store", "point-in-time", "training-serving-skew"] },
+  { id: "e393", title: "Data Versioning (DVC)", slug: "data-versioning-dvc", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "3-6", tags: ["dvc", "data-versioning", "reproducibility", "mlops", "content-addressing"] },
+  { id: "e394", title: "Workflow Orchestration", slug: "workflow-orchestration", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "3-6", tags: ["airflow", "prefect", "dagster", "dag", "orchestration", "scheduling"] },
+
+  // Data — 3-7 Databases & Storage (e395–e399)
+  { id: "e395", title: "SQL Fundamentals", slug: "sql-fundamentals", difficulty: "beginner" as const, status: "published" as const, subcategoryId: "3-7", tags: ["sql", "window-functions", "joins", "group-by", "indexes", "acid"] },
+  { id: "e396", title: "NoSQL Databases", slug: "nosql", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "3-7", tags: ["nosql", "mongodb", "redis", "cassandra", "neo4j", "cap-theorem"] },
+  { id: "e397", title: "Vector Databases", slug: "vector-databases", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "3-7", tags: ["vector-database", "faiss", "hnsw", "ann", "pinecone", "rag"] },
+  { id: "e398", title: "Data Warehouses", slug: "data-warehouses", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "3-7", tags: ["data-warehouse", "columnar-storage", "star-schema", "scd", "redshift", "snowflake"] },
+  { id: "e399", title: "Data Lakes", slug: "data-lakes", difficulty: "intermediate" as const, status: "published" as const, subcategoryId: "3-7", tags: ["data-lake", "delta-lake", "iceberg", "medallion-architecture", "bronze-silver-gold", "lakehouse"] },
 ]
 
 export const difficultyColors = {
