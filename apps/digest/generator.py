@@ -3,7 +3,7 @@ import re
 import httpx
 
 OPENROUTER_API_KEY = os.environ["OPENROUTER_API_KEY"]
-MODEL = "google/gemini-2.5-flash-preview-05-20"
+MODEL = "google/gemini-2.5-flash"
 
 
 def _slug_to_title(slug: str) -> str:
