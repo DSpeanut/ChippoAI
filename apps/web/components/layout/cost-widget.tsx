@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { mockUsage } from "@/lib/mock-data"
+import { mockUsage } from "@/data/mock-data"
 
 export function CostWidget() {
   const [expanded, setExpanded] = useState(false)

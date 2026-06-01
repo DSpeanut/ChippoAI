@@ -15,7 +15,7 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: https:",
               "font-src 'self'",
               "frame-src https://www.youtube.com https://www.youtube-nocookie.com",
-              "connect-src 'self'",
+              "connect-src 'self' http://localhost:8000",
             ].join("; "),
           },
         ],

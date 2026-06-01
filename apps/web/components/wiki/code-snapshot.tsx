@@ -1,4 +1,4 @@
-import type { CodeSnapshot } from "@/lib/mock-data"
+import type { CodeSnapshot } from "@/data/mock-data"
 
 export function CodeSnapshotBlock({ snapshot }: { snapshot: CodeSnapshot }) {
   return (

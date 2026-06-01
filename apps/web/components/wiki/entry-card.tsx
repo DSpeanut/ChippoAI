@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { difficultyColors } from "@/lib/mock-data"
+import { difficultyColors } from "@/data/mock-data"
 import { cn } from "@/lib/utils"
 
 type Entry = {

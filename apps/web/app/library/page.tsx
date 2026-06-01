@@ -1,6 +1,6 @@
 import { WikiSidebar } from "@/components/layout/sidebar"
 import { EntryCard } from "@/components/wiki/entry-card"
-import { mockEntries, categories } from "@/lib/mock-data"
+import { mockEntries, categories } from "@/data/mock-data"
 
 export default async function LibraryPage({
   searchParams,

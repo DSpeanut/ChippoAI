@@ -2,7 +2,7 @@
 
 import { Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { categories } from "@/lib/mock-data"
+import { categories } from "@/data/mock-data"
 import { cn } from "@/lib/utils"
 import { ChevronRight } from "lucide-react"
 import { ScrollArea } from "@/components/ui/scroll-area"
