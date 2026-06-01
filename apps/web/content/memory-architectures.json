@@ -67,7 +67,41 @@
     }
   ],
   "sources": [
-    { "label": "Wang et al. (2024) — A Survey on Large Language Model based Autonomous Agents", "url": "https://arxiv.org/abs/2308.11432" },
-    { "label": "Packer et al. (2023) — MemGPT: Towards LLMs as Operating Systems", "url": "https://arxiv.org/abs/2310.08560" }
+    {
+      "label": "Wang et al. (2024) — A Survey on Large Language Model based Autonomous Agents",
+      "url": "https://arxiv.org/abs/2308.11432"
+    },
+    {
+      "label": "Packer et al. (2023) — MemGPT: Towards LLMs as Operating Systems",
+      "url": "https://arxiv.org/abs/2310.08560"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/W2HVdB4Jbjs",
+  "youtubeLabel": "Architecting Agent Memory: Principles & Patterns — AI Engineer",
+  "terms": [
+    {
+      "term": "In-Context Memory",
+      "def": "Fast, token-limited memory within the current prompt (scratchpad / conversation history)."
+    },
+    {
+      "term": "External Retrieval",
+      "def": "Persistent memory in a vector store or KV cache, retrieved on demand."
+    },
+    {
+      "term": "Parametric Memory",
+      "def": "Knowledge encoded in model weights during training — static and non-updatable at inference."
+    },
+    {
+      "term": "Virtual Context",
+      "def": "MemGPT's approach: manage memory like an OS, swapping content between context and storage."
+    },
+    {
+      "term": "KV Cache",
+      "def": "The key-value cache of attention states, reused across turns to save compute."
+    },
+    {
+      "term": "Multi-Agent Memory",
+      "def": "Shared memory stores that allow multiple agents to read and write collaboratively."
+    }
   ]
 }

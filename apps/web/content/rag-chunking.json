@@ -71,7 +71,41 @@
     }
   ],
   "sources": [
-    { "label": "LangChain Text Splitters Documentation — chunking strategies", "url": "https://python.langchain.com/docs/how_to/character_text_splitter/" },
-    { "label": "Günther et al. (2024) — Late Chunking: Contextual Chunk Embeddings Using Long-Context Embedding Models, Jina AI", "url": "https://arxiv.org/abs/2409.04701" }
+    {
+      "label": "LangChain Text Splitters Documentation — chunking strategies",
+      "url": "https://python.langchain.com/docs/how_to/character_text_splitter/"
+    },
+    {
+      "label": "Günther et al. (2024) — Late Chunking: Contextual Chunk Embeddings Using Long-Context Embedding Models, Jina AI",
+      "url": "https://arxiv.org/abs/2409.04701"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/6cR8eLMbutc",
+  "youtubeLabel": "20+ Chunking Techniques for RAG — Krish Naik",
+  "terms": [
+    {
+      "term": "Chunk",
+      "def": "A text segment (typically 256–1024 tokens) embedded and stored as a retrieval unit."
+    },
+    {
+      "term": "Fixed-size",
+      "def": "Splitting by token/character count with optional overlap — simplest strategy."
+    },
+    {
+      "term": "Parent-Child",
+      "def": "Index small child chunks for retrieval but return the larger parent for context."
+    },
+    {
+      "term": "Semantic Chunking",
+      "def": "Splitting at sentence-boundary similarity drops rather than fixed token counts."
+    },
+    {
+      "term": "Late Chunking",
+      "def": "Embed the full document first, then pool embeddings per chunk — preserves context."
+    },
+    {
+      "term": "Overlap",
+      "def": "Repeating tokens across adjacent chunks to prevent losing context at split boundaries."
+    }
   ]
 }

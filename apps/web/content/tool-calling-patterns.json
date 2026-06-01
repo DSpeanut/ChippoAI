@@ -75,5 +75,33 @@
   "codeSnapshot": {
     "label": "tool_patterns.py",
     "code": "from langchain_openai import ChatOpenAI\nfrom langchain_core.runnables import RunnableParallel, RunnableLambda\nfrom langchain_core.tools import tool\nfrom openai import RateLimitError\n\nllm = ChatOpenAI(model=\"gpt-4o\", temperature=0)\n\n@tool\ndef get_weather(city: str) -> str:\n    \"Get current weather for a city.\"\n    return f\"Weather in {city}: sunny, 22C\"\n\n@tool\ndef get_news(topic: str) -> str:\n    \"Get latest news for a topic.\"\n    return f\"Latest news on {topic}: ...\"\n\n# Pattern 1: Sequential — output of one tool feeds the next\nllm_with_tools = llm.bind_tools([get_weather, get_news])\nresponse = llm_with_tools.invoke(\"What's the weather in Paris and latest AI news?\")\n\n# Pattern 2: Parallel — independent tools run concurrently via RunnableParallel\nparallel = RunnableParallel({\n    \"weather\": RunnableLambda(lambda x: get_weather.invoke({\"city\": x[\"city\"]})),\n    \"news\":    RunnableLambda(lambda x: get_news.invoke({\"topic\": x[\"topic\"]})),\n})\nresults = parallel.invoke({\"city\": \"Paris\", \"topic\": \"AI\"})\nprint(\"Weather:\", results[\"weather\"], \"| News:\", results[\"news\"])\n\n# Pattern 3: Fallback — try primary model, fall back on RateLimitError\nprimary  = ChatOpenAI(model=\"gpt-4o\")\nfallback = ChatOpenAI(model=\"gpt-4o-mini\")\nrobust_llm = primary.with_fallbacks([fallback], exceptions_to_handle=(RateLimitError,))\nresult = robust_llm.invoke(\"Summarise the news.\")"
-  }
+  },
+  "youtubeUrl": "https://www.youtube.com/embed/0auVigyZ3HE",
+  "youtubeLabel": "Essential LLM Workflow Patterns — Sam Witteveen",
+  "terms": [
+    {
+      "term": "Sequential",
+      "def": "Calling tools one at a time where each call depends on the previous result."
+    },
+    {
+      "term": "Parallel",
+      "def": "Emitting multiple independent tool calls in a single LLM turn to run concurrently."
+    },
+    {
+      "term": "Fallback",
+      "def": "Trying an alternate tool or cached result when the primary tool call fails."
+    },
+    {
+      "term": "Idempotency",
+      "def": "A tool call that produces the same result when called multiple times — safe to retry."
+    },
+    {
+      "term": "Error Recovery",
+      "def": "Returning tool errors as tool result messages so the LLM can observe and replan."
+    },
+    {
+      "term": "Tool Cache",
+      "def": "Storing tool results for identical inputs to avoid redundant API calls."
+    }
+  ]
 }

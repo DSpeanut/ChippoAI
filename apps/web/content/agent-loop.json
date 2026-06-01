@@ -71,7 +71,41 @@
     }
   ],
   "sources": [
-    { "label": "Yao et al. (2022) — ReAct: Synergizing Reasoning and Acting in Language Models, ICLR 2023", "url": "https://arxiv.org/abs/2210.03629" },
-    { "label": "Wang et al. (2024) — A Survey on Large Language Model based Autonomous Agents", "url": "https://arxiv.org/abs/2308.11432" }
+    {
+      "label": "Yao et al. (2022) — ReAct: Synergizing Reasoning and Acting in Language Models, ICLR 2023",
+      "url": "https://arxiv.org/abs/2210.03629"
+    },
+    {
+      "label": "Wang et al. (2024) — A Survey on Large Language Model based Autonomous Agents",
+      "url": "https://arxiv.org/abs/2308.11432"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/cFHJYdSJzPA",
+  "youtubeLabel": "From LLMs to Agent Loops — AI Engineer",
+  "terms": [
+    {
+      "term": "Agent Loop",
+      "def": "The repeating Observe-Think-Act cycle that drives an autonomous LLM agent."
+    },
+    {
+      "term": "Observe",
+      "def": "Assembling the current state: history, prior tool outputs, and new inputs."
+    },
+    {
+      "term": "Act",
+      "def": "Executing a tool call or emitting a final answer based on the LLM's decision."
+    },
+    {
+      "term": "Termination",
+      "def": "Stopping conditions: max iterations, timeout, budget exhaustion, or final answer."
+    },
+    {
+      "term": "Orchestrator",
+      "def": "The framework layer that runs the loop, calls the LLM, and routes tool results."
+    },
+    {
+      "term": "ReAct",
+      "def": "A pattern formalising the loop as Thought + Action + Observation triples in the prompt."
+    }
   ]
 }

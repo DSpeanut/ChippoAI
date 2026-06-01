@@ -35,6 +35,14 @@
     {
       "heading": "LlamaIndex vs LangChain for RAG",
       "body": "LlamaIndex advantages for RAG: deeper retrieval abstractions (more built-in advanced strategies), better multi-index composition (query across multiple indices), more sophisticated evaluation (Ragas integration, TruLens integration). LangChain advantages: broader ecosystem beyond RAG (agents, memory, chains), wider community, more integrations for non-retrieval components. In practice: many teams use LlamaIndex for the retrieval layer and LangChain/LangGraph for the agent orchestration layer, since they can be combined: a LlamaIndex QueryEngine can be wrapped as a LangChain Tool and used inside a LangGraph agent. [1]"
+    },
+    {
+      "heading": "Node Postprocessors and Query Transformations",
+      "body": "LlamaIndex's postprocessor pipeline runs after retrieval and before synthesis, allowing retrieved nodes to be filtered, reranked, or augmented. SimilarityPostprocessor removes nodes below a score threshold (e.g., similarity_cutoff=0.75), ensuring only high-confidence matches reach the LLM — important for reducing hallucination from marginally relevant context. KeywordNodePostprocessor filters nodes that must (or must not) contain specific keywords, useful for domain-specific guardrails. LLMRerank is the most powerful: it sends retrieved nodes to an LLM (or cross-encoder model) with the original query and asks it to score relevance from 1–10, then re-sorts and truncates the list. Cross-encoder reranking consistently outperforms bi-encoder retrieval for final-stage precision at the cost of additional LLM calls. On the query transformation side, HyDE (Hypothetical Document Embeddings) generates a hypothetical answer to the query first, then uses the hypothetical answer's embedding for retrieval — this closes the semantic gap between short questions and long document passages. Decompose query transformations break a complex multi-part question into independent sub-questions, retrieve for each, and synthesise a combined answer. Step-back prompting reformulates the query to a more abstract level ('What general principle does this question relate to?') before retrieval, improving recall for domain-specific queries. [1]"
+    },
+    {
+      "heading": "LlamaIndex vs LangChain: When to Use Each",
+      "body": "LlamaIndex and LangChain overlap significantly but have distinct strengths. LlamaIndex excels at data indexing and retrieval: it offers richer index types (VectorStoreIndex, KnowledgeGraphIndex, SummaryIndex, TreeIndex), more sophisticated retrieval strategies (auto-merging, sentence window, sub-question decomposition), and deeper evaluation integrations (TruLens, Ragas). Its data connector ecosystem (100+ SimpleDirectoryReader plugins) makes ingesting heterogeneous sources straightforward. For Q&A over large document collections, LlamaIndex is the more capable choice out of the box. LangChain excels at composing arbitrary components into pipelines and agent loops: its LCEL pipe operator makes it easy to wire together retrievers, LLMs, output parsers, and custom logic; LangGraph extends this to stateful cyclic workflows with checkpointing and human-in-the-loop. For multi-step agentic workflows that happen to include retrieval, LangChain/LangGraph is the stronger orchestration layer. The frameworks are complementary: wrap a LlamaIndex QueryEngine as a LangChain Tool (from llama_index.core.tools import QueryEngineTool; from langchain.tools import Tool), then use it inside a LangGraph ReAct agent. This gives you LlamaIndex's retrieval quality with LangChain's agent control flow and LangSmith's observability. [1]"
     }
   ],
   "takeaways": [
@@ -58,30 +66,42 @@
     "label": "llamaindex_rag.py",
     "code": "from llama_index.core import VectorStoreIndex, SimpleDirectoryReader\nfrom llama_index.llms.openai import OpenAI\nfrom llama_index.embeddings.openai import OpenAIEmbedding\nfrom llama_index.core import Settings\n\n# 1. Configure global LLM and embedding model\nSettings.llm = OpenAI(model=\"gpt-4o\", temperature=0)\nSettings.embed_model = OpenAIEmbedding(model=\"text-embedding-3-small\")\n\n# 2. Load documents from a directory\ndocuments = SimpleDirectoryReader(\"./data\").load_data()\nprint(f\"Loaded {len(documents)} documents\")\n\n# 3. Build a vector index (embeds nodes and stores in memory)\nindex = VectorStoreIndex.from_documents(documents)\n\n# 4. Create a query engine with custom retrieval settings\nquery_engine = index.as_query_engine(\n    llm=OpenAI(model=\"gpt-4o\"),\n    similarity_top_k=5,          # retrieve top-5 most relevant nodes\n    response_mode=\"compact\",     # synthesise into a concise answer\n)\n\n# 5. Run a query\nresponse = query_engine.query(\n    \"What is the main contribution of the paper?\"\n)\nprint(response)\n\n# 6. Inspect source nodes (citations)\nfor i, node in enumerate(response.source_nodes):\n    print(f\"\\n--- Source {i+1} (score: {node.score:.4f}) ---\")\n    print(f\"File: {node.metadata.get('file_name', 'unknown')}\")\n    print(f\"Text: {node.text[:200]}...\")\n"
   },
-  "deepDive": [
+  "sources": [
     {
-      "heading": "Advanced Retrieval Strategies",
-      "body": "Sentence Window Retrieval: embed each sentence individually (high precision), but when a sentence is retrieved, return it along with a window of K surrounding sentences (provides context for synthesis). Auto-Merging Retrieval: build a hierarchical index (sentence → paragraph → document). Retrieve at sentence level; if K out of N sentences from the same parent paragraph are retrieved, return the full paragraph instead. Small-to-Big Retrieval: retrieve small chunks (high recall), then expand each chunk to its parent node (large chunk, more context). Sub-Question Decomposition: given a complex query, generate N sub-questions, retrieve for each, and synthesise a final answer. Best for multi-hop queries. [1]"
+      "label": "LlamaIndex Documentation — official docs",
+      "url": "https://docs.llamaindex.ai/"
     },
     {
-      "heading": "Index Types",
-      "body": "VectorStoreIndex (most common): embeds nodes and stores in a vector DB; retrieval by ANN similarity search. SummaryIndex (formerly ListIndex): stores all nodes in a list; retrieval iterates over all nodes (suitable for small document sets). TreeIndex: builds a tree of summaries from leaf nodes up; retrieval traverses the tree from root to leaf. Useful for very long documents where you want hierarchical summarisation. KeywordTableIndex: extracts keywords from each node; retrieval by keyword intersection with the query. KnowledgeGraphIndex: extracts (entity, relation, entity) triples; retrieval by graph traversal. For most production RAG, VectorStoreIndex + an advanced retrieval strategy is the standard starting point. [1]"
-    },
-    {
-      "heading": "LlamaIndex vs LangChain for RAG",
-      "body": "LlamaIndex advantages for RAG: deeper retrieval abstractions (more built-in advanced strategies), better multi-index composition (query across multiple indices), more sophisticated evaluation (Ragas integration, TruLens integration). LangChain advantages: broader ecosystem beyond RAG (agents, memory, chains), wider community, more integrations for non-retrieval components. In practice: many teams use LlamaIndex for the retrieval layer and LangChain/LangGraph for the agent orchestration layer, since they can be combined: a LlamaIndex QueryEngine can be wrapped as a LangChain Tool and used inside a LangGraph agent. [1]"
-    },
-    {
-      "heading": "Node Postprocessors and Query Transformations",
-      "body": "LlamaIndex's postprocessor pipeline runs after retrieval and before synthesis, allowing retrieved nodes to be filtered, reranked, or augmented. SimilarityPostprocessor removes nodes below a score threshold (e.g., similarity_cutoff=0.75), ensuring only high-confidence matches reach the LLM — important for reducing hallucination from marginally relevant context. KeywordNodePostprocessor filters nodes that must (or must not) contain specific keywords, useful for domain-specific guardrails. LLMRerank is the most powerful: it sends retrieved nodes to an LLM (or cross-encoder model) with the original query and asks it to score relevance from 1–10, then re-sorts and truncates the list. Cross-encoder reranking consistently outperforms bi-encoder retrieval for final-stage precision at the cost of additional LLM calls. On the query transformation side, HyDE (Hypothetical Document Embeddings) generates a hypothetical answer to the query first, then uses the hypothetical answer's embedding for retrieval — this closes the semantic gap between short questions and long document passages. Decompose query transformations break a complex multi-part question into independent sub-questions, retrieve for each, and synthesise a combined answer. Step-back prompting reformulates the query to a more abstract level ('What general principle does this question relate to?') before retrieval, improving recall for domain-specific queries. [1]"
-    },
-    {
-      "heading": "LlamaIndex vs LangChain: When to Use Each",
-      "body": "LlamaIndex and LangChain overlap significantly but have distinct strengths. LlamaIndex excels at data indexing and retrieval: it offers richer index types (VectorStoreIndex, KnowledgeGraphIndex, SummaryIndex, TreeIndex), more sophisticated retrieval strategies (auto-merging, sentence window, sub-question decomposition), and deeper evaluation integrations (TruLens, Ragas). Its data connector ecosystem (100+ SimpleDirectoryReader plugins) makes ingesting heterogeneous sources straightforward. For Q&A over large document collections, LlamaIndex is the more capable choice out of the box. LangChain excels at composing arbitrary components into pipelines and agent loops: its LCEL pipe operator makes it easy to wire together retrievers, LLMs, output parsers, and custom logic; LangGraph extends this to stateful cyclic workflows with checkpointing and human-in-the-loop. For multi-step agentic workflows that happen to include retrieval, LangChain/LangGraph is the stronger orchestration layer. The frameworks are complementary: wrap a LlamaIndex QueryEngine as a LangChain Tool (from llama_index.core.tools import QueryEngineTool; from langchain.tools import Tool), then use it inside a LangGraph ReAct agent. This gives you LlamaIndex's retrieval quality with LangChain's agent control flow and LangSmith's observability. [1]"
+      "label": "LlamaIndex Blog — Advanced RAG techniques",
+      "url": "https://www.llamaindex.ai/blog"
     }
   ],
-  "sources": [
-    { "label": "LlamaIndex Documentation — official docs", "url": "https://docs.llamaindex.ai/" },
-    { "label": "LlamaIndex Blog — Advanced RAG techniques", "url": "https://www.llamaindex.ai/blog" }
+  "youtubeUrl": "https://www.youtube.com/embed/dkisb6FlU-g",
+  "youtubeLabel": "LlamaIndex Crash Course — Patrick Loeber",
+  "terms": [
+    {
+      "term": "Node",
+      "def": "The atomic unit in LlamaIndex — a chunked piece of a document with metadata."
+    },
+    {
+      "term": "Index",
+      "def": "A data structure (vector, tree, keyword) built over nodes to enable fast retrieval."
+    },
+    {
+      "term": "Retriever",
+      "def": "A component that fetches the top-k most relevant nodes for a query."
+    },
+    {
+      "term": "Response Synthesizer",
+      "def": "Combines retrieved nodes with the query to generate a final answer."
+    },
+    {
+      "term": "QueryEngine",
+      "def": "The top-level object: retriever + postprocessors + synthesiser, invoked per query."
+    },
+    {
+      "term": "Ingestion Pipeline",
+      "def": "The process of loading, transforming, embedding, and storing documents as nodes."
+    }
   ]
 }

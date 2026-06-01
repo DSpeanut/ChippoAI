@@ -71,7 +71,37 @@
     }
   ],
   "sources": [
-    { "label": "Wang et al. (2023) — Plan-and-Solve Prompting: Improving Zero-Shot Chain-of-Thought Reasoning by Large Language Models", "url": "https://arxiv.org/abs/2305.04091" },
-    { "label": "LangChain Plan-and-Execute Agent Documentation — official docs", "url": "https://python.langchain.com/docs/how_to/migrate_agent_executor/" }
+    {
+      "label": "Wang et al. (2023) — Plan-and-Solve Prompting: Improving Zero-Shot Chain-of-Thought Reasoning by Large Language Models",
+      "url": "https://arxiv.org/abs/2305.04091"
+    },
+    {
+      "label": "LangChain Plan-and-Execute Agent Documentation — official docs",
+      "url": "https://python.langchain.com/docs/how_to/migrate_agent_executor/"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/8NYLEzJiDcQ",
+  "youtubeLabel": "Plan-and-Execute AI Agent Workflow with LangGraph — Greg Kamradt",
+  "terms": [
+    {
+      "term": "Planner",
+      "def": "The LLM responsible for decomposing a goal into an ordered list of subgoals."
+    },
+    {
+      "term": "Executor",
+      "def": "The agent or tool runner that carries out individual steps from the plan."
+    },
+    {
+      "term": "Task Decomposition",
+      "def": "Breaking a complex goal into simpler, sequentially executable steps."
+    },
+    {
+      "term": "Subgoal",
+      "def": "A single step in the plan that the executor completes before moving to the next."
+    },
+    {
+      "term": "LangGraph",
+      "def": "A library for building stateful, cyclic agent graphs with explicit plan-and-execute support."
+    }
   ]
 }

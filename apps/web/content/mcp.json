@@ -71,7 +71,41 @@
     }
   ],
   "sources": [
-    { "label": "Anthropic MCP Documentation — official specification and SDKs", "url": "https://docs.anthropic.com/en/docs/mcp" },
-    { "label": "MCP GitHub Repository — open-source specification and reference implementations", "url": "https://github.com/modelcontextprotocol/specification" }
+    {
+      "label": "Anthropic MCP Documentation — official specification and SDKs",
+      "url": "https://docs.anthropic.com/en/docs/mcp"
+    },
+    {
+      "label": "MCP GitHub Repository — open-source specification and reference implementations",
+      "url": "https://github.com/modelcontextprotocol/specification"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/kQmXtrmQ5Zg",
+  "youtubeLabel": "Building Agents with Model Context Protocol — Anthropic / AI Engineer",
+  "terms": [
+    {
+      "term": "MCP Host",
+      "def": "The application embedding the LLM (Claude Desktop, IDE, custom app)."
+    },
+    {
+      "term": "MCP Client",
+      "def": "The component inside the host that manages connections to MCP servers."
+    },
+    {
+      "term": "MCP Server",
+      "def": "A process that exposes Tools, Resources, and Prompts via the MCP protocol."
+    },
+    {
+      "term": "JSON-RPC 2.0",
+      "def": "The underlying protocol MCP uses for bidirectional communication."
+    },
+    {
+      "term": "Tool",
+      "def": "A callable function a server exposes (e.g. read_file, query_db)."
+    },
+    {
+      "term": "Resource",
+      "def": "A readable data source exposed by a server (e.g. a file, a database table)."
+    }
   ]
 }

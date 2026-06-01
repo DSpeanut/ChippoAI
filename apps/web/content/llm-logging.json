@@ -43,6 +43,10 @@
     {
       "heading": "Cost Attribution and Per-Feature Token Budgeting",
       "body": "In a multi-feature LLM product, cost attribution isolates which features are driving spend. Tag every log record with feature_name and user_tier; aggregate daily cost by (feature_name, model) to produce a cost breakdown. Common finding: one feature consumes 60–80% of the token budget due to large system prompts or verbose retrieval context, while other features are negligible. Once attribution is established, set per-feature token budgets: if feature X exceeds its daily budget, alert the owning team. Per-user budgeting prevents abuse: if a single user_id accounts for > 5% of daily token spend, trigger a rate-limit review. Budget enforcement requires the log pipeline to emit near-real-time metrics (Kafka + ClickHouse materialized views with sub-minute latency); batch pipelines (daily BigQuery jobs) are too slow for budget enforcement. Alert on both absolute spend ($ per day) and relative spend (% change from 7-day rolling average) — the latter catches gradual cost drift before it becomes a billing surprise. [2]"
+    },
+    {
+      "heading": "Alerting, Incident Response, and Log Replay",
+      "body": "Production LLM logging must feed into alerting pipelines. Key alert types: (1) Cost spike — total tokens or USD spend exceeds 2× rolling 1-hour average; page on-call to prevent budget overrun; (2) Latency p95 breach — p95 LLM call latency > SLA threshold (typical: 3s for interactive, 30s for batch); indicates model provider issues or prompt length regressions; (3) Error rate spike — 5xx rate or tool failure rate > 1%; may indicate a prompt regression introduced by a recent deploy; (4) Safety flag surge — safety classifier trigger rate increases sharply; may indicate a prompt injection campaign or model behaviour change. Log replay is a key debugging tool: when a regression is detected, replay the last N requests from the log against the old and new model/prompt to isolate which change caused the regression. Ensure logs are stored with sufficient metadata (model version, prompt hash, deploy SHA) to enable exact replay. Log retention policy: 30-day hot storage (queryable), 1-year cold storage (S3 Glacier) for compliance. [2]"
     }
   ],
   "takeaways": [
@@ -63,7 +67,37 @@
     }
   ],
   "sources": [
-    { "label": "LangFuse Documentation — LLM logging and analytics", "url": "https://langfuse.com/docs" },
-    { "label": "OpenTelemetry LLM Semantic Conventions — standardised LLM log attributes", "url": "https://opentelemetry.io/docs/specs/semconv/gen-ai/" }
+    {
+      "label": "LangFuse Documentation — LLM logging and analytics",
+      "url": "https://langfuse.com/docs"
+    },
+    {
+      "label": "OpenTelemetry LLM Semantic Conventions — standardised LLM log attributes",
+      "url": "https://opentelemetry.io/docs/specs/semconv/gen-ai/"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/Yq-kl-uVlts",
+  "youtubeLabel": "LLM Logging with Langfuse — Dave Ebbelaar",
+  "terms": [
+    {
+      "term": "Log Record",
+      "def": "A structured entry capturing prompt hash, tokens in/out, latency, cost, and metadata."
+    },
+    {
+      "term": "Prompt Hash",
+      "def": "A fingerprint of the prompt used to deduplicate and link logs to specific inputs."
+    },
+    {
+      "term": "Token Tracking",
+      "def": "Recording tokens_in and tokens_out per call to compute cost and detect anomalies."
+    },
+    {
+      "term": "Cost Attribution",
+      "def": "Associating token spend with specific features, users, or experiments."
+    },
+    {
+      "term": "Alert",
+      "def": "An automated notification triggered when a cost, latency, or error threshold is breached."
+    }
   ]
 }

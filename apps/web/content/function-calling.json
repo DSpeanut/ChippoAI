@@ -71,7 +71,37 @@
     }
   ],
   "sources": [
-    { "label": "OpenAI Function Calling Documentation — official API reference", "url": "https://platform.openai.com/docs/guides/function-calling" },
-    { "label": "Anthropic Tool Use Documentation — official API reference", "url": "https://docs.anthropic.com/en/docs/tool-use" }
+    {
+      "label": "OpenAI Function Calling Documentation — official API reference",
+      "url": "https://platform.openai.com/docs/guides/function-calling"
+    },
+    {
+      "label": "Anthropic Tool Use Documentation — official API reference",
+      "url": "https://docs.anthropic.com/en/docs/tool-use"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/KUEmEb71vzQ",
+  "youtubeLabel": "Function Calling is All You Need — AI Engineer",
+  "terms": [
+    {
+      "term": "Function Calling",
+      "def": "An LLM API feature where the model emits structured tool invocations instead of free text."
+    },
+    {
+      "term": "JSON Schema",
+      "def": "The standard used to define the parameters a function accepts."
+    },
+    {
+      "term": "Binding",
+      "def": "Attaching function schemas to an LLM so it knows what tools are available."
+    },
+    {
+      "term": "Structured Output",
+      "def": "Model output constrained to a valid JSON schema rather than free-form text."
+    },
+    {
+      "term": "Parallel Tool Calls",
+      "def": "Multiple function calls emitted in a single model turn to be run concurrently."
+    }
   ]
 }

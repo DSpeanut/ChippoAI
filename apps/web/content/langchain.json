@@ -39,6 +39,14 @@
     {
       "heading": "LangGraph: Stateful Agent Workflows",
       "body": "LangGraph's production agent pattern centres on three constructs working together: a typed State dataclass (using Python's TypedDict or dataclass), a StateGraph builder that registers nodes and edges, and a compiled graph (graph.compile(checkpointer=...)) that handles execution. Nodes are pure Python functions — easily unit-tested in isolation. Edges can be unconditional (always route to the same next node) or conditional (inspect state and return the name of the next node). Sub-graphs allow encapsulating a complete workflow as a single node inside a parent graph, enabling hierarchical agent composition. LangGraph's persistence layer (checkpointers backed by SQLite, Redis, or Postgres) serialises the entire state dictionary after every node, enabling agents to resume mid-run after failures, support human review of intermediate outputs, and implement time-travel debugging by rewinding to any prior checkpoint. This persistence model is LangGraph's primary differentiator over simpler agent loops. [1]"
+    },
+    {
+      "heading": "LCEL Runnables and the Composability Model",
+      "body": "Every LCEL component implements the Runnable interface, exposing four core methods: invoke (single synchronous call), batch (multiple inputs in parallel, with configurable max_concurrency), stream (token-by-token generator), and astream (async generator for async contexts). This uniform interface means any Runnable can be swapped for another — a ChatOpenAI can be replaced with ChatAnthropic without changing the rest of the chain. Beyond simple sequences, LCEL provides three composition primitives: RunnableParallel executes multiple Runnables concurrently with the same input, returning a dict of results — useful for fan-out (run retriever + keyword extractor simultaneously); RunnablePassthrough forwards the input unchanged to the next step, useful for injecting the original query alongside retrieved context; RunnableLambda wraps any Python function as a Runnable, enabling custom preprocessing or postprocessing steps without subclassing. These primitives compose into arbitrary DAGs: chain = RunnableParallel({'context': retriever, 'question': RunnablePassthrough()}) | prompt | llm | parser. The | operator builds a RunnableSequence that propagates streaming and async support transparently throughout the entire graph. [1]"
+    },
+    {
+      "heading": "LangSmith Tracing Integration",
+      "body": "LangSmith is LangChain's observability platform that automatically traces all LCEL chain executions when the environment variable LANGCHAIN_TRACING_V2=true is set alongside a valid LANGCHAIN_API_KEY. No code changes are required — the tracing hooks are built into the Runnable protocol. Every trace captures: the full prompt sent to the LLM (after template rendering), the raw completion, per-step latency, token counts (input and output) for each LLM call, and any errors with their stack traces. For multi-step chains, each step appears as a nested span, making it easy to identify which step is slow or incorrect. To add custom metadata to a trace — for example, to tag a run with a user ID or experiment name — use chain.with_config({'metadata': {'user_id': '123', 'experiment': 'v2'}, 'run_name': 'my_chain_run'}). In production debugging, LangSmith traces are invaluable: when a user reports a wrong answer, retrieve the trace by run ID, inspect the exact prompt that was sent, compare retrieved context against the expected context, and identify whether the failure is in retrieval, prompt construction, or LLM reasoning. LangSmith also supports dataset-based evaluation: log production traces as a dataset, run a batch evaluation with an LLM judge, and track metric regressions across code changes. [1]"
     }
   ],
   "takeaways": [
@@ -62,34 +70,42 @@
     "label": "langchain_chain.py",
     "code": "from langchain_core.prompts import ChatPromptTemplate\nfrom langchain_core.output_parsers import StrOutputParser\nfrom langchain_openai import ChatOpenAI\n\n# 1. Define a prompt template with input variables\nprompt = ChatPromptTemplate.from_messages([\n    (\"system\", \"You are a helpful assistant that explains technical concepts clearly.\"),\n    (\"human\", \"Explain {topic} in 2-3 sentences for a software engineer.\")\n])\n\n# 2. Initialise the LLM\nllm = ChatOpenAI(model=\"gpt-4o\", temperature=0)\n\n# 3. Add an output parser to extract plain text\nparser = StrOutputParser()\n\n# 4. Compose the chain using LCEL pipe operator\nchain = prompt | llm | parser\n\n# 5. Invoke (single synchronous call)\nresult = chain.invoke({\"topic\": \"LangChain\"})\nprint(result)\n\n# 6. Stream (token-by-token output)\nfor chunk in chain.stream({\"topic\": \"LangChain\"}):\n    print(chunk, end=\"\", flush=True)\nprint()  # newline after streaming completes\n\n# 7. Batch (multiple inputs in parallel)\nresults = chain.batch([\n    {\"topic\": \"LangChain\"},\n    {\"topic\": \"LangGraph\"},\n    {\"topic\": \"LangSmith\"},\n])\nfor r in results:\n    print(r)\n"
   },
-  "deepDive": [
+  "sources": [
     {
-      "heading": "LCEL: Composing Chains with the Pipe Operator",
-      "body": "LangChain Expression Language (LCEL) uses Python's | operator to compose Runnables: chain = prompt | llm | output_parser. Each step in the chain must implement the Runnable protocol (.invoke(), .stream(), .batch()). LCEL chains are automatically parallelised when steps are independent (using RunnableParallel), support streaming out of the box (the | operator forwards stream events end-to-end), and integrate with LangSmith for automatic tracing. Compared to the older class-based Chains, LCEL is more composable and easier to debug. [1]"
+      "label": "LangChain Documentation — official docs and LCEL reference",
+      "url": "https://python.langchain.com/docs/introduction/"
     },
     {
-      "heading": "LangGraph: State Machines for Agents",
-      "body": "LangGraph models agent workflows as state machines: (1) State — a typed dictionary updated by each node; (2) Nodes — Python functions that take the current state and return a state update; (3) Edges — transitions between nodes (unconditional: always go to next_node; conditional: go to node_A if condition else node_B); (4) Checkpointing — persist state after each node using a checkpointer (SQLite, Redis, Postgres) for resumability. Human-in-the-loop: add an interrupt_before=['tool_call_node'] to pause execution before a tool is called and wait for human approval. Time-travel: use thread_id + checkpoint_id to rewind and re-execute from any prior state. [1]"
-    },
-    {
-      "heading": "When Not to Use LangChain",
-      "body": "LangChain adds abstraction overhead that is unnecessary for simple use cases: a single LLM call that doesn't need memory, tools, or retrieval is better done directly with the provider SDK (fewer dependencies, less magic, easier debugging). LangChain critics cite: (1) frequent breaking changes (v0.1 → v0.2 → v0.3 introduced significant API churn); (2) over-abstraction making it hard to understand what's happening under the hood; (3) large dependency tree. For production systems, many teams use LangChain for prototyping and then implement the critical path directly against provider SDKs. Use LangChain when the ecosystem integrations (document loaders, vector store connectors) save significant time; use the provider SDK directly for latency-sensitive paths. [1]"
-    },
-    {
-      "heading": "LangGraph: Stateful Agent Workflows",
-      "body": "LangGraph's production agent pattern centres on three constructs working together: a typed State dataclass (using Python's TypedDict or dataclass), a StateGraph builder that registers nodes and edges, and a compiled graph (graph.compile(checkpointer=...)) that handles execution. Nodes are pure Python functions — easily unit-tested in isolation. Edges can be unconditional (always route to the same next node) or conditional (inspect state and return the name of the next node). Sub-graphs allow encapsulating a complete workflow as a single node inside a parent graph, enabling hierarchical agent composition. LangGraph's persistence layer (checkpointers backed by SQLite, Redis, or Postgres) serialises the entire state dictionary after every node, enabling agents to resume mid-run after failures, support human review of intermediate outputs, and implement time-travel debugging by rewinding to any prior checkpoint. This persistence model is LangGraph's primary differentiator over simpler agent loops. [1]"
-    },
-    {
-      "heading": "LCEL Runnables and the Composability Model",
-      "body": "Every LCEL component implements the Runnable interface, exposing four core methods: invoke (single synchronous call), batch (multiple inputs in parallel, with configurable max_concurrency), stream (token-by-token generator), and astream (async generator for async contexts). This uniform interface means any Runnable can be swapped for another — a ChatOpenAI can be replaced with ChatAnthropic without changing the rest of the chain. Beyond simple sequences, LCEL provides three composition primitives: RunnableParallel executes multiple Runnables concurrently with the same input, returning a dict of results — useful for fan-out (run retriever + keyword extractor simultaneously); RunnablePassthrough forwards the input unchanged to the next step, useful for injecting the original query alongside retrieved context; RunnableLambda wraps any Python function as a Runnable, enabling custom preprocessing or postprocessing steps without subclassing. These primitives compose into arbitrary DAGs: chain = RunnableParallel({'context': retriever, 'question': RunnablePassthrough()}) | prompt | llm | parser. The | operator builds a RunnableSequence that propagates streaming and async support transparently throughout the entire graph. [1]"
-    },
-    {
-      "heading": "LangSmith Tracing Integration",
-      "body": "LangSmith is LangChain's observability platform that automatically traces all LCEL chain executions when the environment variable LANGCHAIN_TRACING_V2=true is set alongside a valid LANGCHAIN_API_KEY. No code changes are required — the tracing hooks are built into the Runnable protocol. Every trace captures: the full prompt sent to the LLM (after template rendering), the raw completion, per-step latency, token counts (input and output) for each LLM call, and any errors with their stack traces. For multi-step chains, each step appears as a nested span, making it easy to identify which step is slow or incorrect. To add custom metadata to a trace — for example, to tag a run with a user ID or experiment name — use chain.with_config({'metadata': {'user_id': '123', 'experiment': 'v2'}, 'run_name': 'my_chain_run'}). In production debugging, LangSmith traces are invaluable: when a user reports a wrong answer, retrieve the trace by run ID, inspect the exact prompt that was sent, compare retrieved context against the expected context, and identify whether the failure is in retrieval, prompt construction, or LLM reasoning. LangSmith also supports dataset-based evaluation: log production traces as a dataset, run a batch evaluation with an LLM judge, and track metric regressions across code changes. [1]"
+      "label": "LangGraph Documentation — official docs",
+      "url": "https://langchain-ai.github.io/langgraph/"
     }
   ],
-  "sources": [
-    { "label": "LangChain Documentation — official docs and LCEL reference", "url": "https://python.langchain.com/docs/introduction/" },
-    { "label": "LangGraph Documentation — official docs", "url": "https://langchain-ai.github.io/langgraph/" }
+  "youtubeUrl": "https://www.youtube.com/embed/yF9kGESAi3M",
+  "youtubeLabel": "LangChain Master Class for Beginners 2024 — Data Science Basics",
+  "terms": [
+    {
+      "term": "LCEL",
+      "def": "LangChain Expression Language — the pipe-operator (|) composition system for chains."
+    },
+    {
+      "term": "Chain",
+      "def": "A sequence of components (prompt | LLM | parser) composed into a single Runnable."
+    },
+    {
+      "term": "Runnable",
+      "def": "The base interface in LCEL — anything composable via | that has invoke/stream/batch."
+    },
+    {
+      "term": "LangGraph",
+      "def": "LangChain's library for building stateful, cyclic agent graphs with typed state."
+    },
+    {
+      "term": "Memory",
+      "def": "A component that stores and retrieves conversation history for multi-turn chains."
+    },
+    {
+      "term": "Agent Executor",
+      "def": "LangChain's built-in loop that runs a ReAct-style tool-calling agent."
+    }
   ]
 }

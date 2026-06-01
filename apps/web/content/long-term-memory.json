@@ -71,7 +71,41 @@
     }
   ],
   "sources": [
-    { "label": "Packer et al. (2023) — MemGPT: Towards LLMs as Operating Systems", "url": "https://arxiv.org/abs/2310.08560" },
-    { "label": "Wang et al. (2024) — A Survey on Large Language Model based Autonomous Agents", "url": "https://arxiv.org/abs/2308.11432" }
+    {
+      "label": "Packer et al. (2023) — MemGPT: Towards LLMs as Operating Systems",
+      "url": "https://arxiv.org/abs/2310.08560"
+    },
+    {
+      "label": "Wang et al. (2024) — A Survey on Large Language Model based Autonomous Agents",
+      "url": "https://arxiv.org/abs/2308.11432"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/jw67V_gBzR0",
+  "youtubeLabel": "Agentic Long-Term Memory for LLMs — David Ondrej",
+  "terms": [
+    {
+      "term": "Vector Store",
+      "def": "A database that stores embeddings and supports similarity search for retrieval."
+    },
+    {
+      "term": "Embedding",
+      "def": "A dense numerical representation of text used to measure semantic similarity."
+    },
+    {
+      "term": "Retrieval",
+      "def": "Fetching the most relevant stored memories at query time using ANN search."
+    },
+    {
+      "term": "Persistence",
+      "def": "Memory that survives session resets by storing to an external database."
+    },
+    {
+      "term": "Episodic Store",
+      "def": "A store of past events and interactions the agent has experienced."
+    },
+    {
+      "term": "MemGPT",
+      "def": "An architecture that manages an LLM's memory like an OS manages RAM — paging context in and out."
+    }
   ]
 }

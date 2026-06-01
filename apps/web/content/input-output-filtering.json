@@ -34,6 +34,14 @@
     {
       "heading": "Output Filtering and Graceful Fallbacks",
       "body": "Output filtering runs on the LLM's generated response before delivery. Triggers: safety classifier score > threshold, PII detection, off-topic detection, fact-checking triggers (for high-stakes factual claims). Actions: (1) Hard block — discard the response, return a pre-written safe fallback message ('I'm not able to help with that.'); (2) Soft block — return the response with a warning/disclaimer prepended; (3) Human review queue — flag for manual review before delivery (acceptable for non-real-time use cases like content generation); (4) Regeneration with constraint — instruct the LLM to regenerate with an explicit constraint ('Your previous response contained [issue]. Please regenerate without that content.'). Latency: output filtering doubles effective response time if applied to the full output. Mitigation: run the safety classifier in parallel with the final LLM call using the streamed output; stop the stream if a violation is detected mid-generation. [2]"
+    },
+    {
+      "heading": "PII Detection and Sensitive Data Filtering",
+      "body": "AI outputs frequently expose PII when the model is trained on web data or when users inadvertently include personal details in prompts. Output PII filtering extracts and redacts: names, email addresses, phone numbers, SSNs, and credit card numbers using a combination of regex patterns and named entity recognition (NER). Libraries: Microsoft Presidio (open-source, supports 50+ entity types, pluggable recognisers), Google Cloud DLP, AWS Comprehend Medical (for healthcare). In RAG systems, PII filtering must also run on retrieved documents before they are inserted into the prompt — preventing the model from quoting a user's private data sourced from a shared knowledge base. For EU deployments, GDPR Article 25 ('data protection by design') mandates that PII handling is built into the pipeline, not bolted on. Log PII detections with redacted values, not originals — the log pipeline itself is an attack surface. [1]"
+    },
+    {
+      "heading": "Streaming Output Filtering and Latency Trade-offs",
+      "body": "Streaming responses deliver tokens to the client as they are generated. Filtering streaming output is harder: safety classifiers typically need the full output to compute a score (cross-sequence patterns like 'step 1: … step 5: make bomb' only become apparent after several tokens). Strategies: (1) Buffer-and-classify — buffer the last N tokens, run the classifier on each new chunk, stop the stream on violation; introduces up to N-token latency. (2) Parallel pre-classification — run a fast binary classifier (keyword heuristic or small classifier) on each token chunk in parallel with delivery; stop if triggered. (3) Post-stream verification — deliver the full stream, then run the full classifier and delete from the client's view if a violation is found (only works if the UI supports post-stream redaction). (4) Sentence-boundary classification — classify at natural sentence boundaries rather than token-by-token to reduce classifier call overhead. For most production systems, buffering 50-100 tokens before delivery (50-100ms at 1000 tok/s) while running a fast classifier is the right default. [2]"
     }
   ],
   "takeaways": [
@@ -54,12 +62,46 @@
     }
   ],
   "sources": [
-    { "label": "Inan et al. (2023) — Llama Guard: LLM-based Input-Output Safeguard for Human-AI Conversations, Meta AI", "url": "https://arxiv.org/abs/2312.06674" },
-    { "label": "OpenAI Moderation Documentation — official API reference", "url": "https://platform.openai.com/docs/guides/moderation" }
+    {
+      "label": "Inan et al. (2023) — Llama Guard: LLM-based Input-Output Safeguard for Human-AI Conversations, Meta AI",
+      "url": "https://arxiv.org/abs/2312.06674"
+    },
+    {
+      "label": "OpenAI Moderation Documentation — official API reference",
+      "url": "https://platform.openai.com/docs/guides/moderation"
+    }
   ],
   "visualizationType": "io-filtering-viz",
   "codeSnapshot": {
     "label": "io_filtering.py",
     "code": "from transformers import pipeline\nfrom langchain_openai import ChatOpenAI\nfrom langchain_core.runnables import RunnableLambda\nimport time\n\n# --- Layer 1: LlamaGuard input filter ---\nguard = pipeline(\"text-classification\", model=\"meta-llama/LlamaGuard-7b\")\n\ndef check_input(user_input: str) -> str:\n    \"\"\"Run LlamaGuard on the raw user input. Raises ValueError if unsafe.\"\"\"\n    prompt = f\"[INST] Task: Check if safe.\\n[/INST]\\nUser: {user_input}\"\n    result = guard(prompt)\n    if result[0][\"label\"] == \"unsafe\":\n        raise ValueError(f\"Input blocked by safety classifier: {result[0]}\")\n    return user_input\n\n# --- Layer 2: Output filter with keyword denylist fallback ---\nDENY_LIST = [\"bomb-making\", \"synthesize nerve agent\", \"child exploitation\"]\n\ndef check_output(response_text: str) -> str:\n    \"\"\"Keyword denylist as a fast fallback output filter.\"\"\"\n    lower = response_text.lower()\n    for banned in DENY_LIST:\n        if banned in lower:\n            raise ValueError(f\"Output blocked: matched denylist term '{banned}'\")\n    return response_text\n\n# --- LangChain integration: filter → LLM → filter ---\nllm = ChatOpenAI(model=\"gpt-4o-mini\", temperature=0)\n\nfilter_chain = (\n    RunnableLambda(check_input)\n    | llm\n    | RunnableLambda(lambda msg: check_output(msg.content))\n)\n\n# --- Measure filter overhead ---\nuser_query = \"How do I safely dispose of old medication?\"\n\nt0 = time.perf_counter()\ntry:\n    safe_input = check_input(user_query)\n    t_filter = time.perf_counter()\n    print(f\"Input filter latency: {(t_filter - t0)*1000:.1f}ms\")\n\n    result = filter_chain.invoke(user_query)\n    print(f\"Final response: {result}\")\nexcept ValueError as e:\n    print(f\"Blocked: {e}\")\n"
-  }
+  },
+  "youtubeUrl": "https://www.youtube.com/embed/ejEDrVJ2xqM",
+  "youtubeLabel": "Filter Unsafe Prompts with Llama Guard 3 — Mervin Praison",
+  "terms": [
+    {
+      "term": "Input Filter",
+      "def": "A safety check applied to user input before it reaches the LLM."
+    },
+    {
+      "term": "Output Filter",
+      "def": "A safety check applied to LLM output before it is delivered to the user."
+    },
+    {
+      "term": "LlamaGuard",
+      "def": "Meta's open-source safety classifier for detecting harmful LLM inputs and outputs."
+    },
+    {
+      "term": "Safety Classifier",
+      "def": "An ML model that scores content across harm categories (violence, hate, sexual, etc.)."
+    },
+    {
+      "term": "Blocklist",
+      "def": "A rule-based list of prohibited keywords or patterns used as a first fast filter."
+    },
+    {
+      "term": "PII",
+      "def": "Personally Identifiable Information — data that must be detected and redacted in outputs."
+    }
+  ]
 }

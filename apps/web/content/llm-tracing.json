@@ -71,7 +71,41 @@
     }
   ],
   "sources": [
-    { "label": "LangSmith Documentation — tracing and evaluation", "url": "https://docs.smith.langchain.com/" },
-    { "label": "LangFuse Documentation — open-source LLM observability", "url": "https://langfuse.com/docs" }
+    {
+      "label": "LangSmith Documentation — tracing and evaluation",
+      "url": "https://docs.smith.langchain.com/"
+    },
+    {
+      "label": "LangFuse Documentation — open-source LLM observability",
+      "url": "https://langfuse.com/docs"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/pTneXS_m1rk",
+  "youtubeLabel": "Langfuse: Observability & Tracing for LLMs — Langfuse",
+  "terms": [
+    {
+      "term": "Trace",
+      "def": "A complete record of all spans for a single user request end-to-end."
+    },
+    {
+      "term": "Span",
+      "def": "A named, timed operation within a trace (e.g. retrieval, LLM call, reranking)."
+    },
+    {
+      "term": "OpenTelemetry",
+      "def": "A vendor-neutral observability standard for distributed tracing used by LLM frameworks."
+    },
+    {
+      "term": "Langfuse",
+      "def": "An open-source LLM observability platform with trace, log, and eval support."
+    },
+    {
+      "term": "LangSmith",
+      "def": "LangChain's hosted observability and evaluation platform."
+    },
+    {
+      "term": "Cost Attribution",
+      "def": "Attributing token costs to specific traces, features, or users for budgeting."
+    }
   ]
 }

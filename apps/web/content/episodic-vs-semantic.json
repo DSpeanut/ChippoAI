@@ -67,7 +67,37 @@
     }
   ],
   "sources": [
-    { "label": "Park et al. (2023) — Generative Agents: Interactive Simulacra of Human Behavior", "url": "https://arxiv.org/abs/2304.03442" },
-    { "label": "Packer et al. (2023) — MemGPT: Towards LLMs as Operating Systems", "url": "https://arxiv.org/abs/2310.08560" }
+    {
+      "label": "Park et al. (2023) — Generative Agents: Interactive Simulacra of Human Behavior",
+      "url": "https://arxiv.org/abs/2304.03442"
+    },
+    {
+      "label": "Packer et al. (2023) — MemGPT: Towards LLMs as Operating Systems",
+      "url": "https://arxiv.org/abs/2310.08560"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/5ZWJxsjeLhw",
+  "youtubeLabel": "Memory for AI Agents: Short-Term, Long-Term & Episodic — AI Foundations",
+  "terms": [
+    {
+      "term": "Episodic Memory",
+      "def": "Records of specific past events and interactions, indexed by time or recency."
+    },
+    {
+      "term": "Semantic Memory",
+      "def": "General facts and knowledge about the world, indexed by meaning."
+    },
+    {
+      "term": "Reflection",
+      "def": "A process where an agent synthesises episodic memories into higher-level semantic facts."
+    },
+    {
+      "term": "Recency Bias",
+      "def": "Episodic memory systems naturally weight recent events more heavily."
+    },
+    {
+      "term": "Knowledge Graph",
+      "def": "A structured store of entities and relationships used for semantic memory retrieval."
+    }
   ]
 }

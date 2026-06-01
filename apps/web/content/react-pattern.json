@@ -71,7 +71,41 @@
     }
   ],
   "sources": [
-    { "label": "Yao et al. (2022) — ReAct: Synergizing Reasoning and Acting in Language Models, ICLR 2023", "url": "https://arxiv.org/abs/2210.03629" },
-    { "label": "Wei et al. (2022) — Chain-of-Thought Prompting Elicits Reasoning in Large Language Models, NeurIPS 2022", "url": "https://arxiv.org/abs/2201.11903" }
+    {
+      "label": "Yao et al. (2022) — ReAct: Synergizing Reasoning and Acting in Language Models, ICLR 2023",
+      "url": "https://arxiv.org/abs/2210.03629"
+    },
+    {
+      "label": "Wei et al. (2022) — Chain-of-Thought Prompting Elicits Reasoning in Large Language Models, NeurIPS 2022",
+      "url": "https://arxiv.org/abs/2201.11903"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/WKTNxaZJf4Y",
+  "youtubeLabel": "LLM Agents with ReAct (Reason + Act) — Andrei Bejinar",
+  "terms": [
+    {
+      "term": "Thought",
+      "def": "The natural-language reasoning trace the model writes before choosing an action."
+    },
+    {
+      "term": "Action",
+      "def": "The tool call or final answer the model selects after reasoning."
+    },
+    {
+      "term": "Observation",
+      "def": "The tool result returned by the environment, appended to the prompt."
+    },
+    {
+      "term": "ReAct",
+      "def": "Reason + Act — a prompting framework that interleaves reasoning traces with tool calls."
+    },
+    {
+      "term": "Scratchpad",
+      "def": "The accumulated (Thought, Action, Observation) history in the prompt."
+    },
+    {
+      "term": "Chain-of-Thought",
+      "def": "Prompting technique that elicits step-by-step reasoning before an answer."
+    }
   ]
 }

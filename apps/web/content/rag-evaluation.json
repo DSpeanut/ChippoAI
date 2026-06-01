@@ -75,5 +75,33 @@
   "codeSnapshot": {
     "label": "rag_evaluation.py",
     "code": "from ragas import evaluate\nfrom ragas.metrics import faithfulness, answer_relevancy, context_precision, context_recall\nfrom datasets import Dataset\nfrom langchain_openai import ChatOpenAI, OpenAIEmbeddings\n\n# Build eval dataset — replace with your actual RAG pipeline output\nquestions = [\"What is RAG?\", \"How does chunking affect retrieval?\"]\nanswers   = [\"RAG combines retrieval with LLM generation.\", \"Chunk size trades precision vs context.\"]\ncontexts  = [[\"RAG = Retrieval-Augmented Generation\", \"RAG retrieves context before generating.\"],\n             [\"Chunking splits docs before embedding\", \"Smaller chunks = higher precision\"]]\nground_truths = [[\"RAG augments LLMs with retrieved docs.\"], [\"Smaller chunks improve retrieval precision.\"]]\n\ndataset = Dataset.from_dict({\n    \"question\": questions,\n    \"answer\": answers,\n    \"contexts\": contexts,\n    \"ground_truth\": ground_truths,\n})\n\n# faithfulness     — every claim in answer supported by retrieved context?\n# answer_relevancy — does the answer actually address the question?\n# context_precision  — are useful chunks ranked above useless ones?\n# context_recall   — does retrieved context cover the ground truth?\nresults = evaluate(\n    dataset=dataset,\n    metrics=[faithfulness, answer_relevancy, context_precision, context_recall],\n    llm=ChatOpenAI(model=\"gpt-4o\", temperature=0),\n    embeddings=OpenAIEmbeddings(model=\"text-embedding-3-small\"),\n)\nprint(results.to_pandas()[[\"question\",\"faithfulness\",\"answer_relevancy\",\"context_precision\",\"context_recall\"]])"
-  }
+  },
+  "youtubeUrl": "https://www.youtube.com/embed/5fp6e5nhJRk",
+  "youtubeLabel": "RAGAS: How to Evaluate a RAG Application — Mervin Praison",
+  "terms": [
+    {
+      "term": "Faithfulness",
+      "def": "The answer is supported by the retrieved context — no hallucinated facts."
+    },
+    {
+      "term": "Answer Relevance",
+      "def": "The answer directly addresses the user's question."
+    },
+    {
+      "term": "Context Precision",
+      "def": "The proportion of retrieved chunks that are actually useful."
+    },
+    {
+      "term": "Context Recall",
+      "def": "What fraction of the relevant chunks were retrieved."
+    },
+    {
+      "term": "RAGAS",
+      "def": "An open-source framework that computes RAG metrics using LLM-as-judge."
+    },
+    {
+      "term": "LLM-as-Judge",
+      "def": "Using an LLM to score another LLM's output against defined criteria."
+    }
+  ]
 }

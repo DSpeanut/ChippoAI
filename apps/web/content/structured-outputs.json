@@ -67,7 +67,37 @@
     }
   ],
   "sources": [
-    { "label": "OpenAI Structured Outputs Documentation — official API reference", "url": "https://platform.openai.com/docs/guides/structured-outputs" },
-    { "label": "Willard & Louf (2023) — Efficient Guided Generation for Large Language Models (Outlines)", "url": "https://arxiv.org/abs/2307.09702" }
+    {
+      "label": "OpenAI Structured Outputs Documentation — official API reference",
+      "url": "https://platform.openai.com/docs/guides/structured-outputs"
+    },
+    {
+      "label": "Willard & Louf (2023) — Efficient Guided Generation for Large Language Models (Outlines)",
+      "url": "https://arxiv.org/abs/2307.09702"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/mIZHRqMoJec",
+  "youtubeLabel": "Structured Outputs: JSON Schema for LLMs — AI Anytime",
+  "terms": [
+    {
+      "term": "JSON Schema",
+      "def": "A standard for describing the required shape of a JSON object."
+    },
+    {
+      "term": "Constrained Decoding",
+      "def": "Forcing the model's token sampling to only generate tokens valid under a grammar."
+    },
+    {
+      "term": "Pydantic",
+      "def": "A Python library that generates JSON schemas from type-annotated classes."
+    },
+    {
+      "term": "Validation",
+      "def": "Checking the model's output conforms to the specified schema; retry if not."
+    },
+    {
+      "term": "Outlines",
+      "def": "A library that enforces grammar-based constrained decoding for structured outputs."
+    }
   ]
 }

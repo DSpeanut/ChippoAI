@@ -71,7 +71,41 @@
     }
   ],
   "sources": [
-    { "label": "Schick et al. (2023) — Toolformer: Language Models Can Teach Themselves to Use Tools, NeurIPS 2023", "url": "https://arxiv.org/abs/2302.04761" },
-    { "label": "Anthropic Tool Use Documentation — official API reference", "url": "https://docs.anthropic.com/en/docs/tool-use" }
+    {
+      "label": "Schick et al. (2023) — Toolformer: Language Models Can Teach Themselves to Use Tools, NeurIPS 2023",
+      "url": "https://arxiv.org/abs/2302.04761"
+    },
+    {
+      "label": "Anthropic Tool Use Documentation — official API reference",
+      "url": "https://docs.anthropic.com/en/docs/tool-use"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/QiRdYCNXAxk",
+  "youtubeLabel": "How LLM Tool Calling Works — Underfitted",
+  "terms": [
+    {
+      "term": "Tool",
+      "def": "A callable function the LLM can invoke to interact with external systems."
+    },
+    {
+      "term": "Tool Call",
+      "def": "The structured output (name + args) the LLM emits when it wants to use a tool."
+    },
+    {
+      "term": "Executor",
+      "def": "The framework component that dispatches tool calls and returns results."
+    },
+    {
+      "term": "Tool Schema",
+      "def": "The JSON Schema description of a tool's name, inputs, and expected output."
+    },
+    {
+      "term": "Tool Result",
+      "def": "The value returned by a tool, injected back into the context for the next LLM call."
+    },
+    {
+      "term": "Toolformer",
+      "def": "A 2023 Meta model that learned to call APIs inline during generation."
+    }
   ]
 }

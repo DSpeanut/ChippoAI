@@ -75,5 +75,33 @@
   "codeSnapshot": {
     "label": "content_moderation.py",
     "code": "from openai import OpenAI\nfrom langchain_openai import ChatOpenAI\nfrom langchain_core.prompts import ChatPromptTemplate\nfrom pydantic import BaseModel\nfrom typing import Literal\n\nopenai_client = OpenAI()\nllm = ChatOpenAI(model=\"gpt-4o\", temperature=0)\n\ndef check_openai_moderation(text: str) -> dict:\n    \"Fast path: use OpenAI Moderation API (free, < 50ms).\"\n    response = openai_client.moderations.create(input=text)\n    result = response.results[0]\n    return {\"flagged\": result.flagged, \"categories\": {k: v for k, v in result.categories.__dict__.items() if v}}\n\nclass ModerationResult(BaseModel):\n    category: Literal[\"safe\", \"hate\", \"violence\", \"sexual\", \"spam\", \"other\"]\n    confidence: float\n    reason: str\n    needs_human_review: bool\n\nmoderation_prompt = ChatPromptTemplate.from_messages([\n    (\"system\", \"You are a content moderation classifier. Analyse the text and classify it accurately.\"),\n    (\"human\", \"Text to moderate: {text}\"),\n])\ndetailed_moderator = moderation_prompt | llm.with_structured_output(ModerationResult)\n\ndef moderate(text: str) -> ModerationResult:\n    \"Two-stage moderation: fast OpenAI API, then detailed LLM classifier if flagged.\"\n    quick = check_openai_moderation(text)\n    if not quick[\"flagged\"]:\n        return ModerationResult(category=\"safe\", confidence=0.99, reason=\"Passed OpenAI moderation\", needs_human_review=False)\n    # Slow path for flagged content: detailed classification\n    return detailed_moderator.invoke({\"text\": text})\n\nresult = moderate(\"Hello world\")\nprint(f\"Category: {result.category}, Confidence: {result.confidence:.2f}\")"
-  }
+  },
+  "youtubeUrl": "https://www.youtube.com/embed/UOtKXrl7j9I",
+  "youtubeLabel": "How AI Content Moderation Works: Safety Filters — AI Foundations",
+  "terms": [
+    {
+      "term": "Harm Category",
+      "def": "A predefined class of harmful content (hate speech, violence, sexual content, self-harm, spam)."
+    },
+    {
+      "term": "Safety Score",
+      "def": "The probability (0–1) that content belongs to a harm category, output by the classifier."
+    },
+    {
+      "term": "Threshold",
+      "def": "The score above which content is flagged or blocked; tuned per category and use case."
+    },
+    {
+      "term": "Human Review Queue",
+      "def": "A queue for near-threshold content reviewed by trust-and-safety analysts."
+    },
+    {
+      "term": "LlamaGuard",
+      "def": "Meta's open-source multi-class safety classifier used for both input and output moderation."
+    },
+    {
+      "term": "Trust & Safety",
+      "def": "The team and policies responsible for preventing harmful content in a product."
+    }
+  ]
 }

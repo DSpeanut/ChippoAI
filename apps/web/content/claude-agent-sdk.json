@@ -35,6 +35,14 @@
     {
       "heading": "Extended Thinking for Complex Agent Decisions",
       "body": "Claude's extended thinking (thinking: {type: 'enabled', budget_tokens: N}) allocates a dedicated token budget for internal reasoning before the response. In agent contexts, use extended thinking for: complex planning steps (which tools to call and in what order), ambiguous tool selection (multiple tools could apply), and multi-hop reasoning tasks. The thinking tokens are not billed as output tokens (at a different rate) and are not injected back into subsequent turns (they don't consume the context window). Set budget_tokens = 1024 for routine steps, 8192+ for complex planning steps. Extended thinking significantly improves tool selection accuracy on difficult tasks. [1]"
+    },
+    {
+      "heading": "Prompt Caching for Long-Running Agents",
+      "body": "Anthropic prompt caching allows you to mark static content — such as the system prompt and tool definitions — with cache_control: {\"type\": \"ephemeral\"}, instructing Claude to cache that prefix for up to 5 minutes. On the first call, the prefix is processed normally and stored in cache. On subsequent calls within the TTL, cached tokens cost 10% of the base input token price (a 90% saving) and add roughly 1ms of latency overhead rather than the full prefill cost. To calculate savings: suppose an agent has a 4,000-token system prompt and runs for 10 turns. Without caching: 4,000 tokens × 10 calls = 40,000 input tokens billed at full price. With caching: 4,000 tokens billed once at full price + 9 calls × 4,000 tokens at 10% price = 4,000 + 3,600 token-equivalents = 7,600 token-equivalents — an 81% reduction in prompt cost. The break-even point is the second call; caching always pays off for agents running more than one turn. The 5-minute cache TTL means caching is most effective for agents that make rapid sequential calls; for long-paused workflows (minutes between calls), the cache may expire between turns. Cache invalidation happens automatically when the cached prefix changes — even a single token difference creates a new cache entry. Tool definitions are the second-highest caching target after the system prompt; mark them with cache_control on the last tool in the list. [1]"
+    },
+    {
+      "heading": "Computer Use and Multi-Modal Agent Actions",
+      "body": "Claude's computer use capability exposes a computer tool type that enables the model to interact with a graphical desktop environment. The architecture is: (1) Observation — Claude receives a screenshot of the current screen state as a base64-encoded image in its context; (2) Reasoning — Claude analyses the screenshot and determines the next action to take; (3) Action — Claude emits a computer action (click at coordinates x,y; type text; scroll; key press; take screenshot); (4) Execution — the client executes the action using a desktop automation library (e.g., pyautogui, xdotool) and captures a new screenshot; (5) Loop — the new screenshot is fed back to Claude and the cycle repeats until the task is complete. This loop enables Claude to operate any desktop application without requiring DOM access or an API — it sees the screen as a human would. Safety is the primary challenge: computer use agents can perform irreversible actions (deleting files, submitting forms, making purchases). Essential safeguards: human-in-the-loop checkpoints before high-stakes actions (file deletion, form submission, purchases); action confirmation dialogs for operations above a risk threshold; capability restrictions limiting the agent to specific applications (e.g., only allowed to interact with the browser, not the file system); running in an isolated VM or container with no access to sensitive credentials. Prompt injection via screen content is a critical threat: a malicious web page or document can contain text designed to redirect the agent's actions. Defence requires monitoring for anomalous action patterns and validating that executed actions are consistent with the original task objective. [1]"
     }
   ],
   "takeaways": [
@@ -58,30 +66,38 @@
     "label": "claude_sdk_agent.py",
     "code": "import os\nfrom anthropic import Anthropic\n\nclient = Anthropic()\n\n# 1. Define tools using JSON Schema format\ntools = [\n    {\n        \"name\": \"get_weather\",\n        \"description\": \"Get the current weather for a given city.\",\n        \"input_schema\": {\n            \"type\": \"object\",\n            \"properties\": {\n                \"city\": {\n                    \"type\": \"string\",\n                    \"description\": \"The city name, e.g. 'San Francisco'\"\n                }\n            },\n            \"required\": [\"city\"]\n        }\n    }\n]\n\n\ndef execute_tool(tool_name: str, tool_input: dict) -> str:\n    \"\"\"Dispatch tool calls to the appropriate implementation.\"\"\"\n    if tool_name == \"get_weather\":\n        # In production, call a real weather API here\n        city = tool_input[\"city\"]\n        return f\"The weather in {city} is 22°C and sunny.\"\n    return f\"Unknown tool: {tool_name}\"\n\n\ndef run_agent(user_message: str) -> str:\n    \"\"\"Run a multi-turn agent loop until the model stops calling tools.\"\"\"\n    messages = [{\"role\": \"user\", \"content\": user_message}]\n\n    while True:\n        # 2. Call the API\n        response = client.messages.create(\n            model=\"claude-opus-4-6\",\n            max_tokens=4096,\n            tools=tools,\n            messages=messages,\n        )\n\n        # 3. Check stop reason\n        if response.stop_reason == \"end_turn\":\n            # Model finished — extract the final text response\n            for block in response.content:\n                if hasattr(block, \"text\"):\n                    return block.text\n            return \"\"\n\n        if response.stop_reason == \"tool_use\":\n            # 4. Append assistant's response to the conversation\n            messages.append({\"role\": \"assistant\", \"content\": response.content})\n\n            # 5. Execute all tool calls and collect results\n            tool_results = []\n            for block in response.content:\n                if block.type == \"tool_use\":\n                    result = execute_tool(block.name, block.input)\n                    tool_results.append({\n                        \"type\": \"tool_result\",\n                        \"tool_use_id\": block.id,\n                        \"content\": result,\n                    })\n\n            # 6. Append tool results and loop\n            messages.append({\"role\": \"user\", \"content\": tool_results})\n\n        else:\n            # Unexpected stop reason — break to avoid infinite loop\n            break\n\n    return \"\"\n\n\nif __name__ == \"__main__\":\n    answer = run_agent(\"What is the weather like in Tokyo and Paris today?\")\n    print(answer)\n"
   },
-  "deepDive": [
+  "sources": [
     {
-      "heading": "Tool Use with the Native Anthropic SDK",
-      "body": "Tools are defined as Python dicts with name, description, and input_schema (JSON Schema). Pass them to client.messages.create(tools=[...]). Claude's response may include a tool_use content block with: id (unique call ID), name (tool name), input (JSON matching the schema). Execute the tool, then create a new message with role='user' and content=[{type: 'tool_result', tool_use_id: id, content: result_string}]. Call the API again with the updated message list. This is the minimal agent loop — no framework needed. For parallel tool calls, Claude may emit multiple tool_use blocks in one response; execute them concurrently and return all results in a single user message. [1]"
+      "label": "Anthropic Computer Use Documentation — official docs",
+      "url": "https://docs.anthropic.com/en/docs/computer-use"
     },
     {
-      "heading": "Prompt Caching for Agent Efficiency",
-      "body": "In agent loops, the system prompt and tool definitions are repeated on every API call. Claude's prompt caching (cache_control: {type: 'ephemeral'}) caches prefix tokens for up to 5 minutes, reducing cost by 90% for cached tokens and latency by ~30%. For an agent with a 2k-token system prompt + 1.5k-token tool definitions making 20 API calls: without caching, pay for 3.5k input tokens × 20 = 70k tokens; with caching, pay for 3.5k tokens once (full price) + 19 × 3.5k tokens at 10% price = 3.5k + 6.65k tokens equivalent = ~70k → ~10k equivalent. Always mark static prefixes (system prompt, tool definitions) for caching in long agent runs. [1]"
-    },
-    {
-      "heading": "Extended Thinking for Complex Agent Decisions",
-      "body": "Claude's extended thinking (thinking: {type: 'enabled', budget_tokens: N}) allocates a dedicated token budget for internal reasoning before the response. In agent contexts, use extended thinking for: complex planning steps (which tools to call and in what order), ambiguous tool selection (multiple tools could apply), and multi-hop reasoning tasks. The thinking tokens are not billed as output tokens (at a different rate) and are not injected back into subsequent turns (they don't consume the context window). Set budget_tokens = 1024 for routine steps, 8192+ for complex planning steps. Extended thinking significantly improves tool selection accuracy on difficult tasks. [1]"
-    },
-    {
-      "heading": "Prompt Caching for Long-Running Agents",
-      "body": "Anthropic prompt caching allows you to mark static content — such as the system prompt and tool definitions — with cache_control: {\"type\": \"ephemeral\"}, instructing Claude to cache that prefix for up to 5 minutes. On the first call, the prefix is processed normally and stored in cache. On subsequent calls within the TTL, cached tokens cost 10% of the base input token price (a 90% saving) and add roughly 1ms of latency overhead rather than the full prefill cost. To calculate savings: suppose an agent has a 4,000-token system prompt and runs for 10 turns. Without caching: 4,000 tokens × 10 calls = 40,000 input tokens billed at full price. With caching: 4,000 tokens billed once at full price + 9 calls × 4,000 tokens at 10% price = 4,000 + 3,600 token-equivalents = 7,600 token-equivalents — an 81% reduction in prompt cost. The break-even point is the second call; caching always pays off for agents running more than one turn. The 5-minute cache TTL means caching is most effective for agents that make rapid sequential calls; for long-paused workflows (minutes between calls), the cache may expire between turns. Cache invalidation happens automatically when the cached prefix changes — even a single token difference creates a new cache entry. Tool definitions are the second-highest caching target after the system prompt; mark them with cache_control on the last tool in the list. [1]"
-    },
-    {
-      "heading": "Computer Use and Multi-Modal Agent Actions",
-      "body": "Claude's computer use capability exposes a computer tool type that enables the model to interact with a graphical desktop environment. The architecture is: (1) Observation — Claude receives a screenshot of the current screen state as a base64-encoded image in its context; (2) Reasoning — Claude analyses the screenshot and determines the next action to take; (3) Action — Claude emits a computer action (click at coordinates x,y; type text; scroll; key press; take screenshot); (4) Execution — the client executes the action using a desktop automation library (e.g., pyautogui, xdotool) and captures a new screenshot; (5) Loop — the new screenshot is fed back to Claude and the cycle repeats until the task is complete. This loop enables Claude to operate any desktop application without requiring DOM access or an API — it sees the screen as a human would. Safety is the primary challenge: computer use agents can perform irreversible actions (deleting files, submitting forms, making purchases). Essential safeguards: human-in-the-loop checkpoints before high-stakes actions (file deletion, form submission, purchases); action confirmation dialogs for operations above a risk threshold; capability restrictions limiting the agent to specific applications (e.g., only allowed to interact with the browser, not the file system); running in an isolated VM or container with no access to sensitive credentials. Prompt injection via screen content is a critical threat: a malicious web page or document can contain text designed to redirect the agent's actions. Defence requires monitoring for anomalous action patterns and validating that executed actions are consistent with the original task objective. [1]"
+      "label": "Anthropic Tool Use Documentation — official API reference",
+      "url": "https://docs.anthropic.com/en/docs/tool-use"
     }
   ],
-  "sources": [
-    { "label": "Anthropic Computer Use Documentation — official docs", "url": "https://docs.anthropic.com/en/docs/computer-use" },
-    { "label": "Anthropic Tool Use Documentation — official API reference", "url": "https://docs.anthropic.com/en/docs/tool-use" }
+  "youtubeUrl": "https://www.youtube.com/embed/TqC1qOfiVcQ",
+  "youtubeLabel": "Claude Agent SDK Full Workshop — Anthropic / AI Engineer",
+  "terms": [
+    {
+      "term": "Runner",
+      "def": "The Anthropic SDK component that manages the turn-taking agent loop."
+    },
+    {
+      "term": "Computer Use",
+      "def": "A Claude capability that enables the model to control a computer GUI via screenshots."
+    },
+    {
+      "term": "Prompt Caching",
+      "def": "Reusing the KV cache for static prompt prefixes to reduce latency and cost."
+    },
+    {
+      "term": "claude-opus-4",
+      "def": "Anthropic's most capable model — recommended for complex, long-horizon agent tasks."
+    },
+    {
+      "term": "Tool",
+      "def": "A Python function registered with the SDK that the model can call during the loop."
+    }
   ]
 }

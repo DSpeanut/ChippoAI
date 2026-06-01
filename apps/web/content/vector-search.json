@@ -67,7 +67,41 @@
     }
   ],
   "sources": [
-    { "label": "Malkov & Yashunin (2018) — Efficient and Robust Approximate Nearest Neighbor Search Using HNSW Graphs", "url": "https://arxiv.org/abs/1603.09320" },
-    { "label": "pgvector GitHub — open-source vector similarity search for Postgres", "url": "https://github.com/pgvector/pgvector" }
+    {
+      "label": "Malkov & Yashunin (2018) — Efficient and Robust Approximate Nearest Neighbor Search Using HNSW Graphs",
+      "url": "https://arxiv.org/abs/1603.09320"
+    },
+    {
+      "label": "pgvector GitHub — open-source vector similarity search for Postgres",
+      "url": "https://github.com/pgvector/pgvector"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/chz74Mtd1AA",
+  "youtubeLabel": "Vector Search & ANN: FAISS / HNSW / IVF — James Briggs",
+  "terms": [
+    {
+      "term": "ANN",
+      "def": "Approximate Nearest Neighbors — fast similarity search with a small accuracy trade-off."
+    },
+    {
+      "term": "HNSW",
+      "def": "Hierarchical Navigable Small World — a graph-based ANN index with O(log n) search."
+    },
+    {
+      "term": "FAISS",
+      "def": "Facebook AI Similarity Search — a library with multiple ANN index types (IVF, HNSW, PQ)."
+    },
+    {
+      "term": "IVF",
+      "def": "Inverted File Index — partitions vectors into clusters for faster search."
+    },
+    {
+      "term": "Cosine Similarity",
+      "def": "Measures the angle between two embedding vectors — preferred for text similarity."
+    },
+    {
+      "term": "Embedding Space",
+      "def": "The high-dimensional vector space where semantically similar texts cluster together."
+    }
   ]
 }

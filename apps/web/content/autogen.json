@@ -35,6 +35,14 @@
     {
       "heading": "AutoGen 0.4: Actor Model and Async Architecture",
       "body": "AutoGen 0.4 rewrite (late 2024): each agent is an actor (isolated state, processes messages from a queue, sends messages to other actors' queues). Key changes: (1) Asynchronous by default — agents run in async event loops; (2) Distributed — actors can run on different machines (via a runtime abstraction); (3) Event-driven — agents can subscribe to event types (MessageSentEvent, ModelClientStreamingChunkEvent); (4) Cancellation — agent tasks can be cancelled cleanly; (5) New API — AgentRuntime, RoutedAgent, message_handler decorator. The new architecture is more production-grade but requires learning the new API. Old ConversableAgent API continues to work via the auto-gen-agentchat package. [1]"
+    },
+    {
+      "heading": "Code Execution Safety in AutoGen",
+      "body": "Allowing an agent to execute arbitrary code on the host machine is the primary security risk in AutoGen deployments. The LocalCommandLineCodeExecutor runs code directly on the host with the same permissions as the Python process — a misconfigured or adversarially-prompted agent could delete files, exfiltrate data, or exhaust system resources. In production, always use Docker sandboxing: code_execution_config={'work_dir': 'coding', 'use_docker': True}. Docker isolates the execution environment: the container has no access to the host filesystem beyond the mounted work_dir, network access can be restricted via docker run --network=none, and resource limits (CPU, memory, execution time) are enforced via Docker's cgroup constraints. Specify a minimal Docker image containing only the required packages (e.g., python:3.11-slim with numpy and pandas installed) to reduce the attack surface. Additional safeguards: set a timeout on code execution to prevent infinite loops; implement an allowlist of safe imports (block os.system, subprocess, socket) using an AST-based pre-execution validator; log all executed code for audit purposes. Cloud-native alternatives include E2B (API-based sandboxed code execution) and AWS Lambda (ephemeral, isolated execution per invocation). Never skip sandboxing for agents that process external inputs or operate on sensitive data. [1]"
+    },
+    {
+      "heading": "Group Chat and Multi-Agent Coordination",
+      "body": "AutoGen's GroupChat and GroupChatManager enable conversations among three or more agents, simulating a team deliberation. Instantiate a GroupChat with the list of agents, the maximum number of rounds (max_round), and the speaker selection strategy. The GroupChatManager is itself an agent (powered by an LLM) that moderates the conversation: after each message, it reads the full conversation history and decides which agent should speak next by emitting the agent's name. This LLM-based speaker selection is the 'auto' strategy — the most flexible but most expensive, as it adds an LLM call per turn. Cheaper alternatives: round_robin (fixed turn order), random (uniform random selection), and manual (human selects). Designing effective multi-agent group chats requires clear role separation: each agent's system prompt should clearly define its specialty and when it should contribute. A common pattern for research tasks: a Researcher agent that gathers information, a Critic agent that challenges assumptions and identifies gaps, and a Synthesiser agent that integrates findings into a coherent output. The GroupChatManager's LLM reads these role descriptions when selecting the next speaker, so well-defined roles directly improve coordination quality. All agents share the same GroupChat.messages history, so each agent has full visibility into the conversation — useful for context but adds to each agent's input token cost. [1]"
     }
   ],
   "takeaways": [
@@ -58,30 +66,38 @@
     "label": "autogen_agents.py",
     "code": "from autogen import AssistantAgent, UserProxyAgent\n\n# LLM configuration for the assistant\nllm_config = {\n    \"config_list\": [\n        {\n            \"model\": \"gpt-4o\",\n            \"api_key\": \"YOUR_OPENAI_API_KEY\",  # use os.environ in production\n        }\n    ],\n    \"temperature\": 0,\n    \"timeout\": 120,\n}\n\n# 1. Create the AssistantAgent (LLM-powered, generates code and reasoning)\nassistant = AssistantAgent(\n    name=\"assistant\",\n    llm_config=llm_config,\n    system_message=(\n        \"You are a helpful AI assistant. Solve tasks by writing Python code. \"\n        \"When the task is complete, end your reply with the word TERMINATE.\"\n    ),\n)\n\n# 2. Create the UserProxyAgent (automated executor — no human in the loop)\nuser_proxy = UserProxyAgent(\n    name=\"user_proxy\",\n    human_input_mode=\"NEVER\",          # fully automated; no human prompt\n    code_execution_config={\n        \"work_dir\": \"coding\",          # directory where code files are saved\n        \"use_docker\": False,           # set True in production for sandboxing\n    },\n    max_consecutive_auto_reply=5,      # stop after 5 auto-replies to prevent loops\n    is_termination_msg=lambda msg: \"TERMINATE\" in msg.get(\"content\", \"\"),\n)\n\n# 3. Initiate the conversation — the two agents converse until termination\nuser_proxy.initiate_chat(\n    assistant,\n    message=(\n        \"Write a Python function to compute Fibonacci numbers using memoisation \"\n        \"and test it with inputs [0, 1, 5, 10, 20]. Print the results.\"\n    ),\n)\n"
   },
-  "deepDive": [
+  "sources": [
     {
-      "heading": "Core Agents: AssistantAgent and UserProxyAgent",
-      "body": "AssistantAgent: configured with an LLM (llm_config specifies the model and API key). Responds to messages with reasoning and (optionally) code blocks. Default system prompt instructs it to solve tasks by writing Python code and explaining the solution. UserProxyAgent: configured with a code execution environment (code_execution_config={'executor': LocalCommandLineCodeExecutor()}). When it receives a message with a code block, it executes the code and sends the output back. human_input_mode='NEVER' makes it fully automated. The two-agent loop (AssistantAgent + UserProxyAgent) is AutoGen's minimal useful configuration and handles code generation/debugging automatically. [1]"
+      "label": "Wu et al. (2023) — AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation, COLM 2024",
+      "url": "https://arxiv.org/abs/2308.08155"
     },
     {
-      "heading": "GroupChat: Multi-Agent Round Tables",
-      "body": "GroupChat: a conversation among N agents with a GroupChatManager that selects the next speaker. Speaker selection strategies: (1) round_robin — agents take turns in a fixed order; (2) auto (default) — the GroupChatManager LLM reads the conversation and selects the most appropriate next speaker; (3) manual — the human selects the next speaker; (4) random — random selection. GroupChat.messages is the shared conversation history visible to all agents. Max_round limits the total number of turns. The admin_name field designates a human agent whose inputs are always accepted. For complex analysis: use role-differentiated agents (researcher, critic, synthesiser) with auto speaker selection. [1]"
-    },
-    {
-      "heading": "AutoGen 0.4: Actor Model and Async Architecture",
-      "body": "AutoGen 0.4 rewrite (late 2024): each agent is an actor (isolated state, processes messages from a queue, sends messages to other actors' queues). Key changes: (1) Asynchronous by default — agents run in async event loops; (2) Distributed — actors can run on different machines (via a runtime abstraction); (3) Event-driven — agents can subscribe to event types (MessageSentEvent, ModelClientStreamingChunkEvent); (4) Cancellation — agent tasks can be cancelled cleanly; (5) New API — AgentRuntime, RoutedAgent, message_handler decorator. The new architecture is more production-grade but requires learning the new API. Old ConversableAgent API continues to work via the auto-gen-agentchat package. [1]"
-    },
-    {
-      "heading": "Code Execution Safety in AutoGen",
-      "body": "Allowing an agent to execute arbitrary code on the host machine is the primary security risk in AutoGen deployments. The LocalCommandLineCodeExecutor runs code directly on the host with the same permissions as the Python process — a misconfigured or adversarially-prompted agent could delete files, exfiltrate data, or exhaust system resources. In production, always use Docker sandboxing: code_execution_config={'work_dir': 'coding', 'use_docker': True}. Docker isolates the execution environment: the container has no access to the host filesystem beyond the mounted work_dir, network access can be restricted via docker run --network=none, and resource limits (CPU, memory, execution time) are enforced via Docker's cgroup constraints. Specify a minimal Docker image containing only the required packages (e.g., python:3.11-slim with numpy and pandas installed) to reduce the attack surface. Additional safeguards: set a timeout on code execution to prevent infinite loops; implement an allowlist of safe imports (block os.system, subprocess, socket) using an AST-based pre-execution validator; log all executed code for audit purposes. Cloud-native alternatives include E2B (API-based sandboxed code execution) and AWS Lambda (ephemeral, isolated execution per invocation). Never skip sandboxing for agents that process external inputs or operate on sensitive data. [1]"
-    },
-    {
-      "heading": "Group Chat and Multi-Agent Coordination",
-      "body": "AutoGen's GroupChat and GroupChatManager enable conversations among three or more agents, simulating a team deliberation. Instantiate a GroupChat with the list of agents, the maximum number of rounds (max_round), and the speaker selection strategy. The GroupChatManager is itself an agent (powered by an LLM) that moderates the conversation: after each message, it reads the full conversation history and decides which agent should speak next by emitting the agent's name. This LLM-based speaker selection is the 'auto' strategy — the most flexible but most expensive, as it adds an LLM call per turn. Cheaper alternatives: round_robin (fixed turn order), random (uniform random selection), and manual (human selects). Designing effective multi-agent group chats requires clear role separation: each agent's system prompt should clearly define its specialty and when it should contribute. A common pattern for research tasks: a Researcher agent that gathers information, a Critic agent that challenges assumptions and identifies gaps, and a Synthesiser agent that integrates findings into a coherent output. The GroupChatManager's LLM reads these role descriptions when selecting the next speaker, so well-defined roles directly improve coordination quality. All agents share the same GroupChat.messages history, so each agent has full visibility into the conversation — useful for context but adds to each agent's input token cost. [1]"
+      "label": "AutoGen Documentation — official docs",
+      "url": "https://microsoft.github.io/autogen/"
     }
   ],
-  "sources": [
-    { "label": "Wu et al. (2023) — AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation, COLM 2024", "url": "https://arxiv.org/abs/2308.08155" },
-    { "label": "AutoGen Documentation — official docs", "url": "https://microsoft.github.io/autogen/" }
+  "youtubeUrl": "https://www.youtube.com/embed/V3pYAAWKET0",
+  "youtubeLabel": "Microsoft AutoGen 0.4: Multi-Agent Framework — 1littlecoder",
+  "terms": [
+    {
+      "term": "UserProxy",
+      "def": "AutoGen's human-facing agent that relays tasks and executes code on behalf of the user."
+    },
+    {
+      "term": "AssistantAgent",
+      "def": "The LLM-backed agent in AutoGen that reasons and generates solutions."
+    },
+    {
+      "term": "GroupChat",
+      "def": "AutoGen's multi-agent conversation where several agents interact to solve a task."
+    },
+    {
+      "term": "Human-in-the-Loop",
+      "def": "A mode where the UserProxy pauses and waits for real human input before continuing."
+    },
+    {
+      "term": "Conversational Agent",
+      "def": "An agent that communicates via structured multi-turn messages rather than direct tool calls."
+    }
   ]
 }

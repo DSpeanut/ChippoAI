@@ -75,5 +75,29 @@
   "codeSnapshot": {
     "label": "regression_test.py",
     "code": "import pytest\nfrom deepeval import assert_test\nfrom deepeval.metrics import AnswerRelevancyMetric, HallucinationMetric\nfrom deepeval.test_case import LLMTestCase\n\nGOLDEN_DATASET = [\n    {\n        \"input\": \"What is RLHF?\",\n        \"expected\": \"RLHF trains LLMs using human preference feedback to align outputs.\",\n        \"context\": [\"RLHF = Reinforcement Learning from Human Feedback\", \"Used to align LLMs with human values.\"],\n    },\n    {\n        \"input\": \"What is RAG?\",\n        \"expected\": \"RAG retrieves relevant documents and uses them to ground LLM responses.\",\n        \"context\": [\"RAG combines retrieval with generation.\", \"Reduces hallucination on factual queries.\"],\n    },\n]\n\n@pytest.mark.parametrize(\"case\", GOLDEN_DATASET)\ndef test_rag_quality(case):\n    # Replace with actual RAG pipeline call\n    from your_rag_module import run_rag\n    answer, retrieved_context = run_rag(case[\"input\"])\n\n    test_case = LLMTestCase(\n        input=case[\"input\"],\n        actual_output=answer,\n        expected_output=case[\"expected\"],\n        retrieval_context=retrieved_context,\n    )\n    assert_test(test_case, [\n        AnswerRelevancyMetric(threshold=0.7),\n        HallucinationMetric(threshold=0.5),\n    ])\n\n# Run: pytest tests/test_regression.py -v --tb=short"
-  }
+  },
+  "youtubeUrl": "https://www.youtube.com/embed/WbbD96-0Nhc",
+  "youtubeLabel": "Model CI/CD: Setting Up LLM Evaluation — Weights & Biases",
+  "terms": [
+    {
+      "term": "Golden Dataset",
+      "def": "A curated Q&A benchmark run on every model or prompt change to detect regressions."
+    },
+    {
+      "term": "Baseline Score",
+      "def": "The reference metric score for the current production model/prompt."
+    },
+    {
+      "term": "Score Delta",
+      "def": "The difference between the new score and baseline; used to pass/fail the CI gate."
+    },
+    {
+      "term": "CI/CD Gate",
+      "def": "A CI step that blocks a PR merge if evaluation scores drop below a threshold."
+    },
+    {
+      "term": "A/B Test",
+      "def": "Running two model variants on the same dataset to compare quality and cost."
+    }
+  ]
 }

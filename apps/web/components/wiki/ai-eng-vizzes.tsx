@@ -247,6 +247,11 @@ export function ShortTermMemoryViz() {
   let cx = x0
   return (
     <svg viewBox="0 0 320 170" className="w-full">
+      <defs>
+        <clipPath id="ctx-clip">
+          <rect x={x0} y={y0} width={W} height={h} rx={6} />
+        </clipPath>
+      </defs>
       <Label x={160} y={20} text="Context Window (Token Budget)" size={9} color={GR} />
       <Label x={160} y={36} text="← 128k tokens →" size={9} color={G} bold />
       {/* Window border */}
@@ -254,13 +259,9 @@ export function ShortTermMemoryViz() {
         fill="none" stroke={G} strokeWidth="2" />
       {segments.map((s, i) => {
         const sw = W * s.pct
-        const rx = i === 0 ? 7 : 0
-        const lx = i === segments.length - 1 ? 7 : 0
         const seg = (
-          <g key={i}>
-            <rect x={cx} y={y0} width={sw} height={h}
-              fill={s.fill} rx={0}
-              style={{ borderRadius: i === 0 ? "6px 0 0 6px" : i === segments.length - 1 ? "0 6px 6px 0" : "0" }} />
+          <g key={i} clipPath="url(#ctx-clip)">
+            <rect x={cx} y={y0} width={sw} height={h} fill={s.fill} />
             {sw > 40 && (
               <text x={cx + sw / 2} y={y0 + h / 2 + 4} textAnchor="middle"
                 fontSize={8} fontWeight="700" fill={s.tc} fontFamily="system-ui">{s.label}</text>
@@ -304,7 +305,7 @@ export function LongTermMemoryViz() {
       </Box>
       {/* Query path */}
       <Arrow x1={190} y1={42} x2={240} y2={80} color="#6366F1" />
-      <Label x={220} y={70} text="query" size={8} color="#6366F1} " />
+      <Label x={220} y={70} text="query" size={8} color="#6366F1" />
       {/* External / Episodic DB */}
       <Box x={200} y={80} w={110} h={50} fill="#F5F3FF" stroke="#DDD6FE">
         <Label x={255} y={100} text="Episodic DB" size={10} color="#5B21B6" bold />
@@ -1021,8 +1022,7 @@ export function IOFilteringViz() {
         { label: "Response", fill: "#DCFCE7", stroke: "#86EFAC", tc: "#166534" },
       ].map((s, i) => (
         <g key={i}>
-          <Box x={10 + i * 60} y={34} w={54} h={44}>
-            <rect x={10 + i * 60} y={34} width={54} height={44} rx={7} fill={s.fill} stroke={s.stroke} strokeWidth="1.5" />
+          <Box x={10 + i * 60} y={34} w={54} h={44} fill={s.fill} stroke={s.stroke}>
             {s.label.split("\n").map((line, j) => (
               <text key={j} x={37 + i * 60} y={52 + j * 14} textAnchor="middle"
                 fontSize={8} fontWeight="700" fill={s.tc} fontFamily="system-ui">{line}</text>

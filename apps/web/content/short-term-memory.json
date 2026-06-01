@@ -71,7 +71,37 @@
     }
   ],
   "sources": [
-    { "label": "Liu et al. (2023) — Lost in the Middle: How Language Models Use Long Contexts", "url": "https://arxiv.org/abs/2307.03172" },
-    { "label": "Wang et al. (2024) — A Survey on Large Language Model based Autonomous Agents", "url": "https://arxiv.org/abs/2308.11432" }
+    {
+      "label": "Liu et al. (2023) — Lost in the Middle: How Language Models Use Long Contexts",
+      "url": "https://arxiv.org/abs/2307.03172"
+    },
+    {
+      "label": "Wang et al. (2024) — A Survey on Large Language Model based Autonomous Agents",
+      "url": "https://arxiv.org/abs/2308.11432"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/UF230UuclZM",
+  "youtubeLabel": "Memory in AI Agents — IBM Technology",
+  "terms": [
+    {
+      "term": "Context Window",
+      "def": "The fixed token limit of what an LLM can read in a single call."
+    },
+    {
+      "term": "Token Budget",
+      "def": "The allocation of context space between system prompt, history, retrieved chunks, and query."
+    },
+    {
+      "term": "Sliding Window",
+      "def": "A strategy that drops the oldest conversation turns when the context overflows."
+    },
+    {
+      "term": "Summarisation",
+      "def": "Compressing old turns into a shorter summary to free up context space."
+    },
+    {
+      "term": "In-Context Memory",
+      "def": "Memory held directly within the current LLM prompt as conversation history."
+    }
   ]
 }

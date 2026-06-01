@@ -35,6 +35,14 @@
     {
       "heading": "CrewAI vs LangGraph for Multi-Agent Systems",
       "body": "CrewAI advantages: higher-level abstractions, easier to get started, role-based prompting built-in, YAML-based configuration for no-code crew definition. LangGraph advantages: more control over the execution graph (CrewAI's sequential/hierarchical processes are fixed; LangGraph lets you define arbitrary graphs with cycles and branches), better checkpointing and state persistence, human-in-the-loop at any node, better observability via LangSmith. CrewAI is better for: quick prototyping, role-based workflows with clear sequential/parallel structure. LangGraph is better for: production systems requiring fine-grained control, complex branching, or long-running stateful workflows. Many teams prototype in CrewAI and refactor to LangGraph for production. [1]"
+    },
+    {
+      "heading": "Hierarchical Process with Manager Agent",
+      "body": "Setting Process.hierarchical on a Crew instructs CrewAI to create a manager agent that acts as the orchestrator. The manager LLM receives the full list of tasks and the crew roster, then decides which agent should handle each task, in what order, and with what context. After each agent completes a task, the manager reviews the output for quality and decides whether to accept it, request a revision, or re-assign the task to a different agent. This process is particularly valuable when the optimal sub-task decomposition is not known upfront — for example, a research task whose scope expands based on initial findings. The manager is configured via manager_llm (e.g., manager_llm=ChatOpenAI(model='gpt-4o')) or manager_agent (a fully specified Agent). Token cost implications are significant: the manager makes an additional LLM call for each delegation decision, and its context window includes the full task history. For a 5-task crew with hierarchical process, expect roughly 2x the LLM calls compared to sequential. Use hierarchical when task complexity or task interdependencies are dynamic; use sequential when the pipeline is fixed and well understood. [1]"
+    },
+    {
+      "heading": "Tool Sharing and Agent Memory in CrewAI",
+      "body": "Tools in CrewAI are LangChain-compatible Tool objects and can be assigned per-agent (in the agent's tools list) or shared at the crew level. When multiple agents need the same tool (e.g., a web search tool), define it once and pass it to each agent's tools list — CrewAI does not enforce exclusivity. Tool execution runs within the agent's own ReAct loop; tool results are injected into the agent's context before its next reasoning step. Memory in CrewAI operates at two levels: short-term memory (within a single task) is the agent's working context — the conversation history with its tools during task execution. Long-term memory (across crew runs) is enabled with Crew(memory=True), which activates a ChromaDB-backed persistent store. With memory=True, agents can recall facts from previous crew runs, enabling continuity across sessions (e.g., a research crew that builds a knowledge base over time). Agent-level memory (agent.memory=True) enables in-session conversational memory within that agent's task, useful for multi-turn tool interactions. The distinction: crew memory is shared and persistent across runs; agent memory is private and ephemeral within a run. Use crew memory for accumulating domain knowledge; use agent memory for agents that need to maintain multi-step reasoning coherence within a single complex task. [1]"
     }
   ],
   "takeaways": [
@@ -58,30 +66,38 @@
     "label": "crewai_crew.py",
     "code": "from crewai import Agent, Task, Crew, Process\nfrom crewai_tools import SerperDevTool\n\n# Initialise a search tool shared by the researcher\nsearch_tool = SerperDevTool()\n\n# 1. Define the Researcher agent\nresearcher = Agent(\n    role=\"Senior Research Analyst\",\n    goal=\"Uncover cutting-edge developments in {topic} and summarise key findings\",\n    backstory=(\n        \"You are an expert research analyst with 15 years of experience \"\n        \"synthesising complex technical literature into clear, actionable insights.\"\n    ),\n    tools=[search_tool],\n    verbose=True,\n    allow_delegation=False,\n)\n\n# 2. Define the Writer agent\nwriter = Agent(\n    role=\"Tech Content Strategist\",\n    goal=\"Craft compelling, well-structured content about {topic} for a technical audience\",\n    backstory=(\n        \"You are a seasoned technical writer who transforms research findings \"\n        \"into engaging blog posts and reports that are accurate and accessible.\"\n    ),\n    verbose=True,\n    allow_delegation=False,\n)\n\n# 3. Define tasks\nresearch_task = Task(\n    description=(\n        \"Research the latest trends and developments in {topic}. \"\n        \"Identify key players, recent breakthroughs, and open challenges. \"\n        \"Produce a structured research brief with at least 5 key findings.\"\n    ),\n    expected_output=\"A structured research brief with 5+ key findings, each with evidence.\",\n    agent=researcher,\n)\n\nwrite_task = Task(\n    description=(\n        \"Using the research brief, write a 500-word technical blog post about {topic}. \"\n        \"Include an introduction, 3 main sections, and a conclusion with next steps.\"\n    ),\n    expected_output=\"A polished 500-word blog post in Markdown format.\",\n    agent=writer,\n)\n\n# 4. Assemble the crew with sequential execution\ncrew = Crew(\n    agents=[researcher, writer],\n    tasks=[research_task, write_task],\n    process=Process.sequential,\n    verbose=True,\n)\n\n# 5. Kick off execution\nresult = crew.kickoff(inputs={\"topic\": \"AI agents\"})\nprint(result)\n"
   },
-  "deepDive": [
+  "sources": [
     {
-      "heading": "Agent Configuration",
-      "body": "Agent fields: role (title: 'Senior Financial Analyst'), goal (what the agent optimises for: 'produce accurate, evidence-based financial summaries'), backstory (shaped personality/expertise: 'You have 20 years of experience in sell-side equity research...'), tools (list of Tool objects), llm (the LLM to use — defaults to GPT-4), verbose (log the agent's reasoning), allow_delegation (can this agent delegate to other agents?), max_iter (max agent loop iterations, default 15), memory (enable in-session memory for this agent). The role, goal, and backstory are injected into the agent's system prompt. Well-crafted backstories significantly improve output quality. [1]"
+      "label": "CrewAI Documentation — official docs",
+      "url": "https://docs.crewai.com/"
     },
     {
-      "heading": "Task and Crew Configuration",
-      "body": "Task fields: description (what to do), expected_output (what a successful output looks like — this is injected into the agent's prompt as a quality target), agent (which agent handles this task), context (list of other tasks whose outputs are provided as context — enables dependency chains), output_pydantic or output_json (structured output schema). Crew fields: agents, tasks, process (sequential/hierarchical), verbose, memory (enable shared crew memory), max_rpm (rate limit LLM calls). kickoff(inputs={}) accepts dynamic inputs that are interpolated into task descriptions via {input_variable} templating. [1]"
-    },
-    {
-      "heading": "CrewAI vs LangGraph for Multi-Agent Systems",
-      "body": "CrewAI advantages: higher-level abstractions, easier to get started, role-based prompting built-in, YAML-based configuration for no-code crew definition. LangGraph advantages: more control over the execution graph (CrewAI's sequential/hierarchical processes are fixed; LangGraph lets you define arbitrary graphs with cycles and branches), better checkpointing and state persistence, human-in-the-loop at any node, better observability via LangSmith. CrewAI is better for: quick prototyping, role-based workflows with clear sequential/parallel structure. LangGraph is better for: production systems requiring fine-grained control, complex branching, or long-running stateful workflows. Many teams prototype in CrewAI and refactor to LangGraph for production. [1]"
-    },
-    {
-      "heading": "Hierarchical Process with Manager Agent",
-      "body": "Setting Process.hierarchical on a Crew instructs CrewAI to create a manager agent that acts as the orchestrator. The manager LLM receives the full list of tasks and the crew roster, then decides which agent should handle each task, in what order, and with what context. After each agent completes a task, the manager reviews the output for quality and decides whether to accept it, request a revision, or re-assign the task to a different agent. This process is particularly valuable when the optimal sub-task decomposition is not known upfront — for example, a research task whose scope expands based on initial findings. The manager is configured via manager_llm (e.g., manager_llm=ChatOpenAI(model='gpt-4o')) or manager_agent (a fully specified Agent). Token cost implications are significant: the manager makes an additional LLM call for each delegation decision, and its context window includes the full task history. For a 5-task crew with hierarchical process, expect roughly 2x the LLM calls compared to sequential. Use hierarchical when task complexity or task interdependencies are dynamic; use sequential when the pipeline is fixed and well understood. [1]"
-    },
-    {
-      "heading": "Tool Sharing and Agent Memory in CrewAI",
-      "body": "Tools in CrewAI are LangChain-compatible Tool objects and can be assigned per-agent (in the agent's tools list) or shared at the crew level. When multiple agents need the same tool (e.g., a web search tool), define it once and pass it to each agent's tools list — CrewAI does not enforce exclusivity. Tool execution runs within the agent's own ReAct loop; tool results are injected into the agent's context before its next reasoning step. Memory in CrewAI operates at two levels: short-term memory (within a single task) is the agent's working context — the conversation history with its tools during task execution. Long-term memory (across crew runs) is enabled with Crew(memory=True), which activates a ChromaDB-backed persistent store. With memory=True, agents can recall facts from previous crew runs, enabling continuity across sessions (e.g., a research crew that builds a knowledge base over time). Agent-level memory (agent.memory=True) enables in-session conversational memory within that agent's task, useful for multi-turn tool interactions. The distinction: crew memory is shared and persistent across runs; agent memory is private and ephemeral within a run. Use crew memory for accumulating domain knowledge; use agent memory for agents that need to maintain multi-step reasoning coherence within a single complex task. [1]"
+      "label": "CrewAI GitHub Repository — source and examples",
+      "url": "https://github.com/crewAIInc/crewAI"
     }
   ],
-  "sources": [
-    { "label": "CrewAI Documentation — official docs", "url": "https://docs.crewai.com/" },
-    { "label": "CrewAI GitHub Repository — source and examples", "url": "https://github.com/crewAIInc/crewAI" }
+  "youtubeUrl": "https://www.youtube.com/embed/I90xJlzAUW0",
+  "youtubeLabel": "CrewAI Tutorial: Multiple Agents Working Together — Patrick Loeber",
+  "terms": [
+    {
+      "term": "Crew",
+      "def": "A collection of agents with a shared goal and communication protocol in CrewAI."
+    },
+    {
+      "term": "Role",
+      "def": "A named responsibility assigned to an agent (e.g. Researcher, Writer, Analyst)."
+    },
+    {
+      "term": "Task",
+      "def": "A unit of work assigned to an agent with a description, expected output, and tools."
+    },
+    {
+      "term": "Process",
+      "def": "How tasks flow between agents — sequential or hierarchical (manager-assigned)."
+    },
+    {
+      "term": "Manager",
+      "def": "A coordinating agent that assigns tasks to other agents in hierarchical process mode."
+    }
   ]
 }

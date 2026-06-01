@@ -67,7 +67,41 @@
     }
   ],
   "sources": [
-    { "label": "OpenAI API Design Reference — streaming, tool use, rate limits", "url": "https://platform.openai.com/docs/api-reference" },
-    { "label": "Anthropic API Reference — messages, streaming, token counting", "url": "https://docs.anthropic.com/en/api/getting-started" }
+    {
+      "label": "OpenAI API Design Reference — streaming, tool use, rate limits",
+      "url": "https://platform.openai.com/docs/api-reference"
+    },
+    {
+      "label": "Anthropic API Reference — messages, streaming, token counting",
+      "url": "https://docs.anthropic.com/en/api/getting-started"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/mQv3UD-vEEM",
+  "youtubeLabel": "LLM Agentic Patterns & Anthropic Workflows — Anthropic",
+  "terms": [
+    {
+      "term": "SSE",
+      "def": "Server-Sent Events — a streaming protocol that pushes token chunks as they generate."
+    },
+    {
+      "term": "Rate Limit",
+      "def": "A cap on requests-per-minute or tokens-per-minute to control cost and capacity."
+    },
+    {
+      "term": "Token Budget",
+      "def": "A per-call or per-day limit on tokens consumed, enforced at the gateway layer."
+    },
+    {
+      "term": "AI Gateway",
+      "def": "A middleware layer handling rate limiting, retry, caching, and provider routing."
+    },
+    {
+      "term": "Idempotency Key",
+      "def": "A header allowing safe retries of API calls without duplicate side-effects."
+    },
+    {
+      "term": "Retry Backoff",
+      "def": "Exponential wait between retries on transient errors (rate limits, timeouts)."
+    }
   ]
 }

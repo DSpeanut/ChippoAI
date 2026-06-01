@@ -75,5 +75,29 @@
   "codeSnapshot": {
     "label": "llm_eval.py",
     "code": "from deepeval import evaluate\nfrom deepeval.metrics import GEval, HallucinationMetric, AnswerRelevancyMetric\nfrom deepeval.test_case import LLMTestCase\n\n# Define a test case\ntest_case = LLMTestCase(\n    input=\"What is RAG?\",\n    actual_output=\"RAG combines retrieval with LLM generation for grounded answers.\",\n    expected_output=\"RAG augments LLM responses with retrieved documents.\",\n    retrieval_context=[\"RAG = Retrieval-Augmented Generation\", \"RAG retrieves context before generating.\"],\n)\n\n# Standard OOTB metrics\nhallucination = HallucinationMetric(threshold=0.5)\nrelevancy     = AnswerRelevancyMetric(threshold=0.7)\n\n# Custom G-Eval metric for domain-specific quality\ncoherence = GEval(\n    name=\"Coherence\",\n    criteria=\"Is the response logically coherent and technically accurate?\",\n    evaluation_steps=[\n        \"Check if the response flows logically from start to finish.\",\n        \"Verify there are no contradictions or non-sequiturs.\",\n        \"Confirm technical terms are used correctly.\",\n    ],\n    threshold=0.7,\n)\n\nresults = evaluate(test_cases=[test_case], metrics=[hallucination, relevancy, coherence])\nfor m in results[0].metrics_data:\n    print(f\"{m.name}: {m.score:.2f} ({'PASS' if m.success else 'FAIL'})\")"
-  }
+  },
+  "youtubeUrl": "https://www.youtube.com/embed/ZNs2dCXHlfo",
+  "youtubeLabel": "LLM Evaluation using DeepEval — 1littlecoder",
+  "terms": [
+    {
+      "term": "DeepEval",
+      "def": "An open-source LLM testing framework with built-in metrics and CI integration."
+    },
+    {
+      "term": "RAGAS",
+      "def": "An evaluation framework for RAG pipelines using LLM-as-judge metrics."
+    },
+    {
+      "term": "LLM-as-Judge",
+      "def": "Using a capable LLM to score another model's output against a rubric."
+    },
+    {
+      "term": "Golden Dataset",
+      "def": "A curated set of question/expected-answer pairs used as evaluation ground truth."
+    },
+    {
+      "term": "Regression Test",
+      "def": "Re-running the eval suite on every code/model change to detect performance drops."
+    }
+  ]
 }

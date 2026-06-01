@@ -71,7 +71,41 @@
     }
   ],
   "sources": [
-    { "label": "Gao et al. (2023) — Retrieval-Augmented Generation for Large Language Models: A Survey", "url": "https://arxiv.org/abs/2312.10997" },
-    { "label": "Gao et al. (2022) — Precise Zero-Shot Dense Retrieval without Relevance Labels (HyDE)", "url": "https://arxiv.org/abs/2212.10496" }
+    {
+      "label": "Gao et al. (2023) — Retrieval-Augmented Generation for Large Language Models: A Survey",
+      "url": "https://arxiv.org/abs/2312.10997"
+    },
+    {
+      "label": "Gao et al. (2022) — Precise Zero-Shot Dense Retrieval without Relevance Labels (HyDE)",
+      "url": "https://arxiv.org/abs/2212.10496"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/qN_2fnOPY-M",
+  "youtubeLabel": "RAG from Scratch (step by step) — freeCodeCamp",
+  "terms": [
+    {
+      "term": "RAG",
+      "def": "Retrieval-Augmented Generation — grounding LLM responses in retrieved documents."
+    },
+    {
+      "term": "Ingestion",
+      "def": "The offline phase: load documents → chunk → embed → store in vector index."
+    },
+    {
+      "term": "Retrieval",
+      "def": "The online phase: embed query → ANN search → return top-k chunks."
+    },
+    {
+      "term": "Chunking",
+      "def": "Splitting documents into smaller pieces for embedding and retrieval."
+    },
+    {
+      "term": "Hybrid Search",
+      "def": "Combining dense (ANN) and sparse (BM25) retrieval, merged with RRF."
+    },
+    {
+      "term": "RRF",
+      "def": "Reciprocal Rank Fusion — a score-merging formula for combining ranked lists."
+    }
   ]
 }

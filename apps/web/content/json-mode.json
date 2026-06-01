@@ -75,5 +75,29 @@
   "codeSnapshot": {
     "label": "json_mode.py",
     "code": "from langchain_openai import ChatOpenAI\nfrom langchain_core.messages import SystemMessage, HumanMessage\nfrom pydantic import BaseModel\nimport json\n\nllm = ChatOpenAI(model=\"gpt-4o\", temperature=0)\n\n# Approach 1: JSON mode — valid JSON but no schema enforcement\njson_llm = ChatOpenAI(model=\"gpt-4o\", temperature=0,\n    model_kwargs={\"response_format\": {\"type\": \"json_object\"}})\nresult = json_llm.invoke([\n    SystemMessage(\"Respond only with valid JSON.\"),\n    HumanMessage(\"Give me a user object with name and age.\"),\n])\n# No guarantee on field names or types — must validate manually\ntry:\n    data = json.loads(result.content)\n    print(\"JSON mode output:\", data)\nexcept json.JSONDecodeError as e:\n    print(\"Parse error:\", e)\n\n# Approach 2: Structured outputs (preferred — schema enforced, typed result)\nclass User(BaseModel):\n    name: str\n    age: int\n    role: str\n\nstructured_llm = llm.with_structured_output(User)\nuser = structured_llm.invoke(\"Extract: Ana is a 29-year-old engineer.\")\nprint(user.name, user.age, user.role)  # fully typed — no manual parsing needed"
-  }
+  },
+  "youtubeUrl": "https://www.youtube.com/embed/eJvYafgLh40",
+  "youtubeLabel": "Structured Output Tutorial: Perfect JSON from OpenAI — Greg Kamradt",
+  "terms": [
+    {
+      "term": "JSON Mode",
+      "def": "An API flag that forces the model to output valid JSON — but without schema enforcement."
+    },
+    {
+      "term": "Structured Outputs",
+      "def": "Schema-constrained generation that guarantees the output matches a specific JSON schema."
+    },
+    {
+      "term": "Schema Enforcement",
+      "def": "Constraining generation so the output not only is valid JSON but also matches required keys/types."
+    },
+    {
+      "term": "Post-processing",
+      "def": "Parsing and validating the LLM's JSON output after generation; retrying on failure."
+    },
+    {
+      "term": "Hallucinated Keys",
+      "def": "A JSON mode failure where the model invents keys not in the expected schema."
+    }
+  ]
 }
