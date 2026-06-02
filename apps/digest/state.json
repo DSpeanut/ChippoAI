@@ -3,6 +3,8 @@
     "dqn",
     "reranking-systems",
     "mdp",
-    "isolation-forest"
+    "isolation-forest",
+    "cvar",
+    "yield-curve"
   ]
 }
