@@ -10,8 +10,8 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "FinAI InterviewPilot",
-  description: "Personal AI-powered study companion for ML/AI and Finance interview prep",
+  title: "ChippoAI",
+  description: "AI-powered study companion for ML/AI and Finance interview prep",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

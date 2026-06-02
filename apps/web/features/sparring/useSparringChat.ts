@@ -1,23 +1,19 @@
 "use client"
 
 import { useState } from "react"
-import { sparringChat, type ChatMessage, type SparringMode } from "@/services/api"
+import { sparringChat, type ChatMessage } from "@/services/api"
 
-export function useSparringChat(topic: string, mode: SparringMode) {
+export function useSparringChat(topic: string) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [streaming, setStreaming] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  async function send(userText: string) {
-    if (!userText.trim() || streaming) return
-
-    const newMessages: ChatMessage[] = [...messages, { role: "user", content: userText }]
-    setMessages(newMessages)
+  async function streamResponse(history: ChatMessage[]) {
     setStreaming(true)
     setError(null)
 
     try {
-      const res = await sparringChat({ messages: newMessages, topic, mode })
+      const res = await sparringChat({ messages: history, topic })
 
       if (!res.ok) {
         const err = await res.json()
@@ -58,10 +54,23 @@ export function useSparringChat(topic: string, mode: SparringMode) {
     }
   }
 
+  // AI speaks first — no user message shown
+  async function start() {
+    if (streaming) return
+    await streamResponse([])
+  }
+
+  async function send(userText: string) {
+    if (!userText.trim() || streaming) return
+    const newMessages: ChatMessage[] = [...messages, { role: "user", content: userText }]
+    setMessages(newMessages)
+    await streamResponse(newMessages)
+  }
+
   function reset() {
     setMessages([])
     setError(null)
   }
 
-  return { messages, streaming, error, send, reset }
+  return { messages, streaming, error, start, send, reset }
 }

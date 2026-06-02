@@ -8,6 +8,5 @@ class Message(BaseModel):
 
 
 class ChatRequest(BaseModel):
-    messages: list[Message]
+    messages: list[Message] = []
     topic: str = ""
-    mode: Literal["devil", "socratic", "expert"] = "socratic"

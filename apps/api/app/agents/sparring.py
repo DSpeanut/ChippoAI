@@ -14,16 +14,10 @@ def _load_prompts() -> dict:
         return yaml.safe_load(f)
 
 
-def build_system_prompt(topic: str, mode: str) -> str:
-    p = _load_prompts()["sparring"]
-    return p["system"].format(
-        topic=topic or "the topic they raise",
-        mode_instruction=p["modes"][mode],
-    )
-
-
 def build_messages(request: ChatRequest) -> list:
-    system = build_system_prompt(request.topic, request.mode)
+    system = _load_prompts()["sparring"]["system"].format(
+        topic=request.topic or "the topic they raise"
+    )
     lc_messages: list = [SystemMessage(content=system)]
     for msg in request.messages:
         if msg.role == "user":

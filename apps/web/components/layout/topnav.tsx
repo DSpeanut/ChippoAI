@@ -2,15 +2,14 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { CostWidget } from "./cost-widget"
 import { cn } from "@/lib/utils"
-import { BookOpen, Mic, Swords, BarChart2, Briefcase } from "lucide-react"
+import { ChippoLogo } from "./ChippoLogo"
+import { BookOpen, Mic, Swords, Briefcase } from "lucide-react"
 
 const navItems = [
   { href: "/library", label: "Library", icon: BookOpen },
   { href: "/interview", label: "Interview", icon: Mic },
   { href: "/sparring", label: "Sparring", icon: Swords },
-  { href: "/dashboard", label: "Dashboard", icon: BarChart2 },
   { href: "/pipeline", label: "Pipeline", icon: Briefcase },
 ]
 
@@ -19,12 +18,10 @@ export function TopNav() {
 
   return (
     <header className="h-14 border-b border-[#D1FAE5] bg-white backdrop-blur-sm flex items-center px-6 gap-8 shrink-0">
-      <div className="flex items-center gap-3 shrink-0">
-        <div className="w-7 h-7 rounded-full bg-[#064E3B] flex items-center justify-center">
-          <span className="text-[10px] font-bold text-white tracking-tight">FP</span>
-        </div>
-        <span className="text-sm font-bold text-[#064E3B] tracking-tight">FinAI InterviewPilot</span>
-      </div>
+      <Link href="/" className="flex items-center gap-2.5 shrink-0 hover:opacity-80 transition-opacity">
+        <ChippoLogo size={28} />
+        <span className="text-sm font-bold text-[#064E3B] tracking-tight">ChippoAI</span>
+      </Link>
 
       <nav className="flex items-center gap-1 flex-1">
         {navItems.map(({ href, label, icon: Icon }) => (
@@ -44,11 +41,8 @@ export function TopNav() {
         ))}
       </nav>
 
-      <div className="flex items-center gap-3">
-        <CostWidget />
-        <div className="w-8 h-8 rounded-full bg-[#10B981] flex items-center justify-center text-xs font-semibold text-white shadow-sm">
-          U
-        </div>
+      <div className="w-8 h-8 rounded-full bg-[#10B981] flex items-center justify-center text-xs font-semibold text-white shadow-sm">
+        U
       </div>
     </header>
   )
