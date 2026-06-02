@@ -59,7 +59,15 @@
     }
   ],
   "sources": [
-    { "label": "Robertson & Zaragoza (2009) — The Probabilistic Relevance Framework: BM25 and Beyond, Foundations and Trends in Information Retrieval", "url": "https://dl.acm.org/doi/10.1561/1500000019" },
-    { "label": "Formal et al. (2021) — SPLADE: Sparse Lexical and Expansion Model for First Stage Ranking, SIGIR 2021", "url": "https://arxiv.org/abs/2107.05720" }
-  ]
+    {
+      "label": "Robertson & Zaragoza (2009) — The Probabilistic Relevance Framework: BM25 and Beyond, Foundations and Trends in Information Retrieval",
+      "url": "https://dl.acm.org/doi/10.1561/1500000019"
+    },
+    {
+      "label": "Formal et al. (2021) — SPLADE: Sparse Lexical and Expansion Model for First Stage Ranking, SIGIR 2021",
+      "url": "https://arxiv.org/abs/2107.05720"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/Hn0UK2l1Nkw",
+  "youtubeLabel": "Hybrid Search"
 }

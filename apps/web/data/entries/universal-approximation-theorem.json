@@ -39,7 +39,7 @@
     {
       "heading": "Width Bounds and Practical Implications",
       "body": "For continuous functions on [0,1]^d, the number of neurons required in a single hidden layer to achieve ε-approximation can grow as O((1/ε)^d) in the worst case — the curse of dimensionality. A function on a 784-dimensional input (28×28 image) might require an intractable number of neurons. Deep networks avoid this by exploiting the compositional structure of natural functions: images have hierarchical structure (pixels → edges → textures → objects), and a 50-layer network with width 256 can represent this hierarchy with ~13M parameters, while a 2-layer network would need exponentially more. The UAT's bound is not tight for such structured functions — deep networks are exponentially more efficient for the functions that occur in practice. [1]"
-  },
+    },
     {
       "heading": "Limitations: What the UAT Does Not Say",
       "body": "The UAT makes existence claims, not algorithmic ones. It does not say: (1) gradient descent will find the right weights — the optimisation landscape of neural networks is non-convex and can have many local minima, saddle points, and flat regions; (2) generalisation is guaranteed — a network that perfectly fits a training function may have poor generalisation (overfitting) if not regularised; (3) the network will be efficient in the number of neurons — for some target functions the required width is exponential; (4) the result extends trivially to multiple outputs — multi-output approximation requires separate analysis. The UAT is best understood as a theoretical existence certificate: the architecture class is expressive enough, but expressiveness does not imply learnability. [2]"
@@ -71,5 +71,7 @@
       "label": "Hornik (1991) — Approximation Capabilities of Multilayer Feedforward Networks, Neural Networks 4(2)",
       "url": "https://doi.org/10.1016/0893-6080(91)90009-T"
     }
-  ]
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/15bmcav7ynE",
+  "youtubeLabel": "Universal Approximation Theorem"
 }

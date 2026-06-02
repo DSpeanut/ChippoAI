@@ -83,7 +83,14 @@
     }
   ],
   "sources": [
-    { "label": "Breiman, Friedman, Olshen & Stone — Classification and Regression Trees (CART), CRC Press, 1984", "url": "https://www.taylorfrancis.com/books/mono/10.1201/9781315139470/classification-regression-trees-leo-breiman" },
-    { "label": "James et al. — An Introduction to Statistical Learning, Ch. 8.1", "url": "https://www.statlearning.com/" }
-  ]
+    {
+      "label": "Breiman, Friedman, Olshen & Stone — Classification and Regression Trees (CART), CRC Press, 1984",
+      "url": "https://www.taylorfrancis.com/books/mono/10.1201/9781315139470/classification-regression-trees-leo-breiman"
+    },
+    {
+      "label": "James et al. — An Introduction to Statistical Learning, Ch. 8.1",
+      "url": "https://www.statlearning.com/"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/g9c66TUylZ4"
 }

@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Maximum Drawdown (MDD)", "def": "Largest peak-to-trough decline over a period; the worst loss an investor timing the peak/trough would suffer." },
-    { "term": "Calmar Ratio", "def": "CAGR / |MDD|; risk-adjusted return relative to worst historical loss. Popular in hedge fund evaluation." },
-    { "term": "Underwater Period", "def": "Time the portfolio spends below its previous peak; long underwater periods signal slow recovery." },
-    { "term": "Recovery Time", "def": "Time from the trough back to the previous peak; longer recovery = worse drawdown characteristics." },
-    { "term": "Drawdown Duration", "def": "Total time from peak to recovery; peak-to-trough + trough-to-recovery." },
-    { "term": "High-Water Mark", "def": "Previous peak NAV; hedge fund performance fees are only charged on returns above the high-water mark." }
+    {
+      "term": "Maximum Drawdown (MDD)",
+      "def": "Largest peak-to-trough decline over a period; the worst loss an investor timing the peak/trough would suffer."
+    },
+    {
+      "term": "Calmar Ratio",
+      "def": "CAGR / |MDD|; risk-adjusted return relative to worst historical loss. Popular in hedge fund evaluation."
+    },
+    {
+      "term": "Underwater Period",
+      "def": "Time the portfolio spends below its previous peak; long underwater periods signal slow recovery."
+    },
+    {
+      "term": "Recovery Time",
+      "def": "Time from the trough back to the previous peak; longer recovery = worse drawdown characteristics."
+    },
+    {
+      "term": "Drawdown Duration",
+      "def": "Total time from peak to recovery; peak-to-trough + trough-to-recovery."
+    },
+    {
+      "term": "High-Water Mark",
+      "def": "Previous peak NAV; hedge fund performance fees are only charged on returns above the high-water mark."
+    }
   ],
   "visualizationType": "drawdown",
   "eli3": [
@@ -62,7 +80,15 @@
     }
   ],
   "sources": [
-    { "label": "Magdon-Ismail, M. & Atiya, A.F. (2004) — Maximum Drawdown, Risk Magazine", "url": "https://www.risk.net/journal-of-investment-strategies/2148814/maximum-drawdown" },
-    { "label": "Kahneman, D. & Tversky, A. (1979) — Prospect Theory, Econometrica", "url": "https://doi.org/10.2307/1914185" }
-  ]
+    {
+      "label": "Magdon-Ismail, M. & Atiya, A.F. (2004) — Maximum Drawdown, Risk Magazine",
+      "url": "https://www.risk.net/journal-of-investment-strategies/2148814/maximum-drawdown"
+    },
+    {
+      "label": "Kahneman, D. & Tversky, A. (1979) — Prospect Theory, Econometrica",
+      "url": "https://doi.org/10.2307/1914185"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/BRH-M0lTmJg",
+  "youtubeLabel": "Drawdown"
 }

@@ -45,6 +45,7 @@
     {
       "heading": "Elastic Net: L1 + L2",
       "body": "Elastic Net (Zou & Hastie, 2005): L = L_data + λ₁‖w‖₁ + λ₂‖w‖². Combines L1 sparsity with L2 grouping effect (correlated features tend to be selected/zeroed together, unlike Lasso which picks one). Elastic Net is more stable than Lasso when features are highly correlated. In scikit-learn: ElasticNet(alpha=λ₁+λ₂, l1_ratio=λ₁/(λ₁+λ₂)). Used as default in logistic regression with 'elasticnet' penalty. [2]"
+    }
   ],
   "youtubeLabel": "Lasso Regression (L1) — StatQuest",
   "youtubeUrl": "https://www.youtube.com/embed/NGf0voTMlcs",

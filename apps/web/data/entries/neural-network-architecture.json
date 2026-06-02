@@ -71,5 +71,7 @@
       "label": "LeCun, Bengio & Hinton (2015) — Deep Learning, Nature 521, pp. 436–444",
       "url": "https://doi.org/10.1038/nature14539"
     }
-  ]
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/aircAruvnKk",
+  "youtubeLabel": "Neural Network Architecture"
 }

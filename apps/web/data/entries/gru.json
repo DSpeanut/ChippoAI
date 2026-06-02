@@ -71,5 +71,7 @@
       "label": "Chung et al. (2014) — Empirical Evaluation of Gated Recurrent Neural Networks on Sequence Modeling, arXiv:1412.3555",
       "url": "https://arxiv.org/abs/1412.3555"
     }
-  ]
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/tOuXgORsXJ4",
+  "youtubeLabel": "Gru"
 }

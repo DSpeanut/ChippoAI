@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "TSMOM", "def": "Time-Series MOMentum — go long if an asset's past return is positive, short if negative (Moskowitz et al. 2012)." },
-    { "term": "Moving Average (MA)", "def": "Average of past prices over N periods; price above MA = uptrend signal; below = downtrend signal." },
-    { "term": "Breakout", "def": "Price exceeds a recent high (or low) — a classic trend entry signal (e.g. 20-day or 52-week high)." },
-    { "term": "CTA", "def": "Commodity Trading Advisor — systematic trend-following manager; strategies applied across futures across asset classes." },
-    { "term": "Crisis Alpha", "def": "Trend following tends to profit in sustained market crises (large, persistent directional moves); acts as a portfolio hedge." },
-    { "term": "Sharpe Ratio", "def": "Risk-adjusted return; TSMOM strategies typically produce Sharpe ~0.5–0.8 over long histories with fat tails." }
+    {
+      "term": "TSMOM",
+      "def": "Time-Series MOMentum — go long if an asset's past return is positive, short if negative (Moskowitz et al. 2012)."
+    },
+    {
+      "term": "Moving Average (MA)",
+      "def": "Average of past prices over N periods; price above MA = uptrend signal; below = downtrend signal."
+    },
+    {
+      "term": "Breakout",
+      "def": "Price exceeds a recent high (or low) — a classic trend entry signal (e.g. 20-day or 52-week high)."
+    },
+    {
+      "term": "CTA",
+      "def": "Commodity Trading Advisor — systematic trend-following manager; strategies applied across futures across asset classes."
+    },
+    {
+      "term": "Crisis Alpha",
+      "def": "Trend following tends to profit in sustained market crises (large, persistent directional moves); acts as a portfolio hedge."
+    },
+    {
+      "term": "Sharpe Ratio",
+      "def": "Risk-adjusted return; TSMOM strategies typically produce Sharpe ~0.5–0.8 over long histories with fat tails."
+    }
   ],
   "eli3": [
     "Trend following is the strategy of buying assets that have been going up and shorting assets that have been going down — following price trends across markets. Unlike equity momentum (which is relative, comparing stocks to each other), trend following is absolute: it goes long or short any individual market based solely on whether that market has been rising or falling.",
@@ -61,7 +79,15 @@
     }
   ],
   "sources": [
-    { "label": "Fung, W. & Hsieh, D.A. (2001) — The Risk in Hedge Fund Strategies: Theory and Evidence from Trend Followers, RFS", "url": "https://doi.org/10.1093/rfs/14.2.313" },
-    { "label": "Moskowitz, T., Ooi, Y.H. & Pedersen, L.H. (2012) — Time Series Momentum, JFE", "url": "https://doi.org/10.1016/j.jfineco.2011.11.003" }
-  ]
+    {
+      "label": "Fung, W. & Hsieh, D.A. (2001) — The Risk in Hedge Fund Strategies: Theory and Evidence from Trend Followers, RFS",
+      "url": "https://doi.org/10.1093/rfs/14.2.313"
+    },
+    {
+      "label": "Moskowitz, T., Ooi, Y.H. & Pedersen, L.H. (2012) — Time Series Momentum, JFE",
+      "url": "https://doi.org/10.1016/j.jfineco.2011.11.003"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/duc9vJCfThs",
+  "youtubeLabel": "Trend Following"
 }

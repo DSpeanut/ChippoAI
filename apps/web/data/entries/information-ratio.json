@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Information Ratio (IR)", "def": "Active return / tracking error; the Sharpe ratio of active management. IR > 0.5 is considered good for long-only." },
-    { "term": "Active Return", "def": "Portfolio return − benchmark return (alpha); the excess return the manager must explain." },
-    { "term": "Tracking Error (TE)", "def": "Std dev of active returns; how much the portfolio deviates from the benchmark." },
-    { "term": "IC (Information Coefficient)", "def": "Correlation between return forecasts and actual returns; measures skill per individual bet." },
-    { "term": "Breadth (BR)", "def": "Number of independent active bets per year; more bets = more opportunities to express skill." },
-    { "term": "Fundamental Law", "def": "IR = IC × √BR (Grinold 1989); high IR requires both skill (IC) and many opportunities (BR)." }
+    {
+      "term": "Information Ratio (IR)",
+      "def": "Active return / tracking error; the Sharpe ratio of active management. IR > 0.5 is considered good for long-only."
+    },
+    {
+      "term": "Active Return",
+      "def": "Portfolio return − benchmark return (alpha); the excess return the manager must explain."
+    },
+    {
+      "term": "Tracking Error (TE)",
+      "def": "Std dev of active returns; how much the portfolio deviates from the benchmark."
+    },
+    {
+      "term": "IC (Information Coefficient)",
+      "def": "Correlation between return forecasts and actual returns; measures skill per individual bet."
+    },
+    {
+      "term": "Breadth (BR)",
+      "def": "Number of independent active bets per year; more bets = more opportunities to express skill."
+    },
+    {
+      "term": "Fundamental Law",
+      "def": "IR = IC × √BR (Grinold 1989); high IR requires both skill (IC) and many opportunities (BR)."
+    }
   ],
   "eli3": [
     "The Information Ratio (IR) measures an active manager's ability to generate excess returns above a benchmark per unit of active risk taken. IR = Active Return / Tracking Error = (Portfolio Return - Benchmark Return) / std(Active Return). It's the Sharpe ratio of active management — a high IR means the manager consistently adds value without taking excessive deviation from the benchmark.",
@@ -61,7 +79,15 @@
     }
   ],
   "sources": [
-    { "label": "Grinold, R.C. (1989) — The Fundamental Law of Active Management, JPM", "url": "https://doi.org/10.3905/jpm.1989.409211" },
-    { "label": "Clarke, R., de Silva, H. & Thorley, S. (2002) — Portfolio Constraints and the Fundamental Law, FAJ", "url": "https://doi.org/10.2469/faj.v58.n5.2468" }
-  ]
+    {
+      "label": "Grinold, R.C. (1989) — The Fundamental Law of Active Management, JPM",
+      "url": "https://doi.org/10.3905/jpm.1989.409211"
+    },
+    {
+      "label": "Clarke, R., de Silva, H. & Thorley, S. (2002) — Portfolio Constraints and the Fundamental Law, FAJ",
+      "url": "https://doi.org/10.2469/faj.v58.n5.2468"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/TV0BInQ_2DQ",
+  "youtubeLabel": "Information Ratio"
 }

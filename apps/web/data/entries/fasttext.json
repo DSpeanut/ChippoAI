@@ -60,7 +60,15 @@
     }
   ],
   "sources": [
-    { "label": "Bojanowski et al. (2017) — Enriching Word Vectors with Subword Information, TACL 5", "url": "https://aclanthology.org/Q17-1010/" },
-    { "label": "Conneau et al. (2018) — Word Translation Without Parallel Data, ICLR 2018", "url": "https://openreview.net/forum?id=H196sainb" }
-  ]
+    {
+      "label": "Bojanowski et al. (2017) — Enriching Word Vectors with Subword Information, TACL 5",
+      "url": "https://aclanthology.org/Q17-1010/"
+    },
+    {
+      "label": "Conneau et al. (2018) — Word Translation Without Parallel Data, ICLR 2018",
+      "url": "https://openreview.net/forum?id=H196sainb"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/MDdeo6_k1x0",
+  "youtubeLabel": "Fasttext"
 }

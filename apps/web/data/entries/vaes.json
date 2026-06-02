@@ -71,5 +71,7 @@
       "label": "Higgins et al. (2017) — beta-VAE: Learning Basic Visual Concepts with a Constrained Variational Framework, ICLR 2017",
       "url": "https://openreview.net/forum?id=Sy2fchegx"
     }
-  ]
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/9zKuYvjFFS8",
+  "youtubeLabel": "Vaes"
 }

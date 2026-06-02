@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Sentiment Score", "def": "A numerical signal (positive/negative) extracted from text; used to predict short-term returns or risk." },
-    { "term": "FinBERT", "def": "BERT pre-trained on financial text (earnings calls, news); better than generic NLP for domain-specific financial sentiment." },
-    { "term": "Loughran-McDonald", "def": "Finance-specific sentiment dictionary; words like 'loss' are negative in finance but not in general English." },
-    { "term": "Earnings Call", "def": "Quarterly conference call where executives discuss results; NLP on tone/language predicts post-call returns." },
-    { "term": "10-K / 10-Q", "def": "SEC annual/quarterly filings; change in language year-over-year is an NLP signal (e.g. increased uncertainty)." },
-    { "term": "Named Entity Recognition", "def": "NLP task identifying companies, people, locations; enables linking news to the right securities." }
+    {
+      "term": "Sentiment Score",
+      "def": "A numerical signal (positive/negative) extracted from text; used to predict short-term returns or risk."
+    },
+    {
+      "term": "FinBERT",
+      "def": "BERT pre-trained on financial text (earnings calls, news); better than generic NLP for domain-specific financial sentiment."
+    },
+    {
+      "term": "Loughran-McDonald",
+      "def": "Finance-specific sentiment dictionary; words like 'loss' are negative in finance but not in general English."
+    },
+    {
+      "term": "Earnings Call",
+      "def": "Quarterly conference call where executives discuss results; NLP on tone/language predicts post-call returns."
+    },
+    {
+      "term": "10-K / 10-Q",
+      "def": "SEC annual/quarterly filings; change in language year-over-year is an NLP signal (e.g. increased uncertainty)."
+    },
+    {
+      "term": "Named Entity Recognition",
+      "def": "NLP task identifying companies, people, locations; enables linking news to the right securities."
+    }
   ],
   "eli3": [
     "NLP (Natural Language Processing) in finance applies text analysis techniques to financial documents — earnings call transcripts, SEC filings, news articles, analyst reports, social media — to extract signals for trading or risk management. The core idea: the language used by executives, analysts, and media contains information about future company performance that is not fully captured in numerical data.",
@@ -61,7 +79,15 @@
     }
   ],
   "sources": [
-    { "label": "Loughran, T. & McDonald, B. (2011) — When Is a Liability Not a Liability?, JF", "url": "https://doi.org/10.1111/j.1540-6261.2010.01625.x" },
-    { "label": "Yang, Y. et al. (2020) — FinBERT: A Pre-Trained Financial Language Representation Model, IJCAI", "url": "https://arxiv.org/abs/1908.10063" }
-  ]
+    {
+      "label": "Loughran, T. & McDonald, B. (2011) — When Is a Liability Not a Liability?, JF",
+      "url": "https://doi.org/10.1111/j.1540-6261.2010.01625.x"
+    },
+    {
+      "label": "Yang, Y. et al. (2020) — FinBERT: A Pre-Trained Financial Language Representation Model, IJCAI",
+      "url": "https://arxiv.org/abs/1908.10063"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/S70nIq1s2cY",
+  "youtubeLabel": "Nlp Finance"
 }

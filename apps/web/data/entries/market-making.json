@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Bid-Ask Spread", "def": "The gap between the market maker's buy price (bid) and sell price (ask); the market maker's gross revenue per round-trip." },
-    { "term": "Inventory Risk", "def": "Risk of holding a large directional position while making markets; price moves against accumulated inventory." },
-    { "term": "Adverse Selection", "def": "Informed traders take from market makers at unfair prices; MM widens spreads to protect against informed flow." },
-    { "term": "Quote Skew", "def": "Adjusting bid/ask asymmetrically based on inventory to encourage trades that reduce risk." },
-    { "term": "HFT", "def": "High-Frequency Trading — market making at microsecond speed using co-located servers and ultra-low latency." },
-    { "term": "Fill Rate", "def": "% of quoted orders that are filled by incoming trades; too high = adverse selection, too low = missing volume." }
+    {
+      "term": "Bid-Ask Spread",
+      "def": "The gap between the market maker's buy price (bid) and sell price (ask); the market maker's gross revenue per round-trip."
+    },
+    {
+      "term": "Inventory Risk",
+      "def": "Risk of holding a large directional position while making markets; price moves against accumulated inventory."
+    },
+    {
+      "term": "Adverse Selection",
+      "def": "Informed traders take from market makers at unfair prices; MM widens spreads to protect against informed flow."
+    },
+    {
+      "term": "Quote Skew",
+      "def": "Adjusting bid/ask asymmetrically based on inventory to encourage trades that reduce risk."
+    },
+    {
+      "term": "HFT",
+      "def": "High-Frequency Trading — market making at microsecond speed using co-located servers and ultra-low latency."
+    },
+    {
+      "term": "Fill Rate",
+      "def": "% of quoted orders that are filled by incoming trades; too high = adverse selection, too low = missing volume."
+    }
   ],
   "eli3": [
     "A market maker is a firm or individual that continuously quotes both a price to buy (bid) and a price to sell (ask) for a security, making it easy for others to trade. The market maker profits from the bid-ask spread — buying at the lower bid price and selling at the higher ask price.",
@@ -62,7 +80,15 @@
     }
   ],
   "sources": [
-    { "label": "Avellaneda, M. & Stoikov, S. (2008) — High-Frequency Trading in a Limit Order Book, Quantitative Finance", "url": "https://doi.org/10.1080/14697680701381228" },
-    { "label": "Harris, L. — Trading and Exchanges: Market Microstructure for Practitioners, Oxford University Press (2002)", "url": "https://global.oup.com/academic/product/trading-and-exchanges-9780195144703" }
-  ]
+    {
+      "label": "Avellaneda, M. & Stoikov, S. (2008) — High-Frequency Trading in a Limit Order Book, Quantitative Finance",
+      "url": "https://doi.org/10.1080/14697680701381228"
+    },
+    {
+      "label": "Harris, L. — Trading and Exchanges: Market Microstructure for Practitioners, Oxford University Press (2002)",
+      "url": "https://global.oup.com/academic/product/trading-and-exchanges-9780195144703"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/ILvFMPqF_7M",
+  "youtubeLabel": "Market Making"
 }

@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "IC (Information Coefficient)", "def": "Correlation between signal values and subsequent returns; IC = 0.05 is considered good for equity signals." },
-    { "term": "IR (Information Ratio)", "def": "Expected return from the signal / signal volatility; IC × √BR by the fundamental law." },
-    { "term": "Signal Decay", "def": "How quickly a signal's predictive power fades over time; fast-decay signals need higher turnover." },
-    { "term": "Alpha Capture", "def": "Framework for recording and evaluating analyst or model signals over time; tracks IC and IR per signal." },
-    { "term": "Composite Signal", "def": "Weighted combination of multiple signals; reduces noise and increases breadth (more independent bets)." },
-    { "term": "t-Stat", "def": "IC / (IC std dev / √N); measures statistical significance of a signal's predictive power across N periods." }
+    {
+      "term": "IC (Information Coefficient)",
+      "def": "Correlation between signal values and subsequent returns; IC = 0.05 is considered good for equity signals."
+    },
+    {
+      "term": "IR (Information Ratio)",
+      "def": "Expected return from the signal / signal volatility; IC × √BR by the fundamental law."
+    },
+    {
+      "term": "Signal Decay",
+      "def": "How quickly a signal's predictive power fades over time; fast-decay signals need higher turnover."
+    },
+    {
+      "term": "Alpha Capture",
+      "def": "Framework for recording and evaluating analyst or model signals over time; tracks IC and IR per signal."
+    },
+    {
+      "term": "Composite Signal",
+      "def": "Weighted combination of multiple signals; reduces noise and increases breadth (more independent bets)."
+    },
+    {
+      "term": "t-Stat",
+      "def": "IC / (IC std dev / √N); measures statistical significance of a signal's predictive power across N periods."
+    }
   ],
   "eli3": [
     "A signal is a quantitative measure that predicts future asset returns. Signal generation is the process of turning raw data (prices, fundamentals, alternative data) into a numerical score that says how attractive an asset is to buy or sell. Good signals are: predictive (they actually work), robust (they work across markets and time periods), and independent (they add information beyond what other signals already capture).",
@@ -61,7 +79,15 @@
     }
   ],
   "sources": [
-    { "label": "Grinold, R.C. (1989) — The Fundamental Law of Active Management, JPM", "url": "https://doi.org/10.3905/jpm.1989.409211" },
-    { "label": "Harvey, C.R., Liu, Y. & Zhu, H. (2016) — … and the Cross-Section of Expected Returns, RFS", "url": "https://doi.org/10.1093/rfs/hhv059" }
-  ]
+    {
+      "label": "Grinold, R.C. (1989) — The Fundamental Law of Active Management, JPM",
+      "url": "https://doi.org/10.3905/jpm.1989.409211"
+    },
+    {
+      "label": "Harvey, C.R., Liu, Y. & Zhu, H. (2016) — … and the Cross-Section of Expected Returns, RFS",
+      "url": "https://doi.org/10.1093/rfs/hhv059"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/hHiImYcXd4g",
+  "youtubeLabel": "Signal Generation"
 }

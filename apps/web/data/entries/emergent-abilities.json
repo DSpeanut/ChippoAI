@@ -59,8 +59,19 @@
     }
   ],
   "sources": [
-    { "label": "Wei et al. (2022) — Emergent Abilities of Large Language Models, TMLR 2022", "url": "https://arxiv.org/abs/2206.07682" },
-    { "label": "Wei et al. (2022) — Finetuned Language Models Are Zero-Shot Learners (FLAN), ICLR 2022", "url": "https://arxiv.org/abs/2109.01652" },
-    { "label": "Schaeffer et al. (2023) — Are Emergent Abilities of Large Language Models a Mirage?, NeurIPS 2023", "url": "https://arxiv.org/abs/2304.15004" }
-  ]
+    {
+      "label": "Wei et al. (2022) — Emergent Abilities of Large Language Models, TMLR 2022",
+      "url": "https://arxiv.org/abs/2206.07682"
+    },
+    {
+      "label": "Wei et al. (2022) — Finetuned Language Models Are Zero-Shot Learners (FLAN), ICLR 2022",
+      "url": "https://arxiv.org/abs/2109.01652"
+    },
+    {
+      "label": "Schaeffer et al. (2023) — Are Emergent Abilities of Large Language Models a Mirage?, NeurIPS 2023",
+      "url": "https://arxiv.org/abs/2304.15004"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/Twkk1Q0yVjo",
+  "youtubeLabel": "Emergent Abilities"
 }

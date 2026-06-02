@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "P/E Ratio", "def": "Price / EPS — how much investors pay per $1 of earnings. High P/E = growth expectations or overvaluation." },
-    { "term": "EV/EBITDA", "def": "Enterprise Value / EBITDA — capital-structure-neutral multiple; the most common M&A and cross-company valuation tool." },
-    { "term": "P/B Ratio", "def": "Price / Book Value per share — compares market price to accounting net assets; low P/B = value stock." },
-    { "term": "EV/Sales", "def": "Enterprise Value / Revenue — used for unprofitable companies or early-stage growth stocks where earnings are negative." },
-    { "term": "Forward vs Trailing", "def": "Trailing multiples use last 12 months (LTM) actual earnings. Forward multiples use next 12 months (NTM) consensus estimates." },
-    { "term": "Peer Comps", "def": "Comparable company analysis — value a stock relative to similar listed peers on the same multiples." }
+    {
+      "term": "P/E Ratio",
+      "def": "Price / EPS — how much investors pay per $1 of earnings. High P/E = growth expectations or overvaluation."
+    },
+    {
+      "term": "EV/EBITDA",
+      "def": "Enterprise Value / EBITDA — capital-structure-neutral multiple; the most common M&A and cross-company valuation tool."
+    },
+    {
+      "term": "P/B Ratio",
+      "def": "Price / Book Value per share — compares market price to accounting net assets; low P/B = value stock."
+    },
+    {
+      "term": "EV/Sales",
+      "def": "Enterprise Value / Revenue — used for unprofitable companies or early-stage growth stocks where earnings are negative."
+    },
+    {
+      "term": "Forward vs Trailing",
+      "def": "Trailing multiples use last 12 months (LTM) actual earnings. Forward multiples use next 12 months (NTM) consensus estimates."
+    },
+    {
+      "term": "Peer Comps",
+      "def": "Comparable company analysis — value a stock relative to similar listed peers on the same multiples."
+    }
   ],
   "visualizationType": "equity-multiples",
   "eli3": [
@@ -63,7 +81,15 @@
     }
   ],
   "sources": [
-    { "label": "Damodaran, A. (2012) — Investment Valuation: Tools and Techniques for Determining the Value of Any Asset, 3rd ed., Wiley", "url": "https://pages.stern.nyu.edu/~adamodar/New_Home_Page/valuation.html" },
-    { "label": "Shiller, R. (2000) — Irrational Exuberance, Princeton University Press", "url": "https://press.princeton.edu/books/paperback/9780691173122/irrational-exuberance" }
-  ]
+    {
+      "label": "Damodaran, A. (2012) — Investment Valuation: Tools and Techniques for Determining the Value of Any Asset, 3rd ed., Wiley",
+      "url": "https://pages.stern.nyu.edu/~adamodar/New_Home_Page/valuation.html"
+    },
+    {
+      "label": "Shiller, R. (2000) — Irrational Exuberance, Princeton University Press",
+      "url": "https://press.princeton.edu/books/paperback/9780691173122/irrational-exuberance"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/cUVxzhcs_2k",
+  "youtubeLabel": "Equity Valuation Multiples"
 }

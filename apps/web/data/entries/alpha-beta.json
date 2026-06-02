@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Alpha (α)", "def": "Excess return above what beta and factor exposures predict; the return attributed to manager skill." },
-    { "term": "Beta (β)", "def": "Sensitivity to a benchmark; β=1.2 means the portfolio amplifies market moves by 20%." },
-    { "term": "R-squared (R²)", "def": "Fraction of portfolio return variance explained by the benchmark; high R² → mostly beta, little active management." },
-    { "term": "Jensen's Alpha", "def": "α from the CAPM regression: Rp − [rf + β(Rm − rf)]; positive = outperformance adjusted for market risk." },
-    { "term": "Factor Loading", "def": "The beta of a portfolio on a specific factor (e.g. value, momentum); expresses systematic factor exposures." },
-    { "term": "Idiosyncratic Risk", "def": "Portfolio return variance not explained by the factor model; driven by stock-specific events." }
+    {
+      "term": "Alpha (α)",
+      "def": "Excess return above what beta and factor exposures predict; the return attributed to manager skill."
+    },
+    {
+      "term": "Beta (β)",
+      "def": "Sensitivity to a benchmark; β=1.2 means the portfolio amplifies market moves by 20%."
+    },
+    {
+      "term": "R-squared (R²)",
+      "def": "Fraction of portfolio return variance explained by the benchmark; high R² → mostly beta, little active management."
+    },
+    {
+      "term": "Jensen's Alpha",
+      "def": "α from the CAPM regression: Rp − [rf + β(Rm − rf)]; positive = outperformance adjusted for market risk."
+    },
+    {
+      "term": "Factor Loading",
+      "def": "The beta of a portfolio on a specific factor (e.g. value, momentum); expresses systematic factor exposures."
+    },
+    {
+      "term": "Idiosyncratic Risk",
+      "def": "Portfolio return variance not explained by the factor model; driven by stock-specific events."
+    }
   ],
   "eli3": [
     "In investing, beta measures how much an investment moves with the market. A beta of 1 means it moves exactly with the market; beta of 2 means it moves twice as much (up or down); beta of 0.5 means it moves half as much. Beta captures 'market risk' — the risk you can't escape just by investing in the market.",
@@ -62,7 +80,15 @@
     }
   ],
   "sources": [
-    { "label": "Sharpe, W.F. (1964) — Capital Asset Prices, Journal of Finance", "url": "https://doi.org/10.2307/2977928" },
-    { "label": "Fama, E. & French, K. (1993) — Common Risk Factors in Returns on Stocks and Bonds, Journal of Financial Economics", "url": "https://doi.org/10.1016/0304-405X(93)90023-5" }
-  ]
+    {
+      "label": "Sharpe, W.F. (1964) — Capital Asset Prices, Journal of Finance",
+      "url": "https://doi.org/10.2307/2977928"
+    },
+    {
+      "label": "Fama, E. & French, K. (1993) — Common Risk Factors in Returns on Stocks and Bonds, Journal of Financial Economics",
+      "url": "https://doi.org/10.1016/0304-405X(93)90023-5"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/l-hh51ncgDI",
+  "youtubeLabel": "Alpha Beta"
 }

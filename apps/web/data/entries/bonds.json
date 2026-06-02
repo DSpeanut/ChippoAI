@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Coupon Rate", "def": "Annual interest payment as a % of face value; a 5% coupon on a $1,000 bond pays $50/year." },
-    { "term": "Face Value (Par)", "def": "The principal amount repaid at maturity; typically $1,000 for corporate bonds." },
-    { "term": "Yield to Maturity (YTM)", "def": "The total annualised return if the bond is held to maturity and all coupons are reinvested at the same rate." },
-    { "term": "Duration", "def": "Weighted-average time to receive cash flows; also measures price sensitivity to a 1% rate change." },
-    { "term": "Credit Spread", "def": "Yield premium over risk-free Treasuries; compensates investors for default and liquidity risk." },
-    { "term": "Discount / Premium", "def": "Bond trades at discount when YTM > coupon; at premium when YTM < coupon; at par when YTM = coupon." }
+    {
+      "term": "Coupon Rate",
+      "def": "Annual interest payment as a % of face value; a 5% coupon on a $1,000 bond pays $50/year."
+    },
+    {
+      "term": "Face Value (Par)",
+      "def": "The principal amount repaid at maturity; typically $1,000 for corporate bonds."
+    },
+    {
+      "term": "Yield to Maturity (YTM)",
+      "def": "The total annualised return if the bond is held to maturity and all coupons are reinvested at the same rate."
+    },
+    {
+      "term": "Duration",
+      "def": "Weighted-average time to receive cash flows; also measures price sensitivity to a 1% rate change."
+    },
+    {
+      "term": "Credit Spread",
+      "def": "Yield premium over risk-free Treasuries; compensates investors for default and liquidity risk."
+    },
+    {
+      "term": "Discount / Premium",
+      "def": "Bond trades at discount when YTM > coupon; at premium when YTM < coupon; at par when YTM = coupon."
+    }
   ],
   "eli3": [
     "A bond is a loan that you make to a government or company. They promise to pay you a fixed amount (the coupon) every year and return your principal (face value) at a specific future date (maturity). In exchange for lending your money, you receive these contractual cash flows.",
@@ -62,7 +80,15 @@
     }
   ],
   "sources": [
-    { "label": "Fabozzi, F.J. — Fixed Income Mathematics, 4th Edition, McGraw-Hill (2006)", "url": "https://www.mhprofessional.com/fixed-income-mathematics-4th-ed-9780071460736-usa" },
-    { "label": "CFA Institute — CFA Program Curriculum, Level 1: Fixed Income", "url": "https://www.cfainstitute.org/en/programs/cfa" }
-  ]
+    {
+      "label": "Fabozzi, F.J. — Fixed Income Mathematics, 4th Edition, McGraw-Hill (2006)",
+      "url": "https://www.mhprofessional.com/fixed-income-mathematics-4th-ed-9780071460736-usa"
+    },
+    {
+      "label": "CFA Institute — CFA Program Curriculum, Level 1: Fixed Income",
+      "url": "https://www.cfainstitute.org/en/programs/cfa"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/Qh-M3_L4xYk",
+  "youtubeLabel": "Bonds"
 }

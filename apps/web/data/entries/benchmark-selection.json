@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Benchmark", "def": "A reference index used to evaluate portfolio performance and calibrate risk; must be investable and representative." },
-    { "term": "Tracking Error", "def": "Std dev of active returns vs. the benchmark; measures how closely the portfolio follows the benchmark." },
-    { "term": "Active Share", "def": "½ × Σ|w_portfolio − w_benchmark|; % of portfolio holdings that differ from the benchmark." },
-    { "term": "Benchmark Hugging", "def": "Closet indexing: low active share, low tracking error — taking active fees for near-index exposure." },
-    { "term": "MSCI / Russell", "def": "Major index families; MSCI for global equity, Russell for US small/large cap, Bloomberg for fixed income." },
-    { "term": "GICS", "def": "Global Industry Classification Standard; used by most equity benchmarks to define sector composition." }
+    {
+      "term": "Benchmark",
+      "def": "A reference index used to evaluate portfolio performance and calibrate risk; must be investable and representative."
+    },
+    {
+      "term": "Tracking Error",
+      "def": "Std dev of active returns vs. the benchmark; measures how closely the portfolio follows the benchmark."
+    },
+    {
+      "term": "Active Share",
+      "def": "½ × Σ|w_portfolio − w_benchmark|; % of portfolio holdings that differ from the benchmark."
+    },
+    {
+      "term": "Benchmark Hugging",
+      "def": "Closet indexing: low active share, low tracking error — taking active fees for near-index exposure."
+    },
+    {
+      "term": "MSCI / Russell",
+      "def": "Major index families; MSCI for global equity, Russell for US small/large cap, Bloomberg for fixed income."
+    },
+    {
+      "term": "GICS",
+      "def": "Global Industry Classification Standard; used by most equity benchmarks to define sector composition."
+    }
   ],
   "eli3": [
     "A benchmark is the standard against which a portfolio's performance is measured. Choosing the right benchmark is critical: if your benchmark is wrong, your performance attribution is meaningless, your risk limits are miscalibrated, and you incentivise the wrong manager behaviour. A global equity fund measured against the S&P 500 will always look like it's taking huge country risk — but it's the benchmark that's wrong.",
@@ -61,7 +79,15 @@
     }
   ],
   "sources": [
-    { "label": "Bailey, J.V. (1992) — Evaluating Benchmark Quality, FAJ", "url": "https://doi.org/10.2469/faj.v48.n3.33" },
-    { "label": "Berg, F., Koelbel, J.F. & Rigobon, R. (2022) — Aggregate Confusion: The Divergence of ESG Ratings, RoF", "url": "https://doi.org/10.1093/rof/rfac033" }
-  ]
+    {
+      "label": "Bailey, J.V. (1992) — Evaluating Benchmark Quality, FAJ",
+      "url": "https://doi.org/10.2469/faj.v48.n3.33"
+    },
+    {
+      "label": "Berg, F., Koelbel, J.F. & Rigobon, R. (2022) — Aggregate Confusion: The Divergence of ESG Ratings, RoF",
+      "url": "https://doi.org/10.1093/rof/rfac033"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/inmUWH7K2xY",
+  "youtubeLabel": "Benchmark Selection"
 }

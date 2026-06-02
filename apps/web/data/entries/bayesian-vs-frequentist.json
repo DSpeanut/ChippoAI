@@ -58,7 +58,15 @@
     }
   ],
   "sources": [
-    { "label": "Gelman et al. — Bayesian Data Analysis (3rd ed.), Ch. 1", "url": "http://www.stat.columbia.edu/~gelman/book/" },
-    { "label": "Casella & Berger — Statistical Inference (2nd ed.), Ch. 7–8", "url": "https://www.cengage.com/c/statistical-inference-2e-casella" }
-  ]
+    {
+      "label": "Gelman et al. — Bayesian Data Analysis (3rd ed.), Ch. 1",
+      "url": "http://www.stat.columbia.edu/~gelman/book/"
+    },
+    {
+      "label": "Casella & Berger — Statistical Inference (2nd ed.), Ch. 7–8",
+      "url": "https://www.cengage.com/c/statistical-inference-2e-casella"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/r76oDIvwETI",
+  "youtubeLabel": "Bayesian Vs Frequentist"
 }

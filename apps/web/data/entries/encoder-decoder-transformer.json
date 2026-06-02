@@ -71,5 +71,7 @@
       "label": "Raffel et al. (2020) — Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer (T5), JMLR arXiv:1910.10683",
       "url": "https://arxiv.org/abs/1910.10683"
     }
-  ]
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/0_4KEb08xrE",
+  "youtubeLabel": "Encoder Decoder Transformer"
 }

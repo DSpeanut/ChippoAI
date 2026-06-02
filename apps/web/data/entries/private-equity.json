@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "IRR", "def": "Internal Rate of Return — discount rate that makes NPV = 0; the standard PE return metric. Sensitive to timing of cash flows." },
-    { "term": "MOIC", "def": "Multiple on Invested Capital — total cash returned / invested capital; simple but ignores time value of money." },
-    { "term": "TVPI", "def": "Total Value to Paid-In = (NAV + distributions) / capital called; shows total value including unrealised." },
-    { "term": "Carried Interest", "def": "PE manager's 20% profit share above the hurdle rate; the primary incentive alignment mechanism." },
-    { "term": "Capital Call", "def": "Request from the PE fund to investors for a portion of committed capital when an investment is made." },
-    { "term": "DPI", "def": "Distributions to Paid-In — realised return multiple; cash actually returned to investors / capital invested." }
+    {
+      "term": "IRR",
+      "def": "Internal Rate of Return — discount rate that makes NPV = 0; the standard PE return metric. Sensitive to timing of cash flows."
+    },
+    {
+      "term": "MOIC",
+      "def": "Multiple on Invested Capital — total cash returned / invested capital; simple but ignores time value of money."
+    },
+    {
+      "term": "TVPI",
+      "def": "Total Value to Paid-In = (NAV + distributions) / capital called; shows total value including unrealised."
+    },
+    {
+      "term": "Carried Interest",
+      "def": "PE manager's 20% profit share above the hurdle rate; the primary incentive alignment mechanism."
+    },
+    {
+      "term": "Capital Call",
+      "def": "Request from the PE fund to investors for a portion of committed capital when an investment is made."
+    },
+    {
+      "term": "DPI",
+      "def": "Distributions to Paid-In — realised return multiple; cash actually returned to investors / capital invested."
+    }
   ],
   "eli3": [
     "Private equity (PE) is investment in companies not listed on public stock exchanges. PE firms raise capital from institutional investors (pensions, endowments, sovereign wealth funds) into a fund, then use that capital — plus significant debt — to buy companies, improve them over 3-7 years, and sell them for a profit. The 'private' part means no public market pricing until exit.",
@@ -61,7 +79,15 @@
     }
   ],
   "sources": [
-    { "label": "Kaplan, S.N. & Schoar, A. (2005) — Private Equity Performance: Returns, Persistence, and Capital, JF", "url": "https://doi.org/10.1111/j.1540-6261.2005.00780.x" },
-    { "label": "Harris, R.S., Jenkinson, T. & Kaplan, S.N. (2014) — Private Equity Performance: What Do We Know?, JF", "url": "https://doi.org/10.1111/jofi.12154" }
-  ]
+    {
+      "label": "Kaplan, S.N. & Schoar, A. (2005) — Private Equity Performance: Returns, Persistence, and Capital, JF",
+      "url": "https://doi.org/10.1111/j.1540-6261.2005.00780.x"
+    },
+    {
+      "label": "Harris, R.S., Jenkinson, T. & Kaplan, S.N. (2014) — Private Equity Performance: What Do We Know?, JF",
+      "url": "https://doi.org/10.1111/jofi.12154"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/1i9YzCL0T8Q",
+  "youtubeLabel": "Private Equity"
 }

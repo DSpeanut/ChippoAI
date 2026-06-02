@@ -71,5 +71,7 @@
       "label": "Gers, Schmidhuber & Cummins (2000) — Learning to Forget: Continual Prediction with LSTM, Neural Computation 12(10)",
       "url": "https://doi.org/10.1162/089976600300015015"
     }
-  ]
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/YCzL96nL7j0",
+  "youtubeLabel": "Lstm"
 }

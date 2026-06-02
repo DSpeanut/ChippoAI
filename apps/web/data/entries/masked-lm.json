@@ -59,7 +59,15 @@
     }
   ],
   "sources": [
-    { "label": "Devlin et al. (2019) — BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding, NAACL 2019", "url": "https://aclanthology.org/N19-1423/" },
-    { "label": "Raffel et al. (2020) — Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer (T5), JMLR 2020", "url": "https://jmlr.org/papers/v21/20-074.html" }
-  ]
+    {
+      "label": "Devlin et al. (2019) — BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding, NAACL 2019",
+      "url": "https://aclanthology.org/N19-1423/"
+    },
+    {
+      "label": "Raffel et al. (2020) — Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer (T5), JMLR 2020",
+      "url": "https://jmlr.org/papers/v21/20-074.html"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/GDN649X_acE",
+  "youtubeLabel": "Masked Lm"
 }

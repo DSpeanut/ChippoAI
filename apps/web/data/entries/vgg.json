@@ -21,7 +21,7 @@
     {
       "title": "Understanding the 3×3 filter design principle",
       "body": "VGGNet popularised the design principle that small 3×3 filters throughout the network are superior to larger filters. Two stacked 3×3 layers have a 5×5 effective receptive field with 2×(3²)=18 parameters vs 5²=25 for a single 5×5 layer — 28% fewer parameters and an extra non-linearity. This principle was generalised into the 'smaller is better for filters' rule that influenced InceptionNet, ResNet (1×1 bottlenecks + 3×3 spatial), and modern architectures."
-  }
+    }
   ],
   "deepDiveIntro": [
     "Simonyan & Zisserman (2014) introduced VGGNet (named after the Oxford Visual Geometry Group) to systematically evaluate the effect of depth on image classification performance. They tested 6 architectures (VGG-A through VGG-E) with 11 to 19 weight layers, all using exclusively 3×3 convolutional filters (stride 1, padding 1) and 2×2 max pooling (stride 2). The key hypothesis: deep networks with small filters can represent the same functions as shallow networks with large filters, with fewer parameters and more non-linearities. VGG-16 (16 weight layers, 2 FC layers) and VGG-19 (19 weight layers) achieved top-5 error rates of 7.3% and 7.1% on ImageNet ILSVRC-2014, compared to AlexNet's 15.3%. [1]",
@@ -71,5 +71,7 @@
       "label": "Gatys, Ecker & Bethge (2015) — A Neural Algorithm of Artistic Style, arXiv:1508.06576",
       "url": "https://arxiv.org/abs/1508.06576"
     }
-  ]
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/c1lqOpFCJkw",
+  "youtubeLabel": "Vgg"
 }

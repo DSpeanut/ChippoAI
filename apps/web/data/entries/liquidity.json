@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Bid-Ask Spread", "def": "Tightest bid-ask spread = most liquid market; the immediate cost of trading in and out." },
-    { "term": "Market Depth", "def": "Volume available at different price levels in the order book; deep market = large orders don't move price much." },
-    { "term": "Amihud Ratio", "def": "|Return| / Volume — illiquidity measure; high ratio means price moves a lot per dollar of trading." },
-    { "term": "Price Impact", "def": "The price move per unit of volume traded; central measure of liquidity risk for large orders." },
-    { "term": "Illiquidity Premium", "def": "Extra expected return demanded for holding illiquid assets; compensation for the risk of not being able to sell." },
-    { "term": "Funding Liquidity", "def": "Ability to roll debt and meet margin calls; distinct from market liquidity — both can dry up simultaneously in crises." }
+    {
+      "term": "Bid-Ask Spread",
+      "def": "Tightest bid-ask spread = most liquid market; the immediate cost of trading in and out."
+    },
+    {
+      "term": "Market Depth",
+      "def": "Volume available at different price levels in the order book; deep market = large orders don't move price much."
+    },
+    {
+      "term": "Amihud Ratio",
+      "def": "|Return| / Volume — illiquidity measure; high ratio means price moves a lot per dollar of trading."
+    },
+    {
+      "term": "Price Impact",
+      "def": "The price move per unit of volume traded; central measure of liquidity risk for large orders."
+    },
+    {
+      "term": "Illiquidity Premium",
+      "def": "Extra expected return demanded for holding illiquid assets; compensation for the risk of not being able to sell."
+    },
+    {
+      "term": "Funding Liquidity",
+      "def": "Ability to roll debt and meet margin calls; distinct from market liquidity — both can dry up simultaneously in crises."
+    }
   ],
   "eli3": [
     "Liquidity is how easily you can buy or sell an asset without causing its price to move significantly. A liquid asset (like a US Treasury bond or Apple stock) can be traded in large quantities quickly without much price impact. An illiquid asset (like a small-cap stock or a piece of real estate) may take time to sell and the act of selling itself pushes the price down.",
@@ -24,7 +42,7 @@
     {
       "title": "Systemic risk and liquidity spirals",
       "body": "Liquidity problems can become self-reinforcing: falling prices force leveraged investors to sell (margin calls), more selling reduces liquidity further, which drives prices down more. Brunnermeier & Pedersen (2009) formalised the 'liquidity spiral': funding liquidity (ability to fund positions) and market liquidity (ability to trade without price impact) interact. When funding liquidity tightens (lenders demand more collateral), forced selling reduces market liquidity; reduced market liquidity increases volatility; increased volatility triggers more margin calls. This feedback loop amplified the 2008 GFC, the 1998 LTCM crisis, and the March 2020 COVID shock."
-  }
+    }
   ],
   "deepDiveIntro": [
     "Liquidity is multidimensional (Kyle 1985 identified three dimensions): (1) Tightness — the bid-ask spread; the cost of an immediate round-trip trade; (2) Depth — the order book depth; how much volume is available at or near the current price before the price moves significantly; (3) Resilience — how quickly prices recover after a large trade; a resilient market absorbs shocks quickly. To these, practitioners add: (4) Breadth — the volume of trading; (5) Immediacy — how quickly a large trade can be executed at a given cost. These dimensions are imperfectly correlated: a market can be tight (narrow spread) but shallow (small depth) — a single large order can still move the price significantly.",
@@ -62,7 +80,15 @@
     }
   ],
   "sources": [
-    { "label": "Amihud, Y. (2002) — Illiquidity and Stock Returns: Cross-Section and Time-Series Effects, Journal of Financial Markets", "url": "https://doi.org/10.1016/S1386-4181(01)00024-6" },
-    { "label": "Brunnermeier, M. & Pedersen, L. (2009) — Market Liquidity and Funding Liquidity, Review of Financial Studies", "url": "https://doi.org/10.1093/rfs/hhn098" }
-  ]
+    {
+      "label": "Amihud, Y. (2002) — Illiquidity and Stock Returns: Cross-Section and Time-Series Effects, Journal of Financial Markets",
+      "url": "https://doi.org/10.1016/S1386-4181(01)00024-6"
+    },
+    {
+      "label": "Brunnermeier, M. & Pedersen, L. (2009) — Market Liquidity and Funding Liquidity, Review of Financial Studies",
+      "url": "https://doi.org/10.1093/rfs/hhn098"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/1WO1GmrIlS0",
+  "youtubeLabel": "Liquidity"
 }

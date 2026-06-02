@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "ROE", "def": "Return on Equity = Net Income / Shareholders' Equity; measures profitability per dollar of equity invested." },
-    { "term": "ROA", "def": "Return on Assets = Net Income / Total Assets; capital-structure-neutral profitability measure." },
-    { "term": "Gross Profitability", "def": "(Revenue − COGS) / Total Assets; Novy-Marx (2013) measure of asset efficiency; predicts returns cross-sectionally." },
-    { "term": "Accruals", "def": "Non-cash component of earnings; low accruals = high earnings quality; Sloan (1996) showed low accruals predict outperformance." },
-    { "term": "QMJ Factor", "def": "Quality Minus Junk (AQR) — long high-quality, short low-quality stocks; composite of profitability, growth, safety metrics." },
-    { "term": "Piotroski F-Score", "def": "9-point score of financial health signals (profitability, leverage, efficiency); high score predicts outperformance in value stocks." }
+    {
+      "term": "ROE",
+      "def": "Return on Equity = Net Income / Shareholders' Equity; measures profitability per dollar of equity invested."
+    },
+    {
+      "term": "ROA",
+      "def": "Return on Assets = Net Income / Total Assets; capital-structure-neutral profitability measure."
+    },
+    {
+      "term": "Gross Profitability",
+      "def": "(Revenue − COGS) / Total Assets; Novy-Marx (2013) measure of asset efficiency; predicts returns cross-sectionally."
+    },
+    {
+      "term": "Accruals",
+      "def": "Non-cash component of earnings; low accruals = high earnings quality; Sloan (1996) showed low accruals predict outperformance."
+    },
+    {
+      "term": "QMJ Factor",
+      "def": "Quality Minus Junk (AQR) — long high-quality, short low-quality stocks; composite of profitability, growth, safety metrics."
+    },
+    {
+      "term": "Piotroski F-Score",
+      "def": "9-point score of financial health signals (profitability, leverage, efficiency); high score predicts outperformance in value stocks."
+    }
   ],
   "eli3": [
     "The quality factor captures the premium earned by owning financially healthy, profitable, well-managed companies over low-quality, financially stressed ones. Unlike value (cheap) or momentum (trending up), quality focuses on the business itself: high profitability, stable earnings, low debt, strong cash generation, and efficient capital allocation.",
@@ -61,7 +79,15 @@
     }
   ],
   "sources": [
-    { "label": "Novy-Marx, R. (2013) — The Other Side of Value: The Gross Profitability Premium, JFE", "url": "https://doi.org/10.1016/j.jfineco.2013.01.003" },
-    { "label": "Sloan, R.G. (1996) — Do Stock Prices Fully Reflect Information in Accruals?, The Accounting Review", "url": "https://www.jstor.org/stable/248290" }
-  ]
+    {
+      "label": "Novy-Marx, R. (2013) — The Other Side of Value: The Gross Profitability Premium, JFE",
+      "url": "https://doi.org/10.1016/j.jfineco.2013.01.003"
+    },
+    {
+      "label": "Sloan, R.G. (1996) — Do Stock Prices Fully Reflect Information in Accruals?, The Accounting Review",
+      "url": "https://www.jstor.org/stable/248290"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/VTmbBe2BuRY",
+  "youtubeLabel": "Quality Factor"
 }

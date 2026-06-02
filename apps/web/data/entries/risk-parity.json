@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Risk Contribution", "def": "Asset i's contribution to portfolio variance: w_i × (Σw)_i; risk parity sets these equal for all assets." },
-    { "term": "Risk Budgeting", "def": "Allocating a portfolio by risk (not capital); risk parity is the equal-risk-budget special case." },
-    { "term": "Leverage", "def": "Risk parity typically levers up low-vol assets (bonds) to match equity risk contribution; changes return profile." },
-    { "term": "All-Weather", "def": "Bridgewater's risk-parity portfolio designed to perform in all macro environments (growth/recession × inflation/deflation)." },
-    { "term": "ERC Portfolio", "def": "Equal Risk Contribution — formal name for risk parity; solved via convex optimisation of Σw." },
-    { "term": "Marginal Risk Contribution", "def": "∂σ_p / ∂w_i = (Σw)_i / σ_p; asset i's marginal contribution to portfolio vol; scaled by w_i to get total contribution." }
+    {
+      "term": "Risk Contribution",
+      "def": "Asset i's contribution to portfolio variance: w_i × (Σw)_i; risk parity sets these equal for all assets."
+    },
+    {
+      "term": "Risk Budgeting",
+      "def": "Allocating a portfolio by risk (not capital); risk parity is the equal-risk-budget special case."
+    },
+    {
+      "term": "Leverage",
+      "def": "Risk parity typically levers up low-vol assets (bonds) to match equity risk contribution; changes return profile."
+    },
+    {
+      "term": "All-Weather",
+      "def": "Bridgewater's risk-parity portfolio designed to perform in all macro environments (growth/recession × inflation/deflation)."
+    },
+    {
+      "term": "ERC Portfolio",
+      "def": "Equal Risk Contribution — formal name for risk parity; solved via convex optimisation of Σw."
+    },
+    {
+      "term": "Marginal Risk Contribution",
+      "def": "∂σ_p / ∂w_i = (Σw)_i / σ_p; asset i's marginal contribution to portfolio vol; scaled by w_i to get total contribution."
+    }
   ],
   "eli3": [
     "Risk parity is a portfolio construction approach where you allocate capital so that each asset contributes equally to total portfolio risk — not equal capital, but equal risk. A traditional 60/40 portfolio (60% stocks, 40% bonds) sounds balanced, but stocks are ~3× more volatile than bonds, so equities contribute ~90% of total portfolio risk. Risk parity fixes this by leveraging the bonds to match the risk contribution of equities.",
@@ -61,7 +79,15 @@
     }
   ],
   "sources": [
-    { "label": "Asness, C., Frazzini, A. & Pedersen, L.H. (2012) — Leverage Aversion and Risk Parity, FAJ", "url": "https://doi.org/10.2469/faj.v68.n1.1" },
-    { "label": "Roncalli, T. (2013) — Introduction to Risk Parity and Budgeting", "url": "https://doi.org/10.2139/ssrn.2272973" }
-  ]
+    {
+      "label": "Asness, C., Frazzini, A. & Pedersen, L.H. (2012) — Leverage Aversion and Risk Parity, FAJ",
+      "url": "https://doi.org/10.2469/faj.v68.n1.1"
+    },
+    {
+      "label": "Roncalli, T. (2013) — Introduction to Risk Parity and Budgeting",
+      "url": "https://doi.org/10.2139/ssrn.2272973"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/MnUERF8DoUY",
+  "youtubeLabel": "Risk Parity"
 }

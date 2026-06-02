@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Macaulay Duration", "def": "Weighted-average time (in years) to receive a bond's cash flows; equals modified duration × (1 + y)." },
-    { "term": "Modified Duration", "def": "% price change per 1% yield move: ΔP/P ≈ −ModDur × Δy; primary interest rate sensitivity measure." },
-    { "term": "DV01 / PVBP", "def": "Dollar Value of 01bp — $ price change for a 1bp yield move; modified duration × price × 0.0001." },
-    { "term": "Convexity", "def": "Second-order sensitivity of price to yield; accounts for the non-linearity that duration alone misses." },
-    { "term": "Zero-Coupon Bond", "def": "Pays only face value at maturity (no coupons); its duration equals its maturity — maximum duration for a given maturity." },
-    { "term": "Parallel Shift", "def": "When all yields across all maturities change by the same amount; the scenario duration assumes." }
+    {
+      "term": "Macaulay Duration",
+      "def": "Weighted-average time (in years) to receive a bond's cash flows; equals modified duration × (1 + y)."
+    },
+    {
+      "term": "Modified Duration",
+      "def": "% price change per 1% yield move: ΔP/P ≈ −ModDur × Δy; primary interest rate sensitivity measure."
+    },
+    {
+      "term": "DV01 / PVBP",
+      "def": "Dollar Value of 01bp — $ price change for a 1bp yield move; modified duration × price × 0.0001."
+    },
+    {
+      "term": "Convexity",
+      "def": "Second-order sensitivity of price to yield; accounts for the non-linearity that duration alone misses."
+    },
+    {
+      "term": "Zero-Coupon Bond",
+      "def": "Pays only face value at maturity (no coupons); its duration equals its maturity — maximum duration for a given maturity."
+    },
+    {
+      "term": "Parallel Shift",
+      "def": "When all yields across all maturities change by the same amount; the scenario duration assumes."
+    }
   ],
   "visualizationType": "duration-price-yield",
   "eli3": [
@@ -63,7 +81,15 @@
     }
   ],
   "sources": [
-    { "label": "Macaulay, F.R. (1938) — Some Theoretical Problems Suggested by the Movements of Interest Rates, Bond Yields, and Stock Prices in the United States Since 1856, NBER", "url": "https://www.nber.org/books-and-chapters/some-theoretical-problems-suggested-movements-interest-rates-bond-yields-and-stock-prices" },
-    { "label": "Fabozzi, F.J. — Fixed Income Mathematics, 4th Edition, McGraw-Hill (2006)", "url": "https://www.mhprofessional.com/fixed-income-mathematics-4th-ed-9780071460736-usa" }
-  ]
+    {
+      "label": "Macaulay, F.R. (1938) — Some Theoretical Problems Suggested by the Movements of Interest Rates, Bond Yields, and Stock Prices in the United States Since 1856, NBER",
+      "url": "https://www.nber.org/books-and-chapters/some-theoretical-problems-suggested-movements-interest-rates-bond-yields-and-stock-prices"
+    },
+    {
+      "label": "Fabozzi, F.J. — Fixed Income Mathematics, 4th Edition, McGraw-Hill (2006)",
+      "url": "https://www.mhprofessional.com/fixed-income-mathematics-4th-ed-9780071460736-usa"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/m4hFbhtdgOc",
+  "youtubeLabel": "Duration"
 }

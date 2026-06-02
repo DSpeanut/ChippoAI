@@ -64,7 +64,15 @@
     }
   ],
   "sources": [
-    { "label": "Wei et al. (2022) — Finetuned Language Models Are Zero-Shot Learners (FLAN), ICLR 2022", "url": "https://arxiv.org/abs/2109.01652" },
-    { "label": "Kojima et al. (2022) — Large Language Models are Zero-Shot Reasoners, NeurIPS 2022", "url": "https://arxiv.org/abs/2205.11916" }
-  ]
+    {
+      "label": "Wei et al. (2022) — Finetuned Language Models Are Zero-Shot Learners (FLAN), ICLR 2022",
+      "url": "https://arxiv.org/abs/2109.01652"
+    },
+    {
+      "label": "Kojima et al. (2022) — Large Language Models are Zero-Shot Reasoners, NeurIPS 2022",
+      "url": "https://arxiv.org/abs/2205.11916"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/sW5xoicq5TY",
+  "youtubeLabel": "Zero Shot Prompting"
 }

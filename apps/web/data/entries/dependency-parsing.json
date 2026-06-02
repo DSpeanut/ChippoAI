@@ -59,7 +59,15 @@
     }
   ],
   "sources": [
-    { "label": "Jurafsky & Martin — Speech and Language Processing (3rd ed.), Ch. 18", "url": "https://web.stanford.edu/~jurafsky/slp3/" },
-    { "label": "Dozat & Manning (2017) — Deep Biaffine Attention for Neural Dependency Parsing, ICLR 2017", "url": "https://openreview.net/forum?id=Hk95PK9le" }
-  ]
+    {
+      "label": "Jurafsky & Martin — Speech and Language Processing (3rd ed.), Ch. 18",
+      "url": "https://web.stanford.edu/~jurafsky/slp3/"
+    },
+    {
+      "label": "Dozat & Manning (2017) — Deep Biaffine Attention for Neural Dependency Parsing, ICLR 2017",
+      "url": "https://openreview.net/forum?id=Hk95PK9le"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/KVKvde-_MYc",
+  "youtubeLabel": "Dependency Parsing"
 }

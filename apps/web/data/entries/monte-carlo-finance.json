@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Monte Carlo Simulation", "def": "Estimate prices or risks by averaging outcomes across many simulated random paths." },
-    { "term": "Standard Error", "def": "σ / √N — uncertainty of the MC estimate; halving standard error requires 4× more simulations." },
-    { "term": "Variance Reduction", "def": "Techniques that reduce σ of the MC estimator without increasing N: antithetic variates, control variates, importance sampling." },
-    { "term": "Antithetic Variates", "def": "Pair each random path with its mirror (−z instead of +z); the average of the pair has lower variance." },
-    { "term": "Quasi-Monte Carlo", "def": "Replace random numbers with low-discrepancy sequences (Sobol, Halton); fills space more evenly, faster convergence." },
-    { "term": "Path-Dependent Option", "def": "Option whose payoff depends on the full price path (not just final price): barriers, Asians, lookbacks — MC is often the only tractable pricer." }
+    {
+      "term": "Monte Carlo Simulation",
+      "def": "Estimate prices or risks by averaging outcomes across many simulated random paths."
+    },
+    {
+      "term": "Standard Error",
+      "def": "σ / √N — uncertainty of the MC estimate; halving standard error requires 4× more simulations."
+    },
+    {
+      "term": "Variance Reduction",
+      "def": "Techniques that reduce σ of the MC estimator without increasing N: antithetic variates, control variates, importance sampling."
+    },
+    {
+      "term": "Antithetic Variates",
+      "def": "Pair each random path with its mirror (−z instead of +z); the average of the pair has lower variance."
+    },
+    {
+      "term": "Quasi-Monte Carlo",
+      "def": "Replace random numbers with low-discrepancy sequences (Sobol, Halton); fills space more evenly, faster convergence."
+    },
+    {
+      "term": "Path-Dependent Option",
+      "def": "Option whose payoff depends on the full price path (not just final price): barriers, Asians, lookbacks — MC is often the only tractable pricer."
+    }
   ],
   "eli3": [
     "Monte Carlo simulation in finance means generating thousands of random scenarios for how markets might evolve, then averaging the outcomes to estimate prices or risks. Instead of solving complex equations analytically, you simulate many possible futures and let the law of large numbers give you the answer.",
@@ -61,7 +79,15 @@
     }
   ],
   "sources": [
-    { "label": "Longstaff, F.A. & Schwartz, E.S. (2001) — Valuing American Options by Simulation, RFS", "url": "https://doi.org/10.1093/rfs/14.1.113" },
-    { "label": "Glasserman, P. — Monte Carlo Methods in Financial Engineering, Springer", "url": "https://link.springer.com/book/10.1007/978-0-387-21617-1" }
-  ]
+    {
+      "label": "Longstaff, F.A. & Schwartz, E.S. (2001) — Valuing American Options by Simulation, RFS",
+      "url": "https://doi.org/10.1093/rfs/14.1.113"
+    },
+    {
+      "label": "Glasserman, P. — Monte Carlo Methods in Financial Engineering, Springer",
+      "url": "https://link.springer.com/book/10.1007/978-0-387-21617-1"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/eXhCXobViJc",
+  "youtubeLabel": "Monte Carlo Finance"
 }

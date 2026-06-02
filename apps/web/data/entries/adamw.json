@@ -44,6 +44,7 @@
     {
       "heading": "LAMB: AdamW at Large Batch Scale",
       "body": "LAMB (Layer-wise Adaptive Moments, You et al. 2020) extends AdamW for extremely large batch training (64K+). AdamW with large batches needs much larger η (linear scaling rule), but large η causes instability. LAMB normalises the update by ‖update‖ and rescales by ‖w‖: wₜ = wₜ₋₁ − η·(‖wₜ₋₁‖/‖m̂ₜ/(√v̂ₜ+ε) + λwₜ₋₁‖) · (m̂ₜ/(√v̂ₜ+ε) + λwₜ₋₁). This allows training BERT in 76 minutes on 1024 TPUs (vs 3 days standard) by enabling batch size 32,768. [2]"
+    }
   ],
   "youtubeLabel": "AdamW vs Adam — Decoupled Weight Decay",
   "youtubeUrl": "https://www.youtube.com/embed/JXQT_vxqwIs",

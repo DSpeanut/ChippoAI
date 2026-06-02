@@ -23,7 +23,7 @@
     }
   ],
   "deepDiveIntro": [
-    "Recommendation pipeline: (1) Candidate generation: from millions of items to hundreds. Matrix factorization, two-tower neural networks, approximate nearest neighbors (ANN). (2) Ranking: score candidates with heavy model. Deep neural networks with user/item features, context. (3) Re-ranking: diversity, freshness, business rules, exploration."
+    "Recommendation pipeline: (1) Candidate generation: from millions of items to hundreds. Matrix factorization, two-tower neural networks, approximate nearest neighbors (ANN). (2) Ranking: score candidates with heavy model. Deep neural networks with user/item features, context. (3) Re-ranking: diversity, freshness, business rules, exploration.",
     "Algorithms: Collaborative filtering (user-item interactions matrix, SVD, ALS). Content-based (item features, TF-IDF, embeddings). Deep learning (two-tower, transformer-based sequential models). Reinforcement learning (bandits for exploration)."
   ],
   "visualizationType": "recommendation-scale",

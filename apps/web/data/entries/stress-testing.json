@@ -53,7 +53,15 @@
     }
   ],
   "sources": [
-    { "label": "Federal Reserve — CCAR 2023: Assessment Framework and Results", "url": "https://www.federalreserve.gov/publications/2023-stress-test-results.htm" },
-    { "label": "Rebonato, R. (2010) — Coherent Stress Testing, Wiley", "url": "https://www.wiley.com/en-us/Coherent+Stress+Testing%3A+A+Bayesian+Approach+to+the+Analysis+of+Financial+Risk-p-9780470666012" }
-  ]
+    {
+      "label": "Federal Reserve — CCAR 2023: Assessment Framework and Results",
+      "url": "https://www.federalreserve.gov/publications/2023-stress-test-results.htm"
+    },
+    {
+      "label": "Rebonato, R. (2010) — Coherent Stress Testing, Wiley",
+      "url": "https://www.wiley.com/en-us/Coherent+Stress+Testing%3A+A+Bayesian+Approach+to+the+Analysis+of+Financial+Risk-p-9780470666012"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/MQGue1TomWE",
+  "youtubeLabel": "Stress Testing"
 }

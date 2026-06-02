@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Active Return", "def": "Portfolio return − benchmark return; the total excess return attribution tries to explain." },
-    { "term": "Allocation Effect", "def": "Return from over/underweighting sectors vs. the benchmark, independent of stock selection within sectors." },
-    { "term": "Selection Effect", "def": "Return from picking stocks that outperform the sector benchmark, holding sector weights constant." },
-    { "term": "Interaction Effect", "def": "Combined effect of over/underweighting sectors AND having good/bad stock selection in those sectors." },
-    { "term": "Benchmark Weight", "def": "The sector or security weight in the reference index; active weight = portfolio weight − benchmark weight." },
-    { "term": "GIPS", "def": "Global Investment Performance Standards; the industry standard for reporting and attributing investment returns." }
+    {
+      "term": "Active Return",
+      "def": "Portfolio return − benchmark return; the total excess return attribution tries to explain."
+    },
+    {
+      "term": "Allocation Effect",
+      "def": "Return from over/underweighting sectors vs. the benchmark, independent of stock selection within sectors."
+    },
+    {
+      "term": "Selection Effect",
+      "def": "Return from picking stocks that outperform the sector benchmark, holding sector weights constant."
+    },
+    {
+      "term": "Interaction Effect",
+      "def": "Combined effect of over/underweighting sectors AND having good/bad stock selection in those sectors."
+    },
+    {
+      "term": "Benchmark Weight",
+      "def": "The sector or security weight in the reference index; active weight = portfolio weight − benchmark weight."
+    },
+    {
+      "term": "GIPS",
+      "def": "Global Investment Performance Standards; the industry standard for reporting and attributing investment returns."
+    }
   ],
   "visualizationType": "brinson-attribution",
   "eli3": [
@@ -62,7 +80,15 @@
     }
   ],
   "sources": [
-    { "label": "Brinson, G.P., Hood, L.R. & Beebower, G.L. (1986) — Determinants of Portfolio Performance, FAJ", "url": "https://doi.org/10.2469/faj.v42.n4.39" },
-    { "label": "Karnosky, D.S. & Singer, B.D. (1994) — Global Asset Management and Performance Attribution, AIMR", "url": "https://www.cfainstitute.org/research/foundation/1994/global-asset-management-and-performance-attribution" }
-  ]
+    {
+      "label": "Brinson, G.P., Hood, L.R. & Beebower, G.L. (1986) — Determinants of Portfolio Performance, FAJ",
+      "url": "https://doi.org/10.2469/faj.v42.n4.39"
+    },
+    {
+      "label": "Karnosky, D.S. & Singer, B.D. (1994) — Global Asset Management and Performance Attribution, AIMR",
+      "url": "https://www.cfainstitute.org/research/foundation/1994/global-asset-management-and-performance-attribution"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/GwcDFyJT4Kw",
+  "youtubeLabel": "Brinson Attribution"
 }

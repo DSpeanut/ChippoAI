@@ -60,7 +60,15 @@
     }
   ],
   "sources": [
-    { "label": "Jurafsky & Martin — Speech and Language Processing (3rd ed.), Ch. 3: N-gram Language Models", "url": "https://web.stanford.edu/~jurafsky/slp3/" },
-    { "label": "Papineni et al. (2002) — BLEU: a Method for Automatic Evaluation of Machine Translation, ACL 2002", "url": "https://aclanthology.org/P02-1040/" }
-  ]
+    {
+      "label": "Jurafsky & Martin — Speech and Language Processing (3rd ed.), Ch. 3: N-gram Language Models",
+      "url": "https://web.stanford.edu/~jurafsky/slp3/"
+    },
+    {
+      "label": "Papineni et al. (2002) — BLEU: a Method for Automatic Evaluation of Machine Translation, ACL 2002",
+      "url": "https://aclanthology.org/P02-1040/"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/hB2ShMlwTyc",
+  "youtubeLabel": "N Grams"
 }

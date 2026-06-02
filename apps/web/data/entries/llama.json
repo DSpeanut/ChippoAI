@@ -60,8 +60,19 @@
     }
   ],
   "sources": [
-    { "label": "Touvron et al. (2023) — Llama 2: Open Foundation and Fine-Tuned Chat Models", "url": "https://arxiv.org/abs/2307.09288" },
-    { "label": "Ainslie et al. (2023) — GQA: Training Generalized Multi-Query Transformer Models, EMNLP 2023", "url": "https://arxiv.org/abs/2305.13245" },
-    { "label": "Meta AI (2024) — Meta Llama 3 Model Card", "url": "https://github.com/meta-llama/llama3" }
-  ]
+    {
+      "label": "Touvron et al. (2023) — Llama 2: Open Foundation and Fine-Tuned Chat Models",
+      "url": "https://arxiv.org/abs/2307.09288"
+    },
+    {
+      "label": "Ainslie et al. (2023) — GQA: Training Generalized Multi-Query Transformer Models, EMNLP 2023",
+      "url": "https://arxiv.org/abs/2305.13245"
+    },
+    {
+      "label": "Meta AI (2024) — Meta Llama 3 Model Card",
+      "url": "https://github.com/meta-llama/llama3"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/E5OnoYF2oAk",
+  "youtubeLabel": "Llama"
 }

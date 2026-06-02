@@ -71,5 +71,7 @@
       "label": "Dinh, Sohl-Dickstein & Bengio (2016) — Density Estimation using Real-valued Non-Volume Preserving Transformations (RealNVP), ICLR 2017 arXiv:1605.08803",
       "url": "https://arxiv.org/abs/1605.08803"
     }
-  ]
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/i7LjDvsLWCg",
+  "youtubeLabel": "Normalizing Flows"
 }

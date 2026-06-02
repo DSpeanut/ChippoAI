@@ -31,7 +31,7 @@
     {
       "heading": "Sinusoidal Encoding Properties",
       "body": "The sinusoidal encoding has several desirable mathematical properties. (1) Unique encoding: every position has a distinct PE vector — since the frequencies span from 1 (lowest: i=0, period 2π) to 1/10000 (highest: i=d/2, period 2π/10000), the encoding is unique for any position 0 to ~10000. (2) Linear relative offset: for any fixed offset k, PE(pos+k) = T_k · PE(pos) for some fixed (position-independent) matrix T_k. This means the model can learn to compute PE(pos+k) from PE(pos) using a linear projection. (3) Bounded magnitude: ‖PE(pos)‖₂ = √(d/2) for all positions — the encoding magnitude is constant, preventing position information from dominating the token embedding for large positions. [1]"
-  },
+    },
     {
       "heading": "Learned vs Sinusoidal vs Relative Positional Encoding",
       "body": "Absolute learned (BERT, GPT): PE ∈ ℝ^{L×d} is a free parameter optimised via gradient descent. Simple, works well within training length, but cannot extrapolate. Absolute sinusoidal (original Transformer): computed by formula, no parameters. Extrapolates to longer sequences but not as expressive. Relative (Transformer-XL, T5): attention score depends on (pos_q − pos_k) rather than absolute positions. Allows attending to relative distances without encoding absolute positions. RoPE (LLaMA, Falcon, GPT-NeoX): rotates Q and K vectors by angle proportional to position, so dot product Q^T K depends only on relative position. ALiBi (MPT, BLOOM): adds penalty −m|i−j| to attention logits, linearly biasing away from attending to distant tokens. ALiBi requires no change to the embedding layer. [2]"
@@ -71,5 +71,7 @@
       "label": "Su et al. (2021) — RoFormer: Enhanced Transformer with Rotary Position Embedding, arXiv:2104.09864",
       "url": "https://arxiv.org/abs/2104.09864"
     }
-  ]
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/1biZfFLPRSY",
+  "youtubeLabel": "Positional Encoding"
 }

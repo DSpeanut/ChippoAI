@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Futures Price", "def": "Agreed price for future delivery; set by no-arbitrage: F = S × e^(r−q)T where q is dividend/convenience yield." },
-    { "term": "Basis", "def": "Spot price − futures price; converges to zero at expiry. Basis risk = uncertainty in this convergence." },
-    { "term": "Contango", "def": "Futures price > spot price; typical for financial futures (storage costs + financing). Forward curve slopes up." },
-    { "term": "Backwardation", "def": "Futures price < spot price; common in commodities with high convenience yield or supply shortages." },
-    { "term": "Roll Yield", "def": "P&L from rolling a futures position (selling expiring contract, buying next); positive in backwardation." },
-    { "term": "Initial Margin", "def": "Collateral deposited to open a futures position; marked to market daily (variation margin) through the exchange." }
+    {
+      "term": "Futures Price",
+      "def": "Agreed price for future delivery; set by no-arbitrage: F = S × e^(r−q)T where q is dividend/convenience yield."
+    },
+    {
+      "term": "Basis",
+      "def": "Spot price − futures price; converges to zero at expiry. Basis risk = uncertainty in this convergence."
+    },
+    {
+      "term": "Contango",
+      "def": "Futures price > spot price; typical for financial futures (storage costs + financing). Forward curve slopes up."
+    },
+    {
+      "term": "Backwardation",
+      "def": "Futures price < spot price; common in commodities with high convenience yield or supply shortages."
+    },
+    {
+      "term": "Roll Yield",
+      "def": "P&L from rolling a futures position (selling expiring contract, buying next); positive in backwardation."
+    },
+    {
+      "term": "Initial Margin",
+      "def": "Collateral deposited to open a futures position; marked to market daily (variation margin) through the exchange."
+    }
   ],
   "eli3": [
     "A futures contract is an agreement to buy or sell an asset at a predetermined price on a future date. Unlike options, both parties are obligated to follow through. Futures are standardised, exchange-traded contracts — the exchange guarantees the trade, so counterparty risk is minimal.",
@@ -61,7 +79,15 @@
     }
   ],
   "sources": [
-    { "label": "Hull, J.C. — Options, Futures, and Other Derivatives (10th ed.), Pearson", "url": "https://www.pearson.com/en-us/subject-catalog/p/options-futures-and-other-derivatives/P200000005938" },
-    { "label": "Gorton, G. & Rouwenhorst, K.G. (2006) — Facts and Fantasies about Commodity Futures, FAJ", "url": "https://doi.org/10.2469/faj.v62.n2.4083" }
-  ]
+    {
+      "label": "Hull, J.C. — Options, Futures, and Other Derivatives (10th ed.), Pearson",
+      "url": "https://www.pearson.com/en-us/subject-catalog/p/options-futures-and-other-derivatives/P200000005938"
+    },
+    {
+      "label": "Gorton, G. & Rouwenhorst, K.G. (2006) — Facts and Fantasies about Commodity Futures, FAJ",
+      "url": "https://doi.org/10.2469/faj.v62.n2.4083"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/3g6P0lRXotI",
+  "youtubeLabel": "Futures"
 }

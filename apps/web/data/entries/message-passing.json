@@ -71,5 +71,7 @@
       "label": "Xu et al. (2019) — How Powerful are Graph Neural Networks? (GIN), ICLR 2019 arXiv:1810.00826",
       "url": "https://arxiv.org/abs/1810.00826"
     }
-  ]
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/rny-lcvfkdY",
+  "youtubeLabel": "Message Passing"
 }

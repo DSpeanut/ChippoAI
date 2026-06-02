@@ -58,6 +58,11 @@
     }
   ],
   "sources": [
-    { "label": "Gao et al. (2023) — Retrieval-Augmented Generation for Large Language Models: A Survey", "url": "https://arxiv.org/abs/2312.10997" }
-  ]
+    {
+      "label": "Gao et al. (2023) — Retrieval-Augmented Generation for Large Language Models: A Survey",
+      "url": "https://arxiv.org/abs/2312.10997"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/Lk6D1huUK0s",
+  "youtubeLabel": "Chunking Strategies"
 }

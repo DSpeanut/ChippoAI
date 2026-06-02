@@ -59,8 +59,19 @@
     }
   ],
   "sources": [
-    { "label": "Brown et al. (2020) — Language Models are Few-Shot Learners (GPT-3), NeurIPS 2020", "url": "https://arxiv.org/abs/2005.14165" },
-    { "label": "Su et al. (2021) — RoFormer: Enhanced Transformer with Rotary Position Embedding", "url": "https://arxiv.org/abs/2104.09864" },
-    { "label": "OpenAI (2023) — GPT-4 Technical Report", "url": "https://arxiv.org/abs/2303.08774" }
-  ]
+    {
+      "label": "Brown et al. (2020) — Language Models are Few-Shot Learners (GPT-3), NeurIPS 2020",
+      "url": "https://arxiv.org/abs/2005.14165"
+    },
+    {
+      "label": "Su et al. (2021) — RoFormer: Enhanced Transformer with Rotary Position Embedding",
+      "url": "https://arxiv.org/abs/2104.09864"
+    },
+    {
+      "label": "OpenAI (2023) — GPT-4 Technical Report",
+      "url": "https://arxiv.org/abs/2303.08774"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/kCc8FmEb1nY",
+  "youtubeLabel": "Gpt Architecture"
 }

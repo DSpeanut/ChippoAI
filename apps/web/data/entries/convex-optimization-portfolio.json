@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Convex Problem", "def": "An optimisation where the objective and feasible region have no local optima; guaranteed global solution via solvers." },
-    { "term": "QP (Quadratic Program)", "def": "Minimise a quadratic objective (e.g. w′Σw) subject to linear constraints; the standard MVO problem class." },
-    { "term": "CVXPY", "def": "Python convex optimisation library; expressive domain-specific language for formulating and solving portfolio problems." },
-    { "term": "L1/L2 Regularisation", "def": "Add λ||w||₁ or λ||w||₂² to the objective; promotes sparsity (L1) or diversification (L2) in portfolio weights." },
-    { "term": "Turnover Constraint", "def": "||w_new − w_old||₁ ≤ T; limits transaction costs by restricting how much the portfolio changes each rebalance." },
-    { "term": "Duality", "def": "Every convex primal problem has a dual; dual variables are shadow prices on constraints (e.g. cost of tightening a weight limit)." }
+    {
+      "term": "Convex Problem",
+      "def": "An optimisation where the objective and feasible region have no local optima; guaranteed global solution via solvers."
+    },
+    {
+      "term": "QP (Quadratic Program)",
+      "def": "Minimise a quadratic objective (e.g. w′Σw) subject to linear constraints; the standard MVO problem class."
+    },
+    {
+      "term": "CVXPY",
+      "def": "Python convex optimisation library; expressive domain-specific language for formulating and solving portfolio problems."
+    },
+    {
+      "term": "L1/L2 Regularisation",
+      "def": "Add λ||w||₁ or λ||w||₂² to the objective; promotes sparsity (L1) or diversification (L2) in portfolio weights."
+    },
+    {
+      "term": "Turnover Constraint",
+      "def": "||w_new − w_old||₁ ≤ T; limits transaction costs by restricting how much the portfolio changes each rebalance."
+    },
+    {
+      "term": "Duality",
+      "def": "Every convex primal problem has a dual; dual variables are shadow prices on constraints (e.g. cost of tightening a weight limit)."
+    }
   ],
   "eli3": [
     "Portfolio optimisation is a mathematical problem: choose weights for a set of assets to maximise expected return while controlling risk. Convex optimisation is the mathematical framework for solving these problems efficiently and reliably. A problem is 'convex' if the objective and constraints have a specific mathematical shape that guarantees we can find the globally best solution — no local optima to get trapped in.",
@@ -61,7 +79,15 @@
     }
   ],
   "sources": [
-    { "label": "Diamond, S. & Boyd, S. (2016) — CVXPY: A Python-Embedded Modeling Language for Convex Optimization, JMLR", "url": "https://jmlr.org/papers/v17/15-408.html" },
-    { "label": "Grinold, R.C. & Kahn, R.N. — Active Portfolio Management (2nd ed.), McGraw-Hill", "url": "https://www.mhprofessional.com/active-portfolio-management-9780070248823-usa" }
-  ]
+    {
+      "label": "Diamond, S. & Boyd, S. (2016) — CVXPY: A Python-Embedded Modeling Language for Convex Optimization, JMLR",
+      "url": "https://jmlr.org/papers/v17/15-408.html"
+    },
+    {
+      "label": "Grinold, R.C. & Kahn, R.N. — Active Portfolio Management (2nd ed.), McGraw-Hill",
+      "url": "https://www.mhprofessional.com/active-portfolio-management-9780070248823-usa"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/0XdEU_qnyto",
+  "youtubeLabel": "Convex Optimization Portfolio"
 }

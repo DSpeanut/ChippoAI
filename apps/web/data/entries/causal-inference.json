@@ -65,7 +65,15 @@
     }
   ],
   "sources": [
-    { "label": "Angrist & Pischke — Mostly Harmless Econometrics, Ch. 3–6", "url": "https://press.princeton.edu/books/paperback/9780691120355/mostly-harmless-econometrics" },
-    { "label": "Pearl — Causality: Models, Reasoning, and Inference (2nd ed.)", "url": "https://doi.org/10.1017/CBO9780511803161" }
-  ]
+    {
+      "label": "Angrist & Pischke — Mostly Harmless Econometrics, Ch. 3–6",
+      "url": "https://press.princeton.edu/books/paperback/9780691120355/mostly-harmless-econometrics"
+    },
+    {
+      "label": "Pearl — Causality: Models, Reasoning, and Inference (2nd ed.)",
+      "url": "https://doi.org/10.1017/CBO9780511803161"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/Od6oAz1Op2k",
+  "youtubeLabel": "Causal Inference"
 }

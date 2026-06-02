@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Cap Rate", "def": "Capitalisation rate = NOI / property value; the real estate equivalent of an earnings yield. Higher = cheaper/riskier." },
-    { "term": "NOI", "def": "Net Operating Income — gross rental income minus operating expenses (excluding financing costs)." },
-    { "term": "Inflation Hedge", "def": "Real assets tend to hold value in real terms — rents and commodity prices often rise with inflation." },
-    { "term": "Infrastructure", "def": "Long-lived physical assets (toll roads, airports, pipelines) with regulated or contracted cash flows; low correlation to equities." },
-    { "term": "REIT", "def": "Real Estate Investment Trust — publicly traded vehicle owning real assets; must distribute 90%+ of taxable income." },
-    { "term": "Vintage Year", "def": "Year the fund started investing; used to compare PE/real asset fund performance across market cycle timing." }
+    {
+      "term": "Cap Rate",
+      "def": "Capitalisation rate = NOI / property value; the real estate equivalent of an earnings yield. Higher = cheaper/riskier."
+    },
+    {
+      "term": "NOI",
+      "def": "Net Operating Income — gross rental income minus operating expenses (excluding financing costs)."
+    },
+    {
+      "term": "Inflation Hedge",
+      "def": "Real assets tend to hold value in real terms — rents and commodity prices often rise with inflation."
+    },
+    {
+      "term": "Infrastructure",
+      "def": "Long-lived physical assets (toll roads, airports, pipelines) with regulated or contracted cash flows; low correlation to equities."
+    },
+    {
+      "term": "REIT",
+      "def": "Real Estate Investment Trust — publicly traded vehicle owning real assets; must distribute 90%+ of taxable income."
+    },
+    {
+      "term": "Vintage Year",
+      "def": "Year the fund started investing; used to compare PE/real asset fund performance across market cycle timing."
+    }
   ],
   "eli3": [
     "Real assets are physical or tangible assets — real estate, infrastructure, timberland, farmland, and natural resources. Unlike stocks and bonds (which are financial claims), real assets produce income by being used: buildings generate rent, toll roads generate toll revenue, timberland produces timber. They provide diversification because their returns are driven by physical supply/demand, not financial markets.",
@@ -61,7 +79,15 @@
     }
   ],
   "sources": [
-    { "label": "Geltner, D. (1993) — Estimating Market Values from Appraised Values without Assuming an Efficient Market, JREA", "url": "https://doi.org/10.1080/10835547.1993.12090713" },
-    { "label": "Bitsch, F., Buchner, A. & Kaserer, C. (2010) — Risk, Return and Cash Flow Characteristics of Infrastructure Fund Investments, EIB Papers", "url": "https://www.eib.org/en/publications/eib-papers-volume-15-no-1-2010" }
-  ]
+    {
+      "label": "Geltner, D. (1993) — Estimating Market Values from Appraised Values without Assuming an Efficient Market, JREA",
+      "url": "https://doi.org/10.1080/10835547.1993.12090713"
+    },
+    {
+      "label": "Bitsch, F., Buchner, A. & Kaserer, C. (2010) — Risk, Return and Cash Flow Characteristics of Infrastructure Fund Investments, EIB Papers",
+      "url": "https://www.eib.org/en/publications/eib-papers-volume-15-no-1-2010"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/QozKntoSr9o",
+  "youtubeLabel": "Real Assets"
 }

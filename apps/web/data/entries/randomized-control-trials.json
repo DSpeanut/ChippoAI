@@ -59,7 +59,15 @@
     }
   ],
   "sources": [
-    { "label": "Rubin (1974) — Estimating Causal Effects of Treatments in Randomized and Nonrandomized Studies, J. Ed. Psychology 66(5)", "url": "https://doi.org/10.1037/h0037350" },
-    { "label": "Senn — Statistical Issues in Drug Development (2nd ed.)", "url": "https://www.wiley.com/en-us/Statistical+Issues+in+Drug+Development%2C+2nd+Edition-p-9780470018774" }
-  ]
+    {
+      "label": "Rubin (1974) — Estimating Causal Effects of Treatments in Randomized and Nonrandomized Studies, J. Ed. Psychology 66(5)",
+      "url": "https://doi.org/10.1037/h0037350"
+    },
+    {
+      "label": "Senn — Statistical Issues in Drug Development (2nd ed.)",
+      "url": "https://www.wiley.com/en-us/Statistical+Issues+in+Drug+Development%2C+2nd+Edition-p-9780470018774"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/Wy7qpJeozec",
+  "youtubeLabel": "Randomized Control Trials"
 }

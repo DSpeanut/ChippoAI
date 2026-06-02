@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Delta (Δ)", "def": "∂V/∂S — option price change per $1 move in the underlying; call delta ∈ [0,1], put delta ∈ [−1,0]." },
-    { "term": "Gamma (Γ)", "def": "∂²V/∂S² — rate of change of delta per $1 move; highest ATM and near expiry; drives hedging cost." },
-    { "term": "Theta (Θ)", "def": "∂V/∂t — daily time decay; options lose value as expiry approaches; long options pay theta, short options earn it." },
-    { "term": "Vega (ν)", "def": "∂V/∂σ — option price change per 1% change in implied volatility; long options have positive vega." },
-    { "term": "Rho (ρ)", "def": "∂V/∂r — sensitivity to interest rate changes; call prices rise with rates (higher forward price)." },
-    { "term": "Delta-Neutral", "def": "Position with combined delta = 0; insensitive to small underlying moves; profits from gamma / vega." }
+    {
+      "term": "Delta (Δ)",
+      "def": "∂V/∂S — option price change per $1 move in the underlying; call delta ∈ [0,1], put delta ∈ [−1,0]."
+    },
+    {
+      "term": "Gamma (Γ)",
+      "def": "∂²V/∂S² — rate of change of delta per $1 move; highest ATM and near expiry; drives hedging cost."
+    },
+    {
+      "term": "Theta (Θ)",
+      "def": "∂V/∂t — daily time decay; options lose value as expiry approaches; long options pay theta, short options earn it."
+    },
+    {
+      "term": "Vega (ν)",
+      "def": "∂V/∂σ — option price change per 1% change in implied volatility; long options have positive vega."
+    },
+    {
+      "term": "Rho (ρ)",
+      "def": "∂V/∂r — sensitivity to interest rate changes; call prices rise with rates (higher forward price)."
+    },
+    {
+      "term": "Delta-Neutral",
+      "def": "Position with combined delta = 0; insensitive to small underlying moves; profits from gamma / vega."
+    }
   ],
   "visualizationType": "greeks-delta",
   "eli3": [
@@ -63,7 +81,15 @@
     }
   ],
   "sources": [
-    { "label": "Hull, J.C. — Options, Futures, and Other Derivatives, 11th Edition, Pearson (2022)", "url": "https://www.pearson.com/en-us/subject-catalog/p/options-futures-and-other-derivatives/P200000005938" },
-    { "label": "Gatheral, J. — The Volatility Surface: A Practitioner's Guide, Wiley (2006)", "url": "https://www.wiley.com/en-us/The+Volatility+Surface%3A+A+Practitioner%27s+Guide-p-9780471792512" }
-  ]
+    {
+      "label": "Hull, J.C. — Options, Futures, and Other Derivatives, 11th Edition, Pearson (2022)",
+      "url": "https://www.pearson.com/en-us/subject-catalog/p/options-futures-and-other-derivatives/P200000005938"
+    },
+    {
+      "label": "Gatheral, J. — The Volatility Surface: A Practitioner's Guide, Wiley (2006)",
+      "url": "https://www.wiley.com/en-us/The+Volatility+Surface%3A+A+Practitioner%27s+Guide-p-9780471792512"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/8107gb50UOY",
+  "youtubeLabel": "Greeks"
 }

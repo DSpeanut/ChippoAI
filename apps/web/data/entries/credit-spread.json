@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Credit Spread", "def": "Yield premium over same-maturity Treasuries; in bps (1bp = 0.01%). Compensation for default + liquidity risk." },
-    { "term": "OAS", "def": "Option-Adjusted Spread — strip out embedded option value to compare callable/putable bonds on equal footing." },
-    { "term": "Z-Spread", "def": "Constant spread added to the full spot rate curve that prices the bond; more accurate than simple YTM spread." },
-    { "term": "Investment Grade (IG)", "def": "Rated BBB-/Baa3 or higher; spreads typically 50–200bps. Lower default probability." },
-    { "term": "High Yield (HY)", "def": "Rated below BBB- ('junk'); spreads 300–600bps+. Higher default risk, higher expected return." },
-    { "term": "Basis (CDS-Bond)", "def": "Difference between CDS spread and bond spread; should be zero in theory, diverges in funding stress." }
+    {
+      "term": "Credit Spread",
+      "def": "Yield premium over same-maturity Treasuries; in bps (1bp = 0.01%). Compensation for default + liquidity risk."
+    },
+    {
+      "term": "OAS",
+      "def": "Option-Adjusted Spread — strip out embedded option value to compare callable/putable bonds on equal footing."
+    },
+    {
+      "term": "Z-Spread",
+      "def": "Constant spread added to the full spot rate curve that prices the bond; more accurate than simple YTM spread."
+    },
+    {
+      "term": "Investment Grade (IG)",
+      "def": "Rated BBB-/Baa3 or higher; spreads typically 50–200bps. Lower default probability."
+    },
+    {
+      "term": "High Yield (HY)",
+      "def": "Rated below BBB- ('junk'); spreads 300–600bps+. Higher default risk, higher expected return."
+    },
+    {
+      "term": "Basis (CDS-Bond)",
+      "def": "Difference between CDS spread and bond spread; should be zero in theory, diverges in funding stress."
+    }
   ],
   "eli3": [
     "The credit spread is the extra yield a corporate bond pays above a risk-free government bond of the same maturity. If a 10-year Treasury yields 4% and a 10-year corporate bond yields 6%, the credit spread is 2% (200 basis points). This extra yield compensates the investor for the risk that the company might default.",
@@ -62,7 +80,15 @@
     }
   ],
   "sources": [
-    { "label": "Merton, R.C. (1974) — On the Pricing of Corporate Debt: The Risk Structure of Interest Rates, Journal of Finance", "url": "https://doi.org/10.2307/2978814" },
-    { "label": "Fabozzi, F.J. — The Handbook of Fixed Income Securities, 8th Edition, McGraw-Hill (2012)", "url": "https://www.mhprofessional.com/the-handbook-of-fixed-income-securities-9780071768467-usa" }
-  ]
+    {
+      "label": "Merton, R.C. (1974) — On the Pricing of Corporate Debt: The Risk Structure of Interest Rates, Journal of Finance",
+      "url": "https://doi.org/10.2307/2978814"
+    },
+    {
+      "label": "Fabozzi, F.J. — The Handbook of Fixed Income Securities, 8th Edition, McGraw-Hill (2012)",
+      "url": "https://www.mhprofessional.com/the-handbook-of-fixed-income-securities-9780071768467-usa"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/GlfCo4jayF8",
+  "youtubeLabel": "Credit Spread"
 }

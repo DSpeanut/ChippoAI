@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Spot Price", "def": "Current market price for immediate delivery; commodity futures converge to spot at expiry." },
-    { "term": "Contango", "def": "Futures price > spot price; typical for financial assets and storable commodities with storage costs." },
-    { "term": "Backwardation", "def": "Futures price < spot price; common for commodities with high convenience yield or supply shortages." },
-    { "term": "Roll Yield", "def": "P&L from rolling futures; positive in backwardation (sell high, buy lower), negative in contango." },
-    { "term": "Convenience Yield", "def": "Benefit of holding physical commodity (e.g. oil as buffer stock); implied from futures pricing: F = S·e^((r−y)T)." },
-    { "term": "Commodity Index", "def": "Investable basket of commodity futures (e.g. GSCI, BCOM); returns = spot return + roll yield + collateral yield." }
+    {
+      "term": "Spot Price",
+      "def": "Current market price for immediate delivery; commodity futures converge to spot at expiry."
+    },
+    {
+      "term": "Contango",
+      "def": "Futures price > spot price; typical for financial assets and storable commodities with storage costs."
+    },
+    {
+      "term": "Backwardation",
+      "def": "Futures price < spot price; common for commodities with high convenience yield or supply shortages."
+    },
+    {
+      "term": "Roll Yield",
+      "def": "P&L from rolling futures; positive in backwardation (sell high, buy lower), negative in contango."
+    },
+    {
+      "term": "Convenience Yield",
+      "def": "Benefit of holding physical commodity (e.g. oil as buffer stock); implied from futures pricing: F = S·e^((r−y)T)."
+    },
+    {
+      "term": "Commodity Index",
+      "def": "Investable basket of commodity futures (e.g. GSCI, BCOM); returns = spot return + roll yield + collateral yield."
+    }
   ],
   "eli3": [
     "Commodities are raw materials: energy (crude oil, natural gas), metals (gold, silver, copper, aluminium), agriculture (wheat, corn, soybeans, coffee). As investments, commodities are typically accessed through futures contracts rather than physical ownership. Returns come from price changes, roll yield (rolling futures contracts), and collateral yield (interest on the cash held as margin).",
@@ -61,7 +79,15 @@
     }
   ],
   "sources": [
-    { "label": "Gorton, G. & Rouwenhorst, K.G. (2006) — Facts and Fantasies about Commodity Futures, FAJ", "url": "https://doi.org/10.2469/faj.v62.n2.4083" },
-    { "label": "Erb, C.B. & Harvey, C.R. (2013) — The Golden Dilemma, FAJ", "url": "https://doi.org/10.2469/faj.v69.n4.1" }
-  ]
+    {
+      "label": "Gorton, G. & Rouwenhorst, K.G. (2006) — Facts and Fantasies about Commodity Futures, FAJ",
+      "url": "https://doi.org/10.2469/faj.v62.n2.4083"
+    },
+    {
+      "label": "Erb, C.B. & Harvey, C.R. (2013) — The Golden Dilemma, FAJ",
+      "url": "https://doi.org/10.2469/faj.v69.n4.1"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/Rp6iW0RPIJ4",
+  "youtubeLabel": "Commodities"
 }

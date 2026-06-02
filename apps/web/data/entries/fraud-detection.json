@@ -23,7 +23,7 @@
     }
   ],
   "deepDiveIntro": [
-    "Fraud detection ML: (1) Features: transaction amount, merchant category, location, time, velocity (transactions per hour), device fingerprint, behavioral biometrics. (2) Models: gradient boosting (XGBoost, LightGBM) popular for tabular data, neural networks for sequences, graph neural networks for networks. (3) Real-time: feature store for low-latency lookups, model serving with <50ms latency. (4) Review queues: medium-risk transactions to human investigators."
+    "Fraud detection ML: (1) Features: transaction amount, merchant category, location, time, velocity (transactions per hour), device fingerprint, behavioral biometrics. (2) Models: gradient boosting (XGBoost, LightGBM) popular for tabular data, neural networks for sequences, graph neural networks for networks. (3) Real-time: feature store for low-latency lookups, model serving with <50ms latency. (4) Review queues: medium-risk transactions to human investigators.",
     "Adversarial aspect: fraudsters adapt to detection. Model performance degrades as attackers learn. Solutions: continuous retraining, online learning, model ensembles, feature obfuscation (don't leak detection logic)."
   ],
   "visualizationType": "fraud-detection",

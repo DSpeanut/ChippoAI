@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "DV01", "def": "Dollar Value of 1bp — $ change in portfolio value for a 1bp yield increase; the standard unit of rate risk." },
-    { "term": "Key Rate Duration", "def": "Sensitivity to a move at one specific maturity point only; captures non-parallel curve risk (twists, butterflies)." },
-    { "term": "Basis Risk", "def": "The hedge instrument and the exposure don't move identically; residual risk after hedging." },
-    { "term": "Interest Rate Swap", "def": "Exchange fixed-rate for floating-rate cash flows (or vice versa); used to adjust a portfolio's duration." },
-    { "term": "Repricing Gap", "def": "For banks: difference between rate-sensitive assets and liabilities repricing in a given period." },
-    { "term": "Parallel vs. Twist", "def": "Parallel: all maturities shift equally. Twist: short/long rates move differently (steepening vs. flattening)." }
+    {
+      "term": "DV01",
+      "def": "Dollar Value of 1bp — $ change in portfolio value for a 1bp yield increase; the standard unit of rate risk."
+    },
+    {
+      "term": "Key Rate Duration",
+      "def": "Sensitivity to a move at one specific maturity point only; captures non-parallel curve risk (twists, butterflies)."
+    },
+    {
+      "term": "Basis Risk",
+      "def": "The hedge instrument and the exposure don't move identically; residual risk after hedging."
+    },
+    {
+      "term": "Interest Rate Swap",
+      "def": "Exchange fixed-rate for floating-rate cash flows (or vice versa); used to adjust a portfolio's duration."
+    },
+    {
+      "term": "Repricing Gap",
+      "def": "For banks: difference between rate-sensitive assets and liabilities repricing in a given period."
+    },
+    {
+      "term": "Parallel vs. Twist",
+      "def": "Parallel: all maturities shift equally. Twist: short/long rates move differently (steepening vs. flattening)."
+    }
   ],
   "eli3": [
     "Interest rate risk is the risk that your bond (or bond portfolio) loses value when interest rates rise. Since bond prices and yields move in opposite directions, every fixed-rate bond holder faces this risk. If you hold a 10-year bond and rates rise 1%, your bond might lose about 7-8% of its value.",
@@ -62,7 +80,15 @@
     }
   ],
   "sources": [
-    { "label": "Basel Committee on Banking Supervision — Interest Rate Risk in the Banking Book (IRRBB), BIS (2016)", "url": "https://www.bis.org/bcbs/publ/d368.htm" },
-    { "label": "Fabozzi, F.J. — Fixed Income Mathematics, 4th Edition, McGraw-Hill (2006)", "url": "https://www.mhprofessional.com/fixed-income-mathematics-4th-ed-9780071460736-usa" }
-  ]
+    {
+      "label": "Basel Committee on Banking Supervision — Interest Rate Risk in the Banking Book (IRRBB), BIS (2016)",
+      "url": "https://www.bis.org/bcbs/publ/d368.htm"
+    },
+    {
+      "label": "Fabozzi, F.J. — Fixed Income Mathematics, 4th Edition, McGraw-Hill (2006)",
+      "url": "https://www.mhprofessional.com/fixed-income-mathematics-4th-ed-9780071460736-usa"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/m4hFbhtdgOc",
+  "youtubeLabel": "Interest Rate Risk"
 }

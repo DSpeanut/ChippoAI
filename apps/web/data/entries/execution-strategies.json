@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "VWAP", "def": "Volume-Weighted Average Price; a common execution benchmark — trade in proportion to market volume over the day." },
-    { "term": "TWAP", "def": "Time-Weighted Average Price; slice the order evenly over time intervals regardless of market volume." },
-    { "term": "Implementation Shortfall", "def": "Difference between paper portfolio return (decision price) and actual portfolio return; the total execution cost." },
-    { "term": "Market Impact", "def": "Price moves against the order as it is filled; scales roughly with √(order size / ADV)." },
-    { "term": "Participation Rate", "def": "% of market volume that the algorithm trades; higher = faster execution but more impact." },
-    { "term": "ADV", "def": "Average Daily Volume; the normalising factor for order size — a 1% ADV order is small; 30% ADV is very large." }
+    {
+      "term": "VWAP",
+      "def": "Volume-Weighted Average Price; a common execution benchmark — trade in proportion to market volume over the day."
+    },
+    {
+      "term": "TWAP",
+      "def": "Time-Weighted Average Price; slice the order evenly over time intervals regardless of market volume."
+    },
+    {
+      "term": "Implementation Shortfall",
+      "def": "Difference between paper portfolio return (decision price) and actual portfolio return; the total execution cost."
+    },
+    {
+      "term": "Market Impact",
+      "def": "Price moves against the order as it is filled; scales roughly with √(order size / ADV)."
+    },
+    {
+      "term": "Participation Rate",
+      "def": "% of market volume that the algorithm trades; higher = faster execution but more impact."
+    },
+    {
+      "term": "ADV",
+      "def": "Average Daily Volume; the normalising factor for order size — a 1% ADV order is small; 30% ADV is very large."
+    }
   ],
   "eli3": [
     "Execution strategy is how you actually buy or sell a large position without moving the market against yourself. If you need to buy $100M of a stock that trades $10M/day, you can't do it in one trade — you'll drive the price up. Execution algorithms break the order into smaller pieces over time to minimise market impact (the cost of moving the price by trading).",
@@ -61,7 +79,15 @@
     }
   ],
   "sources": [
-    { "label": "Perold, A.F. (1988) — The Implementation Shortfall, JPM", "url": "https://doi.org/10.3905/jpm.1988.409150" },
-    { "label": "Almgren, R. & Chriss, N. (2001) — Optimal Execution of Portfolio Transactions, Journal of Risk", "url": "https://doi.org/10.21314/JOR.2001.041" }
-  ]
+    {
+      "label": "Perold, A.F. (1988) — The Implementation Shortfall, JPM",
+      "url": "https://doi.org/10.3905/jpm.1988.409150"
+    },
+    {
+      "label": "Almgren, R. & Chriss, N. (2001) — Optimal Execution of Portfolio Transactions, Journal of Risk",
+      "url": "https://doi.org/10.21314/JOR.2001.041"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/P5yDEtSA_Yo",
+  "youtubeLabel": "Execution Strategies"
 }

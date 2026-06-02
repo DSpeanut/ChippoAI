@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Ornstein-Uhlenbeck (OU)", "def": "Mean-reverting stochastic process: dX = κ(θ−X)dt + σdW; κ = speed of reversion, θ = long-run mean." },
-    { "term": "Half-Life", "def": "ln(2)/κ — expected time for the spread to revert halfway to the mean; key metric for strategy sizing." },
-    { "term": "ADF Test", "def": "Augmented Dickey-Fuller test — tests for a unit root; rejection means the series is stationary (mean-reverting)." },
-    { "term": "Hurst Exponent", "def": "H < 0.5 = mean-reverting; H = 0.5 = random walk; H > 0.5 = trending. Measures degree of long-range dependence." },
-    { "term": "Cointegration", "def": "Two non-stationary series form a stationary spread; the basis for pairs trading and relative value strategies." },
-    { "term": "Spread Z-Score", "def": "(Spread − mean) / std; signal used to enter/exit mean-reversion trades when the spread is sufficiently extreme." }
+    {
+      "term": "Ornstein-Uhlenbeck (OU)",
+      "def": "Mean-reverting stochastic process: dX = κ(θ−X)dt + σdW; κ = speed of reversion, θ = long-run mean."
+    },
+    {
+      "term": "Half-Life",
+      "def": "ln(2)/κ — expected time for the spread to revert halfway to the mean; key metric for strategy sizing."
+    },
+    {
+      "term": "ADF Test",
+      "def": "Augmented Dickey-Fuller test — tests for a unit root; rejection means the series is stationary (mean-reverting)."
+    },
+    {
+      "term": "Hurst Exponent",
+      "def": "H < 0.5 = mean-reverting; H = 0.5 = random walk; H > 0.5 = trending. Measures degree of long-range dependence."
+    },
+    {
+      "term": "Cointegration",
+      "def": "Two non-stationary series form a stationary spread; the basis for pairs trading and relative value strategies."
+    },
+    {
+      "term": "Spread Z-Score",
+      "def": "(Spread − mean) / std; signal used to enter/exit mean-reversion trades when the spread is sufficiently extreme."
+    }
   ],
   "eli3": [
     "Mean reversion is the tendency for asset prices or spreads to return toward their long-run average after moving away from it. If something is abnormally high, it tends to come back down; if abnormally low, it tends to recover. This is the foundation of value investing (cheap stocks revert toward fair value) and many quantitative strategies.",
@@ -61,7 +79,15 @@
     }
   ],
   "sources": [
-    { "label": "Lo, A.W. & MacKinlay, A.C. (1988) — Stock Market Prices Do Not Follow Random Walks, RFS", "url": "https://doi.org/10.1093/rfs/1.1.41" },
-    { "label": "Shleifer, A. & Vishny, R.W. (1997) — The Limits of Arbitrage, JF", "url": "https://doi.org/10.1111/j.1540-6261.1997.tb03807.x" }
-  ]
+    {
+      "label": "Lo, A.W. & MacKinlay, A.C. (1988) — Stock Market Prices Do Not Follow Random Walks, RFS",
+      "url": "https://doi.org/10.1093/rfs/1.1.41"
+    },
+    {
+      "label": "Shleifer, A. & Vishny, R.W. (1997) — The Limits of Arbitrage, JF",
+      "url": "https://doi.org/10.1111/j.1540-6261.1997.tb03807.x"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/NMs87wGmunM",
+  "youtubeLabel": "Mean Reversion"
 }

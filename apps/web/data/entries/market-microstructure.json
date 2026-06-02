@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Bid-Ask Spread", "def": "Ask price − bid price; the immediate cost of trading; compensates market makers for inventory + adverse selection risk." },
-    { "term": "Market Impact", "def": "The price move caused by executing a trade; large orders push prices against the trader." },
-    { "term": "Price Discovery", "def": "The process by which trading reveals new information and incorporates it into prices." },
-    { "term": "Adverse Selection", "def": "Risk that the counterparty has superior information; market makers widen spreads to compensate for this risk." },
-    { "term": "Tick Size", "def": "Minimum price increment for quoting; smaller tick sizes narrow spreads but can reduce market depth." },
-    { "term": "LOB", "def": "Limit Order Book — the queue of all resting limit orders; shows the supply and demand at every price level." }
+    {
+      "term": "Bid-Ask Spread",
+      "def": "Ask price − bid price; the immediate cost of trading; compensates market makers for inventory + adverse selection risk."
+    },
+    {
+      "term": "Market Impact",
+      "def": "The price move caused by executing a trade; large orders push prices against the trader."
+    },
+    {
+      "term": "Price Discovery",
+      "def": "The process by which trading reveals new information and incorporates it into prices."
+    },
+    {
+      "term": "Adverse Selection",
+      "def": "Risk that the counterparty has superior information; market makers widen spreads to compensate for this risk."
+    },
+    {
+      "term": "Tick Size",
+      "def": "Minimum price increment for quoting; smaller tick sizes narrow spreads but can reduce market depth."
+    },
+    {
+      "term": "LOB",
+      "def": "Limit Order Book — the queue of all resting limit orders; shows the supply and demand at every price level."
+    }
   ],
   "eli3": [
     "Market microstructure is the study of how trades actually happen — the mechanics of buying and selling securities. It covers: how prices are set at any given moment, how buyers and sellers find each other, how quickly trades execute, and how trading costs (beyond the obvious commission) affect investors.",
@@ -62,7 +80,15 @@
     }
   ],
   "sources": [
-    { "label": "Glosten, L. & Milgrom, P. (1985) — Bid, Ask and Transaction Prices in a Specialist Market with Heterogeneously Informed Traders, Journal of Financial Economics", "url": "https://doi.org/10.1016/0304-405X(85)90044-3" },
-    { "label": "Almgren, R. & Chriss, N. (2001) — Optimal Execution of Portfolio Transactions, Journal of Risk", "url": "https://www.risk.net/journal-of-risk/1506608/optimal-execution-of-portfolio-transactions" }
-  ]
+    {
+      "label": "Glosten, L. & Milgrom, P. (1985) — Bid, Ask and Transaction Prices in a Specialist Market with Heterogeneously Informed Traders, Journal of Financial Economics",
+      "url": "https://doi.org/10.1016/0304-405X(85)90044-3"
+    },
+    {
+      "label": "Almgren, R. & Chriss, N. (2001) — Optimal Execution of Portfolio Transactions, Journal of Risk",
+      "url": "https://www.risk.net/journal-of-risk/1506608/optimal-execution-of-portfolio-transactions"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/pALcn40A_ec",
+  "youtubeLabel": "Market Microstructure"
 }

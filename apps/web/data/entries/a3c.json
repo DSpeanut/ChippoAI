@@ -71,5 +71,7 @@
       "label": "Espeholt et al. (2018) — IMPALA: Scalable Distributed Deep-RL with Importance Weighted Actor-Learner Architectures, ICML 2018 arXiv:1802.01561",
       "url": "https://arxiv.org/abs/1802.01561"
     }
-  ]
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/OcIx_TBu90Q",
+  "youtubeLabel": "A3C"
 }

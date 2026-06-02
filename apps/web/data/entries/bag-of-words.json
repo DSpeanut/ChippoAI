@@ -60,7 +60,15 @@
     }
   ],
   "sources": [
-    { "label": "Jurafsky & Martin — Speech and Language Processing (3rd ed.), Ch. 4", "url": "https://web.stanford.edu/~jurafsky/slp3/" },
-    { "label": "Manning, Raghavan & Schütze — Introduction to Information Retrieval, Ch. 6", "url": "https://nlp.stanford.edu/IR-book/" }
-  ]
+    {
+      "label": "Jurafsky & Martin — Speech and Language Processing (3rd ed.), Ch. 4",
+      "url": "https://web.stanford.edu/~jurafsky/slp3/"
+    },
+    {
+      "label": "Manning, Raghavan & Schütze — Introduction to Information Retrieval, Ch. 6",
+      "url": "https://nlp.stanford.edu/IR-book/"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/IKgBLTeQQL8",
+  "youtubeLabel": "Bag Of Words"
 }

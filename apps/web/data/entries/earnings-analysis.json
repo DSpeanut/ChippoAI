@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "EPS", "def": "Earnings Per Share = Net Income / Diluted Shares Outstanding; the bottom line profit per share." },
-    { "term": "Consensus Estimate", "def": "Bloomberg/FactSet/Refinitiv average of sell-side analyst forecasts; the benchmark actual results are measured against." },
-    { "term": "Earnings Surprise", "def": "(Actual EPS − Consensus EPS) / |Consensus EPS|; positive surprise = beat, negative = miss." },
-    { "term": "Guidance", "def": "Management's own forward outlook for revenue, margins, or EPS; often more market-moving than the reported quarter." },
-    { "term": "Estimate Revision", "def": "Sell-side analysts updating their forward EPS forecasts; positive revisions are a leading indicator of price momentum." },
-    { "term": "EBIT / EBITDA", "def": "Earnings Before Interest & Tax / + D&A; operating profit metrics that strip out financing and non-cash charges." }
+    {
+      "term": "EPS",
+      "def": "Earnings Per Share = Net Income / Diluted Shares Outstanding; the bottom line profit per share."
+    },
+    {
+      "term": "Consensus Estimate",
+      "def": "Bloomberg/FactSet/Refinitiv average of sell-side analyst forecasts; the benchmark actual results are measured against."
+    },
+    {
+      "term": "Earnings Surprise",
+      "def": "(Actual EPS − Consensus EPS) / |Consensus EPS|; positive surprise = beat, negative = miss."
+    },
+    {
+      "term": "Guidance",
+      "def": "Management's own forward outlook for revenue, margins, or EPS; often more market-moving than the reported quarter."
+    },
+    {
+      "term": "Estimate Revision",
+      "def": "Sell-side analysts updating their forward EPS forecasts; positive revisions are a leading indicator of price momentum."
+    },
+    {
+      "term": "EBIT / EBITDA",
+      "def": "Earnings Before Interest & Tax / + D&A; operating profit metrics that strip out financing and non-cash charges."
+    }
   ],
   "eli3": [
     "Earnings season is when companies report their quarterly financial results. The market doesn't care about the absolute number — it cares about whether results beat or missed what analysts expected (the consensus). A company reporting $1.00 EPS when analysts expected $0.90 typically sees its stock rise. The same $1.00 EPS with expectations of $1.10 leads to a selloff, even though the company made good money.",
@@ -62,7 +80,15 @@
     }
   ],
   "sources": [
-    { "label": "Ball, R. & Brown, P. (1968) — An Empirical Evaluation of Accounting Income Numbers, Journal of Accounting Research", "url": "https://doi.org/10.2307/2490232" },
-    { "label": "Sloan, R. (1996) — Do Stock Prices Fully Reflect Information in Accruals and Cash Flows About Future Earnings?, Accounting Review", "url": "https://doi.org/10.2307/248290" }
-  ]
+    {
+      "label": "Ball, R. & Brown, P. (1968) — An Empirical Evaluation of Accounting Income Numbers, Journal of Accounting Research",
+      "url": "https://doi.org/10.2307/2490232"
+    },
+    {
+      "label": "Sloan, R. (1996) — Do Stock Prices Fully Reflect Information in Accruals and Cash Flows About Future Earnings?, Accounting Review",
+      "url": "https://doi.org/10.2307/248290"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/dqhsR-zC4LQ",
+  "youtubeLabel": "Earnings Analysis"
 }

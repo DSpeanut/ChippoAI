@@ -71,5 +71,7 @@
       "label": "Ying et al. (2018) — Graph Convolutional Neural Networks for Web-Scale Recommender Systems (PinSage), KDD 2018 arXiv:1806.01973",
       "url": "https://arxiv.org/abs/1806.01973"
     }
-  ]
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/vinQCnizqDA",
+  "youtubeLabel": "Graphsage"
 }

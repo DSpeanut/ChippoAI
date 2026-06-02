@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Walk-Forward Test", "def": "Rolling train/test splits advancing through time; train on earlier data, test on next period, repeat." },
-    { "term": "Purging", "def": "Removing training samples whose label period overlaps with the test period; prevents information leakage." },
-    { "term": "Embargo", "def": "Gap between training and test sets to avoid spillover from regime-correlated observations." },
-    { "term": "CPCV", "def": "Combinatorial Purged Cross-Validation (de Prado) — samples many train/test splits for more reliable evaluation." },
-    { "term": "Overfitting", "def": "Model memorises training noise; walk-forward testing is designed to detect this before live deployment." },
-    { "term": "PBO", "def": "Probability of Backtest Overfitting — probability the in-sample best strategy is not the out-of-sample best." }
+    {
+      "term": "Walk-Forward Test",
+      "def": "Rolling train/test splits advancing through time; train on earlier data, test on next period, repeat."
+    },
+    {
+      "term": "Purging",
+      "def": "Removing training samples whose label period overlaps with the test period; prevents information leakage."
+    },
+    {
+      "term": "Embargo",
+      "def": "Gap between training and test sets to avoid spillover from regime-correlated observations."
+    },
+    {
+      "term": "CPCV",
+      "def": "Combinatorial Purged Cross-Validation (de Prado) — samples many train/test splits for more reliable evaluation."
+    },
+    {
+      "term": "Overfitting",
+      "def": "Model memorises training noise; walk-forward testing is designed to detect this before live deployment."
+    },
+    {
+      "term": "PBO",
+      "def": "Probability of Backtest Overfitting — probability the in-sample best strategy is not the out-of-sample best."
+    }
   ],
   "eli3": [
     "Walk-forward testing is a rigorous method for evaluating trading strategies that mimics how they would actually be deployed live. Instead of testing on the entire historical dataset at once (which can lead to overfitting), you divide history into sequential windows: train on earlier data, test on the immediately following period, then advance the window and repeat.",
@@ -61,7 +79,15 @@
     }
   ],
   "sources": [
-    { "label": "Lopez de Prado, M. — Advances in Financial Machine Learning, Wiley", "url": "https://www.wiley.com/en-us/Advances+in+Financial+Machine+Learning-p-9781119482086" },
-    { "label": "White, H. (2000) — A Reality Check for Data Snooping, Econometrica", "url": "https://doi.org/10.1111/1468-0262.00152" }
-  ]
+    {
+      "label": "Lopez de Prado, M. — Advances in Financial Machine Learning, Wiley",
+      "url": "https://www.wiley.com/en-us/Advances+in+Financial+Machine+Learning-p-9781119482086"
+    },
+    {
+      "label": "White, H. (2000) — A Reality Check for Data Snooping, Econometrica",
+      "url": "https://doi.org/10.1111/1468-0262.00152"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/bfwhXTnQgMI",
+  "youtubeLabel": "Walk Forward Testing"
 }

@@ -80,7 +80,14 @@
     }
   ],
   "sources": [
-    { "label": "Zou, H. & Hastie, T. — Regularization and Variable Selection via the Elastic Net (JRSS-B, 2005)", "url": "https://doi.org/10.1111/j.1467-9868.2005.00503.x" },
-    { "label": "James et al. — An Introduction to Statistical Learning, Ch. 6.2", "url": "https://www.statlearning.com/" }
-  ]
+    {
+      "label": "Zou, H. & Hastie, T. — Regularization and Variable Selection via the Elastic Net (JRSS-B, 2005)",
+      "url": "https://doi.org/10.1111/j.1467-9868.2005.00503.x"
+    },
+    {
+      "label": "James et al. — An Introduction to Statistical Learning, Ch. 6.2",
+      "url": "https://www.statlearning.com/"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/1dKRdX9bfIo"
 }

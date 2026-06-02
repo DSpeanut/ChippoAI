@@ -58,6 +58,11 @@
     }
   ],
   "sources": [
-    { "label": "OpenAI (2023) — GPT-4V(ision) System Card", "url": "https://openai.com/research/gpt-4v-system-card" }
-  ]
+    {
+      "label": "OpenAI (2023) — GPT-4V(ision) System Card",
+      "url": "https://openai.com/research/gpt-4v-system-card"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/lwlvyy5PtBo",
+  "youtubeLabel": "Gpt 4V"
 }

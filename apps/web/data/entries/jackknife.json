@@ -60,7 +60,15 @@
     }
   ],
   "sources": [
-    { "label": "Efron & Hastie — Computer Age Statistical Inference, Ch. 11", "url": "https://hastie.su.domains/CASI/" },
-    { "label": "Davison & Hinkley — Bootstrap Methods and Their Application, Ch. 2", "url": "https://doi.org/10.1017/CBO9780511802843" }
-  ]
+    {
+      "label": "Efron & Hastie — Computer Age Statistical Inference, Ch. 11",
+      "url": "https://hastie.su.domains/CASI/"
+    },
+    {
+      "label": "Davison & Hinkley — Bootstrap Methods and Their Application, Ch. 2",
+      "url": "https://doi.org/10.1017/CBO9780511802843"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/BuNYSxqfK8U",
+  "youtubeLabel": "Jackknife"
 }

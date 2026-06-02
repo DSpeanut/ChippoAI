@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Survivorship Bias", "def": "Only analysing entities that 'survived'; ignoring bankruptcies, delistings, fund closures inflates apparent returns." },
-    { "term": "Delisted Stock", "def": "A stock removed from an exchange (bankruptcy, acquisition, fraud); survivorship bias omits these losers from backtests." },
-    { "term": "CRSP Database", "def": "Comprehensive historical US stock database that includes delisted stocks; survivorship-bias-free source for research." },
-    { "term": "Backfill Bias", "def": "Hedge fund databases add funds retroactively with full history; only successful funds are added, inflating apparent returns." },
-    { "term": "Incubation Bias", "def": "Managers only launch funds that show good incubation-period results; inflates reported early-track-record performance." },
-    { "term": "Graveyard Database", "def": "Historical record of defunct funds; adding this to a live database removes survivorship bias in manager analysis." }
+    {
+      "term": "Survivorship Bias",
+      "def": "Only analysing entities that 'survived'; ignoring bankruptcies, delistings, fund closures inflates apparent returns."
+    },
+    {
+      "term": "Delisted Stock",
+      "def": "A stock removed from an exchange (bankruptcy, acquisition, fraud); survivorship bias omits these losers from backtests."
+    },
+    {
+      "term": "CRSP Database",
+      "def": "Comprehensive historical US stock database that includes delisted stocks; survivorship-bias-free source for research."
+    },
+    {
+      "term": "Backfill Bias",
+      "def": "Hedge fund databases add funds retroactively with full history; only successful funds are added, inflating apparent returns."
+    },
+    {
+      "term": "Incubation Bias",
+      "def": "Managers only launch funds that show good incubation-period results; inflates reported early-track-record performance."
+    },
+    {
+      "term": "Graveyard Database",
+      "def": "Historical record of defunct funds; adding this to a live database removes survivorship bias in manager analysis."
+    }
   ],
   "eli3": [
     "Survivorship bias is the error of only looking at things that 'survived' some selection process and ignoring everything that didn't make it. In finance, it means building strategies on datasets that only include successful companies (those still trading today) and ignoring companies that went bankrupt, got acquired, or were delisted — making strategies look much better than they really are.",
@@ -61,7 +79,15 @@
     }
   ],
   "sources": [
-    { "label": "Shumway, T. (1997) — The Delisting Bias in CRSP Data, JF", "url": "https://doi.org/10.1111/j.1540-6261.1997.tb04818.x" },
-    { "label": "Fung, W. & Hsieh, D.A. (2000) — Performance Characteristics of Hedge Funds, JFQA", "url": "https://doi.org/10.2307/2676262" }
-  ]
+    {
+      "label": "Shumway, T. (1997) — The Delisting Bias in CRSP Data, JF",
+      "url": "https://doi.org/10.1111/j.1540-6261.1997.tb04818.x"
+    },
+    {
+      "label": "Fung, W. & Hsieh, D.A. (2000) — Performance Characteristics of Hedge Funds, JFQA",
+      "url": "https://doi.org/10.2307/2676262"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/bpf18AoZNug",
+  "youtubeLabel": "Survivorship Bias"
 }

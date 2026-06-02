@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Market Impact", "def": "The adverse price move caused by trading; roughly proportional to √(order size / ADV)." },
-    { "term": "Bid-Ask Spread", "def": "The cost of immediately crossing the spread; ½ spread per one-way trip." },
-    { "term": "Implementation Shortfall", "def": "Total execution cost = paper return − actual return; includes market impact + spread + opportunity cost." },
-    { "term": "Almgren-Chriss Model", "def": "Optimal execution framework: trade off between market impact (trade slowly) and price risk (trade quickly)." },
-    { "term": "VWAP", "def": "Volume-Weighted Average Price; common execution benchmark — minimising deviation from VWAP reduces impact." },
-    { "term": "Turnover", "def": "% of portfolio traded per period; high-alpha strategies are often turnover-constrained by transaction costs." }
+    {
+      "term": "Market Impact",
+      "def": "The adverse price move caused by trading; roughly proportional to √(order size / ADV)."
+    },
+    {
+      "term": "Bid-Ask Spread",
+      "def": "The cost of immediately crossing the spread; ½ spread per one-way trip."
+    },
+    {
+      "term": "Implementation Shortfall",
+      "def": "Total execution cost = paper return − actual return; includes market impact + spread + opportunity cost."
+    },
+    {
+      "term": "Almgren-Chriss Model",
+      "def": "Optimal execution framework: trade off between market impact (trade slowly) and price risk (trade quickly)."
+    },
+    {
+      "term": "VWAP",
+      "def": "Volume-Weighted Average Price; common execution benchmark — minimising deviation from VWAP reduces impact."
+    },
+    {
+      "term": "Turnover",
+      "def": "% of portfolio traded per period; high-alpha strategies are often turnover-constrained by transaction costs."
+    }
   ],
   "eli3": [
     "Transaction cost modelling is the science of estimating how much it costs to trade — not just commissions, but all the hidden costs: the bid-ask spread you cross, the price impact of your own trading (you move the market when you buy or sell large amounts), and the opportunity cost of not trading when you should.",
@@ -61,7 +79,15 @@
     }
   ],
   "sources": [
-    { "label": "Almgren, R. & Chriss, N. (2001) — Optimal Execution of Portfolio Transactions, Journal of Risk", "url": "https://doi.org/10.21314/JOR.2001.022" },
-    { "label": "Grinold, R.C. & Kahn, R.N. — Active Portfolio Management (2nd ed.), McGraw-Hill", "url": "https://www.mhprofessional.com/active-portfolio-management-9780070248823-usa" }
-  ]
+    {
+      "label": "Almgren, R. & Chriss, N. (2001) — Optimal Execution of Portfolio Transactions, Journal of Risk",
+      "url": "https://doi.org/10.21314/JOR.2001.022"
+    },
+    {
+      "label": "Grinold, R.C. & Kahn, R.N. — Active Portfolio Management (2nd ed.), McGraw-Hill",
+      "url": "https://www.mhprofessional.com/active-portfolio-management-9780070248823-usa"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/LAUKOjZvvQQ",
+  "youtubeLabel": "Transaction Cost Modeling"
 }

@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Expected Return (μ)", "def": "The probability-weighted average return of an asset over a future period; the key input to MVO alongside risk." },
-    { "term": "Variance (σ²)", "def": "The average squared deviation of returns from the mean; measures individual asset risk." },
-    { "term": "Covariance / Correlation", "def": "Covariance measures how two assets move together; correlation = cov/(σ₁σ₂), scaled to [−1, +1]." },
-    { "term": "Portfolio Weight (w)", "def": "The fraction of portfolio value allocated to each asset; weights sum to 1 (fully invested)." },
-    { "term": "Quadratic Programming", "def": "The optimisation class used for MVO: minimise w′Σw subject to linear constraints on weights and target return." },
-    { "term": "Estimation Error", "def": "The sensitivity of MVO to small errors in expected return inputs; the main practical failure of naive MVO." }
+    {
+      "term": "Expected Return (μ)",
+      "def": "The probability-weighted average return of an asset over a future period; the key input to MVO alongside risk."
+    },
+    {
+      "term": "Variance (σ²)",
+      "def": "The average squared deviation of returns from the mean; measures individual asset risk."
+    },
+    {
+      "term": "Covariance / Correlation",
+      "def": "Covariance measures how two assets move together; correlation = cov/(σ₁σ₂), scaled to [−1, +1]."
+    },
+    {
+      "term": "Portfolio Weight (w)",
+      "def": "The fraction of portfolio value allocated to each asset; weights sum to 1 (fully invested)."
+    },
+    {
+      "term": "Quadratic Programming",
+      "def": "The optimisation class used for MVO: minimise w′Σw subject to linear constraints on weights and target return."
+    },
+    {
+      "term": "Estimation Error",
+      "def": "The sensitivity of MVO to small errors in expected return inputs; the main practical failure of naive MVO."
+    }
   ],
   "eli3": [
     "Mean-variance optimization (MVO) is a mathematical method for building a portfolio that gives you the best possible expected return for a given level of risk. It was invented by Harry Markowitz in 1952 and earned him the Nobel Prize in Economics.",
@@ -62,7 +80,15 @@
     }
   ],
   "sources": [
-    { "label": "Markowitz, H. (1952) — Portfolio Selection, Journal of Finance", "url": "https://doi.org/10.2307/2975974" },
-    { "label": "Black, F. & Litterman, R. (1992) — Global Portfolio Optimization, Financial Analysts Journal", "url": "https://doi.org/10.2469/faj.v48.n5.28" }
-  ]
+    {
+      "label": "Markowitz, H. (1952) — Portfolio Selection, Journal of Finance",
+      "url": "https://doi.org/10.2307/2975974"
+    },
+    {
+      "label": "Black, F. & Litterman, R. (1992) — Global Portfolio Optimization, Financial Analysts Journal",
+      "url": "https://doi.org/10.2469/faj.v48.n5.28"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/-jS9EhOEp8Y",
+  "youtubeLabel": "Mean Variance Optimization"
 }

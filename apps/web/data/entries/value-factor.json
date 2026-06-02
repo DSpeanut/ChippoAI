@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "P/E Ratio", "def": "Price-to-Earnings: market price / EPS. Low P/E = cheap (value); high P/E = expensive (growth)." },
-    { "term": "B/M Ratio", "def": "Book-to-Market: book value of equity / market cap. High B/M = value stock; used in Fama-French HML factor." },
-    { "term": "P/B Ratio", "def": "Price-to-Book: inverse of B/M. Low P/B = value; high P/B = growth. Common screening metric." },
-    { "term": "EV/EBITDA", "def": "Enterprise Value / EBITDA; capital-structure-neutral valuation multiple; lower = potentially undervalued." },
-    { "term": "HML Factor", "def": "High Minus Low — long high-B/M, short low-B/M; the factor portfolio that captures the value premium." },
-    { "term": "Value Trap", "def": "A stock that looks cheap but keeps getting cheaper due to deteriorating fundamentals; value investing's main risk." }
+    {
+      "term": "P/E Ratio",
+      "def": "Price-to-Earnings: market price / EPS. Low P/E = cheap (value); high P/E = expensive (growth)."
+    },
+    {
+      "term": "B/M Ratio",
+      "def": "Book-to-Market: book value of equity / market cap. High B/M = value stock; used in Fama-French HML factor."
+    },
+    {
+      "term": "P/B Ratio",
+      "def": "Price-to-Book: inverse of B/M. Low P/B = value; high P/B = growth. Common screening metric."
+    },
+    {
+      "term": "EV/EBITDA",
+      "def": "Enterprise Value / EBITDA; capital-structure-neutral valuation multiple; lower = potentially undervalued."
+    },
+    {
+      "term": "HML Factor",
+      "def": "High Minus Low — long high-B/M, short low-B/M; the factor portfolio that captures the value premium."
+    },
+    {
+      "term": "Value Trap",
+      "def": "A stock that looks cheap but keeps getting cheaper due to deteriorating fundamentals; value investing's main risk."
+    }
   ],
   "eli3": [
     "The value factor is the tendency of 'cheap' stocks (low price relative to fundamentals like earnings, book value, or cash flow) to outperform 'expensive' stocks over time. It's one of the most documented and debated anomalies in finance — markets seem to systematically underprice boring, out-of-favour companies and overprice exciting, high-growth ones.",
@@ -61,7 +79,15 @@
     }
   ],
   "sources": [
-    { "label": "Fama, E.F. & French, K.R. (1992) — The Cross-Section of Expected Stock Returns, JF", "url": "https://doi.org/10.1111/j.1540-6261.1992.tb04398.x" },
-    { "label": "Asness, C., Moskowitz, T. & Pedersen, L. (2013) — Value and Momentum Everywhere, JF", "url": "https://doi.org/10.1111/jofi.12021" }
-  ]
+    {
+      "label": "Fama, E.F. & French, K.R. (1992) — The Cross-Section of Expected Stock Returns, JF",
+      "url": "https://doi.org/10.1111/j.1540-6261.1992.tb04398.x"
+    },
+    {
+      "label": "Asness, C., Moskowitz, T. & Pedersen, L. (2013) — Value and Momentum Everywhere, JF",
+      "url": "https://doi.org/10.1111/jofi.12021"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/CQKRzN-oV0g",
+  "youtubeLabel": "Value Factor"
 }

@@ -53,7 +53,15 @@
     }
   ],
   "sources": [
-    { "label": "Hull, J.C. — Options, Futures, and Other Derivatives (10th ed.), Pearson", "url": "https://www.pearson.com/en-us/subject-catalog/p/options-futures-and-other-derivatives/P200000005938" },
-    { "label": "ISDA — Interest Rate Derivatives Pricing (IBOR Transition)", "url": "https://www.isda.org/category/market-practice-and-regulatory-policy/ibor-transition/" }
-  ]
+    {
+      "label": "Hull, J.C. — Options, Futures, and Other Derivatives (10th ed.), Pearson",
+      "url": "https://www.pearson.com/en-us/subject-catalog/p/options-futures-and-other-derivatives/P200000005938"
+    },
+    {
+      "label": "ISDA — Interest Rate Derivatives Pricing (IBOR Transition)",
+      "url": "https://www.isda.org/category/market-practice-and-regulatory-policy/ibor-transition/"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/PLjyj1FJqig",
+  "youtubeLabel": "Swaps"
 }

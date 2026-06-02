@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Competitive Moat", "def": "A durable structural advantage that protects a company's returns on capital from competition; coined by Warren Buffett." },
-    { "term": "ROIC", "def": "Return on Invested Capital = NOPAT / (Equity + Net Debt); the single most important measure of business quality." },
-    { "term": "WACC", "def": "Weighted Average Cost of Capital — the hurdle rate; a business creating value requires ROIC > WACC consistently." },
-    { "term": "Reinvestment Rate", "def": "Fraction of NOPAT reinvested back into the business; higher reinvestment × higher ROIC = faster value creation." },
-    { "term": "Porter's Five Forces", "def": "Framework: threat of entry, buyer power, supplier power, substitutes, rivalry — determines industry structural profitability." },
-    { "term": "Unit Economics", "def": "Profitability per customer or transaction (CAC, LTV, gross margin per unit); reveals whether growth creates or destroys value." }
+    {
+      "term": "Competitive Moat",
+      "def": "A durable structural advantage that protects a company's returns on capital from competition; coined by Warren Buffett."
+    },
+    {
+      "term": "ROIC",
+      "def": "Return on Invested Capital = NOPAT / (Equity + Net Debt); the single most important measure of business quality."
+    },
+    {
+      "term": "WACC",
+      "def": "Weighted Average Cost of Capital — the hurdle rate; a business creating value requires ROIC > WACC consistently."
+    },
+    {
+      "term": "Reinvestment Rate",
+      "def": "Fraction of NOPAT reinvested back into the business; higher reinvestment × higher ROIC = faster value creation."
+    },
+    {
+      "term": "Porter's Five Forces",
+      "def": "Framework: threat of entry, buyer power, supplier power, substitutes, rivalry — determines industry structural profitability."
+    },
+    {
+      "term": "Unit Economics",
+      "def": "Profitability per customer or transaction (CAC, LTV, gross margin per unit); reveals whether growth creates or destroys value."
+    }
   ],
   "eli3": [
     "Fundamental analysis is the study of a company's underlying business to determine its intrinsic value. It asks: how strong is this business, how durable are its competitive advantages, how skilled is management, and what are the earnings worth? A fundamentally strong company — high returns on capital, pricing power, growing markets — deserves a premium valuation. A fundamentally weak company — thin margins, intense competition, capital destruction — deserves a discount.",
@@ -62,7 +80,15 @@
     }
   ],
   "sources": [
-    { "label": "Dorsey, P. (2008) — The Little Book That Builds Wealth, Wiley", "url": "https://www.wiley.com/en-us/The+Little+Book+That+Builds+Wealth-p-9780470226513" },
-    { "label": "Novy-Marx, R. (2013) — The Other Side of Value: The Gross Profitability Premium, Journal of Financial Economics", "url": "https://doi.org/10.1016/j.jfineco.2013.01.003" }
-  ]
+    {
+      "label": "Dorsey, P. (2008) — The Little Book That Builds Wealth, Wiley",
+      "url": "https://www.wiley.com/en-us/The+Little+Book+That+Builds+Wealth-p-9780470226513"
+    },
+    {
+      "label": "Novy-Marx, R. (2013) — The Other Side of Value: The Gross Profitability Premium, Journal of Financial Economics",
+      "url": "https://doi.org/10.1016/j.jfineco.2013.01.003"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/8yDmq03XAHQ",
+  "youtubeLabel": "Fundamental Analysis"
 }

@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Convexity", "def": "Second derivative of bond price w.r.t. yield; measures curvature in the price-yield relationship." },
-    { "term": "Dollar Convexity", "def": "Convexity × Price / 2; the extra price gain from convexity on a Δy move: ½ × Convexity × Price × (Δy)²." },
-    { "term": "Positive Convexity", "def": "Price rises more when yields fall than it falls when yields rise — beneficial asymmetry for bondholders." },
-    { "term": "Negative Convexity", "def": "Callable bonds / MBS: price appreciation is capped (prepayment/call risk limits the upside)." },
-    { "term": "Duration", "def": "Linear (first-order) price-yield approximation; convexity is the second-order correction term." },
-    { "term": "Barbell vs Bullet", "def": "Same duration but barbell has higher convexity (more weight in short + long maturities) — outperforms in large rate moves." }
+    {
+      "term": "Convexity",
+      "def": "Second derivative of bond price w.r.t. yield; measures curvature in the price-yield relationship."
+    },
+    {
+      "term": "Dollar Convexity",
+      "def": "Convexity × Price / 2; the extra price gain from convexity on a Δy move: ½ × Convexity × Price × (Δy)²."
+    },
+    {
+      "term": "Positive Convexity",
+      "def": "Price rises more when yields fall than it falls when yields rise — beneficial asymmetry for bondholders."
+    },
+    {
+      "term": "Negative Convexity",
+      "def": "Callable bonds / MBS: price appreciation is capped (prepayment/call risk limits the upside)."
+    },
+    {
+      "term": "Duration",
+      "def": "Linear (first-order) price-yield approximation; convexity is the second-order correction term."
+    },
+    {
+      "term": "Barbell vs Bullet",
+      "def": "Same duration but barbell has higher convexity (more weight in short + long maturities) — outperforms in large rate moves."
+    }
   ],
   "eli3": [
     "Convexity measures the curvature of the price-yield relationship for a bond. Duration gives you the first approximation ('for every 1% rate rise, price falls 5%'), but the actual relationship is curved — the further rates move, the less accurate duration becomes. Convexity captures this curvature.",
@@ -62,7 +80,15 @@
     }
   ],
   "sources": [
-    { "label": "Fabozzi, F.J. — Fixed Income Mathematics, 4th Edition, McGraw-Hill (2006)", "url": "https://www.mhprofessional.com/fixed-income-mathematics-4th-ed-9780071460736-usa" },
-    { "label": "Tuckman, B. & Serrat, A. — Fixed Income Securities: Tools for Today's Markets, 3rd Edition, Wiley (2011)", "url": "https://www.wiley.com/en-us/Fixed+Income+Securities%3A+Tools+for+Today%27s+Markets%2C+3rd+Edition-p-9780470891698" }
-  ]
+    {
+      "label": "Fabozzi, F.J. — Fixed Income Mathematics, 4th Edition, McGraw-Hill (2006)",
+      "url": "https://www.mhprofessional.com/fixed-income-mathematics-4th-ed-9780071460736-usa"
+    },
+    {
+      "label": "Tuckman, B. & Serrat, A. — Fixed Income Securities: Tools for Today's Markets, 3rd Edition, Wiley (2011)",
+      "url": "https://www.wiley.com/en-us/Fixed+Income+Securities%3A+Tools+for+Today%27s+Markets%2C+3rd+Edition-p-9780470891698"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/kfOpCBiSOg4",
+  "youtubeLabel": "Convexity"
 }

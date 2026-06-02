@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "SMB", "def": "Small Minus Big — return of small-cap stocks minus large-cap stocks; captures the size premium." },
-    { "term": "HML", "def": "High Minus Low — return of high B/M (value) stocks minus low B/M (growth) stocks; captures the value premium." },
-    { "term": "B/M Ratio", "def": "Book-to-Market ratio = book value of equity / market cap; high B/M = value stock, low B/M = growth stock." },
-    { "term": "MKT-RF", "def": "Market excess return = Rm − Rf; the CAPM factor capturing systematic market risk." },
-    { "term": "Factor Loading", "def": "Regression coefficient on a factor; measures how much exposure a portfolio has to that risk premium." },
-    { "term": "Factor Premium", "def": "Average excess return of a long-short factor portfolio; compensation for bearing that systematic risk." }
+    {
+      "term": "SMB",
+      "def": "Small Minus Big — return of small-cap stocks minus large-cap stocks; captures the size premium."
+    },
+    {
+      "term": "HML",
+      "def": "High Minus Low — return of high B/M (value) stocks minus low B/M (growth) stocks; captures the value premium."
+    },
+    {
+      "term": "B/M Ratio",
+      "def": "Book-to-Market ratio = book value of equity / market cap; high B/M = value stock, low B/M = growth stock."
+    },
+    {
+      "term": "MKT-RF",
+      "def": "Market excess return = Rm − Rf; the CAPM factor capturing systematic market risk."
+    },
+    {
+      "term": "Factor Loading",
+      "def": "Regression coefficient on a factor; measures how much exposure a portfolio has to that risk premium."
+    },
+    {
+      "term": "Factor Premium",
+      "def": "Average excess return of a long-short factor portfolio; compensation for bearing that systematic risk."
+    }
   ],
   "visualizationType": "factor-returns",
   "eli3": [
@@ -63,7 +81,15 @@
     }
   ],
   "sources": [
-    { "label": "Fama, E.F. & French, K.R. (1993) — Common risk factors in the returns on stocks and bonds, JFE", "url": "https://doi.org/10.1016/0304-405X(93)90023-5" },
-    { "label": "McLean, R.D. & Pontiff, J. (2016) — Does Academic Research Destroy Stock Return Predictability?, JF", "url": "https://doi.org/10.1111/jofi.12365" }
-  ]
+    {
+      "label": "Fama, E.F. & French, K.R. (1993) — Common risk factors in the returns on stocks and bonds, JFE",
+      "url": "https://doi.org/10.1016/0304-405X(93)90023-5"
+    },
+    {
+      "label": "McLean, R.D. & Pontiff, J. (2016) — Does Academic Research Destroy Stock Return Predictability?, JF",
+      "url": "https://doi.org/10.1111/jofi.12365"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/6I9dqE-Wy-g",
+  "youtubeLabel": "Fama French"
 }

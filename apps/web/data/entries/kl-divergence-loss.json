@@ -45,6 +45,7 @@
     {
       "heading": "Jensen-Shannon Divergence and GANs",
       "body": "JS(P||Q) = 0.5 KL(P||M) + 0.5 KL(Q||M) where M = 0.5(P+Q). JSD is symmetric, bounded in [0, log 2], and is a proper metric when square-rooted. Goodfellow et al. (2014) showed that training a GAN's discriminator to optimality causes the generator to minimise JSD(p_data||p_g). When distributions have disjoint support (common in high-dimensional data), JSD = log 2 and gradient vanishes — motivating Wasserstein GAN's use of the earth mover's distance instead. [3]"
+    }
   ],
   "youtubeLabel": "KL Divergence — StatQuest with Josh Starmer",
   "youtubeUrl": "https://www.youtube.com/embed/q0AkK8aYbLY",

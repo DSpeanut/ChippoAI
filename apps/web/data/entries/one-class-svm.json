@@ -21,8 +21,8 @@
     {
       "title": "Novelty detection: distinguish normal vs new classes",
       "body": "Unlike contamination-based methods (Isolation Forest, LOF), One-Class SVM can be set to assume zero anomalies in training data (novelty=True in sklearn) and used strictly for novelty detection: flagging new types of data not seen during training. This is the right framing for: detecting new product categories in a recommendation system, new attack patterns in network security, or new failure modes in manufacturing."
-  ]
-  },
+    }
+  ],
   "deepDiveIntro": [
     "Schölkopf et al. (2001) introduced the One-Class SVM. The primal optimization problem: find a hyperplane in kernel feature space ϕ(x) ∈ F such that most training points are on one side, and the margin from the origin is maximized. Primal: min_{w,ξ,ρ} (1/2)‖w‖² − ρ + (1/νn)Σᵢ ξᵢ, s.t. ⟨w,ϕ(xᵢ)⟩ ≥ ρ − ξᵢ, ξᵢ ≥ 0. The dual involves only kernel evaluations K(xᵢ, xⱼ) = ⟨ϕ(xᵢ), ϕ(xⱼ)⟩, enabling non-linear boundaries via the kernel trick. Decision function: f(x) = sgn(Σᵢ αᵢ K(xᵢ, x) − ρ). Points with f(x) ≥ 0 are inliers; f(x) < 0 are anomalies. [1]",
     "The ν parameter has dual interpretation: (1) it is an upper bound on the fraction of training examples that may be outside the boundary (margin violations), and (2) it is a lower bound on the fraction of training examples that are support vectors. This provides a useful practical guide: set ν ≈ expected contamination rate. For the RBF kernel, gamma controls the width: large gamma → tight boundary around each training point (overfitting); small gamma → smooth, loose boundary. [2]"

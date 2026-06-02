@@ -54,7 +54,15 @@
     }
   ],
   "sources": [
-    { "label": "Campbell, J., Lo, A. & MacKinlay, A.C. — The Econometrics of Financial Markets, Princeton University Press (1997)", "url": "https://press.princeton.edu/books/hardcover/9780691043012/the-econometrics-of-financial-markets" },
-    { "label": "Tuckman, B. & Serrat, A. — Fixed Income Securities: Tools for Today's Markets, 3rd Edition, Wiley (2011)", "url": "https://www.wiley.com/en-us/Fixed+Income+Securities%3A+Tools+for+Today%27s+Markets%2C+3rd+Edition-p-9780470891698" }
-  ]
+    {
+      "label": "Campbell, J., Lo, A. & MacKinlay, A.C. — The Econometrics of Financial Markets, Princeton University Press (1997)",
+      "url": "https://press.princeton.edu/books/hardcover/9780691043012/the-econometrics-of-financial-markets"
+    },
+    {
+      "label": "Tuckman, B. & Serrat, A. — Fixed Income Securities: Tools for Today's Markets, 3rd Edition, Wiley (2011)",
+      "url": "https://www.wiley.com/en-us/Fixed+Income+Securities%3A+Tools+for+Today%27s+Markets%2C+3rd+Edition-p-9780470891698"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/b_cAxh44aNQ",
+  "youtubeLabel": "Yield Curve"
 }

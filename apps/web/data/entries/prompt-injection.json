@@ -63,7 +63,15 @@
     }
   ],
   "sources": [
-    { "label": "OWASP Top 10 for Large Language Model Applications — LLM01: Prompt Injection", "url": "https://owasp.org/www-project-top-10-for-large-language-model-applications/" },
-    { "label": "Greshake et al. (2023) — Not What You've Signed Up For: Compromising Real-World LLM-Integrated Applications with Indirect Prompt Injection", "url": "https://arxiv.org/abs/2302.12173" }
-  ]
+    {
+      "label": "OWASP Top 10 for Large Language Model Applications — LLM01: Prompt Injection",
+      "url": "https://owasp.org/www-project-top-10-for-large-language-model-applications/"
+    },
+    {
+      "label": "Greshake et al. (2023) — Not What You've Signed Up For: Compromising Real-World LLM-Integrated Applications with Indirect Prompt Injection",
+      "url": "https://arxiv.org/abs/2302.12173"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/3tsF7CnsgHM",
+  "youtubeLabel": "Prompt Injection"
 }

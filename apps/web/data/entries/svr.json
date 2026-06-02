@@ -83,7 +83,14 @@
     }
   ],
   "sources": [
-    { "label": "Smola, A.J. & Schölkopf, B. — A Tutorial on Support Vector Regression (Statistics and Computing, 2004)", "url": "https://doi.org/10.1023/B:STCO.0000035301.49549.88" },
-    { "label": "Bishop, C.M. — Pattern Recognition and Machine Learning, Ch. 7.1", "url": "https://www.microsoft.com/en-us/research/publication/pattern-recognition-machine-learning/" }
-  ]
+    {
+      "label": "Smola, A.J. & Schölkopf, B. — A Tutorial on Support Vector Regression (Statistics and Computing, 2004)",
+      "url": "https://doi.org/10.1023/B:STCO.0000035301.49549.88"
+    },
+    {
+      "label": "Bishop, C.M. — Pattern Recognition and Machine Learning, Ch. 7.1",
+      "url": "https://www.microsoft.com/en-us/research/publication/pattern-recognition-machine-learning/"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/_hFKABBFOSM"
 }

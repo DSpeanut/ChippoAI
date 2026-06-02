@@ -60,7 +60,15 @@
     }
   ],
   "sources": [
-    { "label": "Jurafsky & Martin — Speech and Language Processing (3rd ed.), Ch. 3 & Ch. 9", "url": "https://web.stanford.edu/~jurafsky/slp3/" },
-    { "label": "Devlin et al. (2019) — BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding, NAACL 2019", "url": "https://aclanthology.org/N19-1423/" }
-  ]
+    {
+      "label": "Jurafsky & Martin — Speech and Language Processing (3rd ed.), Ch. 3 & Ch. 9",
+      "url": "https://web.stanford.edu/~jurafsky/slp3/"
+    },
+    {
+      "label": "Devlin et al. (2019) — BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding, NAACL 2019",
+      "url": "https://aclanthology.org/N19-1423/"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/PaCmpygFfXo",
+  "youtubeLabel": "Language Modeling"
 }

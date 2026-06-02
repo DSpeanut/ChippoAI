@@ -71,5 +71,7 @@
       "label": "Cho et al. (2014) — Learning Phrase Representations using RNN Encoder-Decoder for SMT, EMNLP 2014 arXiv:1406.1078",
       "url": "https://arxiv.org/abs/1406.1078"
     }
-  ]
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/L8HKweZIOmg",
+  "youtubeLabel": "Seq2Seq"
 }

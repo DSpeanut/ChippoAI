@@ -44,6 +44,7 @@
     {
       "heading": "Nesterov Accelerated SGD",
       "body": "Nesterov (1983) proposed a modification: compute gradient at a look-ahead position (w − β·v) rather than current w. Update: v_{t+1} = β·vₜ + η·∇L(w_t − β·vₜ); w_{t+1} = w_t − v_{t+1}. For convex functions, Nesterov achieves O(1/T²) convergence vs O(1/T) for GD — provably optimal for first-order methods. In deep learning, Nesterov often gives slightly better results than standard momentum because it 'corrects' the momentum step using a more accurate gradient. [1]"
+    }
   ],
   "youtubeLabel": "Gradient Descent — 3Blue1Brown (Neural Networks Ch. 2)",
   "youtubeUrl": "https://www.youtube.com/embed/IHZwWFHWa-w",

@@ -59,7 +59,15 @@
     }
   ],
   "sources": [
-    { "label": "Lewis et al. (2020) — Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks, NeurIPS 2020", "url": "https://arxiv.org/abs/2005.11401" },
-    { "label": "Gao et al. (2023) — Retrieval-Augmented Generation for Large Language Models: A Survey", "url": "https://arxiv.org/abs/2312.10997" }
-  ]
+    {
+      "label": "Lewis et al. (2020) — Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks, NeurIPS 2020",
+      "url": "https://arxiv.org/abs/2005.11401"
+    },
+    {
+      "label": "Gao et al. (2023) — Retrieval-Augmented Generation for Large Language Models: A Survey",
+      "url": "https://arxiv.org/abs/2312.10997"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/RosLeHGBLoY",
+  "youtubeLabel": "Rag"
 }

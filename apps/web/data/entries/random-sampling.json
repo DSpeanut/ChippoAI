@@ -60,7 +60,15 @@
     }
   ],
   "sources": [
-    { "label": "Cochran — Sampling Techniques (3rd ed.), Ch. 2–4", "url": "https://www.wiley.com/en-us/Sampling+Techniques%2C+3rd+Edition-p-9780471162407" },
-    { "label": "Lohr — Sampling: Design and Analysis (2nd ed.), Ch. 2", "url": "https://www.routledge.com/Sampling-Design-and-Analysis/Lohr/p/book/9780367279509" }
-  ]
+    {
+      "label": "Cochran — Sampling Techniques (3rd ed.), Ch. 2–4",
+      "url": "https://www.wiley.com/en-us/Sampling+Techniques%2C+3rd+Edition-p-9780471162407"
+    },
+    {
+      "label": "Lohr — Sampling: Design and Analysis (2nd ed.), Ch. 2",
+      "url": "https://www.routledge.com/Sampling-Design-and-Analysis/Lohr/p/book/9780367279509"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/PdXDLNNXPik",
+  "youtubeLabel": "Random Sampling"
 }

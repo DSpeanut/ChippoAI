@@ -59,7 +59,15 @@
     }
   ],
   "sources": [
-    { "label": "Thakur et al. (2021) — BEIR: A Heterogeneous Benchmark for Zero-shot Evaluation of Information Retrieval Models, NeurIPS 2021", "url": "https://arxiv.org/abs/2104.08663" },
-    { "label": "Sun et al. (2023) — Is ChatGPT Good at Search? Investigating Large Language Models as Re-Ranking Agents, EMNLP 2023", "url": "https://arxiv.org/abs/2304.09542" }
-  ]
+    {
+      "label": "Thakur et al. (2021) — BEIR: A Heterogeneous Benchmark for Zero-shot Evaluation of Information Retrieval Models, NeurIPS 2021",
+      "url": "https://arxiv.org/abs/2104.08663"
+    },
+    {
+      "label": "Sun et al. (2023) — Is ChatGPT Good at Search? Investigating Large Language Models as Re-Ranking Agents, EMNLP 2023",
+      "url": "https://arxiv.org/abs/2304.09542"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/iVTBASjft6A",
+  "youtubeLabel": "Reranking"
 }

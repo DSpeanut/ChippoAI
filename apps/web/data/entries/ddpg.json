@@ -71,5 +71,7 @@
       "label": "Fujimoto, van Hoof & Meger (2018) — Addressing Function Approximation Error in Actor-Critic Methods (TD3), ICML 2018 arXiv:1802.09477",
       "url": "https://arxiv.org/abs/1802.09477"
     }
-  ]
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/6Yd5WnYls_Y",
+  "youtubeLabel": "Ddpg"
 }

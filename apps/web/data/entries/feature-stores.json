@@ -35,7 +35,7 @@
     {
       "heading": "Online Store Materialization",
       "body": "Materialization writes the latest feature values for each entity to the online store. Batch materialization: a Spark/Pandas job reads from the offline store (up to current time), writes one record per entity to Redis. Run on a schedule (hourly, daily) depending on staleness tolerance. Streaming materialization: a Kafka consumer updates the online store as new events arrive — enables sub-minute feature freshness. TTL (time-to-live) on online store entries prevents serving stale features for entities that haven't been seen recently. Feast's materialization-incremental command only processes new data since the last materialization, reducing compute cost. [1]"
-  ],
+    },
     {
       "heading": "Feature Store vs Data Warehouse vs Feature Pipeline",
       "body": "Data warehouse: stores raw and transformed data for analytics. No point-in-time retrieval, no online serving layer, no ML-specific metadata. Feature pipeline (standalone): a Spark/Airflow job that computes features and writes to a table. Fragile — multiple teams maintain separate pipelines, inconsistency risk. Feature store: adds the registry (discoverability and governance), point-in-time correctness for training, and the online store for serving — addressing the limitations of both. Trade-off: feature stores add operational complexity. For small teams (<3 ML engineers), starting with point-in-time correct Parquet files and a Redis serving layer may be sufficient before adopting a full feature store. [1]"

@@ -35,7 +35,7 @@
     {
       "heading": "Overestimation and Double DQN",
       "body": "DQN systematically overestimates Q-values. Cause: the max operator in the TD target selects the action with the highest estimated Q-value — which, due to estimation noise, is biased upward. Formally: E[max_a Q̂(s',a)] ≥ max_a E[Q̂(s',a)] = max_a Q(s',a). van Hasselt et al. (2016) proposed Double DQN: decouple action selection (online network θ) from action evaluation (target network θ⁻): y_DQ = r + γ·Q(s', argmax_{a'} Q(s',a';θ); θ⁻). The online network θ selects the best action; the target network θ⁻ evaluates it. This reduces overestimation bias because the maximum of a noisy estimate used for selection is evaluated by an independent network. Double DQN improved median performance across 49 Atari games by 10–20% over vanilla DQN. [2]"
-  },
+    },
     {
       "heading": "Dueling Network Architecture",
       "body": "Wang et al. (2016) proposed the Dueling DQN architecture: decompose Q(s,a;θ) into V(s;θ) (state-value: how good is this state?) + A(s,a;θ) (advantage: how much better is action a than average?): Q(s,a;θ,α,β) = V(s;θ,β) + (A(s,a;θ,α) − max_{a'} A(s,a';θ,α)). The max subtraction (or mean subtraction: − 1/|A| Σ_{a'} A(s,a';θ,α)) ensures identifiability: V and A are only uniquely determined up to a constant shift. The shared representation is split into two streams at the final hidden layer. Advantage: when actions make little difference (e.g., standing still in Atari Breakout between bounces), the V stream learns quickly from all transitions — V doesn't depend on which action was taken. Dueling DQN improved over Double DQN on 75% of Atari games. [2]"
@@ -71,5 +71,7 @@
       "label": "van Hasselt, Guez & Silver (2016) — Deep Reinforcement Learning with Double Q-learning, AAAI 2016 arXiv:1509.06461",
       "url": "https://arxiv.org/abs/1509.06461"
     }
-  ]
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/EUrWGTCGzlA",
+  "youtubeLabel": "Dqn"
 }

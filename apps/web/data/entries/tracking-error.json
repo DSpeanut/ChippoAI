@@ -53,7 +53,15 @@
     }
   ],
   "sources": [
-    { "label": "Roll, R. (1992) — A Mean/Variance Analysis of Tracking Error, JPM", "url": "https://doi.org/10.3905/jpm.1992.409411" },
-    { "label": "Cremers, M. & Petajisto, A. (2009) — How Active Is Your Fund Manager?, RFS", "url": "https://doi.org/10.1093/rfs/hhp057" }
-  ]
+    {
+      "label": "Roll, R. (1992) — A Mean/Variance Analysis of Tracking Error, JPM",
+      "url": "https://doi.org/10.3905/jpm.1992.409411"
+    },
+    {
+      "label": "Cremers, M. & Petajisto, A. (2009) — How Active Is Your Fund Manager?, RFS",
+      "url": "https://doi.org/10.1093/rfs/hhp057"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/2PYwbVMovD0",
+  "youtubeLabel": "Tracking Error"
 }

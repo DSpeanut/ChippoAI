@@ -60,7 +60,15 @@
     }
   ],
   "sources": [
-    { "label": "Pearl — Causality: Models, Reasoning, and Inference (2nd ed.), Ch. 3", "url": "https://doi.org/10.1017/CBO9780511803161" },
-    { "label": "Hernán & Robins — Causal Inference: What If (2020)", "url": "https://www.hsph.harvard.edu/miguel-hernan/causal-inference-book/" }
-  ]
+    {
+      "label": "Pearl — Causality: Models, Reasoning, and Inference (2nd ed.), Ch. 3",
+      "url": "https://doi.org/10.1017/CBO9780511803161"
+    },
+    {
+      "label": "Hernán & Robins — Causal Inference: What If (2020)",
+      "url": "https://www.hsph.harvard.edu/miguel-hernan/causal-inference-book/"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/Wl5nSDTL66U",
+  "youtubeLabel": "Confounding Variables"
 }

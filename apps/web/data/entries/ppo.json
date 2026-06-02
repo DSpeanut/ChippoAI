@@ -71,5 +71,7 @@
       "label": "Ouyang et al. (2022) — Training language models to follow instructions with human feedback (InstructGPT), NeurIPS 2022 arXiv:2203.02155",
       "url": "https://arxiv.org/abs/2203.02155"
     }
-  ]
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/hlv79rcHws0",
+  "youtubeLabel": "Ppo"
 }

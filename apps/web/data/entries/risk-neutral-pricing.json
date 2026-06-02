@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Risk-Neutral Measure (Q)", "def": "Probability measure under which all assets grow at the risk-free rate; simplifies derivative pricing." },
-    { "term": "Girsanov Theorem", "def": "Changes the drift of a Brownian motion by changing the probability measure; basis for risk-neutral pricing." },
-    { "term": "Martingale", "def": "A process with no predictable drift under a given measure; discounted asset prices are martingales under Q." },
-    { "term": "No-Arbitrage", "def": "The assumption that no risk-free profit exists; the foundation of risk-neutral pricing — if no arbitrage, Q exists." },
-    { "term": "Radon-Nikodym Derivative", "def": "The 'change of measure' factor dQ/dP; relates real-world (P) and risk-neutral (Q) probabilities." },
-    { "term": "Risk Premium (λ)", "def": "Market price of risk = (μ − r) / σ; adjusts real-world drift to risk-neutral drift in the Girsanov transformation." }
+    {
+      "term": "Risk-Neutral Measure (Q)",
+      "def": "Probability measure under which all assets grow at the risk-free rate; simplifies derivative pricing."
+    },
+    {
+      "term": "Girsanov Theorem",
+      "def": "Changes the drift of a Brownian motion by changing the probability measure; basis for risk-neutral pricing."
+    },
+    {
+      "term": "Martingale",
+      "def": "A process with no predictable drift under a given measure; discounted asset prices are martingales under Q."
+    },
+    {
+      "term": "No-Arbitrage",
+      "def": "The assumption that no risk-free profit exists; the foundation of risk-neutral pricing — if no arbitrage, Q exists."
+    },
+    {
+      "term": "Radon-Nikodym Derivative",
+      "def": "The 'change of measure' factor dQ/dP; relates real-world (P) and risk-neutral (Q) probabilities."
+    },
+    {
+      "term": "Risk Premium (λ)",
+      "def": "Market price of risk = (μ − r) / σ; adjusts real-world drift to risk-neutral drift in the Girsanov transformation."
+    }
   ],
   "eli3": [
     "Risk-neutral pricing is a clever mathematical trick for valuing derivatives. Instead of using the real probability of future outcomes (which requires knowing investors' risk preferences), we pretend we're in a world where all investors are indifferent to risk. In this 'risk-neutral world,' all assets earn the risk-free rate on average, and derivative prices are simply expected payoffs discounted at the risk-free rate.",
@@ -61,7 +79,15 @@
     }
   ],
   "sources": [
-    { "label": "Harrison, J.M. & Pliska, S.R. (1981) — Martingales and Stochastic Integrals in the Theory of Continuous Trading, SPA", "url": "https://doi.org/10.1016/0304-4149(81)90026-0" },
-    { "label": "Shreve, S.E. — Stochastic Calculus for Finance II, Springer", "url": "https://link.springer.com/book/10.1007/978-1-4757-4296-1" }
-  ]
+    {
+      "label": "Harrison, J.M. & Pliska, S.R. (1981) — Martingales and Stochastic Integrals in the Theory of Continuous Trading, SPA",
+      "url": "https://doi.org/10.1016/0304-4149(81)90026-0"
+    },
+    {
+      "label": "Shreve, S.E. — Stochastic Calculus for Finance II, Springer",
+      "url": "https://link.springer.com/book/10.1007/978-1-4757-4296-1"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/TnS8kI_KuJc",
+  "youtubeLabel": "Risk Neutral Pricing"
 }

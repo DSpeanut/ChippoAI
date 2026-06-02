@@ -59,6 +59,11 @@
     }
   ],
   "sources": [
-    { "label": "Vaswani et al. (2017) — Attention Is All You Need, NeurIPS 2017", "url": "https://arxiv.org/abs/1706.03762" }
-  ]
+    {
+      "label": "Vaswani et al. (2017) — Attention Is All You Need, NeurIPS 2017",
+      "url": "https://arxiv.org/abs/1706.03762"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/Vpjb1lu0MDk",
+  "youtubeLabel": "Causal Lm"
 }

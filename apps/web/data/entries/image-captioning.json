@@ -58,7 +58,15 @@
     }
   ],
   "sources": [
-    { "label": "Xu et al. (2015) — Show, Attend and Tell: Neural Image Caption Generation with Visual Attention, ICML 2015", "url": "https://arxiv.org/abs/1502.03044" },
-    { "label": "Li et al. (2022) — BLIP: Bootstrapping Language-Image Pre-training for Unified Vision-Language Understanding and Generation, ICML 2022", "url": "https://arxiv.org/abs/2201.12086" }
-  ]
+    {
+      "label": "Xu et al. (2015) — Show, Attend and Tell: Neural Image Caption Generation with Visual Attention, ICML 2015",
+      "url": "https://arxiv.org/abs/1502.03044"
+    },
+    {
+      "label": "Li et al. (2022) — BLIP: Bootstrapping Language-Image Pre-training for Unified Vision-Language Understanding and Generation, ICML 2022",
+      "url": "https://arxiv.org/abs/2201.12086"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/LWIZj_RJYjM",
+  "youtubeLabel": "Image Captioning"
 }

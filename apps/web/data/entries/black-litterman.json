@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Equilibrium Return", "def": "Implied return from the market-cap-weighted portfolio via reverse optimisation: Π = δΣw_mkt." },
-    { "term": "Views (P, Q, Ω)", "def": "Manager's return forecasts: P = pick matrix, Q = view returns, Ω = view uncertainty matrix." },
-    { "term": "Posterior Return", "def": "BL blended return: combination of equilibrium priors and manager views, weighted by view confidence." },
-    { "term": "Tau (τ)", "def": "Scalar controlling how much weight to give the prior vs. the views; typically 0.025–0.1." },
-    { "term": "Reverse Optimisation", "def": "Back out implied expected returns from market weights: Π = δΣw_mkt; the starting point for BL." },
-    { "term": "Shrinkage", "def": "Pulling extreme estimates toward a prior; BL is a Bayesian shrinkage of MVO inputs toward market equilibrium." }
+    {
+      "term": "Equilibrium Return",
+      "def": "Implied return from the market-cap-weighted portfolio via reverse optimisation: Π = δΣw_mkt."
+    },
+    {
+      "term": "Views (P, Q, Ω)",
+      "def": "Manager's return forecasts: P = pick matrix, Q = view returns, Ω = view uncertainty matrix."
+    },
+    {
+      "term": "Posterior Return",
+      "def": "BL blended return: combination of equilibrium priors and manager views, weighted by view confidence."
+    },
+    {
+      "term": "Tau (τ)",
+      "def": "Scalar controlling how much weight to give the prior vs. the views; typically 0.025–0.1."
+    },
+    {
+      "term": "Reverse Optimisation",
+      "def": "Back out implied expected returns from market weights: Π = δΣw_mkt; the starting point for BL."
+    },
+    {
+      "term": "Shrinkage",
+      "def": "Pulling extreme estimates toward a prior; BL is a Bayesian shrinkage of MVO inputs toward market equilibrium."
+    }
   ],
   "eli3": [
     "The Black-Litterman model solves a key problem with Markowitz optimisation: if you just maximise expected returns subject to risk, the optimal portfolio is extremely sensitive to small changes in your expected return assumptions and produces crazy concentrated positions. Black and Litterman fixed this by starting from a sensible 'equilibrium' portfolio (the market-cap-weighted portfolio) and then blending in your own views — quantitatively and consistently.",
@@ -61,7 +79,15 @@
     }
   ],
   "sources": [
-    { "label": "Black, F. & Litterman, R. (1992) — Global Portfolio Optimization, FAJ", "url": "https://doi.org/10.2469/faj.v48.n5.28" },
-    { "label": "Idzorek, T. (2005) — A Step-by-Step Guide to the Black-Litterman Model", "url": "https://faculty.fuqua.duke.edu/~charvey/Teaching/BA453_2006/Idzorek_onBL.pdf" }
-  ]
+    {
+      "label": "Black, F. & Litterman, R. (1992) — Global Portfolio Optimization, FAJ",
+      "url": "https://doi.org/10.2469/faj.v48.n5.28"
+    },
+    {
+      "label": "Idzorek, T. (2005) — A Step-by-Step Guide to the Black-Litterman Model",
+      "url": "https://faculty.fuqua.duke.edu/~charvey/Teaching/BA453_2006/Idzorek_onBL.pdf"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/RGw2qYWPigA",
+  "youtubeLabel": "Black Litterman"
 }

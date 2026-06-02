@@ -39,6 +39,7 @@
     {
       "heading": "Micro-batch as a Middle Ground",
       "body": "Spark Structured Streaming uses micro-batch processing: it accumulates events in a very small window (100ms–1s), then processes them as a mini-batch. This reuses Spark's mature batch optimizer (Catalyst), provides exactly-once semantics, and achieves sub-second latency — sufficient for most 'near real-time' use cases. True streaming (Flink) achieves sub-100ms latency with more complex stateful event-by-event processing. For ML inference pipelines where 1-second latency is acceptable, Spark Structured Streaming is often preferred over full streaming due to operational simplicity. [1]"
+    }
   ],
   "youtubeLabel": "Batch vs Stream Processing — Databricks",
   "youtubeUrl": "https://www.youtube.com/embed/nkq_9RpGkgU",

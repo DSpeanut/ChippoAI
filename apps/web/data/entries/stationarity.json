@@ -59,7 +59,15 @@
     }
   ],
   "sources": [
-    { "label": "Hamilton — Time Series Analysis, Ch. 15–17", "url": "https://press.princeton.edu/books/hardcover/9780691042893/time-series-analysis" },
-    { "label": "Box, Jenkins, Reinsel & Ljung — Time Series Analysis: Forecasting and Control (5th ed.), Ch. 2", "url": "https://www.wiley.com/en-us/Time+Series+Analysis%3A+Forecasting+and+Control%2C+5th+Edition-p-9781118675021" }
-  ]
+    {
+      "label": "Hamilton — Time Series Analysis, Ch. 15–17",
+      "url": "https://press.princeton.edu/books/hardcover/9780691042893/time-series-analysis"
+    },
+    {
+      "label": "Box, Jenkins, Reinsel & Ljung — Time Series Analysis: Forecasting and Control (5th ed.), Ch. 2",
+      "url": "https://www.wiley.com/en-us/Time+Series+Analysis%3A+Forecasting+and+Control%2C+5th+Edition-p-9781118675021"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/gDn-V08ZxfY",
+  "youtubeLabel": "Stationarity"
 }

@@ -71,5 +71,7 @@
       "label": "Luong, Pham & Manning (2015) — Effective Approaches to Attention-based Neural Machine Translation, EMNLP 2015 arXiv:1508.04025",
       "url": "https://arxiv.org/abs/1508.04025"
     }
-  ]
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/eMlx5fFNoYc",
+  "youtubeLabel": "Attention Mechanism"
 }

@@ -49,7 +49,7 @@
     {
       "heading": "Extension to Multiple Features",
       "body": "With p features, polynomial expansion includes all monomials up to degree d: x₁, x₂, x₁², x₁x₂, x₂², etc. The number of terms grows as O(pᵈ) — for p = 10, d = 3 this is over 200 terms. Interaction terms (x₁x₂) capture feature interactions. Regularise with Ridge or Lasso to control the combinatorial explosion; or use a kernel method (polynomial kernel in SVR/SVM) which implicitly computes the expansion without materialising it. [2]"
-  }
+    }
   ],
   "youtubeLabel": "StatQuest: Polynomial Regression",
   "takeaways": [
@@ -82,7 +82,14 @@
     }
   ],
   "sources": [
-    { "label": "James et al. — An Introduction to Statistical Learning, Ch. 7.1", "url": "https://www.statlearning.com/" },
-    { "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 5.1–5.2", "url": "https://hastie.su.domains/ElemStatLearn/" }
-  ]
+    {
+      "label": "James et al. — An Introduction to Statistical Learning, Ch. 7.1",
+      "url": "https://www.statlearning.com/"
+    },
+    {
+      "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 5.1–5.2",
+      "url": "https://hastie.su.domains/ElemStatLearn/"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/UedwCvFGlvU"
 }

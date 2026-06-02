@@ -35,7 +35,7 @@
     {
       "heading": "ReLU and the Dead Neuron Problem",
       "body": "ReLU f(x) = max(0, x) has gradient 1 for x > 0 and 0 for x ≤ 0. The zero gradient for x ≤ 0 causes dead neurons: if a neuron's pre-activation is consistently negative (e.g., after a large negative gradient update to its incoming weights), it will output 0 and receive 0 gradient forever — its weights will never update again. In practice, 10–40% of ReLU neurons die in poorly tuned networks. Mitigations: (1) Leaky ReLU f(x) = max(αx, x) with α ≈ 0.01 — small gradient even for negative inputs; (2) Parametric ReLU (PReLU) — α is learned; (3) ELU f(x) = x if x≥0, α(e^x − 1) if x<0 — smooth negative region, negative saturation at −α; (4) careful weight initialisation (He init) and low learning rates. [1]"
-  },
+    },
     {
       "heading": "GELU and Swish — Modern Transformer Activations",
       "body": "GELU (Hendrycks & Gimpel, 2016) is defined as x·Φ(x) where Φ is the cumulative distribution function of the standard normal. The intuition: each input is multiplied by the probability that a standard normal draw is less than it — inputs in the negative regime are attenuated stochastically. In practice the fast approximation GELU(x) ≈ 0.5x(1 + tanh(√(2/π)(x + 0.044715x³))) is used. GELU is smooth everywhere (no kink at zero like ReLU) and has been found to outperform ReLU on language tasks, becoming the standard in BERT, GPT-2, and subsequent transformers. Swish (Ramachandran et al., 2017) is defined as x·σ(x) — very similar to GELU in shape. Both provide small negative outputs for slightly negative inputs, which acts as a soft gate and improves gradient flow. [2]"
@@ -71,5 +71,7 @@
       "label": "Hendrycks & Gimpel (2016) — Gaussian Error Linear Units (GELUs), arXiv:1606.08415",
       "url": "https://arxiv.org/abs/1606.08415"
     }
-  ]
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/v1MhJs4A1i4",
+  "youtubeLabel": "Activation Functions"
 }

@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Pairs Trading", "def": "Long the cheap stock, short the expensive one in a historically correlated pair; profit when prices revert." },
-    { "term": "Cointegration", "def": "Two non-stationary series have a stationary linear combination; the statistical basis for pairs trading." },
-    { "term": "Z-Score", "def": "Number of standard deviations the spread is from its mean; z > 2 typically triggers a trade in stat arb." },
-    { "term": "Mean Reversion", "def": "The tendency of a spread or price to return to its historical average after deviating." },
-    { "term": "Spread", "def": "The difference (or ratio) between two related securities; stat arb profits when this spread mean-reverts." },
-    { "term": "Half-Life", "def": "Expected time for the spread to revert halfway to the mean; estimated from the OU process mean-reversion parameter." }
+    {
+      "term": "Pairs Trading",
+      "def": "Long the cheap stock, short the expensive one in a historically correlated pair; profit when prices revert."
+    },
+    {
+      "term": "Cointegration",
+      "def": "Two non-stationary series have a stationary linear combination; the statistical basis for pairs trading."
+    },
+    {
+      "term": "Z-Score",
+      "def": "Number of standard deviations the spread is from its mean; z > 2 typically triggers a trade in stat arb."
+    },
+    {
+      "term": "Mean Reversion",
+      "def": "The tendency of a spread or price to return to its historical average after deviating."
+    },
+    {
+      "term": "Spread",
+      "def": "The difference (or ratio) between two related securities; stat arb profits when this spread mean-reverts."
+    },
+    {
+      "term": "Half-Life",
+      "def": "Expected time for the spread to revert halfway to the mean; estimated from the OU process mean-reversion parameter."
+    }
   ],
   "eli3": [
     "Statistical arbitrage (stat arb) is a quantitative trading strategy that exploits small, temporary mispricings between related securities using statistical models. Unlike classical arbitrage (risk-free profit from identical assets at different prices), stat arb involves probabilistic, not certain, profits — you make money on average across many trades, not on every single trade.",
@@ -61,7 +79,15 @@
     }
   ],
   "sources": [
-    { "label": "Gatev, E., Goetzmann, W.N. & Rouwenhorst, K.G. (2006) — Pairs Trading: Performance of a Relative-Value Arbitrage Rule, RFS", "url": "https://doi.org/10.1093/rfs/hhj020" },
-    { "label": "Khandani, A.E. & Lo, A.W. (2011) — What Happened To The Quants In August 2007?, JIM", "url": "https://doi.org/10.3905/jpm.2008.35.1.29" }
-  ]
+    {
+      "label": "Gatev, E., Goetzmann, W.N. & Rouwenhorst, K.G. (2006) — Pairs Trading: Performance of a Relative-Value Arbitrage Rule, RFS",
+      "url": "https://doi.org/10.1093/rfs/hhj020"
+    },
+    {
+      "label": "Khandani, A.E. & Lo, A.W. (2011) — What Happened To The Quants In August 2007?, JIM",
+      "url": "https://doi.org/10.3905/jpm.2008.35.1.29"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/g-qvFjvyqcs",
+  "youtubeLabel": "Statistical Arbitrage"
 }

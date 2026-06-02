@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Beta (β)", "def": "Sensitivity of an asset's returns to the market; β=1 moves with the market, β=2 moves twice as much." },
-    { "term": "Market Risk Premium", "def": "E[Rm] − r_f: the extra return demanded for holding the market portfolio over risk-free assets; historically ~5–6%." },
-    { "term": "Alpha (α)", "def": "Return above the CAPM prediction; positive α means the asset earned more than its beta justified." },
-    { "term": "SML", "def": "Security Market Line — plots expected return vs beta; assets on the SML are fairly priced; above = positive α." },
-    { "term": "Systematic Risk", "def": "Market risk that cannot be diversified away; CAPM says only systematic risk is compensated by higher expected return." },
-    { "term": "Risk-Free Rate (r_f)", "def": "Return on a zero-risk asset (typically 3-month T-bill); the baseline against which risk premia are measured." }
+    {
+      "term": "Beta (β)",
+      "def": "Sensitivity of an asset's returns to the market; β=1 moves with the market, β=2 moves twice as much."
+    },
+    {
+      "term": "Market Risk Premium",
+      "def": "E[Rm] − r_f: the extra return demanded for holding the market portfolio over risk-free assets; historically ~5–6%."
+    },
+    {
+      "term": "Alpha (α)",
+      "def": "Return above the CAPM prediction; positive α means the asset earned more than its beta justified."
+    },
+    {
+      "term": "SML",
+      "def": "Security Market Line — plots expected return vs beta; assets on the SML are fairly priced; above = positive α."
+    },
+    {
+      "term": "Systematic Risk",
+      "def": "Market risk that cannot be diversified away; CAPM says only systematic risk is compensated by higher expected return."
+    },
+    {
+      "term": "Risk-Free Rate (r_f)",
+      "def": "Return on a zero-risk asset (typically 3-month T-bill); the baseline against which risk premia are measured."
+    }
   ],
   "visualizationType": "capm-sml",
   "eli3": [
@@ -63,7 +81,15 @@
     }
   ],
   "sources": [
-    { "label": "Sharpe, W.F. (1964) — Capital Asset Prices: A Theory of Market Equilibrium Under Conditions of Risk, Journal of Finance", "url": "https://doi.org/10.2307/2977928" },
-    { "label": "Fama, E. & French, K. (1992) — The Cross-Section of Expected Stock Returns, Journal of Finance", "url": "https://doi.org/10.2307/2329112" }
-  ]
+    {
+      "label": "Sharpe, W.F. (1964) — Capital Asset Prices: A Theory of Market Equilibrium Under Conditions of Risk, Journal of Finance",
+      "url": "https://doi.org/10.2307/2977928"
+    },
+    {
+      "label": "Fama, E. & French, K. (1992) — The Cross-Section of Expected Stock Returns, Journal of Finance",
+      "url": "https://doi.org/10.2307/2329112"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/AJDfQWYpHFY",
+  "youtubeLabel": "Capm"
 }

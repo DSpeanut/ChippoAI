@@ -58,7 +58,15 @@
     }
   ],
   "sources": [
-    { "label": "Jurafsky & Martin — Speech and Language Processing (3rd ed.), Ch. 2", "url": "https://web.stanford.edu/~jurafsky/slp3/" },
-    { "label": "Porter (1980) — An Algorithm for Suffix Stripping, Program 14(3)", "url": "https://doi.org/10.1108/eb046814" }
-  ]
+    {
+      "label": "Jurafsky & Martin — Speech and Language Processing (3rd ed.), Ch. 2",
+      "url": "https://web.stanford.edu/~jurafsky/slp3/"
+    },
+    {
+      "label": "Porter (1980) — An Algorithm for Suffix Stripping, Program 14(3)",
+      "url": "https://doi.org/10.1108/eb046814"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/JpxCt3kvbLk",
+  "youtubeLabel": "Stemming Lemmatization"
 }

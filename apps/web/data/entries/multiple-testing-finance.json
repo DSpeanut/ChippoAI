@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Multiple Testing Problem", "def": "Testing many hypotheses: even if all are false, ~5% will appear significant at the 5% level by chance." },
-    { "term": "p-Hacking", "def": "Iteratively tweaking a strategy or model until p < 0.05; produces false positives that don't survive out-of-sample." },
-    { "term": "Deflated Sharpe Ratio", "def": "Bailey-López de Prado: Sharpe adjusted for the number of trials, skewness, and kurtosis of returns." },
-    { "term": "Bonferroni Correction", "def": "Divide significance threshold by number of tests: α* = α/N. Conservative but controls family-wise error rate." },
-    { "term": "FDR (Benjamini-Hochberg)", "def": "Controls the False Discovery Rate — the fraction of discoveries that are false; less conservative than Bonferroni." },
-    { "term": "Factor Zoo", "def": "Hundreds of published return-predicting factors; most are likely false discoveries from data mining on the same datasets." }
+    {
+      "term": "Multiple Testing Problem",
+      "def": "Testing many hypotheses: even if all are false, ~5% will appear significant at the 5% level by chance."
+    },
+    {
+      "term": "p-Hacking",
+      "def": "Iteratively tweaking a strategy or model until p < 0.05; produces false positives that don't survive out-of-sample."
+    },
+    {
+      "term": "Deflated Sharpe Ratio",
+      "def": "Bailey-López de Prado: Sharpe adjusted for the number of trials, skewness, and kurtosis of returns."
+    },
+    {
+      "term": "Bonferroni Correction",
+      "def": "Divide significance threshold by number of tests: α* = α/N. Conservative but controls family-wise error rate."
+    },
+    {
+      "term": "FDR (Benjamini-Hochberg)",
+      "def": "Controls the False Discovery Rate — the fraction of discoveries that are false; less conservative than Bonferroni."
+    },
+    {
+      "term": "Factor Zoo",
+      "def": "Hundreds of published return-predicting factors; most are likely false discoveries from data mining on the same datasets."
+    }
   ],
   "eli3": [
     "The multiple testing problem in finance: if you test 100 strategies on historical data, roughly 5 will appear to have statistically significant results by pure chance (at the 5% significance level), even if none of them actually work. With hundreds of researchers testing thousands of factor ideas, many 'discoveries' are just random noise dressed up as alpha.",
@@ -61,7 +79,15 @@
     }
   ],
   "sources": [
-    { "label": "Harvey, C.R., Liu, Y. & Zhu, H. (2016) — ... and the Cross-Section of Expected Returns, RFS", "url": "https://doi.org/10.1093/rfs/hhv059" },
-    { "label": "White, H. (2000) — A Reality Check for Data Snooping, Econometrica", "url": "https://doi.org/10.1111/1468-0262.00152" }
-  ]
+    {
+      "label": "Harvey, C.R., Liu, Y. & Zhu, H. (2016) — ... and the Cross-Section of Expected Returns, RFS",
+      "url": "https://doi.org/10.1093/rfs/hhv059"
+    },
+    {
+      "label": "White, H. (2000) — A Reality Check for Data Snooping, Econometrica",
+      "url": "https://doi.org/10.1111/1468-0262.00152"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/uGQQ6ti2ncM",
+  "youtubeLabel": "Multiple Testing Finance"
 }

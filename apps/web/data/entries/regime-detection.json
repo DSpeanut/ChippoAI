@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Market Regime", "def": "A distinct market state (bull/bear, high/low volatility, risk-on/off) with characteristic return distributions." },
-    { "term": "HMM", "def": "Hidden Markov Model — models regimes as latent states; observed returns are emitted from the current hidden regime." },
-    { "term": "GARCH", "def": "Generalised Autoregressive Conditional Heteroskedasticity — models time-varying volatility; high vol clusters with high vol." },
-    { "term": "Change Point", "def": "A date where the statistical properties of returns shift; detected by CUSUM, Bayesian Online CP Detection, etc." },
-    { "term": "Recession Indicator", "def": "Macro signal (yield curve, PMI, unemployment) used to identify economic regime; leads equity returns by 6–12 months." },
-    { "term": "Regime-Conditional Allocation", "def": "Adjust factor/asset weights based on detected regime; e.g. favour quality/defensive in bear regimes." }
+    {
+      "term": "Market Regime",
+      "def": "A distinct market state (bull/bear, high/low volatility, risk-on/off) with characteristic return distributions."
+    },
+    {
+      "term": "HMM",
+      "def": "Hidden Markov Model — models regimes as latent states; observed returns are emitted from the current hidden regime."
+    },
+    {
+      "term": "GARCH",
+      "def": "Generalised Autoregressive Conditional Heteroskedasticity — models time-varying volatility; high vol clusters with high vol."
+    },
+    {
+      "term": "Change Point",
+      "def": "A date where the statistical properties of returns shift; detected by CUSUM, Bayesian Online CP Detection, etc."
+    },
+    {
+      "term": "Recession Indicator",
+      "def": "Macro signal (yield curve, PMI, unemployment) used to identify economic regime; leads equity returns by 6–12 months."
+    },
+    {
+      "term": "Regime-Conditional Allocation",
+      "def": "Adjust factor/asset weights based on detected regime; e.g. favour quality/defensive in bear regimes."
+    }
   ],
   "eli3": [
     "Financial markets don't behave the same way all the time. In bull markets, momentum works well and value lags; in bear markets or recessions, quality and defensive factors outperform while momentum crashes. Regime detection is the process of identifying which market 'state' you're currently in so you can allocate to strategies that work in that regime.",
@@ -61,7 +79,15 @@
     }
   ],
   "sources": [
-    { "label": "Hamilton, J.D. (1989) — A New Approach to the Economic Analysis of Nonstationary Time Series, Econometrica", "url": "https://doi.org/10.2307/1912559" },
-    { "label": "Asness, C. et al. (2017) — Factor Momentum Everywhere, JPM", "url": "https://doi.org/10.3905/jpm.2018.2.040" }
-  ]
+    {
+      "label": "Hamilton, J.D. (1989) — A New Approach to the Economic Analysis of Nonstationary Time Series, Econometrica",
+      "url": "https://doi.org/10.2307/1912559"
+    },
+    {
+      "label": "Asness, C. et al. (2017) — Factor Momentum Everywhere, JPM",
+      "url": "https://doi.org/10.3905/jpm.2018.2.040"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/DEalMqoYbzc",
+  "youtubeLabel": "Regime Detection"
 }

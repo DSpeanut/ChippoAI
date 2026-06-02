@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Sharpe Ratio", "def": "(Return − r_f) / σ — risk-adjusted return per unit of total volatility; higher = better." },
-    { "term": "Risk-Free Rate (r_f)", "def": "The baseline return requiring no risk; subtracted so only compensated risk-taking is measured." },
-    { "term": "Standard Deviation (σ)", "def": "Measures total return volatility; denominator of Sharpe; captures both upside and downside fluctuations." },
-    { "term": "Sortino Ratio", "def": "Like Sharpe but divides by downside deviation only — penalises only harmful volatility, not upside." },
-    { "term": "Calmar Ratio", "def": "CAGR / Max Drawdown — an alternative risk-adjusted metric popular in alternative investments." },
-    { "term": "Information Ratio (IR)", "def": "Active return / tracking error — the Sharpe ratio of active management relative to a benchmark." }
+    {
+      "term": "Sharpe Ratio",
+      "def": "(Return − r_f) / σ — risk-adjusted return per unit of total volatility; higher = better."
+    },
+    {
+      "term": "Risk-Free Rate (r_f)",
+      "def": "The baseline return requiring no risk; subtracted so only compensated risk-taking is measured."
+    },
+    {
+      "term": "Standard Deviation (σ)",
+      "def": "Measures total return volatility; denominator of Sharpe; captures both upside and downside fluctuations."
+    },
+    {
+      "term": "Sortino Ratio",
+      "def": "Like Sharpe but divides by downside deviation only — penalises only harmful volatility, not upside."
+    },
+    {
+      "term": "Calmar Ratio",
+      "def": "CAGR / Max Drawdown — an alternative risk-adjusted metric popular in alternative investments."
+    },
+    {
+      "term": "Information Ratio (IR)",
+      "def": "Active return / tracking error — the Sharpe ratio of active management relative to a benchmark."
+    }
   ],
   "visualizationType": "sharpe-cml",
   "eli3": [
@@ -63,7 +81,15 @@
     }
   ],
   "sources": [
-    { "label": "Sharpe, W.F. (1966) — Mutual Fund Performance, Journal of Business", "url": "https://doi.org/10.1086/294846" },
-    { "label": "Lo, A.W. (2002) — The Statistics of Sharpe Ratios, Financial Analysts Journal", "url": "https://doi.org/10.2469/faj.v58.n4.2453" }
-  ]
+    {
+      "label": "Sharpe, W.F. (1966) — Mutual Fund Performance, Journal of Business",
+      "url": "https://doi.org/10.1086/294846"
+    },
+    {
+      "label": "Lo, A.W. (2002) — The Statistics of Sharpe Ratios, Financial Analysts Journal",
+      "url": "https://doi.org/10.2469/faj.v58.n4.2453"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/9HD6xo2iO1g",
+  "youtubeLabel": "Sharpe Ratio"
 }

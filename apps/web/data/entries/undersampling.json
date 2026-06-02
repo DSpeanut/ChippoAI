@@ -21,8 +21,8 @@
     {
       "title": "EasyEnsemble and BalancedBagging",
       "body": "A principled approach: train multiple classifiers, each on a randomly undersampled version of the data, and combine by voting (EasyEnsemble) or averaging (BalancedBaggingClassifier). This uses all majority data across the ensemble without any single model seeing all majority examples. BalancedRandomForestClassifier and EasyEnsembleClassifier in imblearn implement this. Often outperforms both oversampling and single-model undersampling because variance reduction from the ensemble compensates for bias from undersampling."
-  ]
-  },
+    }
+  ],
   "deepDiveIntro": [
     "Random undersampling samples n_minority × (1/sampling_strategy) majority examples uniformly at random (without replacement), discarding the rest. This is the simplest method but introduces high variance in which majority examples are included — different random seeds give different models. NearMiss addresses this by selecting majority examples that are most relevant to the decision boundary (those closest to the minority class). Three variants by He et al. (2009): NearMiss-1 selects majority samples with the smallest average distance to their k nearest minority neighbours; NearMiss-2 selects those with smallest average distance to the k farthest minority neighbours; NearMiss-3 retains majority samples close to at least one minority sample. [1]",
     "Edited Nearest Neighbours (ENN) removes any sample (from the majority class, or both classes) whose class label disagrees with the majority vote of its k nearest neighbours. This cleans boundary noise rather than balancing class counts — ENN alone rarely achieves the desired class ratio but is useful as a post-processing step after oversampling to remove noisy synthetic samples introduced by SMOTE. [2]"

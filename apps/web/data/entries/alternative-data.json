@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Alternative Data", "def": "Non-traditional investment data: satellite imagery, credit card transactions, web traffic, social media, job postings." },
-    { "term": "Signal Decay", "def": "How quickly alt data alpha fades after publication or widespread adoption; faster than traditional factors." },
-    { "term": "MNPI", "def": "Material Non-Public Information — trading on MNPI is illegal; alt data legal compliance requires careful sourcing." },
-    { "term": "NLP Sentiment", "def": "Extracting positive/negative signals from news, earnings calls, or social media using NLP; predicts short-term returns." },
-    { "term": "Web Scraping", "def": "Automated data collection from websites; common alt data source but requires ToS compliance and data cleaning." },
-    { "term": "Data Exclusivity", "def": "Period when only one fund has access to a new dataset; source of temporary alpha before the edge is arbitraged away." }
+    {
+      "term": "Alternative Data",
+      "def": "Non-traditional investment data: satellite imagery, credit card transactions, web traffic, social media, job postings."
+    },
+    {
+      "term": "Signal Decay",
+      "def": "How quickly alt data alpha fades after publication or widespread adoption; faster than traditional factors."
+    },
+    {
+      "term": "MNPI",
+      "def": "Material Non-Public Information — trading on MNPI is illegal; alt data legal compliance requires careful sourcing."
+    },
+    {
+      "term": "NLP Sentiment",
+      "def": "Extracting positive/negative signals from news, earnings calls, or social media using NLP; predicts short-term returns."
+    },
+    {
+      "term": "Web Scraping",
+      "def": "Automated data collection from websites; common alt data source but requires ToS compliance and data cleaning."
+    },
+    {
+      "term": "Data Exclusivity",
+      "def": "Period when only one fund has access to a new dataset; source of temporary alpha before the edge is arbitraged away."
+    }
   ],
   "eli3": [
     "Alternative data in finance refers to any data used for investment decisions that is not traditional financial data (prices, earnings, balance sheets). Examples: satellite imagery of retailer parking lots to estimate store traffic before earnings, credit card transaction data to predict quarterly revenue, social media sentiment to gauge investor attention, job postings to measure company growth plans.",
@@ -61,7 +79,15 @@
     }
   ],
   "sources": [
-    { "label": "Kolanovic, M. & Krishnamachari, R. (2017) — Big Data and AI Strategies, J.P. Morgan", "url": "https://www.jpmorgan.com/insights/research/quantitative-research-report" },
-    { "label": "Lopez de Prado, M. — Machine Learning for Asset Managers, Cambridge University Press", "url": "https://www.cambridge.org/core/books/machine-learning-for-asset-managers/6D9211305EA2E425D33A9F38D0AE3545" }
-  ]
+    {
+      "label": "Kolanovic, M. & Krishnamachari, R. (2017) — Big Data and AI Strategies, J.P. Morgan",
+      "url": "https://www.jpmorgan.com/insights/research/quantitative-research-report"
+    },
+    {
+      "label": "Lopez de Prado, M. — Machine Learning for Asset Managers, Cambridge University Press",
+      "url": "https://www.cambridge.org/core/books/machine-learning-for-asset-managers/6D9211305EA2E425D33A9F38D0AE3545"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/KhyTwsxHzjQ",
+  "youtubeLabel": "Alternative Data"
 }

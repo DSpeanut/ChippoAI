@@ -2,8 +2,8 @@
   "eli3": [
     "Parameter servers (PS) is an architecture for distributed training where separate machines store and manage model parameters, while worker machines compute gradients. Like a central repository that workers read from and write to.",
     "Workers fetch parameters, compute gradients on local data, send gradients to PS, which updates parameters. PS can be sharded (different PS machines hold different parameters) for scale.",
-  "  "Prior approach for large-scale training (Google DistBelief, MXNet, early TensorFlow). Being replaced by AllReduce-based data parallelism (Horovod, DDP) for most cases, but PS still useful for specific scenarios like large-scale recommendation systems."
-  ]
+    "Prior approach for large-scale training (Google DistBelief, MXNet, early TensorFlow). Being replaced by AllReduce-based data parallelism (Horovod, DDP) for most cases, but PS still useful for specific scenarios like large-scale recommendation systems."
+  ],
   "whenWhy": [
     {
       "title": "Large-scale recommendation systems",

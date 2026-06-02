@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Efficient Frontier", "def": "The set of portfolios that maximise expected return for each level of risk — no other portfolio dominates them." },
-    { "term": "GMV Portfolio", "def": "Global Minimum Variance portfolio — the leftmost point of the frontier with the lowest achievable portfolio variance." },
-    { "term": "CML", "def": "Capital Market Line — the straight line from the risk-free rate tangent to the risky efficient frontier; highest Sharpe slope." },
-    { "term": "Tangency Portfolio", "def": "The risky portfolio with the highest Sharpe ratio; the tangent point between the CML and the efficient frontier." },
-    { "term": "Covariance (Σ)", "def": "A matrix measuring how asset returns move together; the key input to MVO that drives diversification benefits." },
-    { "term": "Two-Fund Separation", "def": "Theorem: all investors hold the same tangency portfolio combined with different amounts of the risk-free asset." }
+    {
+      "term": "Efficient Frontier",
+      "def": "The set of portfolios that maximise expected return for each level of risk — no other portfolio dominates them."
+    },
+    {
+      "term": "GMV Portfolio",
+      "def": "Global Minimum Variance portfolio — the leftmost point of the frontier with the lowest achievable portfolio variance."
+    },
+    {
+      "term": "CML",
+      "def": "Capital Market Line — the straight line from the risk-free rate tangent to the risky efficient frontier; highest Sharpe slope."
+    },
+    {
+      "term": "Tangency Portfolio",
+      "def": "The risky portfolio with the highest Sharpe ratio; the tangent point between the CML and the efficient frontier."
+    },
+    {
+      "term": "Covariance (Σ)",
+      "def": "A matrix measuring how asset returns move together; the key input to MVO that drives diversification benefits."
+    },
+    {
+      "term": "Two-Fund Separation",
+      "def": "Theorem: all investors hold the same tangency portfolio combined with different amounts of the risk-free asset."
+    }
   ],
   "visualizationType": "efficient-frontier",
   "eli3": [
@@ -63,7 +81,15 @@
     }
   ],
   "sources": [
-    { "label": "Markowitz, H. (1952) — Portfolio Selection, Journal of Finance", "url": "https://doi.org/10.2307/2975974" },
-    { "label": "Michaud, R. (1998) — Efficient Asset Management: A Practical Guide to Stock Portfolio Optimization and Asset Allocation, Harvard Business School Press", "url": "https://www.hbs.edu/faculty/Pages/item.aspx?num=10419" }
-  ]
+    {
+      "label": "Markowitz, H. (1952) — Portfolio Selection, Journal of Finance",
+      "url": "https://doi.org/10.2307/2975974"
+    },
+    {
+      "label": "Michaud, R. (1998) — Efficient Asset Management: A Practical Guide to Stock Portfolio Optimization and Asset Allocation, Harvard Business School Press",
+      "url": "https://www.hbs.edu/faculty/Pages/item.aspx?num=10419"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/pwyR9uAM0iU",
+  "youtubeLabel": "Efficient Frontier"
 }

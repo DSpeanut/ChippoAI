@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "In-Sample / Out-of-Sample", "def": "In-sample: data used to build the model. Out-of-sample (OOS): held-out data to test it. OOS performance is what matters." },
-    { "term": "Walk-Forward Test", "def": "Rolling train/test splits that advance through time; mimics live trading without look-ahead bias." },
-    { "term": "Look-Ahead Bias", "def": "Using future data to make a past decision; the most common backtesting error — inflates backtest performance." },
-    { "term": "Survivorship Bias", "def": "Only including stocks/funds that survived; inflates apparent returns because losers (delisted stocks) are excluded." },
-    { "term": "Sharpe Ratio", "def": "Return / risk metric used to evaluate strategy quality; deflated Sharpe accounts for multiple testing." },
-    { "term": "Transaction Costs", "def": "Bid-ask spread + market impact + commissions; realistic backtesting must include these or strategy looks better than it is." }
+    {
+      "term": "In-Sample / Out-of-Sample",
+      "def": "In-sample: data used to build the model. Out-of-sample (OOS): held-out data to test it. OOS performance is what matters."
+    },
+    {
+      "term": "Walk-Forward Test",
+      "def": "Rolling train/test splits that advance through time; mimics live trading without look-ahead bias."
+    },
+    {
+      "term": "Look-Ahead Bias",
+      "def": "Using future data to make a past decision; the most common backtesting error — inflates backtest performance."
+    },
+    {
+      "term": "Survivorship Bias",
+      "def": "Only including stocks/funds that survived; inflates apparent returns because losers (delisted stocks) are excluded."
+    },
+    {
+      "term": "Sharpe Ratio",
+      "def": "Return / risk metric used to evaluate strategy quality; deflated Sharpe accounts for multiple testing."
+    },
+    {
+      "term": "Transaction Costs",
+      "def": "Bid-ask spread + market impact + commissions; realistic backtesting must include these or strategy looks better than it is."
+    }
   ],
   "eli3": [
     "Backtesting is testing a trading strategy on historical data to see how it would have performed in the past. If a strategy would have made money historically, it might be a valid strategy — or it might just have been lucky on that specific historical period. Backtesting is essential but dangerously easy to misuse.",
@@ -61,7 +79,15 @@
     }
   ],
   "sources": [
-    { "label": "Lopez de Prado, M. — Advances in Financial Machine Learning, Wiley", "url": "https://www.wiley.com/en-us/Advances+in+Financial+Machine+Learning-p-9781119482086" },
-    { "label": "Bailey, D.H. & Lopez de Prado, M. (2014) — The Deflated Sharpe Ratio, JPM", "url": "https://doi.org/10.3905/jpm.2014.40.5.094" }
-  ]
+    {
+      "label": "Lopez de Prado, M. — Advances in Financial Machine Learning, Wiley",
+      "url": "https://www.wiley.com/en-us/Advances+in+Financial+Machine+Learning-p-9781119482086"
+    },
+    {
+      "label": "Bailey, D.H. & Lopez de Prado, M. (2014) — The Deflated Sharpe Ratio, JPM",
+      "url": "https://doi.org/10.3905/jpm.2014.40.5.094"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/T3PT4eV8xFU",
+  "youtubeLabel": "Backtesting Framework"
 }

@@ -54,7 +54,15 @@
     }
   ],
   "sources": [
-    { "label": "Hull, J. (2022) — Options, Futures, and Other Derivatives, 11th ed., Pearson", "url": "https://www.pearson.com/en-us/subject-catalog/p/options-futures-and-other-derivatives/P200000005938" },
-    { "label": "Hodges, S. & Neuberger, A. (1989) — Optimal Replication of Contingent Claims under Transaction Costs, Review of Futures Markets", "url": "https://www.researchgate.net/publication/228260446" }
-  ]
+    {
+      "label": "Hull, J. (2022) — Options, Futures, and Other Derivatives, 11th ed., Pearson",
+      "url": "https://www.pearson.com/en-us/subject-catalog/p/options-futures-and-other-derivatives/P200000005938"
+    },
+    {
+      "label": "Hodges, S. & Neuberger, A. (1989) — Optimal Replication of Contingent Claims under Transaction Costs, Review of Futures Markets",
+      "url": "https://www.researchgate.net/publication/228260446"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/ooztpv2gQpE",
+  "youtubeLabel": "Hedging Strategies"
 }

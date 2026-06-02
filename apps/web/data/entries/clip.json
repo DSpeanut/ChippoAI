@@ -59,6 +59,11 @@
     }
   ],
   "sources": [
-    { "label": "Radford et al. (2021) — Learning Transferable Visual Models From Natural Language Supervision (CLIP), ICML 2021", "url": "https://arxiv.org/abs/2103.00020" }
-  ]
+    {
+      "label": "Radford et al. (2021) — Learning Transferable Visual Models From Natural Language Supervision (CLIP), ICML 2021",
+      "url": "https://arxiv.org/abs/2103.00020"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/T9XSU0pKX2E",
+  "youtubeLabel": "Clip"
 }

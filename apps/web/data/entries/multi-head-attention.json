@@ -71,5 +71,7 @@
       "label": "Michel, Levy & Neubig (2019) — Are Sixteen Heads Really Better than One? NeurIPS 2019 arXiv:1905.10650",
       "url": "https://arxiv.org/abs/1905.10650"
     }
-  ]
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/eMlx5fFNoYc",
+  "youtubeLabel": "Multi Head Attention"
 }

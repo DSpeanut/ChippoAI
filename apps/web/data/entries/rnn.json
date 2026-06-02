@@ -71,5 +71,7 @@
       "label": "Bengio, Simard & Frasconi (1994) — Learning Long-Term Dependencies with Gradient Descent is Difficult, IEEE Transactions on Neural Networks 5(2)",
       "url": "https://doi.org/10.1109/72.279181"
     }
-  ]
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/AsNTP8Kwu80",
+  "youtubeLabel": "Rnn"
 }

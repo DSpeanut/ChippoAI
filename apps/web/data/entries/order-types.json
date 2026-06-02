@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Market Order", "def": "Execute immediately at the best available price; guaranteed fill, uncertain price." },
-    { "term": "Limit Order", "def": "Execute only at a specified price or better; certain price, uncertain fill." },
-    { "term": "Stop Order", "def": "Becomes a market order when a trigger price is reached; used to exit positions or protect profits." },
-    { "term": "Stop-Limit", "def": "Becomes a limit order (not market) when triggered; risk of non-execution if price moves through the limit." },
-    { "term": "IOC / FOK", "def": "Immediate-Or-Cancel: fill what you can now, cancel the rest. Fill-Or-Kill: fill the entire order or cancel all." },
-    { "term": "Slippage", "def": "Difference between expected execution price and actual fill price; caused by market impact and timing." }
+    {
+      "term": "Market Order",
+      "def": "Execute immediately at the best available price; guaranteed fill, uncertain price."
+    },
+    {
+      "term": "Limit Order",
+      "def": "Execute only at a specified price or better; certain price, uncertain fill."
+    },
+    {
+      "term": "Stop Order",
+      "def": "Becomes a market order when a trigger price is reached; used to exit positions or protect profits."
+    },
+    {
+      "term": "Stop-Limit",
+      "def": "Becomes a limit order (not market) when triggered; risk of non-execution if price moves through the limit."
+    },
+    {
+      "term": "IOC / FOK",
+      "def": "Immediate-Or-Cancel: fill what you can now, cancel the rest. Fill-Or-Kill: fill the entire order or cancel all."
+    },
+    {
+      "term": "Slippage",
+      "def": "Difference between expected execution price and actual fill price; caused by market impact and timing."
+    }
   ],
   "eli3": [
     "An order type tells the exchange exactly how you want to buy or sell a security. A market order says 'buy immediately at whatever the current price is.' A limit order says 'only buy if the price is at or below $50.' A stop order says 'wait until the price drops to $40, then sell immediately to limit my losses.'",
@@ -38,7 +56,7 @@
     {
       "heading": "Time-in-Force Conditions",
       "body": "Time-in-force (TIF) specifies how long an unexecuted order remains active: Day: order expires at end of the trading day if unfilled (default). GTC (Good Till Cancelled): remains active until explicitly cancelled or filled. IOC (Immediate or Cancel): fill as much as possible immediately; cancel the unfilled remainder. FOK (Fill or Kill): fill the entire order immediately or cancel entirely — no partial fills. GTD (Good Till Date): remains until a specified date. AON (All or None): fill all or cancel — may reduce fill probability but prevents partial fills that create tracking error in indexed portfolios. HFT market makers primarily use IOC for aggressive orders (to avoid being picked off at stale prices) and Day orders for passive limit orders that provide liquidity. [1]"
-  },
+    },
     {
       "heading": "Algorithmic Order Types: VWAP and TWAP",
       "body": "VWAP (Volume-Weighted Average Price): the benchmark price = Σ(price × volume) / Σ(volume) over a period. VWAP algorithms slice a large order to match the market's intraday volume distribution (typically U-shaped: high volume at open and close, low at midday). Goal: execute at or better than VWAP — a VWAP buy order below the VWAP benchmark is considered a successful execution. TWAP (Time-Weighted Average Price): slice the order equally over N time intervals. Simpler than VWAP; avoids participation in high-volume periods (which might increase market impact). POV (Participation of Volume): execute at X% of market volume. Adapts to actual market conditions. Choosing between them: VWAP is appropriate when the investor has no information advantage; TWAP when volume patterns are unreliable; POV when urgency varies dynamically. [2]"
@@ -62,7 +80,15 @@
     }
   ],
   "sources": [
-    { "label": "Harris, L. — Trading and Exchanges: Market Microstructure for Practitioners, Oxford University Press (2002)", "url": "https://global.oup.com/academic/product/trading-and-exchanges-9780195144703" },
-    { "label": "Kissell, R. — The Science of Algorithmic Trading and Portfolio Management, Academic Press (2013)", "url": "https://www.sciencedirect.com/book/9780124016897/the-science-of-algorithmic-trading-and-portfolio-management" }
-  ]
+    {
+      "label": "Harris, L. — Trading and Exchanges: Market Microstructure for Practitioners, Oxford University Press (2002)",
+      "url": "https://global.oup.com/academic/product/trading-and-exchanges-9780195144703"
+    },
+    {
+      "label": "Kissell, R. — The Science of Algorithmic Trading and Portfolio Management, Academic Press (2013)",
+      "url": "https://www.sciencedirect.com/book/9780124016897/the-science-of-algorithmic-trading-and-portfolio-management"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/gJv8d514DWI",
+  "youtubeLabel": "Order Types"
 }

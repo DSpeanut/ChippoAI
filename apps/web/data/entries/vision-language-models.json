@@ -58,7 +58,15 @@
     }
   ],
   "sources": [
-    { "label": "Radford et al. (2021) — Learning Transferable Visual Models From Natural Language Supervision (CLIP), ICML 2021", "url": "https://arxiv.org/abs/2103.00020" },
-    { "label": "Liu et al. (2023) — Visual Instruction Tuning (LLaVA), NeurIPS 2023", "url": "https://arxiv.org/abs/2304.08485" }
-  ]
+    {
+      "label": "Radford et al. (2021) — Learning Transferable Visual Models From Natural Language Supervision (CLIP), ICML 2021",
+      "url": "https://arxiv.org/abs/2103.00020"
+    },
+    {
+      "label": "Liu et al. (2023) — Visual Instruction Tuning (LLaVA), NeurIPS 2023",
+      "url": "https://arxiv.org/abs/2304.08485"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/gBgEcn7AxZs",
+  "youtubeLabel": "Vision Language Models"
 }

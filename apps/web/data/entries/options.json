@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Strike Price (K)", "def": "The pre-agreed price at which the option can be exercised to buy (call) or sell (put) the underlying." },
-    { "term": "Premium", "def": "The upfront price paid to buy an option; the buyer's maximum loss; the seller's maximum gain." },
-    { "term": "Intrinsic Value", "def": "For calls: max(S−K, 0). For puts: max(K−S, 0). The immediate exercise value." },
-    { "term": "Implied Volatility (IV)", "def": "The volatility implied by the market option price via the Black-Scholes formula; the market's forecast of future vol." },
-    { "term": "ITM / ATM / OTM", "def": "In-the-money (profitable to exercise), at-the-money (S≈K), out-of-the-money (not profitable to exercise)." },
-    { "term": "Put-Call Parity", "def": "C − P = S − K·e^(−rT); links call and put prices to prevent arbitrage for European options." }
+    {
+      "term": "Strike Price (K)",
+      "def": "The pre-agreed price at which the option can be exercised to buy (call) or sell (put) the underlying."
+    },
+    {
+      "term": "Premium",
+      "def": "The upfront price paid to buy an option; the buyer's maximum loss; the seller's maximum gain."
+    },
+    {
+      "term": "Intrinsic Value",
+      "def": "For calls: max(S−K, 0). For puts: max(K−S, 0). The immediate exercise value."
+    },
+    {
+      "term": "Implied Volatility (IV)",
+      "def": "The volatility implied by the market option price via the Black-Scholes formula; the market's forecast of future vol."
+    },
+    {
+      "term": "ITM / ATM / OTM",
+      "def": "In-the-money (profitable to exercise), at-the-money (S≈K), out-of-the-money (not profitable to exercise)."
+    },
+    {
+      "term": "Put-Call Parity",
+      "def": "C − P = S − K·e^(−rT); links call and put prices to prevent arbitrage for European options."
+    }
   ],
   "visualizationType": "options-payoff",
   "eli3": [
@@ -63,7 +81,15 @@
     }
   ],
   "sources": [
-    { "label": "Hull, J.C. — Options, Futures, and Other Derivatives, 11th Edition, Pearson (2022)", "url": "https://www.pearson.com/en-us/subject-catalog/p/options-futures-and-other-derivatives/P200000005938" },
-    { "label": "Black, F. & Scholes, M. (1973) — The Pricing of Options and Corporate Liabilities, Journal of Political Economy", "url": "https://doi.org/10.1086/260062" }
-  ]
+    {
+      "label": "Hull, J.C. — Options, Futures, and Other Derivatives, 11th Edition, Pearson (2022)",
+      "url": "https://www.pearson.com/en-us/subject-catalog/p/options-futures-and-other-derivatives/P200000005938"
+    },
+    {
+      "label": "Black, F. & Scholes, M. (1973) — The Pricing of Options and Corporate Liabilities, Journal of Political Economy",
+      "url": "https://doi.org/10.1086/260062"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/nnl3x1wo25g",
+  "youtubeLabel": "Options"
 }

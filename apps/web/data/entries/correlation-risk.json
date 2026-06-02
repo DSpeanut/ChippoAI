@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Correlation (ρ)", "def": "Normalised covariance in [−1, +1]; ρ=0 means no linear relationship, ρ=1 means perfect co-movement." },
-    { "term": "Tail Correlation", "def": "Correlation conditional on both assets being in their extreme tails; typically much higher than unconditional correlation." },
-    { "term": "Correlation Matrix", "def": "N×N matrix of pairwise correlations; must be positive semi-definite for a valid covariance matrix." },
-    { "term": "Diversification Ratio", "def": "Weighted-average individual vol / portfolio vol; higher = more diversification benefit from low correlations." },
-    { "term": "Crisis Correlation", "def": "In market stress, asset correlations spike toward 1 — 'diversification fails when you need it most'." },
-    { "term": "Copula", "def": "A function describing the joint dependence structure of assets, separating marginal distributions from correlation." }
+    {
+      "term": "Correlation (ρ)",
+      "def": "Normalised covariance in [−1, +1]; ρ=0 means no linear relationship, ρ=1 means perfect co-movement."
+    },
+    {
+      "term": "Tail Correlation",
+      "def": "Correlation conditional on both assets being in their extreme tails; typically much higher than unconditional correlation."
+    },
+    {
+      "term": "Correlation Matrix",
+      "def": "N×N matrix of pairwise correlations; must be positive semi-definite for a valid covariance matrix."
+    },
+    {
+      "term": "Diversification Ratio",
+      "def": "Weighted-average individual vol / portfolio vol; higher = more diversification benefit from low correlations."
+    },
+    {
+      "term": "Crisis Correlation",
+      "def": "In market stress, asset correlations spike toward 1 — 'diversification fails when you need it most'."
+    },
+    {
+      "term": "Copula",
+      "def": "A function describing the joint dependence structure of assets, separating marginal distributions from correlation."
+    }
   ],
   "eli3": [
     "Correlation risk is the danger that correlations between assets change — especially in crises, when correlations that normally provide diversification suddenly spike toward 1 ('everything falls together'). A portfolio built on the assumption that stocks and bonds are negatively correlated suffers more than expected when that relationship breaks down.",
@@ -61,7 +79,15 @@
     }
   ],
   "sources": [
-    { "label": "Li, D.X. (2000) — On Default Correlation: A Copula Function Approach, Journal of Fixed Income", "url": "https://doi.org/10.3905/jfi.2000.319253" },
-    { "label": "Engle, R. (2002) — Dynamic Conditional Correlation, JBES", "url": "https://doi.org/10.1198/073500102288618487" }
-  ]
+    {
+      "label": "Li, D.X. (2000) — On Default Correlation: A Copula Function Approach, Journal of Fixed Income",
+      "url": "https://doi.org/10.3905/jfi.2000.319253"
+    },
+    {
+      "label": "Engle, R. (2002) — Dynamic Conditional Correlation, JBES",
+      "url": "https://doi.org/10.1198/073500102288618487"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/oUVbe3PYjp8",
+  "youtubeLabel": "Correlation Risk"
 }

@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "DDM", "def": "Dividend Discount Model — values a stock as the PV of all future dividends: P = Σ Dt / (1+r)^t." },
-    { "term": "Gordon Growth Model", "def": "Single-stage DDM: P = D1 / (r − g), where D1 = next dividend, r = required return, g = constant growth rate." },
-    { "term": "Dividend Payout Ratio", "def": "Dividends / Net Income; portion of earnings returned to shareholders. Retention ratio = 1 − payout." },
-    { "term": "Dividend Yield", "def": "Annual dividend / stock price; income component of total return. High yield may signal value or distress." },
-    { "term": "Sustainable Growth Rate", "def": "g = ROE × retention ratio; maximum growth rate sustainable without changing capital structure." },
-    { "term": "Cost of Equity (r)", "def": "Required return for equity holders; estimated via CAPM: r = Rf + β × ERP. DDM's discount rate." }
+    {
+      "term": "DDM",
+      "def": "Dividend Discount Model — values a stock as the PV of all future dividends: P = Σ Dt / (1+r)^t."
+    },
+    {
+      "term": "Gordon Growth Model",
+      "def": "Single-stage DDM: P = D1 / (r − g), where D1 = next dividend, r = required return, g = constant growth rate."
+    },
+    {
+      "term": "Dividend Payout Ratio",
+      "def": "Dividends / Net Income; portion of earnings returned to shareholders. Retention ratio = 1 − payout."
+    },
+    {
+      "term": "Dividend Yield",
+      "def": "Annual dividend / stock price; income component of total return. High yield may signal value or distress."
+    },
+    {
+      "term": "Sustainable Growth Rate",
+      "def": "g = ROE × retention ratio; maximum growth rate sustainable without changing capital structure."
+    },
+    {
+      "term": "Cost of Equity (r)",
+      "def": "Required return for equity holders; estimated via CAPM: r = Rf + β × ERP. DDM's discount rate."
+    }
   ],
   "eli3": [
     "The Dividend Discount Model says a stock is worth the present value of all the dividends it will ever pay. If a company will pay $2 in dividends next year, and you expect those dividends to grow at 5% per year forever, and you require a 10% return, the stock is worth $2 / (10% − 5%) = $40. This is the Gordon Growth Model — the simplest form of the DDM.",
@@ -62,7 +80,15 @@
     }
   ],
   "sources": [
-    { "label": "Damodaran, A. (2012) — Investment Valuation, 3rd ed., Wiley", "url": "https://pages.stern.nyu.edu/~adamodar/New_Home_Page/valuation.html" },
-    { "label": "Grinold, R. & Kroner, K. (2002) — The Equity Risk Premium, Investment Insights, Barclays Global Investors", "url": "https://efts.lib.uchicago.edu/EFTs/MasterPortfolio/Equity_Risk_Premium_Grinold_Kroner.pdf" }
-  ]
+    {
+      "label": "Damodaran, A. (2012) — Investment Valuation, 3rd ed., Wiley",
+      "url": "https://pages.stern.nyu.edu/~adamodar/New_Home_Page/valuation.html"
+    },
+    {
+      "label": "Grinold, R. & Kroner, K. (2002) — The Equity Risk Premium, Investment Insights, Barclays Global Investors",
+      "url": "https://efts.lib.uchicago.edu/EFTs/MasterPortfolio/Equity_Risk_Premium_Grinold_Kroner.pdf"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/cN-sVL7OWcY",
+  "youtubeLabel": "Dividend Discount Model"
 }

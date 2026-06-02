@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Short Rate (r_t)", "def": "Instantaneous risk-free rate at time t; the fundamental state variable in short-rate models (Vasicek, CIR, Hull-White)." },
-    { "term": "Mean Reversion (κ)", "def": "Speed at which the short rate returns to its long-run mean θ; interest rates are mean-reverting unlike equities." },
-    { "term": "Vasicek Model", "def": "dr = κ(θ−r)dt + σdW; Gaussian mean-reverting short rate. Analytically tractable but allows negative rates." },
-    { "term": "CIR Model", "def": "dr = κ(θ−r)dt + σ√r dW; square-root diffusion prevents negative rates; less tractable than Vasicek." },
-    { "term": "HJM Framework", "def": "Heath-Jarrow-Morton: models evolution of the entire forward rate curve; no-arbitrage constrains the drift." },
-    { "term": "Term Structure", "def": "The full set of yields/prices across all maturities at a given time; what interest rate models must be consistent with." }
+    {
+      "term": "Short Rate (r_t)",
+      "def": "Instantaneous risk-free rate at time t; the fundamental state variable in short-rate models (Vasicek, CIR, Hull-White)."
+    },
+    {
+      "term": "Mean Reversion (κ)",
+      "def": "Speed at which the short rate returns to its long-run mean θ; interest rates are mean-reverting unlike equities."
+    },
+    {
+      "term": "Vasicek Model",
+      "def": "dr = κ(θ−r)dt + σdW; Gaussian mean-reverting short rate. Analytically tractable but allows negative rates."
+    },
+    {
+      "term": "CIR Model",
+      "def": "dr = κ(θ−r)dt + σ√r dW; square-root diffusion prevents negative rates; less tractable than Vasicek."
+    },
+    {
+      "term": "HJM Framework",
+      "def": "Heath-Jarrow-Morton: models evolution of the entire forward rate curve; no-arbitrage constrains the drift."
+    },
+    {
+      "term": "Term Structure",
+      "def": "The full set of yields/prices across all maturities at a given time; what interest rate models must be consistent with."
+    }
   ],
   "eli3": [
     "Interest rate models describe how interest rates evolve randomly over time. Unlike stocks, interest rates are mean-reverting (they don't wander off to infinity; they pull back toward a long-run level) and have complex term structure dynamics (short rates and long rates don't move in lockstep). These properties require specialised models beyond simple GBM.",
@@ -61,7 +79,15 @@
     }
   ],
   "sources": [
-    { "label": "Hull, J.C. & White, A. (1990) — Pricing Interest-Rate-Derivative Securities, RFS", "url": "https://doi.org/10.1093/rfs/3.4.573" },
-    { "label": "Litterman, R. & Scheinkman, J. (1991) — Common Factors Affecting Bond Returns, JPM", "url": "https://doi.org/10.3905/jfm.1991.409506" }
-  ]
+    {
+      "label": "Hull, J.C. & White, A. (1990) — Pricing Interest-Rate-Derivative Securities, RFS",
+      "url": "https://doi.org/10.1093/rfs/3.4.573"
+    },
+    {
+      "label": "Litterman, R. & Scheinkman, J. (1991) — Common Factors Affecting Bond Returns, JPM",
+      "url": "https://doi.org/10.3905/jfm.1991.409506"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/VSfOeEkNmKQ",
+  "youtubeLabel": "Interest Rate Models"
 }

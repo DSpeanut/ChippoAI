@@ -21,7 +21,7 @@
     {
       "title": "Audio, video, and multimodal generation",
       "body": "WaveGrad and DiffWave apply diffusion to audio waveform generation; AudioDiffusion to spectrogram synthesis. Video diffusion models (Sora, Make-A-Video) extend the UNet to 3D (spatial + temporal). The same denoising objective works across modalities by defining the noise process in the appropriate data space (pixel space, latent space, audio waveform space). Latent diffusion models (Rombach et al., 2022) compress images to a lower-dimensional latent space first, running the diffusion process in that space for dramatic speed and memory improvements."
-  }
+    }
   ],
   "deepDiveIntro": [
     "DDPM (Ho et al., 2020) defines a forward Markov chain that gradually adds Gaussian noise: q(x_t|x_{t-1}) = N(x_t; √(1−β_t)x_{t-1}, β_tI), where β_t ∈ (0,1) is a noise schedule. By the Markov property, the marginal at step t is tractable: q(x_t|x_0) = N(x_t; √ᾱ_t x_0, (1−ᾱ_t)I), where ᾱ_t = ∏_{s=1}^t αs, αs = 1−βs. This allows directly sampling x_t = √ᾱ_t x_0 + √(1−ᾱ_t) ε, ε ~ N(0,I). The reverse process p_θ(x_{t-1}|x_t) = N(x_{t-1}; μ_θ(x_t,t), σ_t²I) is parameterised by a neural network. Ho et al. showed that parameterising the network to predict the noise ε (rather than the mean) gives the simplified training objective: L_{simple} = E_{t,x_0,ε}[‖ε − ε_θ(x_t, t)‖²]. [1]",
@@ -71,5 +71,7 @@
       "label": "Song et al. (2020) — Denoising Diffusion Implicit Models, ICLR 2021 arXiv:2010.02502",
       "url": "https://arxiv.org/abs/2010.02502"
     }
-  ]
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/HoKDTa5jHvg",
+  "youtubeLabel": "Diffusion Models"
 }

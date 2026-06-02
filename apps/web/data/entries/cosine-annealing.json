@@ -44,6 +44,7 @@
     {
       "heading": "Cycle Scheduling and 1cycle Policy",
       "body": "Smith (2018) introduced the 1cycle policy: linear warmup + cosine decay in a single cycle, with the final few iterations below η_min (annealing phase). The lr starts at η_min/10, rises linearly to η_max, then cosine decays to η_min/10 over the full training budget. The paper showed this achieves SOTA in fewer total steps than standard schedules. PyTorch: torch.optim.lr_scheduler.OneCycleLR. Used in fast.ai's training philosophy — trains ResNet-50 on ImageNet in ~60 epochs vs standard 90. [3]"
+    }
   ],
   "youtubeLabel": "Cosine Annealing & SGDR — Learning Rate Scheduling",
   "youtubeUrl": "https://www.youtube.com/embed/vc16-1oLqtM",

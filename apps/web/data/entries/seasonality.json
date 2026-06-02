@@ -60,7 +60,15 @@
     }
   ],
   "sources": [
-    { "label": "Cleveland et al. (1990) — STL: A Seasonal-Trend Decomposition Procedure Based on Loess, J. Official Statistics 6(1)", "url": "https://www.wessa.net/download/stl.pdf" },
-    { "label": "Hyndman & Athanasopoulos — Forecasting: Principles and Practice (3rd ed.), Ch. 3, 9", "url": "https://otexts.com/fpp3/" }
-  ]
+    {
+      "label": "Cleveland et al. (1990) — STL: A Seasonal-Trend Decomposition Procedure Based on Loess, J. Official Statistics 6(1)",
+      "url": "https://www.wessa.net/download/stl.pdf"
+    },
+    {
+      "label": "Hyndman & Athanasopoulos — Forecasting: Principles and Practice (3rd ed.), Ch. 3, 9",
+      "url": "https://otexts.com/fpp3/"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/ScquIYGnawA",
+  "youtubeLabel": "Seasonality"
 }

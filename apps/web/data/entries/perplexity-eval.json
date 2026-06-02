@@ -40,8 +40,8 @@
     {
       "heading": "Perplexity vs Downstream Task Performance",
       "body": "Lower perplexity on held-out text generally correlates with better downstream task performance, but the correlation is imperfect. Scaling laws (Hoffmann et al., 2022): perplexity decreases as a smooth power law with training compute. Downstream task performance shows 'emergent' step-function improvements at certain perplexity thresholds. Implication: perplexity is a useful proxy during training but shouldn't replace task-specific evaluation. A model fine-tuned with RLHF may have higher perplexity (vs SFT baseline) on general text but much better instruction-following — perplexity and alignment can trade off. [1]"
-  ]
-  },
+    }
+  ],
   "youtubeLabel": "Perplexity in NLP — How Good Is Your Language Model?",
   "youtubeUrl": "https://www.youtube.com/embed/NURcDHhYe98",
   "takeaways": [

@@ -53,7 +53,15 @@
     }
   ],
   "sources": [
-    { "label": "Jorion, P. — Value at Risk: The New Benchmark for Managing Financial Risk (3rd ed.), McGraw-Hill", "url": "https://www.mhprofessional.com/9780071464956-usa-value-at-risk-3rd-ed" },
-    { "label": "Barone-Adesi, G., Giannopoulos, K. & Vosper, L. (1999) — VaR Without Correlations for Portfolios of Derivative Securities, JFQA", "url": "https://doi.org/10.2307/2676208" }
-  ]
+    {
+      "label": "Jorion, P. — Value at Risk: The New Benchmark for Managing Financial Risk (3rd ed.), McGraw-Hill",
+      "url": "https://www.mhprofessional.com/9780071464956-usa-value-at-risk-3rd-ed"
+    },
+    {
+      "label": "Barone-Adesi, G., Giannopoulos, K. & Vosper, L. (1999) — VaR Without Correlations for Portfolios of Derivative Securities, JFQA",
+      "url": "https://doi.org/10.2307/2676208"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/YQquArbUKkI",
+  "youtubeLabel": "Var"
 }

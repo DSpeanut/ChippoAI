@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "2 and 20", "def": "Standard HF fee: 2% annual management fee on AUM + 20% performance fee on profits above hurdle rate." },
-    { "term": "Hurdle Rate", "def": "Minimum return before the performance fee applies; often the risk-free rate or LIBOR/SOFR." },
-    { "term": "High-Water Mark", "def": "Previous peak NAV; performance fees only charged when fund exceeds it — protects investors from paying twice." },
-    { "term": "Net / Gross Exposure", "def": "Net = longs − shorts (directional risk). Gross = longs + |shorts| (total leverage)." },
-    { "term": "Lock-Up Period", "def": "Minimum time investors must keep capital in the fund; allows the manager to hold illiquid positions." },
-    { "term": "Gates", "def": "Redemption limits during stress — fund limits withdrawals to a % of NAV per quarter to prevent forced selling." }
+    {
+      "term": "2 and 20",
+      "def": "Standard HF fee: 2% annual management fee on AUM + 20% performance fee on profits above hurdle rate."
+    },
+    {
+      "term": "Hurdle Rate",
+      "def": "Minimum return before the performance fee applies; often the risk-free rate or LIBOR/SOFR."
+    },
+    {
+      "term": "High-Water Mark",
+      "def": "Previous peak NAV; performance fees only charged when fund exceeds it — protects investors from paying twice."
+    },
+    {
+      "term": "Net / Gross Exposure",
+      "def": "Net = longs − shorts (directional risk). Gross = longs + |shorts| (total leverage)."
+    },
+    {
+      "term": "Lock-Up Period",
+      "def": "Minimum time investors must keep capital in the fund; allows the manager to hold illiquid positions."
+    },
+    {
+      "term": "Gates",
+      "def": "Redemption limits during stress — fund limits withdrawals to a % of NAV per quarter to prevent forced selling."
+    }
   ],
   "eli3": [
     "Hedge funds are private investment vehicles that use sophisticated strategies — long-short equity, global macro, relative value arbitrage, event-driven — to generate absolute returns uncorrelated with the stock market. Unlike mutual funds, they can short-sell, use leverage, and invest in illiquid or complex instruments. They typically charge '2 and 20': 2% annual management fee and 20% of profits.",
@@ -61,7 +79,15 @@
     }
   ],
   "sources": [
-    { "label": "Fung, W. & Hsieh, D.A. (2004) — Hedge Fund Benchmarks: A Risk-Based Approach, FAJ", "url": "https://doi.org/10.2469/faj.v60.n5.2657" },
-    { "label": "Agarwal, V. & Naik, N.Y. (2000) — Multi-Period Performance Persistence Analysis of Hedge Funds, JFQA", "url": "https://doi.org/10.2307/2676190" }
-  ]
+    {
+      "label": "Fung, W. & Hsieh, D.A. (2004) — Hedge Fund Benchmarks: A Risk-Based Approach, FAJ",
+      "url": "https://doi.org/10.2469/faj.v60.n5.2657"
+    },
+    {
+      "label": "Agarwal, V. & Naik, N.Y. (2000) — Multi-Period Performance Persistence Analysis of Hedge Funds, JFQA",
+      "url": "https://doi.org/10.2307/2676190"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/ToGIX1op0bY",
+  "youtubeLabel": "Hedge Funds"
 }

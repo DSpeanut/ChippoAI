@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "CVaR / ES", "def": "Conditional VaR = Expected Shortfall: the average loss in the worst α% of scenarios; always ≥ VaR." },
-    { "term": "VaR", "def": "Value at Risk: the loss not exceeded with probability (1−α); e.g. 99% VaR says 1% of days are worse than this." },
-    { "term": "Tail Risk", "def": "Risk from extreme, low-probability events in the left tail of the P&L distribution." },
-    { "term": "Coherent Risk Measure", "def": "A risk measure satisfying sub-additivity, monotonicity, positive homogeneity, and translation invariance. CVaR is coherent; VaR is not." },
-    { "term": "Sub-additivity", "def": "Risk(A+B) ≤ Risk(A) + Risk(B); diversification never increases risk — a property VaR can violate." },
-    { "term": "Loss Distribution", "def": "The probability distribution of portfolio losses over a horizon; CVaR and VaR are quantiles/tails of this distribution." }
+    {
+      "term": "CVaR / ES",
+      "def": "Conditional VaR = Expected Shortfall: the average loss in the worst α% of scenarios; always ≥ VaR."
+    },
+    {
+      "term": "VaR",
+      "def": "Value at Risk: the loss not exceeded with probability (1−α); e.g. 99% VaR says 1% of days are worse than this."
+    },
+    {
+      "term": "Tail Risk",
+      "def": "Risk from extreme, low-probability events in the left tail of the P&L distribution."
+    },
+    {
+      "term": "Coherent Risk Measure",
+      "def": "A risk measure satisfying sub-additivity, monotonicity, positive homogeneity, and translation invariance. CVaR is coherent; VaR is not."
+    },
+    {
+      "term": "Sub-additivity",
+      "def": "Risk(A+B) ≤ Risk(A) + Risk(B); diversification never increases risk — a property VaR can violate."
+    },
+    {
+      "term": "Loss Distribution",
+      "def": "The probability distribution of portfolio losses over a horizon; CVaR and VaR are quantiles/tails of this distribution."
+    }
   ],
   "eli3": [
     "Conditional Value at Risk (CVaR) — also called Expected Shortfall (ES) or Expected Tail Loss — answers a question VaR ignores: 'When things go badly, how bad do they actually get?' CVaR is the average loss in the worst α% of scenarios. If 1-day 99% VaR is $1M, CVaR tells you the average loss on those worst 1% of days — which might be $3M or $20M depending on how fat the tail is.",
@@ -61,7 +79,15 @@
     }
   ],
   "sources": [
-    { "label": "Artzner, P. et al. (1999) — Coherent Measures of Risk, Mathematical Finance", "url": "https://doi.org/10.1111/1467-9965.00068" },
-    { "label": "Rockafellar, R.T. & Uryasev, S. (2000) — Optimization of Conditional Value-at-Risk, Journal of Risk", "url": "https://doi.org/10.21314/JOR.2000.038" }
-  ]
+    {
+      "label": "Artzner, P. et al. (1999) — Coherent Measures of Risk, Mathematical Finance",
+      "url": "https://doi.org/10.1111/1467-9965.00068"
+    },
+    {
+      "label": "Rockafellar, R.T. & Uryasev, S. (2000) — Optimization of Conditional Value-at-Risk, Journal of Risk",
+      "url": "https://doi.org/10.21314/JOR.2000.038"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/MrVJSizFJhs",
+  "youtubeLabel": "Cvar"
 }

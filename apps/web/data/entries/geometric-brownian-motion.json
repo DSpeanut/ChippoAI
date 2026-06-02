@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "GBM", "def": "Geometric Brownian Motion: dS = μS dt + σS dW; log-normal price process with constant drift and volatility." },
-    { "term": "Drift (μ)", "def": "Expected rate of return per unit time; the deterministic part of the GBM." },
-    { "term": "Volatility (σ)", "def": "Standard deviation of log-returns per unit time; the random part; annualised σ = daily σ × √252." },
-    { "term": "Wiener Process (W)", "def": "Continuous-time random walk; increments dW ~ N(0, dt) — the source of randomness in GBM." },
-    { "term": "Log-Normal", "def": "If S follows GBM, then log(S) is normally distributed — ensures prices remain positive." },
-    { "term": "Risk-Neutral Measure (Q)", "def": "Probability measure under which all assets grow at the risk-free rate; used for derivative pricing." }
+    {
+      "term": "GBM",
+      "def": "Geometric Brownian Motion: dS = μS dt + σS dW; log-normal price process with constant drift and volatility."
+    },
+    {
+      "term": "Drift (μ)",
+      "def": "Expected rate of return per unit time; the deterministic part of the GBM."
+    },
+    {
+      "term": "Volatility (σ)",
+      "def": "Standard deviation of log-returns per unit time; the random part; annualised σ = daily σ × √252."
+    },
+    {
+      "term": "Wiener Process (W)",
+      "def": "Continuous-time random walk; increments dW ~ N(0, dt) — the source of randomness in GBM."
+    },
+    {
+      "term": "Log-Normal",
+      "def": "If S follows GBM, then log(S) is normally distributed — ensures prices remain positive."
+    },
+    {
+      "term": "Risk-Neutral Measure (Q)",
+      "def": "Probability measure under which all assets grow at the risk-free rate; used for derivative pricing."
+    }
   ],
   "visualizationType": "gbm-paths",
   "eli3": [
@@ -62,7 +80,15 @@
     }
   ],
   "sources": [
-    { "label": "Black, F. & Scholes, M. (1973) — The Pricing of Options and Corporate Liabilities, JPE", "url": "https://doi.org/10.1086/260062" },
-    { "label": "Hull, J.C. — Options, Futures, and Other Derivatives (10th ed.), Pearson", "url": "https://www.pearson.com/en-us/subject-catalog/p/options-futures-and-other-derivatives/P200000005938" }
-  ]
+    {
+      "label": "Black, F. & Scholes, M. (1973) — The Pricing of Options and Corporate Liabilities, JPE",
+      "url": "https://doi.org/10.1086/260062"
+    },
+    {
+      "label": "Hull, J.C. — Options, Futures, and Other Derivatives (10th ed.), Pearson",
+      "url": "https://www.pearson.com/en-us/subject-catalog/p/options-futures-and-other-derivatives/P200000005938"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/3DZKGNHWTPY",
+  "youtubeLabel": "Geometric Brownian Motion"
 }

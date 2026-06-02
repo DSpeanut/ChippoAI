@@ -1,11 +1,29 @@
 {
   "terms": [
-    { "term": "Free Cash Flow (FCF)", "def": "EBIT(1−t) + D&A − ΔWorking Capital − Capex; cash the business generates after maintaining/growing its asset base." },
-    { "term": "WACC", "def": "Weighted Average Cost of Capital = (E/V)×Re + (D/V)×Rd×(1−t); the blended required return used to discount FCF." },
-    { "term": "Terminal Value (TV)", "def": "Present value of all cash flows beyond the explicit forecast period; typically 60–80% of total DCF value." },
-    { "term": "NOPAT", "def": "Net Operating Profit After Tax = EBIT × (1 − tax rate); the after-tax operating profit that drives FCF." },
-    { "term": "ROIC", "def": "Return on Invested Capital = NOPAT / Invested Capital; must exceed WACC to create value; key value driver." },
-    { "term": "Terminal Growth Rate (g)", "def": "Long-run FCF growth assumed in perpetuity; must be ≤ long-run GDP growth (~2–3%) to be sustainable." }
+    {
+      "term": "Free Cash Flow (FCF)",
+      "def": "EBIT(1−t) + D&A − ΔWorking Capital − Capex; cash the business generates after maintaining/growing its asset base."
+    },
+    {
+      "term": "WACC",
+      "def": "Weighted Average Cost of Capital = (E/V)×Re + (D/V)×Rd×(1−t); the blended required return used to discount FCF."
+    },
+    {
+      "term": "Terminal Value (TV)",
+      "def": "Present value of all cash flows beyond the explicit forecast period; typically 60–80% of total DCF value."
+    },
+    {
+      "term": "NOPAT",
+      "def": "Net Operating Profit After Tax = EBIT × (1 − tax rate); the after-tax operating profit that drives FCF."
+    },
+    {
+      "term": "ROIC",
+      "def": "Return on Invested Capital = NOPAT / Invested Capital; must exceed WACC to create value; key value driver."
+    },
+    {
+      "term": "Terminal Growth Rate (g)",
+      "def": "Long-run FCF growth assumed in perpetuity; must be ≤ long-run GDP growth (~2–3%) to be sustainable."
+    }
   ],
   "eli3": [
     "A DCF (Discounted Cash Flow) model values a business by forecasting all the cash it will generate in the future and discounting those cash flows back to today's value. The logic: $100 received in 10 years is worth less than $100 today, because today's $100 could be invested and grow. The discount rate (WACC) reflects the return investors require for the risk they're taking.",
@@ -62,7 +80,15 @@
     }
   ],
   "sources": [
-    { "label": "Damodaran, A. (2012) — Investment Valuation, 3rd ed., Wiley", "url": "https://pages.stern.nyu.edu/~adamodar/New_Home_Page/valuation.html" },
-    { "label": "Mauboussin, M. & Rappaport, A. (2003) — Expectations Investing, Harvard Business Review Press", "url": "https://www.hbs.edu/faculty/Pages/item.aspx?num=32294" }
-  ]
+    {
+      "label": "Damodaran, A. (2012) — Investment Valuation, 3rd ed., Wiley",
+      "url": "https://pages.stern.nyu.edu/~adamodar/New_Home_Page/valuation.html"
+    },
+    {
+      "label": "Mauboussin, M. & Rappaport, A. (2003) — Expectations Investing, Harvard Business Review Press",
+      "url": "https://www.hbs.edu/faculty/Pages/item.aspx?num=32294"
+    }
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/6WCfVjUTTEY",
+  "youtubeLabel": "Dcf Analysis"
 }

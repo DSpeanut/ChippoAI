@@ -71,5 +71,7 @@
       "label": "Arjovsky, Chintala & Bottou (2017) — Wasserstein GAN, ICML 2017 arXiv:1701.07875",
       "url": "https://arxiv.org/abs/1701.07875"
     }
-  ]
+  ],
+  "youtubeUrl": "https://www.youtube.com/embed/eyxmSmjmNS0",
+  "youtubeLabel": "Gans"
 }
