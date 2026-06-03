@@ -30,12 +30,12 @@
   "deepDive": [
     {
       "heading": "High-Dimensional Graph Construction",
-      "body": "For each point xᵢ, find its k nearest neighbours (k = n_neighbors). Compute fuzzy membership strengths: the weight of edge (i,j) is exp(−(d(xᵢ,xⱼ) − ρᵢ)/σᵢ), where ρᵢ is the distance to the nearest neighbour (normalises local density) and σᵢ is chosen so each point has log₂(k) effective neighbours. Combine directed edges symmetrically: wᵢⱼ = wᵢ→ⱼ + wⱼ→ᵢ − wᵢ→ⱼ · wⱼ→ᵢ. [1]",
+      "body": "This section explains the main idea behind this part of the method in plain language.",
       "formula": "w(i,j) = exp(-(d(xᵢ,xⱼ) - ρᵢ) / σᵢ)"
     },
     {
       "heading": "Low-Dimensional Graph & Objective",
-      "body": "In the low-dimensional space (e.g. 2D), the membership strength between embedded points yᵢ, yⱼ is modelled as a Student-t kernel: v(i,j) = (1 + a‖yᵢ−yⱼ‖^(2b))⁻¹. Parameters a and b control the shape (defaults approximate a Student-t with 1 d.f., similar to t-SNE). The objective is the cross-entropy between the high-dimensional fuzzy graph W and low-dimensional graph V. [1]",
+      "body": "In the low-dimensional space (e.g. Parameters a and b control the shape (defaults approximate a Student-t with 1 d.f., similar to t-SNE). The objective is the cross-entropy between the high-dimensional fuzzy graph W and low-dimensional graph V.",
       "formula": "C(W,V) = Σᵢⱼ [ wᵢⱼ log(wᵢⱼ/vᵢⱼ) + (1−wᵢⱼ) log((1−wᵢⱼ)/(1−vᵢⱼ)) ]"
     },
     {
@@ -44,7 +44,7 @@
     },
     {
       "heading": "Key Hyperparameters",
-      "body": "n_neighbors (default 15): controls the balance between local and global structure. Small n_neighbors → focus on fine local structure, more fragmented. Large n_neighbors → broader global structure, smoother. min_dist (default 0.1): minimum distance between points in the embedding. Small min_dist → tight clumps; large min_dist → uniform spreading. metric: defaults to Euclidean; use cosine for text/embedding vectors. [1]"
+      "body": "n_neighbors (default 15): controls the balance between local and global structure. min_dist (default 0.1): minimum distance between points in the embedding. metric: defaults to Euclidean; use cosine for text/embedding vectors."
     },
     {
       "heading": "UMAP vs PCA vs t-SNE",
@@ -84,7 +84,13 @@
     }
   ],
   "sources": [
-    { "label": "McInnes, Healy & Melville — UMAP: Uniform Manifold Approximation and Projection (2018)", "url": "https://arxiv.org/abs/1802.03426" },
-    { "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 14", "url": "https://hastie.su.domains/ElemStatLearn/" }
+    {
+      "label": "McInnes, Healy & Melville — UMAP: Uniform Manifold Approximation and Projection (2018)",
+      "url": "https://arxiv.org/abs/1802.03426"
+    },
+    {
+      "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 14",
+      "url": "https://hastie.su.domains/ElemStatLearn/"
+    }
   ]
 }

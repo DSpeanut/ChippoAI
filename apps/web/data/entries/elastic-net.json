@@ -36,12 +36,12 @@
     },
     {
       "heading": "The Grouping Effect",
-      "body": "If features xⱼ and xₖ are perfectly correlated (correlation = 1), the Elastic Net solution satisfies |β̂ⱼ − β̂ₖ| ≤ (1/λ₂)|β̂ⱼ − β̂ₖ|·0 = 0 in the limit — i.e. perfectly correlated features receive identical coefficients. More generally, highly correlated predictors are selected or excluded together and receive similar coefficient magnitudes. This is the key advantage over Lasso, which breaks this symmetry arbitrarily. [1]",
+      "body": "When two features are highly correlated, Elastic Net tends to assign them similar coefficient magnitudes and either includes or excludes them together. Perfectly correlated features receive identical coefficients. This grouping effect is the key advantage over Lasso, which arbitrarily picks one correlated feature and zeros out the others — an unstable choice that changes with small perturbations to the data. [1]",
       "formula": "|β̂ⱼ − β̂ₖ| ≤ (1/λ₂) · √(2·RSS) · √(1 − corr(xⱼ, xₖ))"
     },
     {
       "heading": "Naive vs Corrected Elastic Net",
-      "body": "The naive Elastic Net applies both L1 and L2 shrinkage, but this causes double shrinkage — the final coefficients are too small. Zou & Hastie (2005) show the corrected solution multiplies the naive estimate by (1 + λ₂). sklearn implements the corrected version by default. [1]",
+      "body": "Applying both the L1 and L2 penalties simultaneously causes double shrinkage — the coefficients end up smaller than they should be. Zou and Hastie (2005) showed that multiplying the naive solution by a correction factor of one plus the L2 regularization strength recovers the right scale. sklearn implements this corrected version by default, so you get the right coefficients without manual adjustment. [1]",
       "formula": "β̂_elastic = (1 + λ₂) · β̂_naive"
     },
     {

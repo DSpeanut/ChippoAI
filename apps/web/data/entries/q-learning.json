@@ -30,16 +30,16 @@
   "deepDive": [
     {
       "heading": "TD Error and Bootstrapping",
-      "body": "The TD error δ_t = R_{t+1} + γ max_a Q(S_{t+1},a) − Q(S_t,A_t) has two components: R_{t+1} is the observed immediate reward (real signal); γ max_a Q(S_{t+1},a) is a bootstrapped estimate of future value (using the current Q-estimate, not the true value). Bootstrapping is powerful: we don't need to run the full episode to get a return estimate — we use the current value estimate as a proxy. This makes Q-learning online and incremental. Compare with Monte Carlo methods: G_t = Σ γᵏ R_{t+k+1} — uses the actual return from a full episode. Monte Carlo is unbiased but high variance; TD is biased (bootstrap estimate) but lower variance. TD(λ) interpolates between them via eligibility traces. [1]",
+      "body": "Bootstrapping is powerful: we don't need to run the full episode to get a return estimate — we use the current value estimate as a proxy. This makes Q-learning online and incremental. Monte Carlo is unbiased but high variance; TD is biased (bootstrap estimate) but lower variance.",
       "formula": "Q(S,A) ← Q(S,A) + α[R + γ max_{a'} Q(S',a') − Q(S,A)]"
     },
     {
       "heading": "ε-Greedy Exploration and Exploration-Exploitation Tradeoff",
-      "body": "The agent must balance: exploitation (take the greedy action with highest Q estimate) vs exploration (try actions with uncertain Q to gather information). ε-greedy: with probability ε, take a random action; with probability 1−ε, take the greedy action. ε decay schedule: start at ε=1 (fully random) and decay to ε_min=0.01 over training. Alternatives: (1) UCB (Upper Confidence Bound): a = argmax_a [Q(s,a) + c·√(ln t / N(s,a))], where N(s,a) is visit count — optimistic exploration guided by uncertainty. (2) Boltzmann (softmax) exploration: P(a|s) ∝ exp(Q(s,a)/τ), temperature τ controls exploration. (3) Intrinsic motivation: add a bonus reward for visiting novel states (count-based or curiosity-based). [2]"
+      "body": "The agent must balance: exploitation (take the greedy action with highest Q estimate) vs exploration (try actions with uncertain Q to gather information). ε-greedy: with probability ε, take a random action; with probability 1−ε, take the greedy action. (3) Intrinsic motivation: add a bonus reward for visiting novel states (count-based or curiosity-based)."
     },
     {
       "heading": "DQN: Q-Learning with Neural Networks",
-      "body": "DQN (Mnih et al., 2015) scales Q-learning to high-dimensional state spaces via two innovations: (1) Experience replay: store transitions (s,a,r,s') in a replay buffer D of size N; sample random minibatches to train — breaks temporal correlations that destabilize training. (2) Target network: maintain a separate network Q(s,a;θ⁻) with parameters θ⁻ updated every C steps from θ. The loss is: L(θ) = E_{(s,a,r,s')~D}[(r + γ max_{a'} Q(s',a';θ⁻) − Q(s,a;θ))²]. Without the target network, the bootstrap target moves as θ updates, creating oscillations or divergence. Double DQN (van Hasselt et al., 2016): use the online network to select the best action, the target network to evaluate it — reduces overestimation bias in Q-learning targets. [2]",
+      "body": "DQN (Mnih et al., 2015) scales Q-learning to high-dimensional state spaces via two innovations: (1) Experience replay: store transitions (s,a,r,s') in a replay buffer D of size N; sample random minibatches to train — breaks temporal correlations that destabilize training. (2) Target network: maintain a separate network Q(s,a;θ⁻) with parameters θ⁻ updated every C steps from θ. Without the target network, the bootstrap target moves as θ updates, creating oscillations or divergence. Double DQN (van Hasselt et al., 2016): use the online network to select the best action, the target network to evaluate it — reduces overestimation bias in Q-learning targets.",
       "formula": "DQN loss: E[(r + γ max_{a'} Q(s',a';θ⁻) − Q(s,a;θ))²]"
     }
   ],
@@ -63,7 +63,13 @@
     }
   ],
   "sources": [
-    { "label": "Sutton, R.S. & Barto, A.G. — Reinforcement Learning: An Introduction, 2nd Ed., MIT Press, 2018", "url": "http://incompleteideas.net/book/the-book-2nd.html" },
-    { "label": "Mnih, V. et al. — Human-level Control through Deep Reinforcement Learning, Nature 518, 2015", "url": "https://doi.org/10.1038/nature14236" }
+    {
+      "label": "Sutton, R.S. & Barto, A.G. — Reinforcement Learning: An Introduction, 2nd Ed., MIT Press, 2018",
+      "url": "http://incompleteideas.net/book/the-book-2nd.html"
+    },
+    {
+      "label": "Mnih, V. et al. — Human-level Control through Deep Reinforcement Learning, Nature 518, 2015",
+      "url": "https://doi.org/10.1038/nature14236"
+    }
   ]
 }

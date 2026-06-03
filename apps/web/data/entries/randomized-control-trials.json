@@ -25,20 +25,21 @@
   "deepDive": [
     {
       "heading": "Randomization Methods",
-      "body": "Simple randomization: flip a coin for each participant. Can produce unequal group sizes by chance. Restricted randomization: (1) blocked randomization — within blocks of size 2k, ensure exactly k treated; guarantees balance at the end of each block and preserves balance if trial stops early; (2) stratified randomization — randomize within strata of key prognostic variables (age, disease severity) to ensure balance on these; (3) minimization (adaptive) — adaptively assign to minimize imbalance on multiple covariates. [1]",
+      "body": "Randomization can be implemented in several ways depending on how much balance the study needs during enrollment. Simple randomization is conceptually clean, while blocked and stratified designs help keep important covariates balanced between groups. The overall goal is always the same: make treatment assignment unrelated to potential outcomes.",
       "formula": "ATE = E[Y(1)] − E[Y(0)] = E[Y|Z=1] − E[Y|Z=0]  [under randomization]"
     },
     {
       "heading": "Intention-to-Treat vs Per-Protocol",
-      "body": "ITT: analyze by randomized assignment. Estimand: ATE in the randomized population. Unbiased under randomization regardless of non-compliance. Per-protocol (PP): restrict to those who completed treatment as assigned. Biased: compliers may be systematically different from non-compliers. Modified ITT (mITT): pre-specified partial exclusion (e.g., exclude those with no baseline assessment). Complier Average Causal Effect (CACE = LATE): the effect among those who would comply with whichever treatment they were assigned — estimated via IV with randomization as instrument. [1]"
+      "body": "Intention-to-treat analysis keeps participants in the groups to which they were originally randomized, even if they do not fully comply. That preserves the protection created by randomization and reflects the practical effect of offering the intervention in the real world. Per-protocol analyses answer a different question and can easily become biased because compliance is rarely random."
     },
     {
       "heading": "Covariate Adjustment: ANCOVA",
-      "body": "Including baseline covariates (ANCOVA) in the analysis of an RCT reduces residual variance and increases power without introducing bias — because covariates are independent of treatment by randomization. Model: Yᵢ = α + τZᵢ + βXᵢ + εᵢ. The estimate τ̂ is unbiased for ATE; its variance is reduced by (1−ρ²)·Var_unadjusted, where ρ is the correlation between X and Y. For RCTs with strong prognostic covariates (e.g., baseline of the outcome), ANCOVA can halve the required sample size. [1]"
+      "body": "Adjusting for strong baseline predictors can make randomized trials more efficient by reducing residual noise. Because those covariates are measured before treatment, including them does not compromise randomization. This is why covariate adjustment is often recommended even in trials that are already randomized."
     },
     {
       "heading": "Cluster Randomized Trials",
-      "body": "When randomizing individuals is not feasible (school interventions, community health programs, contamination risk), randomize clusters (schools, villages, clinics). Key design considerations: ICC (intraclass correlation) inflates required number of clusters via DEFF ≈ 1+(m−1)·ICC. For ICC = 0.05, cluster size m = 30: DEFF ≈ 2.45 — need 2.45× the number of participants vs individual RCT. Analysis must account for clustering: mixed effects models, GEE, or cluster-level analysis (analyze cluster means). Randomization at cluster level protects against contamination between treatment and control. [1]"
+      "body": "Sometimes the unit that can realistically be randomized is a group rather than an individual, such as a school, clinic, or village. Cluster randomization helps avoid contamination between treatment and control, but it also reduces statistical efficiency because people within the same cluster tend to resemble one another. Both design and analysis therefore have to account for clustering explicitly.",
+      "formula": "DEFF ≈ 1 + (m−1)·ICC"
     }
   ],
   "takeaways": [

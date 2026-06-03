@@ -25,22 +25,22 @@
   "deepDive": [
     {
       "heading": "OLS Estimators and Gauss-Markov",
-      "body": "Minimizing Q = Σ(yᵢ−β₀−β₁xᵢ)² yields normal equations. Solution: β̂₁ = Sxy/Sxx, β̂₀ = ȳ − β̂₁x̄, where Sxy = Σ(xᵢ−x̄)(yᵢ−ȳ), Sxx = Σ(xᵢ−x̄)². Gauss-Markov: under E[ε|X] = 0 and Var(ε) = σ²I, OLS is BLUE — minimum variance among all linear unbiased estimators. Normality not required for BLUE property; only needed for exact t/F distributions. [1]",
+      "body": "Ordinary least squares fits the straight line that minimizes the total squared vertical error. Under the standard exogeneity and constant-variance assumptions, the resulting slope and intercept are the most efficient unbiased linear estimators. This is the main reason simple linear regression is such a central model in classical statistics.",
       "formula": "β̂₁ = Sxy / Sxx = Σ(xᵢ−x̄)(yᵢ−ȳ) / Σ(xᵢ−x̄)²"
     },
     {
       "heading": "Variance Decomposition and R²",
-      "body": "SS_tot = Σ(yᵢ−ȳ)² = SS_reg + SS_res, where SS_reg = Σ(ŷᵢ−ȳ)² and SS_res = Σ(yᵢ−ŷᵢ)². R² = SS_reg/SS_tot = 1 − SS_res/SS_tot = r²_{xy} (squared Pearson correlation in SLR). Note: R² always increases when adding predictors, even irrelevant ones — use adjusted R² = 1−(SS_res/(n−p−1))/(SS_tot/(n−1)) for multiple regression. [1]",
+      "body": "Regression divides total variation in the outcome into explained variation and leftover residual variation. The coefficient of determination summarizes what fraction of the original variation is captured by the fitted line. It is useful descriptively, but it should not be mistaken for evidence of causality or guaranteed predictive skill.",
       "formula": "R² = 1 − SS_res / SS_tot = SS_reg / SS_tot"
     },
     {
       "heading": "Inference on β₁ and β₀",
-      "body": "Under normality: β̂₁ ~ N(β₁, σ²/Sxx). t-test: T = β̂₁/(s/√Sxx) ~ t(n−2) under H₀: β₁ = 0. 95% CI: β̂₁ ± t_{n−2,0.025}·(s/√Sxx). CI for E[Y|X=x*]: ŷ ± t_{n−2,0.025}·s·√(1/n + (x*−x̄)²/Sxx). Prediction interval for a new Y at X=x*: ŷ ± t_{n−2,0.025}·s·√(1 + 1/n + (x*−x̄)²/Sxx) — extra 1 under the radical accounts for residual variance. [1]",
+      "body": "Once the model is fitted, you can test whether the slope is plausibly zero and build intervals for both the mean response and future observations. Confidence intervals for the average response are narrower because they only describe uncertainty in the line itself. Prediction intervals are wider because they must also include the irreducible scatter of individual outcomes around that line.",
       "formula": "PI(x*) = ŷ* ± t_{n−2,α/2} · s · √(1 + 1/n + (x* − x̄)² / Sxx)"
     },
     {
       "heading": "Residual Diagnostics",
-      "body": "Plot 1: Residuals vs. Fitted — should show no pattern (checks linearity and homoscedasticity). Plot 2: Q-Q plot of residuals — should be approximately linear (checks normality). Plot 3: Scale-Location (√|residuals| vs fitted) — flat trend confirms homoscedasticity. Plot 4: Residuals vs. Leverage — identifies high-leverage points (far from x̄) and influential observations (Cook's distance > 4/(n−p−1)). Violation patterns: fan shape → heteroscedasticity (use WLS or robust SE); curve → non-linearity (add polynomial term or transform). [1]"
+      "body": "Residual plots are the main way to check whether a fitted line is actually appropriate. Patterns in residuals can reveal curvature, changing variance, non-normal errors, and influential observations that distort the fit. Good regression practice therefore treats diagnostics as part of the model, not as an optional afterthought."
     }
   ],
   "youtubeLabel": "Linear Regression — StatQuest",

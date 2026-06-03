@@ -30,26 +30,27 @@
   "deepDive": [
     {
       "heading": "Definitions and Properties",
-      "body": "I(X;Y) = H(X) - H(X|Y) = H(Y) - H(Y|X) = H(X) + H(Y) - H(X,Y). Symmetric: I(X;Y) = I(Y;X). Non-negative: I(X;Y) ≥ 0. Zero iff independence. Bounded: I(X;Y) ≤ min(H(X), H(Y)).",
+      "body": "Mutual information measures how much two variables tell you about each other. It can be interpreted as the reduction in uncertainty that comes from observing one variable before predicting the other. Because it is symmetric, it captures shared information rather than a one-way influence.",
       "formula": "I(X;Y) = Σₓ,ᵧ p(x,y) log(p(x,y)/(p(x)p(y))) = D(p(x,y)||p(x)p(y))"
     },
     {
       "heading": "Conditional Mutual Information",
-      "body": "I(X;Y|Z) = H(X|Z) - H(X|Y,Z). Information between X and Y given Z. Measures conditional dependence. Chain rule: I(X,Y;Z) = I(X;Z) + I(Y;Z|X). Used in conditional independence testing, causal discovery.",
+      "body": "Conditional mutual information asks how much two variables still tell you about each other after a third variable is already known. It is useful for separating direct relationships from ones that are explained away by context or by a common cause. This makes it a key tool in graphical models, causal discovery, and conditional independence testing.",
       "formula": "I(X;Y|Z) = Σ p(z) I(X;Y|Z=z) = H(X|Z) - H(X|Y,Z)"
     },
     {
       "heading": "Data Processing Inequality",
-      "body": "If X → Z → Y (Markov chain), then I(X;Z) ≥ I(X;Y). No processing of Z can increase information about X. Foundation of information theory. Equality iff Z is a sufficient statistic: X → Z → Y and I(X;Z) = I(X;Y) implies Y adds no info beyond Z.",
+      "body": "The data processing inequality says that once information has been compressed or transformed, later processing cannot create new information about the original source. In other words, passing through an intermediate representation can preserve information or lose it, but it cannot magically add more. This principle underlies representation learning, statistics, and communication theory.",
       "formula": "X → Z → Y ⟹ I(X;Z) ≥ I(X;Y)"
     },
     {
       "heading": "Estimating MI from Data",
-      "body": "Hard problem: need density estimation. Methods: (1) Histogram/binning (biased, doesn't scale). (2) k-NN estimators (Kraskov-Stögbauer-Grassberger). (3) Neural estimators (MINE: DV representation, InfoNCE). (4) Kernel density estimation. Each has tradeoffs."
+      "body": "Estimating mutual information from data is difficult because it requires learning something about the joint distribution, not just the marginals. Simple estimators work in low dimensions but become unreliable as dimensionality grows. Modern approaches trade off bias, variance, and computational cost in different ways depending on the problem."
     },
     {
       "heading": "Normalized Variants",
-      "body": "Raw MI depends on marginal entropies. Normalized versions for comparison: NMI = 2I(X;Y)/(H(X)+H(Y)) or I(X;Y)/√(H(X)H(Y)). Range [0,1]. Adjusted MI corrects for chance (similar to adjusted Rand index)."
+      "body": "Raw mutual information depends on how much uncertainty the variables have to begin with, so it can be hard to compare across problems. Normalized versions rescale the value to make comparisons more interpretable, especially in clustering and representation evaluation. Adjusted versions go one step further by accounting for similarity that would arise just by chance.",
+      "formula": "NMI = 2I(X;Y)/(H(X)+H(Y))"
     }
   ],
   "youtubeLabel": "Mutual Information — Machine Learning Street Talk",

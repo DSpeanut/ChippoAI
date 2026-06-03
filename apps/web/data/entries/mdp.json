@@ -30,16 +30,16 @@
   "deepDive": [
     {
       "heading": "Bellman Equations",
-      "body": "The Bellman expectation equation decomposes the value of a state into the immediate reward plus the discounted value of the successor state: V^π(s) = Σ_a π(a|s)[R(s,a) + γ Σ_{s'} P(s'|s,a)V^π(s')]. This is a linear system in V^π — for a policy π, it can be solved exactly: V^π = (I − γP^π)⁻¹ r^π, where P^π is the transition matrix under π and r^π is the reward vector. The Bellman optimality equation replaces the expectation over π with a maximum: V*(s) = max_a [R(s,a) + γ Σ_{s'} P(s'|s,a)V*(s')]. This is a non-linear system — no closed form, but solvable by Value Iteration (repeated application of the Bellman operator T). [1]",
+      "body": "This is a non-linear system — no closed form, but solvable by Value Iteration (repeated application of the Bellman operator T).",
       "formula": "V*(s) = max_a [R(s,a) + γ Σ_{s'} P(s'|s,a) V*(s')]"
     },
     {
       "heading": "Value Iteration vs Policy Iteration",
-      "body": "Value Iteration: start V(s) = 0. Repeat: V(s) ← max_a [R(s,a) + γ Σ_{s'} P(s'|s,a)V(s')] for all s. Convergence guaranteed; error after k iterations ≤ γᵏ/(1−γ) · max_s |V(s)|. Each iteration: O(|S|²|A|). Policy Iteration: start with arbitrary π. Repeat: (1) evaluate π by solving (I−γP^π)V^π = r^π (O(|S|³) matrix solve or O(|S|²|A|) iterative); (2) improve π: π'(s) = argmax_a [R(s,a) + γ Σ_{s'} P(s'|s,a)V^π(s')]. Policy Iteration usually converges in <20 iterations for tabular MDPs (much faster than VI) but each iteration is more expensive. In practice: Value Iteration is simpler to implement; Policy Iteration converges in fewer sweeps for problems with small action spaces. [2]"
+      "body": "This section explains the main idea behind this part of the method in plain language."
     },
     {
       "heading": "Discount Factor γ and Return",
-      "body": "The discount factor γ ∈ [0,1) ensures the return G_t = Σ_{k≥0} γᵏ R_{t+k+1} is finite (bounded by R_max / (1−γ)). Interpretation: γ close to 1 means the agent cares about distant future rewards (long-horizon planning). γ close to 0 means greedy (only immediate reward matters). γ is also a mathematical convenience: it ensures the Bellman operator is a contraction (convergence guarantee). Without discounting (γ=1), Value Iteration may not converge for infinite-horizon MDPs (only guaranteed for episodic/finite-horizon settings). In practice: γ=0.99 is common for continuous control; γ=0.99–0.999 for long-horizon games; γ=0.9 for short-horizon problems. [1]"
+      "body": "Interpretation: γ close to 1 means the agent cares about distant future rewards (long-horizon planning). γ close to 0 means greedy (only immediate reward matters). γ is also a mathematical convenience: it ensures the Bellman operator is a contraction (convergence guarantee)."
     }
   ],
   "youtubeLabel": "Markov Decision Processes — David Silver RL Lecture 2",
@@ -62,7 +62,13 @@
     }
   ],
   "sources": [
-    { "label": "Sutton, R.S. & Barto, A.G. — Reinforcement Learning: An Introduction, 2nd Ed., MIT Press, 2018", "url": "http://incompleteideas.net/book/the-book-2nd.html" },
-    { "label": "Puterman, M.L. — Markov Decision Processes: Discrete Stochastic Dynamic Programming, Wiley, 1994", "url": "https://doi.org/10.1002/9780470316887" }
+    {
+      "label": "Sutton, R.S. & Barto, A.G. — Reinforcement Learning: An Introduction, 2nd Ed., MIT Press, 2018",
+      "url": "http://incompleteideas.net/book/the-book-2nd.html"
+    },
+    {
+      "label": "Puterman, M.L. — Markov Decision Processes: Discrete Stochastic Dynamic Programming, Wiley, 1994",
+      "url": "https://doi.org/10.1002/9780470316887"
+    }
   ]
 }

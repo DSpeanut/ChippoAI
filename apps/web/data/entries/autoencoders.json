@@ -23,32 +23,32 @@
     }
   ],
   "deepDiveIntro": [
-    "An autoencoder consists of an encoder f: ℝᵖ → ℝᵈ (d << p) and a decoder g: ℝᵈ → ℝᵖ. Both are neural networks. The model is trained to minimise reconstruction loss between input x and output g(f(x)). The bottleneck forces the network to learn a compressed representation.",
-    "The bottleneck dimension d controls the compression ratio and the richness of the learned representation. Undercomplete autoencoders (d << p) learn to compress. Overcomplete autoencoders (d > p) require regularisation (denoising, sparse, contractive) to learn useful representations."
+    "An autoencoder has an encoder that squeezes the input into a small bottleneck representation, and a decoder that tries to rebuild the original from that bottleneck. Both are neural networks trained end-to-end to minimise the difference between the original input and the reconstruction. The narrower the bottleneck, the more the network must compress.",
+    "The bottleneck size controls the compression ratio and how rich the learned representation is. When the bottleneck is smaller than the input (undercomplete), the network is forced to compress. When the bottleneck is larger than the input (overcomplete), regularisation such as denoising or sparsity constraints is needed to prevent the network from simply memorising the input."
   ],
   "visualizationType": "autoencoders",
   "deepDive": [
     {
       "heading": "Architecture: Encoder–Bottleneck–Decoder",
-      "body": "Encoder: x → z = f_θ(x), typically a stack of fully-connected or convolutional layers with decreasing width. Bottleneck: z ∈ ℝᵈ (latent code). Decoder: z → x̂ = g_φ(z), typically a mirror of the encoder with increasing width. Training minimises: L = ||x − g_φ(f_θ(x))||² (MSE) for continuous inputs, or binary cross-entropy for binary inputs. [1][2]",
+      "body": "The encoder is a stack of layers with decreasing width that progressively compresses the input. The bottleneck is the smallest layer — the latent code. The decoder mirrors the encoder with increasing width and tries to reconstruct the original input from the latent code. For continuous data, training minimises mean squared reconstruction error; for binary data, binary cross-entropy is used. [1][2]",
       "formula": "L(θ,φ) = ||x − g_φ(f_θ(x))||²"
     },
     {
       "heading": "Undercomplete vs Overcomplete",
-      "body": "Undercomplete (d < p): bottleneck forces compression — the autoencoder must discard redundancy. If the encoder and decoder are linear, an undercomplete autoencoder recovers the same subspace as PCA. With non-linear activations, it finds non-linear manifolds. Overcomplete (d ≥ p): without regularisation, the network can learn the identity mapping (copy input to output) without learning useful structure. Regularisation is required. [1]"
+      "body": "When the bottleneck is smaller than the input, the network must discard redundancy and learn what matters most. A linear autoencoder with a narrow bottleneck recovers the same subspace as PCA; adding non-linear activations lets it find curved, more expressive compressions. When the bottleneck is larger than the input, the network could just copy the input without learning anything — regularisation such as denoising or sparsity penalties are essential to force meaningful features. [1]"
     },
     {
       "heading": "Regularised Autoencoders",
-      "body": "Denoising AE: train to reconstruct clean x from corrupted x̃ = corrupt(x) (e.g. add Gaussian noise or randomly zero out features). Forces the encoder to learn robust features insensitive to small perturbations. Sparse AE: add L1 penalty on activations — only a few latent units are active per input. Contractive AE: penalise the Frobenius norm of the Jacobian ||∂f/∂x||²_F — encourages invariance to small input changes. [1]"
+      "body": "A denoising autoencoder is trained to reconstruct the clean input from a corrupted version (random noise added, or features randomly zeroed out). This forces the encoder to learn features robust to small perturbations rather than just memorising the exact input. A sparse autoencoder adds a penalty that keeps most latent units inactive for any given input, so only a few dimensions fire at once — similar to sparse coding in neuroscience. A contractive autoencoder adds a penalty that rewards the encoder for being insensitive to small input changes. [1]"
     },
     {
       "heading": "Variational Autoencoder (VAE)",
-      "body": "VAE (Kingma & Welling, 2014) replaces the deterministic latent code z with a stochastic code: the encoder outputs μ and σ of a Gaussian q(z|x) ≈ N(μ,σ²I). The decoder receives z ~ q(z|x). The objective (ELBO) = reconstruction term − KL divergence term: L = E[log p(x|z)] − KL(q(z|x)||p(z)). The KL term regularises the posterior toward the prior N(0,I), enabling sampling. [1]",
+      "body": "A VAE replaces the fixed bottleneck with a probability distribution — the encoder outputs the mean and spread of a Gaussian, and the latent code is sampled from that Gaussian during training. The training objective balances two goals: reconstruct the input as faithfully as possible, and keep the learned distribution close to a standard Gaussian prior. This second constraint (the KL term) regularises the latent space so that it is smooth and continuous, enabling you to sample new examples by drawing from the prior. [1]",
       "formula": "ELBO = E_{z~q(z|x)}[log p(x|z)] − KL(q(z|x)‖N(0,I))"
     },
     {
       "heading": "Autoencoder vs PCA",
-      "body": "PCA: linear, global optimum (eigendecomposition), interpretable components, can reconstruct exactly. AE: non-linear (with activation functions), local optimum (gradient descent), black-box features. If encoder and decoder are linear (no activations), the AE's latent space spans the same subspace as PCA (but may rotate within it). Non-linear activations allow AEs to capture curved manifolds that PCA cannot represent. [1][2]"
+      "body": "PCA finds the best linear compression of the data with an exact, globally optimal solution. An autoencoder with no activation functions converges to the same linear subspace as PCA (though possibly rotated). Adding non-linear activations is what makes autoencoders more powerful: they can discover curved, non-linear structure that PCA cannot capture. The cost is that autoencoders find only a local optimum through gradient descent and their features are harder to interpret. [1][2]"
     }
   ],
   "youtubeLabel": "Autoencoders Explained",

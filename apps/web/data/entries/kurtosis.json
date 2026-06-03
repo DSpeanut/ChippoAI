@@ -30,20 +30,21 @@
   "deepDive": [
     {
       "heading": "Definition: Fourth Standardised Moment",
-      "body": "κ = E[(X−μ)⁴] / σ⁴. Excess kurtosis: γ₂ = κ − 3. Normal distribution: κ = 3, γ₂ = 0. Leptokurtic (γ₂ > 0): fatter tails, sharper peak. Platykurtic (γ₂ < 0): thinner tails, flatter peak. The fourth power amplifies large deviations — kurtosis is dominated by tail behaviour. [1]",
+      "body": "Kurtosis measures how much probability sits in the tails relative to a normal distribution. High kurtosis means extreme outcomes occur more often than normal theory would suggest, while low kurtosis means tails are lighter and extremes are less common. Because the calculation emphasizes very large deviations, kurtosis is mainly a tail-risk measure rather than a simple peak-height measure.",
       "formula": "γ₂ = E[(X−μ)⁴] / σ⁴ − 3"
     },
     {
       "heading": "Named Distributions and Their Kurtosis",
-      "body": "Normal N(μ,σ²): γ₂ = 0. Student-t(ν): γ₂ = 6/(ν−4) for ν > 4 (approaches 0 as ν→∞). Laplace(μ,b): γ₂ = 3 (always leptokurtic). Uniform(a,b): γ₂ = −6/5 (always platykurtic). Exponential(λ): γ₂ = 6. Bernoulli(p): γ₂ = (1−6p(1−p))/(p(1−p)). [1]"
+      "body": "Different distribution families have very different tail profiles. The normal distribution is the reference point with zero excess kurtosis, while heavy-tailed distributions such as the Student t and Laplace have positive excess kurtosis. Light-tailed distributions such as the uniform have negative excess kurtosis, reflecting fewer extreme observations than the normal would predict.",
+      "formula": "Student-t: 6/(ν−4),   Uniform: −6/5"
     },
     {
       "heading": "Mesokurtic, Leptokurtic, Platykurtic",
-      "body": "Mesokurtic (γ₂ ≈ 0): normal-like tails. Leptokurtic (γ₂ > 0): 'lepto' = thin in Greek, but the peak is thin/sharp and tails are fat — most mass is concentrated at centre AND in the extremes, with less in the shoulders. Platykurtic (γ₂ < 0): 'platy' = flat — flatter peak, shorter tails. Despite the 'lepto=thin' etymology, leptokurtic means fatter tails relative to normal. [1]"
+      "body": "The usual labels compare tail behavior against the normal benchmark. Mesokurtic means normal-like tails, leptokurtic means heavier tails, and platykurtic means lighter tails. These labels are often described in terms of peak shape, but the more important interpretation is how likely the distribution is to generate rare, extreme values."
     },
     {
       "heading": "Excess Kurtosis and Tail Risk",
-      "body": "For a normal distribution, P(|X−μ| > 4σ) ≈ 6.3×10⁻⁵. For t(5) with γ₂ = 6: P(|X−μ| > 4σ) is much higher. Value-at-Risk models assuming normality underestimate extreme losses when γ₂ > 0. The distinction is captured by extreme value theory (EVT): the generalised extreme value parameter ξ > 0 corresponds to fat tails (positive excess kurtosis). [2]"
+      "body": "Kurtosis matters most when extreme events are costly. If a model assumes normal tails when the true data is much heavier-tailed, it will systematically understate the chance of crashes, large claims, or rare anomalies. This is why kurtosis is a central diagnostic in finance, risk management, and anomaly detection."
     }
   ],
   "youtubeLabel": "Kurtosis Explained",

@@ -30,19 +30,19 @@
   "deepDive": [
     {
       "heading": "Output Size Formula — Detailed Derivation",
-      "body": "Consider a 1D convolution for clarity. With input size H_in, kernel K, stride S, padding P: the input (padded) has size H_in + 2P. The filter can start at positions 0, S, 2S, ..., up to the last valid position H_in+2P−K. The number of valid positions is floor((H_in+2P−K)/S) + 1 = H_out. Special cases: valid convolution (P=0): H_out = floor((H_in−K)/S)+1 — always smaller than input unless K=1; same convolution (P=(K−1)/2, S=1): H_out = H_in — requires odd K for integer P; full convolution (P=K−1, S=1): H_out = H_in+K−1 — larger than input, used in signal processing. For building architectures: always compute the expected output size at each layer to catch dimension mismatches before training. [1]"
+      "body": "Consider a 1D convolution for clarity. With input size H_in, kernel K, stride S, padding P: the input (padded) has size H_in + 2P. The filter can start at positions 0, S, 2S, ..., up to the last valid position H_in+2P−K. For building architectures: always compute the expected output size at each layer to catch dimension mismatches before training."
     },
     {
       "heading": "Strided Convolutions vs Pooling",
-      "body": "Both stride-2 convolutions and 2×2 max pooling halve spatial dimensions. Key differences: (1) Learnable vs fixed — strided conv has parameters W, b that are learned; max pool is a fixed max operation. (2) Information preservation — strided conv learns the optimal aggregation kernel; max pool only keeps the maximum. (3) Gradient flow — strided conv has full gradients; max pool has sparse gradients (only through the argmax). (4) Computation — for equal output size, strided conv (K=3, S=2) performs 9 multiply-adds per output location; max pool (K=2, S=2) performs 4 comparisons, no multiplications — max pool is faster. Modern architectures (ResNet, EfficientNet) use stride-2 conv at residual stage boundaries (more expressive); architectures prioritising speed (MobileNet) use depth-wise stride-2 conv. [2]"
+      "body": "Both stride-2 convolutions and 2×2 max pooling halve spatial dimensions. Key differences: (1) Learnable vs fixed — strided conv has parameters W, b that are learned; max pool is a fixed max operation. (2) Information preservation — strided conv learns the optimal aggregation kernel; max pool only keeps the maximum. Modern architectures (ResNet, EfficientNet) use stride-2 conv at residual stage boundaries (more expressive); architectures prioritising speed (MobileNet) use depth-wise stride-2 conv."
     },
     {
       "heading": "Dilated Convolution and WaveNet",
-      "body": "WaveNet (van den Oord et al., 2016) uses causal dilated convolutions for audio generation. Causal means no future context: only past samples contribute to the current output (achieved by masking the kernel to use only positions m ≤ 0). Dilation rates cycle through 1,2,4,8,16,...,512 in each 'stack'; with 10 dilation rates and 3 stacks, the receptive field covers 3×(1+2+...+512)+1 = 3069 time steps — covering ~190ms at 16kHz audio. This allows WaveNet to model long-range dependencies in audio (e.g., an instrument's sustain envelope) that would require thousands of sequential RNN steps to capture. The exponential dilation schedule achieves logarithmic depth growth of the receptive field. [2]"
+      "body": "WaveNet (van den Oord et al., 2016) uses causal dilated convolutions for audio generation. This allows WaveNet to model long-range dependencies in audio (e.g., an instrument's sustain envelope) that would require thousands of sequential RNN steps to capture. The exponential dilation schedule achieves logarithmic depth growth of the receptive field."
     },
     {
       "heading": "Transposed Convolutions and Upsampling",
-      "body": "Transposed convolutions (erroneously called 'deconvolutions') upsample feature maps, commonly used in generative models (GANs, VAEs) and segmentation decoders (U-Net). For input size H_in, the output is H_out = (H_in−1)·S − 2P + K. A transposed conv with K=4, S=2, P=1 doubles spatial size: H_out = (H_in−1)·2 − 2 + 4 = 2H_in. Transposed convolutions can produce checkerboard artefacts when the kernel size is not divisible by the stride (stride=2, kernel=3 causes overlapping coverage patterns). The fix: use K=4 with S=2 (divisible), or replace transposed conv with bilinear/nearest-neighbour upsampling followed by a standard conv (Odena et al., 2016). [1]"
+      "body": "Transposed convolutions (erroneously called 'deconvolutions') upsample feature maps, commonly used in generative models (GANs, VAEs) and segmentation decoders (U-Net)."
     }
   ],
   "takeaways": [

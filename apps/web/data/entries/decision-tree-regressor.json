@@ -35,16 +35,16 @@
     },
     {
       "heading": "Prediction",
-      "body": "Once the tree is built, every input x is routed through the binary decisions from root to leaf. The leaf's prediction is the mean of all training targets assigned to that leaf. With R leaf regions R₁, …, R_R, the model can be written as a sum of step functions weighted by the leaf means. [2]",
+      "body": "Once the tree is built, every input x is routed through the binary decisions from root to leaf. The leaf's prediction is the mean of all training targets assigned to that leaf.",
       "formula": "f̂(x) = Σₘ ȳₘ · 𝟙(x ∈ Rₘ),  where ȳₘ = (1/|Rₘ|) Σᵢ∈Rₘ yᵢ"
     },
     {
       "heading": "Complexity Control",
-      "body": "A fully grown tree memorises the training set (one leaf per point). Depth is controlled by: max_depth (hard limit on tree depth), min_samples_leaf (minimum training examples in a leaf), min_samples_split (minimum examples to attempt a split). These are hyperparameters tuned by cross-validation. Lower values → more complex tree → risk of overfitting. [2]"
+      "body": "A fully grown tree memorises the training set (one leaf per point). Depth is controlled by: max_depth (hard limit on tree depth), min_samples_leaf (minimum training examples in a leaf), min_samples_split (minimum examples to attempt a split). These are hyperparameters tuned by cross-validation."
     },
     {
       "heading": "Cost-Complexity Pruning (α-Pruning)",
-      "body": "Introduced in the original CART paper: grow a full tree T₀, then remove subtrees to minimise a penalised loss Rα(T) = RSS(T) + α|T|, where |T| is the number of leaves and α ≥ 0 is the complexity penalty. As α increases, the optimal tree shrinks. sklearn's DecisionTreeRegressor implements this via ccp_alpha. [1]",
+      "body": "As α increases, the optimal tree shrinks. sklearn's DecisionTreeRegressor implements this via ccp_alpha.",
       "formula": "Rα(T) = Σₘ Σᵢ∈Rₘ (yᵢ − ȳₘ)² + α · |T|"
     },
     {

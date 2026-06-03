@@ -29,21 +29,21 @@
   "deepDive": [
     {
       "heading": "Power Formula for z-test",
-      "body": "One-sided right test, H₀: μ = μ₀, H₁: μ = μ₁ > μ₀, effect δ = μ₁ − μ₀. Reject H₀ when Z = (x̄ − μ₀)/(σ/√n) > z_α. Power = P(Z > z_α | μ = μ₁) = P((x̄−μ₁)/(σ/√n) > z_α − δ√n/σ) = 1 − Φ(z_α − δ√n/σ) = Φ(δ√n/σ − z_α). For two-sided test at α: Power ≈ Φ(|δ|√n/σ − z_{α/2}) (ignoring the negligible left tail). [1]",
+      "body": "Power describes how likely a test is to detect a real effect of a given size. It rises when the true effect is larger, the sample is bigger, the noise is smaller, or the significance threshold is less strict. In practice, power curves are useful because they show exactly which effect sizes a study can and cannot detect reliably.",
       "formula": "Power ≈ Φ(|δ| · √n / σ  −  z_{α/2})"
     },
     {
       "heading": "Sample Size Formula",
-      "body": "Solving Power = 1−β for n: n = (z_{α/2} + z_β)²σ²/δ² (two-sided). In terms of Cohen's d = δ/σ: n = (z_{α/2} + z_β)²/d². For α = 0.05 (z_{0.025} = 1.96), power = 0.80 (z_{0.20} = 0.842): coefficient = (1.96+0.842)² = 7.85. For d = 0.2 (small): n ≈ 197; d = 0.5 (medium): n ≈ 32; d = 0.8 (large): n ≈ 13 per group (two-sample: double these). [1]",
+      "body": "Sample-size planning works by reversing the power calculation. You choose a minimum effect worth detecting, a significance level, and a desired probability of detection, then solve for the number of observations needed. This turns vague ideas about adequate sample size into a concrete design calculation.",
       "formula": "n = (z_{α/2} + z_β)² · σ² / δ² = (z_{α/2} + z_β)² / d²"
     },
     {
       "heading": "Power-Precision Tradeoff",
-      "body": "There is a fundamental tradeoff between Type I error (α) and Type II error (β). Lowering α (more stringent) increases β (less power) for fixed n. The only way to simultaneously reduce both is to increase n. In exploratory research, α = 0.10 or 0.20 may be acceptable to increase power; in confirmatory trials with strong consequences (FDA approval), α = 0.01 with power = 0.90 may be required. [1]"
+      "body": "There is an unavoidable trade-off between being cautious about false positives and being sensitive to real effects. If the sample size stays fixed, making the test more stringent lowers power. The only reliable way to reduce both false-positive and false-negative risk at once is to collect more informative data."
     },
     {
       "heading": "Winner's Curse in Underpowered Studies",
-      "body": "When an underpowered study 'succeeds' (rejects H₀), the observed effect size is inflated above the true effect — this is the winner's curse (Ioannidis, 2008). Only extreme sample effects pass the significance threshold in underpowered designs. Meta-analyses that include underpowered studies are subject to this bias. Publication bias (only significant results published) compounds the problem."
+      "body": "Underpowered studies do not just miss real effects more often; they also exaggerate the effects they happen to detect. Only unusually large sample estimates cross the significance threshold in those settings, so published findings become biased upward. This is one reason low-power literatures often look less replicable than expected."
     }
   ],
   "youtubeLabel": "Statistical Power — StatQuest",

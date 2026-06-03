@@ -30,27 +30,27 @@
   "deepDive": [
     {
       "heading": "Matrix Multiplication",
-      "body": "Defined when inner dimensions match. Each entry is the dot product of a row from the first matrix with a column from the second. Complexity is O(mnp) for naive algorithm, O(n^2.373) theoretically with advanced methods. Strassen's algorithm achieves O(n^2.81). In practice, BLAS libraries use highly optimized blocking strategies.",
+      "body": "You can multiply two matrices only when the output size of the first matches the input size of the second. The product describes doing one linear transformation after the other, so each entry mixes one row from the first matrix with one column from the second. Practical software focuses on efficient and numerically stable implementations of this operation.",
       "formula": "(AB)ᵢₖ = Σⱼ₌₁ⁿ AᵢⱼBⱼₖ"
     },
     {
       "heading": "Transpose",
-      "body": "Swaps rows and columns. A square matrix is symmetric if A = Aᵀ. The transpose converts column vectors to row vectors, enabling outer products: uvᵀ is a matrix. In ML, XᵀX appears frequently in normal equations and covariance estimation.",
+      "body": "The transpose flips a matrix across its main diagonal, turning rows into columns and columns into rows. This lets you switch perspectives between inputs and outputs, which is why transposes appear constantly in covariance formulas, least squares, and gradient calculations. A symmetric matrix is one that stays the same after this flip.",
       "formula": "(Aᵀ)ᵢⱼ = Aⱼᵢ, (AB)ᵀ = BᵀAᵀ"
     },
     {
       "heading": "Matrix Inverse",
-      "body": "A⁻¹ satisfies AA⁻¹ = A⁻¹A = I. Exists iff det(A) ≠ 0 (A is nonsingular). Computing the inverse is O(n³) with Gaussian elimination. In practice, we solve Ax = b using LU or QR decomposition rather than explicitly computing A⁻¹, for numerical stability.",
+      "body": "An inverse undoes the action of a matrix, so applying a matrix and then its inverse returns you to the original vector. Only square matrices that do not collapse any directions have inverses. In real computation, people usually solve linear systems directly instead of forming the inverse explicitly because that is more stable.",
       "formula": "A⁻¹A = AA⁻¹ = I, (AB)⁻¹ = B⁻¹A⁻¹"
     },
     {
       "heading": "Trace and Determinant",
-      "body": "Trace is the sum of diagonal elements. Determinant measures volume scaling factor: det(A) is the signed volume of the parallelepiped spanned by columns. det(AB) = det(A)det(B). det(A) = 0 means the transformation collapses space (singular matrix).",
+      "body": "The trace adds the diagonal entries and is closely tied to the sum of the eigenvalues. The determinant measures how the matrix scales signed volume, so a zero determinant means the transformation collapses space into a lower dimension. Together they give fast structural clues about a matrix.",
       "formula": "tr(A) = Σᵢ Aᵢᵢ, det(AB) = det(A)det(B)"
     },
     {
       "heading": "Hadamard (Elementwise) Product",
-      "body": "Different from matrix multiplication. (A ∘ B)ᵢⱼ = AᵢⱼBᵢⱼ. Used in attention mechanisms (Transformer queries and keys), gating mechanisms (LSTM, GRU), and some regularization schemes. Requires same dimensions.",
+      "body": "The Hadamard product multiplies entries one by one instead of mixing rows with columns. It only works when the two matrices have the same shape. This is useful when you want to mask, gate, or reweight values without changing how information moves across dimensions.",
       "formula": "(A ∘ B)ᵢⱼ = Aᵢⱼ · Bᵢⱼ"
     }
   ],

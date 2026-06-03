@@ -19,26 +19,26 @@
     }
   ],
   "deepDiveIntro": [
-    "The Dickey-Fuller regression for AR(1): ΔYₜ = α + βt + γYₜ₋₁ + εₜ, where α is the constant, βt is a linear trend, and γ = φ₁ − 1. H₀: γ = 0 (unit root, φ₁ = 1). The t-statistic for γ does not follow the standard t-distribution under H₀ — it follows the Dickey-Fuller distribution, which is more negative than the normal. Critical values from Fuller (1976) and MacKinnon (1996).",
-    "The Augmented DF adds lagged differences to correct for serial correlation in the errors: ΔYₜ = α + βt + γYₜ₋₁ + Σᵢ₌₁ᵖ δᵢΔYₜ₋ᵢ + εₜ. The lag order p must be chosen to ensure white noise residuals. Selection: AIC/BIC on the augmented regression, or the Ng-Perron modified AIC. Too few lags → size distortion (over-rejection). Too many → power loss."
+    "The basic Dickey-Fuller test runs a regression of the change in a series on its lagged level (plus optional constant and trend). If the series has a unit root, the coefficient on the lagged level will be zero — that's the null hypothesis. The tricky part: the t-statistic for this coefficient does not follow the usual bell-curve distribution under the null; it follows a special distribution with more extreme (more negative) critical values, tabulated by MacKinnon (1996). [1]",
+    "The 'Augmented' version adds several lags of the change in the series to soak up any leftover serial correlation in the residuals. The number of lags p must be chosen carefully: too few and the test rejects the null too often (size distortion); too many and it loses the ability to detect stationarity (power loss). AIC or BIC are the standard ways to pick p. [1]"
   ],
   "deepDive": [
     {
       "heading": "ADF Test Specifications",
-      "body": "Three versions: (1) No constant: ΔYₜ = γYₜ₋₁ + Σδᵢ·ΔYₜ₋ᵢ + εₜ — only for zero-mean series. (2) Constant: ΔYₜ = α + γYₜ₋₁ + Σδᵢ·ΔYₜ₋ᵢ + εₜ — tests random walk vs stationary AR. (3) Constant + trend: ΔYₜ = α + βt + γYₜ₋₁ + Σδᵢ·ΔYₜ₋ᵢ + εₜ — tests random walk (with drift) vs trend-stationary. Critical values differ by specification. MacKinnon (1996) response surface approximations for any n. [1]",
+      "body": "There are three versions of the test, depending on what you know about your series. No constant: use only if the series is centered at zero. Constant only: use for a series with a non-zero average but no upward or downward trend — this is the most common choice. Constant plus trend: use when the series appears to be trending; this tests whether the trend is random (a random walk with drift) or deterministic. Choosing the wrong specification distorts critical values and can lead to wrong conclusions. [1]",
       "formula": "ΔYₜ = α + βt + γ·Yₜ₋₁ + Σᵢ₌₁ᵖ δᵢ·ΔYₜ₋ᵢ + εₜ;   H₀: γ = 0"
     },
     {
       "heading": "Critical Values and Test Decision",
-      "body": "Under H₀ (unit root), the t-statistic τ = γ̂/SE(γ̂) follows the Dickey-Fuller distribution — left-skewed and more negative than N(0,1). Reject H₀ if τ < critical value (note: one-sided left test). MacKinnon (1996) 5% critical values (n = 100): no constant: −1.95; constant: −2.89; constant + trend: −3.45. For n = 25 (small sample): −2.98 (constant), −3.60 (constant + trend). As n→∞, critical values approach approximately −1.95, −2.86, −3.41. [1]"
+      "body": "You reject the null hypothesis (unit root) when the test statistic is more negative than the critical value — this is a one-sided left-tail test. The threshold is more extreme than a regular t-test: for 100 observations with a constant, you need the statistic to be below about −2.89 at the 5% level (versus −1.96 for a standard t-test). With fewer observations the threshold is even more negative, reflecting the lower precision of the estimate. [1]"
     },
     {
       "heading": "Lag Selection in ADF",
-      "body": "AIC lag selection: choose p to minimize AIC = −2ℓ + 2(p+k) in the augmented regression. BIC is also common. Maximum lag: pmax = floor(12(n/100)^{1/4}) (Schwert 1989 rule of thumb). Alternative: sequential testing (Ng & Perron 1995) — start with pmax, test δₚ = 0 with standard t-test (10% level), reduce until first significant lag. Too few lags: correlated residuals, size distortion (ADF rejects too often). Too many: power loss (ADF fails to reject non-stationarity). [1]"
-  },
+      "body": "The number of lagged differences to include is usually chosen by AIC or BIC — pick the lag count that minimises the information criterion. A common rule of thumb for the maximum to consider is 12 times the fourth root of the sample size divided by 100. If you include too few lags, leftover correlation inflates the rejection rate; too many lags and the test becomes sluggish and misses genuine stationarity. [1]"
+    },
     {
       "heading": "Limitations and Complementary Tests",
-      "body": "ADF limitations: (1) Low power against near-unit-root alternatives (φ₁ = 0.98 looks like a unit root); (2) Sensitive to lag selection; (3) Cannot distinguish trend-stationary from difference-stationary for small n. KPSS test (Kwiatkowski et al. 1992): H₀ = trend stationary — complementary to ADF. If ADF fails to reject AND KPSS rejects: strong evidence of unit root. If ADF rejects AND KPSS fails to reject: strong evidence of stationarity. PP (Phillips-Perron, 1988) test: uses non-parametric correction for serial correlation instead of augmented lags — similar power to ADF but can be more sensitive to heteroscedasticity. [1]"
+      "body": "The ADF test has weak power against near-unit-root processes — a series with very high persistence (like an AR coefficient of 0.98) looks almost identical to a true random walk in small samples. The KPSS test flips the null: it assumes stationarity and rejects when there is evidence of a unit root, making it a useful complement. If ADF fails to reject (evidence for a unit root) and KPSS also rejects (evidence against stationarity), you have strong two-sided evidence of non-stationarity. The Phillips-Perron test corrects for serial correlation non-parametrically rather than with extra lags, offering a slightly different perspective. [1]"
     }
   ],
   "youtubeLabel": "Unit Root Tests (ADF) — Ben Lambert",

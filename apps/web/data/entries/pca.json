@@ -30,22 +30,22 @@
   "deepDive": [
     {
       "heading": "The PCA Objective",
-      "body": "Centre the data: X̃ = X − μ̄ (subtract column means). Find the direction w₁ that maximises variance: w₁ = argmax_{||w||=1} wᵀSw, where S = (1/n)X̃ᵀX̃ is the sample covariance matrix. The solution is the eigenvector corresponding to the largest eigenvalue λ₁. Subsequent components are eigenvectors of the remaining eigenvalues, constrained to be orthogonal. [1][2]",
+      "body": "Subsequent components are eigenvectors of the remaining eigenvalues, constrained to be orthogonal.",
       "formula": "w₁ = argmax_{‖w‖=1} wᵀSw,   Sw₁ = λ₁w₁"
     },
     {
       "heading": "SVD Connection",
-      "body": "The numerically stable way to compute PCA is via Thin SVD of the centred data matrix: X̃ = UΣVᵀ. The principal components are the columns of V (right singular vectors). The scores (projected data) are Z = X̃V = UΣ. The eigenvalues of S are σᵢ²/n. SVD avoids explicitly forming X̃ᵀX̃, which is numerically preferable for tall-and-skinny matrices. [1]",
+      "body": "The principal components are the columns of V (right singular vectors).",
       "formula": "X̃ = UΣVᵀ,    Z = X̃V = UΣ"
     },
     {
       "heading": "Explained Variance & Scree Plot",
-      "body": "Variance explained by component k: λₖ / Σᵢ λᵢ. Cumulative explained variance at k components: Σᵢ₌₁ᵏ λᵢ / Σᵢ λᵢ. A scree plot shows eigenvalues vs component index — the 'elbow' suggests how many components to retain. A common rule: retain enough components to explain 90–95% of total variance. [1]",
+      "body": "A scree plot shows eigenvalues vs component index — the 'elbow' suggests how many components to retain. A common rule: retain enough components to explain 90–95% of total variance.",
       "formula": "Explained variance ratio_k = λₖ / Σᵢ λᵢ"
     },
     {
       "heading": "Reconstruction & Rank-k Approximation",
-      "body": "The rank-k PCA approximation of X̃ is: X̂ = ZₖVₖᵀ where Zₖ = X̃Vₖ and Vₖ contains the top k principal components. Eckart–Young theorem: among all rank-k matrices, X̂ minimises ||X̃ − X̂||²_F (Frobenius norm). Reconstruction error = Σᵢ₌ₖ₊₁ᵖ λᵢ (sum of discarded eigenvalues). [1]",
+      "body": "This section explains the main idea behind this part of the method in plain language.",
       "formula": "X̂ = X̃Vₖ Vₖᵀ   (rank-k reconstruction)"
     },
     {
@@ -82,7 +82,13 @@
     }
   ],
   "sources": [
-    { "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 14.5", "url": "https://hastie.su.domains/ElemStatLearn/" },
-    { "label": "James et al. — An Introduction to Statistical Learning, Ch. 12", "url": "https://www.statlearning.com/" }
+    {
+      "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 14.5",
+      "url": "https://hastie.su.domains/ElemStatLearn/"
+    },
+    {
+      "label": "James et al. — An Introduction to Statistical Learning, Ch. 12",
+      "url": "https://www.statlearning.com/"
+    }
   ]
 }

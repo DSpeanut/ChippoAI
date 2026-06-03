@@ -30,27 +30,28 @@
   "deepDive": [
     {
       "heading": "Gradient Descent Update",
-      "body": "Basic iteration: x_{k+1} = x_k - α∇f(x_k). First-order approximation: f(x - α∇f) ≈ f(x) - α||∇f||², guaranteeing decrease for small α. Step size α critical: too small = slow convergence; too large = oscillation or divergence.",
+      "body": "Gradient descent improves a current guess by stepping opposite the gradient, which is the local uphill direction. For small enough steps, the objective decreases because the first-order approximation says this direction points downhill. The learning rate controls the trade-off between progress and stability.",
       "formula": "x_{k+1} = x_k - αₖ∇f(x_k)"
     },
     {
       "heading": "Convergence Analysis",
-      "body": "For L-smooth convex f (||∇f(x) - ∇f(y)|| ≤ L||x-y||): f(xₖ) - f* ≤ ||x₀ - x*||²/(2αk) for α ≤ 1/L. For μ-strongly convex: ||xₖ - x*||² ≤ (1 - μ/L)ᵏ||x₀ - x*||². Condition number κ = L/μ determines convergence speed.",
+      "body": "For smooth convex problems, gradient descent steadily closes the gap to the optimum, and for strongly convex problems the error shrinks at a geometric rate. The exact speed depends on how quickly gradients can change and how strongly curved the objective is near the minimum. Well-conditioned problems converge quickly, while poorly conditioned ones tend to zigzag and slow down.",
       "formula": "L-smooth: O(1/k), μ-strongly convex: O((1-1/κ)ᵏ)"
     },
     {
       "heading": "Line Search",
-      "body": "Instead of fixed α, find step size satisfying Wolfe conditions: sufficient decrease (Armijo) and curvature condition. Methods: exact line search (minimize along direction), backtracking (start large, shrink until Armijo satisfied). Guarantees convergence without manual tuning.",
+      "body": "Line search chooses the step size adaptively instead of fixing it in advance. The goal is to find a step that is large enough to make useful progress but not so large that the local approximation breaks down. This reduces manual tuning and often makes deterministic optimization more reliable.",
       "formula": "Armijo: f(x + αp) ≤ f(x) + c₁α∇f(x)ᵀp"
     },
     {
       "heading": "Momentum Methods",
-      "body": "Polyak momentum: v_{k+1} = βv_k + ∇f(x_k), x_{k+1} = x_k - αv_{k+1}. Accumulates velocity in consistent directions, damping oscillations. Nesterov accelerated gradient: look ahead before computing gradient. Improves rate to O(1/k²) for convex, O((1-√(μ/L))ᵏ) for strongly convex.",
+      "body": "Momentum smooths the update by carrying some of the previous motion into the next step. That helps the method keep moving through shallow directions while damping back-and-forth oscillation in steep directions. Nesterov-style momentum adds a look-ahead correction that can speed up convergence on convex problems.",
       "formula": "Nesterov: y_k = x_k + β(x_k - x_{k-1}), x_{k+1} = y_k - α∇f(y_k)"
     },
     {
       "heading": "Stochastic Gradient Descent",
-      "body": "Instead of full gradient ∇f = (1/n)Σ∇fᵢ, use minibatch gradient (1/|B|)Σ_{i∈B}∇fᵢ. Much faster per iteration. Converges for convex f with decreasing step sizes αₖ = O(1/k) or αₖ = O(1/√k). In deep learning, SGD often generalizes better than full gradient methods (implicit regularization)."
+      "body": "Stochastic gradient descent replaces the full gradient with a cheaper estimate computed from a random minibatch. Each step is noisier, but the updates are much cheaper, so the method can make rapid progress on large datasets. That noise also changes the optimization path and often helps models generalize better.",
+      "formula": "g_B = (1/|B|)Σ_{i∈B} ∇fᵢ"
     }
   ],
   "youtubeLabel": "Gradient Descent — StatQuest",

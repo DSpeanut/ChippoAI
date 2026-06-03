@@ -30,11 +30,11 @@
   "deepDive": [
     {
       "heading": "Attention Score Computation",
-      "body": "The attention score e_{ij} measures the importance of node j's features to node i. Three components: (1) Feature projection Wh_j: project j's features to a shared space (same W is used for all source nodes). (2) Concatenation [Wh_i || Wh_j]: form a 2F'-dimensional vector capturing both the query (i) and key (j) features. (3) LeakyReLU(a^T [·]): scalar scoring via a learnable vector a ∈ ℝ^{2F'} with a negative slope activation (α=0.2 in the original paper). LeakyReLU is used instead of ReLU to ensure non-zero gradients for negative attention scores. The softmax normalisation is over all neighbours j ∈ N(i) ∪ {i} (self-loop included): α_{ij} = exp(e_{ij})/Σ_{k ∈ N(i)∪{i}} exp(e_{ik}). [1]"
+      "body": "This section explains how the model represents interactions or sequence order and why that design choice matters."
     },
     {
       "heading": "Multi-Head Attention in GAT",
-      "body": "Similar to Transformer multi-head attention, GAT uses K independent attention mechanisms, each with separate weight matrices W^k and attention vector a^k. For intermediate layers, concatenate: h_i' = ||_{k=1}^K σ(Σ_j α_{ij}^k W^k h_j) — output dimension K×F'. For the final prediction layer, average: h_i' = σ(1/K Σ_{k=1}^K Σ_j α_{ij}^k W^k h_j) — averages the heads to produce final representation. Veličković et al. use K=8 heads with F'=8 features per head (total 64) in layer 1, and K=1 (or K=6 averaged) in layer 2. Multi-head attention in GAT is cheaper than in Transformers (attention only over actual neighbours, not all-to-all) but more expensive than GCN (requires computing K×|E| attention scores). [1]"
+      "body": "This section explains how the model represents interactions or sequence order and why that design choice matters."
     },
     {
       "heading": "GAT vs GCN: When Does Attention Help?",
@@ -42,7 +42,7 @@
     },
     {
       "heading": "Sparse Attention and Computational Cost",
-      "body": "In a graph with N nodes and E edges, GAT computes 2K×E attention scores (K per edge, 2 for i→j and j→i), compared to GCN's E normalisation constants. For sparse graphs (E ≪ N²), attention is much cheaper than all-to-all Transformer attention O(N²). For dense graphs (social networks with millions of edges per node), GAT becomes expensive. Graph transformers (e.g., Graphormer, GRIT) add structural encodings to standard attention, enabling sparse attention that combines the expressiveness of attention with the efficiency of graph sparsity. Graph transformers with virtual nodes and shortest-path distance encodings achieve state-of-the-art on molecular benchmarks while maintaining O(N+E) complexity for sparse graphs. [2]"
+      "body": "For sparse graphs (E ≪ N²), attention is much cheaper than all-to-all Transformer attention O(N²). For dense graphs (social networks with millions of edges per node), GAT becomes expensive. Graph transformers (e.g., Graphormer, GRIT) add structural encodings to standard attention, enabling sparse attention that combines the expressiveness of attention with the efficiency of graph sparsity. Graph transformers with virtual nodes and shortest-path distance encodings achieve state-of-the-art on molecular benchmarks while maintaining O(N+E) complexity for sparse graphs."
     }
   ],
   "takeaways": [

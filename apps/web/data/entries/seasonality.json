@@ -25,21 +25,22 @@
   "deepDive": [
     {
       "heading": "Classical Decomposition",
-      "body": "1. Estimate trend Tₜ using a 2×s moving average (for even s: 2×s MA = [0.5Yₜ₋ₛ/₂ + Yₜ₋ₛ/₂₊₁+…+Yₜ₊ₛ/₂₋₁ + 0.5Yₜ₊ₛ/₂]/s). 2. Detrend: dₜ = Yₜ − Tₜ (additive) or Yₜ/Tₜ (multiplicative). 3. Seasonal indices: average dₜ within each season k = 1,…,s; normalize to sum to 0 (additive) or s (multiplicative). Limitations: trend undefined at series ends (±s/2 observations); assumes constant seasonal pattern; sensitive to outliers. [1]",
+      "body": "Classical decomposition separates a series into trend, seasonal pattern, and irregular remainder by first smoothing the long-run movement and then averaging seasonal effects. It is easy to understand and works well for stable, regular patterns. Its main weakness is that it assumes the seasonal pattern does not change much over time.",
       "formula": "Additive: Yₜ = Tₜ + Sₜ + Rₜ;   Multiplicative: Yₜ = Tₜ · Sₜ · Rₜ"
     },
     {
       "heading": "STL Decomposition",
-      "body": "STL iterates (outer loop: robustness; inner loop: component estimation): (1) Detrend: dₜ = Yₜ − Tₜ. (2) Cycle-subseries smoothing: apply loess to each season's subseries {dₜ: t mod s = k} across time to get raw seasonal. (3) Low-pass filter the raw seasonal and subtract to remove trend leakage. (4) Update seasonal: Sₜ from smoothed minus filtered. (5) Update trend: loess smooth of Yₜ − Sₜ. Repeat. Result: Tₜ, Sₜ, Rₜ with Rₜ = Yₜ − Tₜ − Sₜ. Seasonal component can change slowly over years. [1]"
+      "body": "STL decomposition is a more flexible alternative that uses local smoothing instead of rigid moving-average formulas. It can handle changing seasonal patterns and is more resistant to outliers than classical decomposition. That flexibility is why it has become a standard exploratory tool for modern seasonal time series."
     },
     {
       "heading": "Seasonal ARIMA: SARIMA",
-      "body": "SARIMA(p,d,q)(P,D,Q)_s: Φ(Bˢ)φ(B)(1−Bˢ)ᴰ(1−B)ᵈYₜ = c + Θ(Bˢ)θ(B)εₜ. Seasonal difference ∇ˢ = 1−Bˢ: ∇ˢYₜ = Yₜ − Yₜ₋ₛ removes seasonal non-stationarity. Example: SARIMA(1,1,1)(1,1,1)₁₂ for monthly series with trend and seasonality. ACF/PACF patterns: seasonal AR shows spikes at lags s, 2s,… with decay; seasonal MA shows single spike at lag s. Identify seasonal orders by looking at ACF/PACF at multiples of s after seasonal differencing. [1]",
+      "body": "Seasonal ARIMA extends ordinary ARIMA by adding terms that model dependence across seasonal lags such as twelve months or four quarters. Seasonal differencing removes recurring level shifts, while seasonal autoregressive and moving-average terms capture repeated dynamics at those longer lags. This makes SARIMA one of the main workhorse models for regularly seasonal data.",
       "formula": "SARIMA: Φ(Bˢ)φ(B)·(1−Bˢ)ᴰ(1−B)ᵈ·Yₜ = Θ(Bˢ)θ(B)·εₜ"
     },
     {
       "heading": "Fourier Terms for Flexible Seasonality",
-      "body": "For complex or multiple seasonality, include Fourier terms as regressors: sin(2πkt/s), cos(2πkt/s) for k = 1,…,K, where s is the seasonal period. K Fourier pairs approximate a smooth seasonal pattern — fewer parameters than s−1 seasonal dummies and can model non-standard periods (e.g., weekly seasonality in daily data: s = 7, or annual in daily data: s = 365.25). TBATS (Trigonometric Box-Cox ARMA Trend Seasonality) and Prophet use this approach for multiple seasonal periods. [1]"
+      "body": "Fourier terms provide a smooth way to model seasonality with a small number of parameters. They are especially useful when the seasonal pattern is complex, long, or when multiple seasonal cycles must be represented at once. This idea is widely used in modern forecasting systems because it scales much better than large sets of seasonal dummy variables.",
+      "formula": "sin(2πkt/s),   cos(2πkt/s)"
     }
   ],
   "takeaways": [

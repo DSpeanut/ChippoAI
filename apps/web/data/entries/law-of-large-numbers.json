@@ -30,26 +30,28 @@
   "deepDive": [
     {
       "heading": "Weak Law of Large Numbers",
-      "body": "X̄ₙ →ᵖ μ (convergence in probability). Proof via Chebyshev: P(|X̄ₙ - μ| ≥ ε) ≤ Var(X̄ₙ)/ε² = σ²/(nε²) → 0. Only requires finite variance. Actually holds with just finite mean (using truncation arguments). WLLN is what justifies Monte Carlo estimation.",
+      "body": "The weak law says that as you average more independent samples, the chance of being noticeably far from the true mean becomes smaller and smaller. It formalizes the practical idea that large samples stabilize noisy observations. This is the version most often used to justify simulation and estimation methods such as Monte Carlo averages.",
       "formula": "∀ε > 0: P(|X̄ₙ - μ| ≥ ε) → 0 as n → ∞"
     },
     {
       "heading": "Strong Law of Large Numbers",
-      "body": "X̄ₙ → μ almost surely (a.s.). Stronger: P(lim_{n→∞} X̄ₙ = μ) = 1. Implies WLLN. Proved via Borel-Cantelli: show Σ P(|X̄ₙ - μ| > ε) < ∞ for each ε. SLLN says sample paths converge, not just probabilities.",
+      "body": "The strong law says more than the weak law: with probability one, the running average eventually settles on the true mean along the realized sample path itself. So instead of only saying large deviations become unlikely, it says the long-run average actually converges almost surely. This gives a sharper theoretical version of the idea that repeated averaging reveals the truth.",
       "formula": "P(lim_{n→∞} X̄ₙ = μ) = 1"
     },
     {
       "heading": "Convergence Modes",
-      "body": "Almost sure (a.s.): P(Xₙ → X) = 1. In probability: P(|Xₙ - X| > ε) → 0. In distribution: CDFs converge. In Lᵖ: E[|Xₙ - X|ᵖ] → 0. Implications: a.s. ⟹ probability ⟹ distribution. Lᵖ ⟹ probability. For LLN: a.s. and probability convergence of sample mean.",
+      "body": "Probability theory has several ways to define convergence, and they are not all equally strong. Almost sure convergence is the strongest notion discussed here, convergence in probability is weaker, and convergence in distribution is weaker still. Understanding these modes helps clarify exactly what each version of the law of large numbers guarantees.",
       "formula": "Xₙ →ᵃˢ X ⟹ Xₙ →ᵖ X ⟹ Xₙ →ᵈ X"
     },
     {
       "heading": "Extensions and Variants",
-      "body": "Independent but not identically distributed: requires Σ Var(Xₙ)/n² < ∞ (Kolmogorov). Weakly dependent (mixing): LLN still holds. Non-i.i.d. LLNs exist for martingales, stationary processes. Ergodic theorem generalizes SLLN for stationary processes."
+      "body": "The law of large numbers is not limited to the simplest independent and identically distributed setting. Versions also exist for unequal distributions, weak dependence, martingales, and stationary processes when suitable regularity conditions hold. The ergodic theorem is one of the most important generalizations because it connects time averages to long-run expectations.",
+      "formula": "Σ Var(Xₙ)/n² < ∞"
     },
     {
       "heading": "Rate of Convergence",
-      "body": "LLN says X̄ₙ → μ but not how fast. Central Limit Theorem gives rate: √n(X̄ₙ - μ) → N(0, σ²). So error is O(1/√n). Concentration inequalities (Hoeffding, Bernstein) give non-asymptotic bounds: P(|X̄ₙ - μ| > ε) ≤ 2exp(-2nε²) for bounded variables."
+      "body": "The law of large numbers guarantees convergence but does not by itself tell you how quickly the error shrinks. To answer that question, you need results such as the central limit theorem and concentration inequalities. Those tools explain the familiar trade-off that reducing error substantially usually requires many more samples.",
+      "formula": "√n(X̄ₙ - μ) → N(0, σ²),   P(|X̄ₙ - μ| > ε) ≤ 2exp(-2nε²)"
     }
   ],
   "youtubeLabel": "Law of Large Numbers — Khan Academy",

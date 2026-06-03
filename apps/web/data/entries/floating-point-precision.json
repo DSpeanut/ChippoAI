@@ -23,32 +23,32 @@
     }
   ],
   "deepDiveIntro": [
-    "IEEE 754 standard defines floating-point formats. Double precision (FP64): 1 sign bit, 11 exponent bits (bias 1023), 52 mantissa bits (plus implicit leading 1). Machine epsilon ε = 2⁻⁵² ≈ 2.22×10⁻¹⁶ is the gap between 1 and next representable number. Relative error of any operation ≤ ε/2 (round-to-nearest).",
-    "Single precision (FP32): 32 bits, ε ≈ 1.19×10⁻⁷. Half precision (FP16): 16 bits, ε ≈ 9.77×10⁻⁴. Special values: ±0, ±∞, NaN (Not a Number). Subnormal numbers fill the gap near zero, but with gradual precision loss."
+    "The IEEE 754 standard defines how floating-point numbers are stored in bits. Double precision (FP64) uses 64 bits: one for the sign, 11 for the exponent (which determines scale), and 52 for the significant digits (mantissa). Machine epsilon is the smallest difference between 1.0 and the next representable number — about 2.2×10⁻¹⁶ for double precision — and bounds the relative rounding error of any single operation.",
+    "Single precision (FP32) has about 7 significant decimal digits, and half precision (FP16) has about 3, making it prone to underflow and overflow for gradients in deep learning. Special values include positive and negative infinity (produced by overflow or division by zero) and NaN (Not a Number, produced by invalid operations like zero divided by zero), which propagates through all subsequent calculations. Subnormal numbers fill the gap near zero at the cost of gradually reducing precision."
   ],
   "visualizationType": "floating-point-precision",
   "deepDive": [
     {
       "heading": "IEEE 754 Format",
-      "body": "Value = (-1)^s × 1.mantissa × 2^(exponent-bias). Normal numbers have implicit leading 1. Exponent all zeros: subnormals (gradual underflow). Exponent all ones: ±∞ or NaN. Range: double precision ≈ ±10^±308, smallest normal ≈ 2.2×10⁻³⁰⁸, smallest subnormal ≈ 5×10⁻³²⁴.",
+      "body": "A floating-point number is stored as three fields: a sign bit, an exponent that determines the scale (similar to the exponent in scientific notation), and a mantissa that stores the significant digits. Normal numbers always have an implicit leading 1 before the mantissa, giving an extra bit of precision for free. When the exponent field is all zeros, the number is subnormal — it loses the implicit leading 1 and precision degrades gracefully as the value approaches zero.",
       "formula": "x = (-1)^s × (1 + Σ mᵢ2⁻ⁱ) × 2^(e-1023)"
     },
     {
       "heading": "Machine Epsilon and ULP",
-      "body": "Machine epsilon ε = distance from 1.0 to next representable number. Half ULP (Unit in Last Place) bounds rounding error. For double: ε ≈ 2.22×10⁻¹⁶. Relative error of representation ≤ ε/2. Gap between floats grows with magnitude: spacing is ~ε×|x|.",
+      "body": "Machine epsilon is the gap between 1.0 and the next representable number — it tells you the worst-case relative rounding error of any single floating-point operation. For double precision this is about 2.22×10⁻¹⁶, meaning any result is accurate to about 16 significant decimal digits. The spacing between representable numbers grows proportionally to the number itself: near 1 billion, numbers are about 1 billion times further apart than near 1.",
       "formula": "ε = 2⁻⁵² ≈ 2.22×10⁻¹⁶ (double), ε = 2⁻²³ ≈ 1.19×10⁻⁷ (single)"
     },
     {
       "heading": "Catastrophic Cancellation",
-      "body": "Subtracting nearly equal numbers loses significant digits. If x ≈ y, then x - y has large relative error even if x, y are accurate. Example: x = 1.0000001, y = 1.0000000. Difference 10⁻⁷ loses 7 digits of precision. Common in variance computation, quadratic formula."
+      "body": "When you subtract two numbers that are nearly equal, the leading significant digits cancel and you are left with only the low-order digits — which may be mostly rounding error. If both numbers are accurate to 16 digits but agree in the first 7, the difference has only 9 meaningful digits. This problem appears in variance computation (subtracting the square of the mean from the mean of squares) and in the quadratic formula when the discriminant is small."
     },
     {
       "heading": "Overflow and Underflow",
-      "body": "Overflow: |result| > max float → ±∞. Underflow: |result| < min normal → subnormal or zero. In ML, softmax exp(zᵢ) can overflow; subtract max(z) first. Log-sum-exp trick: log Σ exp(xᵢ) = max(x) + log Σ exp(xᵢ - max(x))."
+      "body": "Overflow occurs when a result exceeds the largest representable value and becomes infinity. Underflow occurs when a result is smaller than the smallest normal number and either becomes zero or loses precision gradually. In machine learning, computing softmax of large logits can overflow the exponentials — the fix is to subtract the maximum logit before exponentiating, which does not change the result but keeps numbers in range. The log-sum-exp trick applies the same idea when computing the log of a sum of exponentials."
     },
     {
       "heading": "Decimal vs Binary Floating Point",
-      "body": "Binary can't exactly represent 0.1, 0.2, 0.01 (repeating fractions). Decimal floating-point (IEEE 754-2008) or integer representation (cents) preferred for money. COBOL, SQL use decimal. Python decimal module; Java BigDecimal."
+      "body": "Binary floating-point cannot represent 0.1 or 0.2 exactly, because these are repeating fractions in binary — just as 1/3 repeats in decimal. This is why 0.1 + 0.2 does not equal exactly 0.3 in most programming languages. For financial calculations where exact decimal arithmetic is legally required, use decimal floating-point types (Python's decimal module or Java's BigDecimal) or store values as integers in the smallest unit (e.g., cents)."
     }
   ],
   "youtubeLabel": "Floating Point Numbers — Computerphile",

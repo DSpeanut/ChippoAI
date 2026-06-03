@@ -23,33 +23,33 @@
     }
   ],
   "deepDiveIntro": [
-    "For y = f(g(x)) where f: ℝ → ℝ and g: ℝ → ℝ, the chain rule states dy/dx = f'(g(x)) · g'(x). In Leibniz notation: dy/dx = (dy/dg)(dg/dx). This extends to multiple variables: if z = f(x(t), y(t)), then dz/dt = (∂z/∂x)(dx/dt) + (∂z/∂y)(dy/dt).",
-    "For vector functions, if h(x) = f(g(x)) where g: ℝⁿ → ℝᵐ and f: ℝᵐ → ℝᵖ, then Jh(x) = Jf(g(x)) · Jg(x) — matrix multiplication of Jacobians. The (i,j) entry is Σₖ (∂fᵢ/∂yₖ)(∂yₖ/∂xⱼ). This form is fundamental to automatic differentiation and backpropagation."
+    "For a composed function y = f(g(x)), the chain rule says the overall rate of change is the product of the individual rates: how fast f changes with its input, multiplied by how fast g changes with x. In Leibniz notation this looks like fraction cancellation: the intermediate quantity dg appears in both numerator and denominator. The rule extends to multiple variables by summing contributions from each input path.",
+    "For vector-valued functions, the chain rule becomes matrix multiplication of Jacobians. When h is the composition of two functions, the matrix of partial derivatives of h equals the matrix of partial derivatives of the outer function times the matrix of partial derivatives of the inner function. This is the mathematical engine behind backpropagation in neural networks."
   ],
   "visualizationType": "chain-rule",
   "deepDive": [
     {
       "heading": "Single Variable Chain Rule",
-      "body": "For composition f∘g: (f∘g)'(x) = f'(g(x)) · g'(x). Intuition: change in f due to change in g, times change in g due to change in x. Leibniz notation makes it look like fraction cancellation: dy/dx = (dy/dg)(dg/dx).",
+      "body": "When one function feeds into another, the total rate of change comes from multiplying the two local sensitivities. First you measure how the outer function reacts to its input, then you multiply by how the inner function changes that input. This simple idea is why composite expressions differentiate so naturally.",
       "formula": "(f∘g)'(x) = f'(g(x)) · g'(x)"
     },
     {
       "heading": "Multivariable Chain Rule",
-      "body": "For z = f(x(t), y(t)): dz/dt = (∂f/∂x)(dx/dt) + (∂f/∂y)(dy/dt). General form: if x depends on t, then df/dt = ∇fᵀ (dx/dt). Each path from t to f contributes a product of partials; sum over all paths.",
+      "body": "If an output depends on several intermediate quantities, the total change comes from adding the contribution from every dependency path. Each path contributes a local sensitivity multiplied by the rate at which the intermediate quantity changes. This is the bookkeeping rule behind related-rates problems and many multivariable derivatives.",
       "formula": "dz/dt = Σᵢ (∂f/∂xᵢ)(dxᵢ/dt)"
     },
     {
       "heading": "Chain Rule for Jacobians",
-      "body": "For h(x) = f(g(x)) with g: ℝⁿ → ℝᵐ, f: ℝᵐ → ℝᵖ: Jh(x) = Jf(g(x)) · Jg(x) ∈ ℝᵖˣⁿ. Matrix multiplication corresponds to composing linear approximations. This is the mathematical foundation of backpropagation.",
-      "formula": "Jh = Jf · Jg, (Jh)ᵢⱼ = Σₖ (∂fᵢ/∂gₖ)(∂gₖ/∂xⱼ)"
+      "body": "For vector-valued functions, composing maps means their local linear approximations compose as well. That is why the Jacobian of a composition is the product of the individual Jacobians in the correct order. This matrix view is the mathematical core of backpropagation.",
+      "formula": "Jh = Jf · Jg"
     },
     {
       "heading": "Backpropagation as Chain Rule",
-      "body": "For neural network L = fₙ∘…∘f₁(x), the gradient ∂L/∂Wₖ requires Jacobian of all layers after k. Backprop efficiently computes this via vector-Jacobian products (VJPs) passing backward: vᵀJₙ, then (vᵀJₙ)Jₙ₋₁, etc. Complexity is linear in network depth."
+      "body": "Backpropagation applies the chain rule across many layers while avoiding the cost of building huge Jacobian matrices explicitly. It repeatedly combines the incoming gradient with local derivatives as it moves backward through the computation graph. That makes gradient computation practical even for very large neural networks."
     },
     {
       "heading": "Higher-Order Chain Rule (Faà di Bruno)",
-      "body": "Generalizes to higher derivatives. The formula involves Bell polynomials and sums over partitions. Rarely used directly in ML, but relevant for higher-order optimization methods (Newton, natural gradient) and analyzing curvature of composed functions."
+      "body": "For second and higher derivatives, the chain rule becomes more intricate because curvature terms from many interactions must be combined. These formulas are rarely written out by hand in machine learning, but they matter for second-order methods and theoretical error analysis."
     }
   ],
   "youtubeLabel": "Chain Rule — 3Blue1Brown",

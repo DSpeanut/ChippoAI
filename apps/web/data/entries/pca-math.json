@@ -30,27 +30,27 @@
   "deepDive": [
     {
       "heading": "Covariance Matrix",
-      "body": "For centered X, the sample covariance S = (1/(n-1)) XᵀX is symmetric positive semi-definite. Its entries Sᵢⱼ measure how features i and j vary together. Diagonal entries are variances; off-diagonal are covariances.",
+      "body": "After the data is centered, the covariance matrix summarizes how features vary together. The diagonal tells you how much each feature varies on its own, while the off-diagonal terms show whether pairs of features tend to move together or in opposite directions. Because this matrix is symmetric, it has a clean set of orthogonal directions for principal component analysis to use.",
       "formula": "S = (1/(n-1)) XᵀX, Sᵢⱼ = Cov(Xᵢ, Xⱼ)"
     },
     {
       "heading": "Eigendecomposition",
-      "body": "S = VΛVᵀ. Columns of V are eigenvectors (principal component directions). Diagonal of Λ contains eigenvalues (variances along each PC). SVD of X gives the same: X = UΣVᵀ, then S = (1/(n-1)) VΣ²Vᵀ, so λᵢ = σᵢ²/(n-1).",
+      "body": "Principal component analysis finds the directions in feature space that capture as much variation as possible. Those directions are the eigenvectors of the covariance matrix, and their matching eigenvalues tell you how much variance each direction explains. Running singular value decomposition on the centered data gives the same information in a numerically safer way.",
       "formula": "Svᵢ = λᵢvᵢ, λᵢ = variance along vᵢ"
     },
     {
       "heading": "Projection and Reconstruction",
-      "body": "Project data onto first k PCs: Z = XVₖ where Vₖ has first k eigenvectors. Reconstruction: X̂ = ZVₖᵀ = XVₖVₖᵀ. The projection matrix Pₖ = VₖVₖᵀ is orthogonal (Pₖ² = Pₖ, Pₖᵀ = Pₖ).",
+      "body": "Projecting onto the first few principal components replaces the original coordinates with scores along the most informative directions. Reconstructing from those scores maps the data back into the original feature space using only the retained components. This gives a lower-dimensional approximation that preserves as much structure as possible for the chosen number of components.",
       "formula": "Z = XVₖ, X̂ = ZVₖᵀ, reconstruction error = Σᵢ₌ₖ₊₁ᵖ λᵢ"
     },
     {
       "heading": "Variance Explained",
-      "body": "Total variance = tr(S) = Σ λᵢ. The k-th PC explains λₖ/Σλᵢ of total variance. Cumulative explained variance = Σᵢ₌₁ᵏ λᵢ / Σᵢ₌₁ᵖ λᵢ. Often plot this to choose k (elbow method or threshold like 95%).",
+      "body": "Each principal component explains some share of the total variation in the dataset. Looking at those shares, or at their cumulative total, helps you decide how many components to keep. This is the idea behind scree plots, elbow rules, and variance-retention thresholds.",
       "formula": "Explained variance ratio = λₖ / Σλᵢ"
     },
     {
       "heading": "PCA as Optimization",
-      "body": "First PC: v₁ = argmax_{||v||=1} vᵀSv = argmax Var(Xv). This is a Rayleigh quotient maximization. Subsequent PCs solve the same problem orthogonal to previous components. This is a sequence of constrained quadratic optimizations.",
+      "body": "Principal component analysis can also be viewed as an optimization problem. The first component is the direction that maximizes the variance of the projected data, and each later component solves the same problem while staying orthogonal to the earlier ones. This view connects principal components to constrained optimization and quadratic forms.",
       "formula": "v₁ = argmax_{||v||=1} vᵀSv, vₖ = argmax_{||v||=1, v⟂v₁,...,vₖ₋₁} vᵀSv"
     }
   ],

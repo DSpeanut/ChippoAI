@@ -30,25 +30,25 @@
   "deepDive": [
     {
       "heading": "Generative Model Assumptions",
-      "body": "LDA assumes: (1) each class k follows a multivariate Gaussian with mean μₖ and shared covariance Σ; (2) the prior probability of class k is πₖ. Parameters are estimated by maximum likelihood: μ̂ₖ = sample mean of class k; Σ̂ = pooled within-class covariance; π̂ₖ = nₖ/n. [1][2]"
+      "body": "This section describes the core structure of the method and the assumptions it makes about how inputs, outputs, or latent components relate."
     },
     {
       "heading": "Linear Discriminant Function",
-      "body": "Substituting the Gaussian density into Bayes' theorem and cancelling terms that don't depend on k, the log-posterior simplifies to the linear discriminant δₖ(x). Classify x to the class k that maximises δₖ(x). The pooled covariance Σ makes the quadratic terms identical across classes — they cancel — leaving a linear function of x. [1]",
+      "body": "Substituting the Gaussian density into Bayes' theorem and cancelling terms that don't depend on k, the log-posterior simplifies to the linear discriminant δₖ(x). Classify x to the class k that maximises δₖ(x).",
       "formula": "δₖ(x) = xᵀΣ⁻¹μₖ − ½μₖᵀΣ⁻¹μₖ + log πₖ"
     },
     {
       "heading": "Decision Boundary",
-      "body": "The boundary between classes k and l is the set {x : δₖ(x) = δₗ(x)}, which simplifies to xᵀΣ⁻¹(μₖ−μₗ) = ½(μₖᵀΣ⁻¹μₖ − μₗᵀΣ⁻¹μₗ) − log(πₖ/πₗ). This is an affine hyperplane (linear in x) — hence 'Linear' Discriminant Analysis. [1]"
+      "body": "This is an affine hyperplane (linear in x) — hence 'Linear' Discriminant Analysis."
     },
     {
       "heading": "LDA as Dimensionality Reduction",
-      "body": "LDA can project p-dimensional data onto at most K−1 dimensions (the Fisher discriminant subspace) that maximise between-class scatter relative to within-class scatter. Objective: maximise J(w) = wᵀSᴮw / wᵀSᵂw, where Sᴮ is between-class scatter and Sᵂ is within-class scatter. This is a generalised eigenvalue problem. [1]",
+      "body": "LDA can project p-dimensional data onto at most K−1 dimensions (the Fisher discriminant subspace) that maximise between-class scatter relative to within-class scatter. This is a generalised eigenvalue problem.",
       "formula": "max_w  wᵀSᴮw / wᵀSᵂw   ⟺   Sᴮw = λSᵂw"
     },
     {
       "heading": "Regularised LDA",
-      "body": "When p > n, the pooled covariance Σ̂ is singular and cannot be inverted. Regularised LDA (Friedman 1989) replaces Σ̂ with (1−α)Σ̂ + αI, where α ∈ [0,1] is a shrinkage parameter tuned by cross-validation. α=0 recovers standard LDA; α=1 gives Gaussian NB with equal variances. [1]"
+      "body": "This section explains how the method controls flexibility, reduces overfitting, and balances fit against generalization."
     }
   ],
   "youtubeLabel": "StatQuest: LDA (Linear Discriminant Analysis)",
@@ -84,7 +84,13 @@
     }
   ],
   "sources": [
-    { "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 4", "url": "https://hastie.su.domains/ElemStatLearn/" },
-    { "label": "James et al. — An Introduction to Statistical Learning, Ch. 4", "url": "https://www.statlearning.com/" }
+    {
+      "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 4",
+      "url": "https://hastie.su.domains/ElemStatLearn/"
+    },
+    {
+      "label": "James et al. — An Introduction to Statistical Learning, Ch. 4",
+      "url": "https://www.statlearning.com/"
+    }
   ]
 }

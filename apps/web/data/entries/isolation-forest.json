@@ -30,12 +30,12 @@
   "deepDive": [
     {
       "heading": "Anomaly Score Formula",
-      "body": "s(x, n) = 2^{−E[h(x)]/c(n)}, where c(n) = 2·H(n−1) − 2(n−1)/n and H is the harmonic number. Interpretation: c(n) is the expected path length for a random point in a dataset of size n — it normalises the score so that s=0.5 corresponds to the average isolation difficulty. s → 1: h(x) << c(n) → the point isolates in very few splits → anomaly. s → 0.5: h(x) ≈ c(n) → average → ambiguous. s → 0: h(x) >> c(n) → many splits needed → clearly normal. sklearn's score_samples() returns the raw (unnormalised, negated) score; anomaly_score = −score_samples. [1]",
+      "body": "This section explains the main idea behind this part of the method in plain language.",
       "formula": "s(x,n) = 2^{−E[h(x)] / c(n)},   c(n) = 2H(n−1) − 2(n−1)/n"
     },
     {
       "heading": "Hyperparameters and Tuning",
-      "body": "n_estimators (t): number of trees. Performance stabilises at t=100; more trees reduce variance but slow inference. max_samples (ψ): subsample size. Liu et al. recommend 256 — increasing beyond this rarely helps. contamination: threshold for binary classification. In sklearn, contamination sets the decision_function threshold: the top contamination fraction of anomaly scores are labelled −1. Tuning: if you have some labelled anomalies, tune contamination to maximise precision/recall on those labels. Otherwise, use domain knowledge (expected fraud rate, defect rate). max_features: fraction of features randomly selected per split. Default 1.0 (all features). Reducing to 0.5–0.7 can reduce masking effects in high-dimensional data. [1]"
+      "body": "n_estimators (t): number of trees. max_samples (ψ): subsample size. Liu et al. recommend 256 — increasing beyond this rarely helps. contamination: threshold for binary classification. In sklearn, contamination sets the decision_function threshold: the top contamination fraction of anomaly scores are labelled −1. Tuning: if you have some labelled anomalies, tune contamination to maximise precision/recall on those labels. Otherwise, use domain knowledge (expected fraud rate, defect rate). max_features: fraction of features randomly selected per split. Default 1.0 (all features). Reducing to 0.5–0.7 can reduce masking effects in high-dimensional data."
     },
     {
       "heading": "Limitations and Extended Isolation Forest",
@@ -62,7 +62,13 @@
     }
   ],
   "sources": [
-    { "label": "Liu, F.T., Ting, K.M. & Zhou, Z-H. — Isolation Forest, IEEE ICDM 2008", "url": "https://doi.org/10.1109/ICDM.2008.17" },
-    { "label": "Hariri, S., Kind, M.C. & Brunner, R.J. — Extended Isolation Forest, IEEE TNNLS 2021", "url": "https://arxiv.org/abs/1811.02141" }
+    {
+      "label": "Liu, F.T., Ting, K.M. & Zhou, Z-H. — Isolation Forest, IEEE ICDM 2008",
+      "url": "https://doi.org/10.1109/ICDM.2008.17"
+    },
+    {
+      "label": "Hariri, S., Kind, M.C. & Brunner, R.J. — Extended Isolation Forest, IEEE TNNLS 2021",
+      "url": "https://arxiv.org/abs/1811.02141"
+    }
   ]
 }

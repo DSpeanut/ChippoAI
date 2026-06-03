@@ -30,7 +30,7 @@
   "deepDive": [
     {
       "heading": "Mutual Reachability Distance",
-      "body": "HDBSCAN uses the mutual reachability distance to smooth density: d_mreach(a,b) = max(core_k(a), core_k(b), d(a,b)), where core_k(x) is the distance to the k-th nearest neighbour of x (k = min_samples). This effectively 'spreads out' sparse points and reduces the impact of noise on the distance structure. [1]",
+      "body": "This effectively 'spreads out' sparse points and reduces the impact of noise on the distance structure.",
       "formula": "d_mreach(a,b) = max(core_k(a), core_k(b), d(a,b))"
     },
     {
@@ -39,11 +39,11 @@
     },
     {
       "heading": "Condensed Cluster Tree",
-      "body": "From the dendrogram, condense by collapsing splits where the smaller resulting component has fewer than min_cluster_size points (those points become noise, not a new cluster). The condensed tree retains only 'true' splits. The λ scale (λ = 1/distance) measures density — higher λ means higher density. [1]"
+      "body": "From the dendrogram, condense by collapsing splits where the smaller resulting component has fewer than min_cluster_size points (those points become noise, not a new cluster). The condensed tree retains only 'true' splits."
     },
     {
       "heading": "Cluster Stability & Flat Cluster Extraction",
-      "body": "Stability of a cluster C is: Σᵢ∈C (λ_death(i) − λ_birth(i)), where λ_birth is the λ at which point i joined cluster C and λ_death is the λ at which C splits. HDBSCAN selects the flat partition by choosing, for each subtree, whether to keep the parent or replace it with its children based on stability — a dynamic programming solution. [1]",
+      "body": "HDBSCAN selects the flat partition by choosing, for each subtree, whether to keep the parent or replace it with its children based on stability — a dynamic programming solution.",
       "formula": "stability(C) = Σᵢ∈C (λ_death(i) − λ_birth(i))"
     },
     {
@@ -84,7 +84,13 @@
     }
   ],
   "sources": [
-    { "label": "McInnes, Healy & Astels — hdbscan: Hierarchical density based clustering (2017)", "url": "https://joss.theoj.org/papers/10.21105/joss.00205" },
-    { "label": "Campello et al. — Density-Based Clustering Based on Hierarchical Density Estimates (2013)", "url": "https://link.springer.com/chapter/10.1007/978-3-642-37456-2_14" }
+    {
+      "label": "McInnes, Healy & Astels — hdbscan: Hierarchical density based clustering (2017)",
+      "url": "https://joss.theoj.org/papers/10.21105/joss.00205"
+    },
+    {
+      "label": "Campello et al. — Density-Based Clustering Based on Hierarchical Density Estimates (2013)",
+      "url": "https://link.springer.com/chapter/10.1007/978-3-642-37456-2_14"
+    }
   ]
 }

@@ -30,15 +30,15 @@
   "deepDive": [
     {
       "heading": "Symmetric Normalisation: Why It Matters",
-      "body": "Without normalisation (H^{l+1} = σ(ÃH^{l}W)), aggregating features from all neighbours increases the magnitude of features for high-degree nodes (hubs) — gradients would be dominated by high-degree nodes and features would be numerically unstable. D^{-1/2} Ã D^{-1/2} normalises each edge (i,j) by 1/√(d_i · d_j): the contribution of node j to node i is weighted by the geometric mean of their degrees. Alternative: simple mean aggregation D^{-1}Ã (divide by source degree). Symmetric normalisation is more statistically justified: it's equivalent to graph normalised cuts and is the standard in spectral graph theory. For directed graphs, the asymmetric version D^{-1}Ã is used (row-wise normalisation). [1]"
+      "body": "Symmetric normalisation is more statistically justified: it's equivalent to graph normalised cuts and is the standard in spectral graph theory."
     },
     {
       "heading": "Over-smoothing: Depth Limitation of GCN",
-      "body": "A critical limitation: deep GCNs suffer over-smoothing — as the number of layers increases, node representations converge to the same value (become indistinguishable). Formally, D^{-1/2}ÃD^{-1/2} is a doubly stochastic matrix with spectral radius ≤ 1; repeated multiplication drives all features toward the eigenvector corresponding to the largest eigenvalue (constant vector). Li et al. (2018) showed that after L layers, all node representations converge to the graph's stationary distribution weighted by √d_v. Mitigation: (1) use only 2–3 layers in practice; (2) residual connections (GCNII): h^{(l)} = σ(((1−α)D^{-1/2}ÃD^{-1/2}h^{(l-1)} + α h^{(0)})W^{(l)}) — retains original features at every layer; (3) jumping knowledge networks — concatenate hidden states from all layers. [2]"
+      "body": "A critical limitation: deep GCNs suffer over-smoothing — as the number of layers increases, node representations converge to the same value (become indistinguishable). Li et al. (2018) showed that after L layers, all node representations converge to the graph's stationary distribution weighted by √d_v."
     },
     {
       "heading": "Semi-Supervised Learning with GCN",
-      "body": "Kipf & Welling's original setting: only a small fraction of nodes are labeled (20 per class on Cora ≈ 5% labeled). The GCN is trained with cross-entropy on labeled nodes only: L = Σ_{v ∈ labeled} CE(h_v^{(L)}, y_v). But because GCN aggregates features across the graph, unlabeled nodes influence the representations of labeled nodes and vice versa — the graph structure acts as a regulariser that propagates label information. This is a form of graph-based semi-supervised learning without explicit graph Laplacian regularisation (as in earlier methods like label propagation). Performance comparison (Cora, 140 labeled nodes): Logistic regression on features: 57.2%; DeepWalk: 67.2%; GCN: 81.5%. [1]"
+      "body": "But because GCN aggregates features across the graph, unlabeled nodes influence the representations of labeled nodes and vice versa — the graph structure acts as a regulariser that propagates label information. This is a form of graph-based semi-supervised learning without explicit graph Laplacian regularisation (as in earlier methods like label propagation). Performance comparison (Cora, 140 labeled nodes): Logistic regression on features: 57.2%; DeepWalk: 67.2%; GCN: 81.5%."
     },
     {
       "heading": "Mini-Batch Training and Neighbourhood Sampling",

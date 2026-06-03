@@ -30,7 +30,7 @@
   "deepDive": [
     {
       "heading": "Training Dynamics: Balanced Adversarial Training",
-      "body": "GAN training alternates: (1) update D for k steps using real and fake examples (maximise V); (2) update G for 1 step (minimise V or maximise log D(G(z))). The ratio k:1 is a hyperparameter; k=1 is most common but some papers use k=5 (more discriminator updates). The discriminator must not get too strong (no gradient to G) or too weak (no learning signal). Monitoring: plot D(x) (should be ~0.5 at equilibrium, real samples should score ~0.7 early in training and converge to ~0.5) and D(G(z)) (should converge to ~0.5). If D(G(z)) → 0, the discriminator is too strong; if D(G(z)) → 1 too quickly, the generator is dominating. Spectral normalisation on D layers (Miyato et al., 2018) is a widely used stabiliser: constrain each weight matrix W to have spectral norm 1 by dividing by its largest singular value. [1]"
+      "body": "GAN training alternates: (1) update D for k steps using real and fake examples (maximise V); (2) update G for 1 step (minimise V or maximise log D(G(z))). The discriminator must not get too strong (no gradient to G) or too weak (no learning signal). Monitoring: plot D(x) (should be ~0.5 at equilibrium, real samples should score ~0.7 early in training and converge to ~0.5) and D(G(z)) (should converge to ~0.5). Spectral normalisation on D layers (Miyato et al., 2018) is a widely used stabiliser: constrain each weight matrix W to have spectral norm 1 by dividing by its largest singular value."
     },
     {
       "heading": "Mode Collapse: Causes and Mitigations",
@@ -38,11 +38,11 @@
     },
     {
       "heading": "StyleGAN: Controlling the Generation Process",
-      "body": "StyleGAN (Karras et al., 2019) introduced several architectural innovations that made high-fidelity controllable generation practical. (1) Mapping network: maps latent z ∈ ℝ^512 through 8 FC layers to an intermediate latent W space — this disentangles latent factors (different parts of W control independent visual attributes). (2) Adaptive Instance Normalisation (AdaIN): at each generator layer, normalise feature maps and affinely transform using style vectors derived from W: AdaIN(x, y) = y_s (x − μ(x))/σ(x) + y_b. This injects style at every scale. (3) Stochastic variation: add per-pixel Gaussian noise after each layer for fine details (hair strands, skin pores). StyleGAN2 removed the 'water droplet' artefacts of StyleGAN1 by normalising weight matrices per-pixel instead of feature maps. [2]"
+      "body": "StyleGAN (Karras et al., 2019) introduced several architectural innovations that made high-fidelity controllable generation practical. This injects style at every scale. (3) Stochastic variation: add per-pixel Gaussian noise after each layer for fine details (hair strands, skin pores). StyleGAN2 removed the 'water droplet' artefacts of StyleGAN1 by normalising weight matrices per-pixel instead of feature maps."
     },
     {
       "heading": "Evaluation Metrics: FID and IS",
-      "body": "Inception Score (IS, Salimans et al., 2016): IS = exp(E_x[KL(p(y|x) || p(y))]), where y are ImageNet classes predicted by an Inception network. High IS means: each individual image looks like a specific class (p(y|x) is sharp), and the diversity across images is high (p(y) is uniform). Fréchet Inception Distance (FID, Heusel et al., 2017): compute the Fréchet distance between Gaussian distributions fitted to Inception-v3 features of real and generated images: FID = ‖μ_r − μ_g‖² + Tr(Σ_r + Σ_g − 2(Σ_rΣ_g)^{1/2}). Lower FID is better. FID is more reliable than IS for detecting mode collapse (IS doesn't penalise collapse, FID does). Standard practice: compute FID on 50k generated vs 50k real samples for comparability. [1]"
+      "body": "This section explains how the method is usually evaluated and what the main diagnostic metrics are intended to capture."
     }
   ],
   "takeaways": [

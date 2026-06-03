@@ -30,21 +30,21 @@
   "deepDive": [
     {
       "heading": "Prediction Rule",
-      "body": "For a query point x*, collect the K nearest neighbours Nₖ(x*) in the training set under distance metric d. The predicted class is the plurality vote: ŷ = argmax_c Σᵢ∈Nₖ(x*) 𝟙[yᵢ = c]. For regression, replace the vote with the mean of neighbour labels. [1]",
+      "body": "For a query point x*, collect the K nearest neighbours Nₖ(x*) in the training set under distance metric d. For regression, replace the vote with the mean of neighbour labels.",
       "formula": "ŷ = argmax_{c} Σ_{i ∈ Nₖ(x*)} 𝟙[yᵢ = c]"
     },
     {
       "heading": "Distance Metrics",
-      "body": "Euclidean distance (L2) is the default: d(x,z) = ||x−z||₂. Alternatives include Manhattan (L1), Minkowski (Lₚ), and Cosine similarity for text/sparse data. For categorical features, Hamming distance is appropriate. Feature scaling is essential — otherwise features with large numerical ranges dominate the distance calculation. [1]"
+      "body": "Alternatives include Manhattan (L1), Minkowski (Lₚ), and Cosine similarity for text/sparse data. For categorical features, Hamming distance is appropriate. Feature scaling is essential — otherwise features with large numerical ranges dominate the distance calculation."
     },
     {
       "heading": "Choosing K: The Bias-Variance Tradeoff",
-      "body": "K=1: zero training error, high variance (decision boundary traces every training point — prone to noise). Large K: smoother boundary, higher bias. Optimal K is typically found by cross-validation. As n → ∞, the 1-NN error rate converges to at most twice the Bayes error rate — a classical theoretical result. [1][2]",
+      "body": "Large K: smoother boundary, higher bias. Optimal K is typically found by cross-validation.",
       "formula": "K=1: lowest bias, highest variance   |   K=n: highest bias (predict majority class)"
     },
     {
       "heading": "Curse of Dimensionality",
-      "body": "In high dimensions, the concept of 'nearest neighbours' breaks down: all distances become nearly equal as p grows. The fraction of the data volume needed to capture K neighbours grows exponentially with p. Rule of thumb: KNN degrades significantly for p > 20 without dimensionality reduction (PCA, UMAP) or feature selection. [1][2]"
+      "body": "This section explains the main idea behind this part of the method in plain language."
     },
     {
       "heading": "Computational Complexity",
@@ -84,7 +84,13 @@
     }
   ],
   "sources": [
-    { "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 13", "url": "https://hastie.su.domains/ElemStatLearn/" },
-    { "label": "James et al. — An Introduction to Statistical Learning, Ch. 2", "url": "https://www.statlearning.com/" }
+    {
+      "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 13",
+      "url": "https://hastie.su.domains/ElemStatLearn/"
+    },
+    {
+      "label": "James et al. — An Introduction to Statistical Learning, Ch. 2",
+      "url": "https://www.statlearning.com/"
+    }
   ]
 }

@@ -23,35 +23,35 @@
     }
   ],
   "deepDiveIntro": [
-    "For vectors a, b ∈ ℝⁿ, the dot product (inner product) is a·b = Σᵢ aᵢbᵢ = aᵀb. Geometrically, a·b = ||a|| ||b|| cos(θ) where θ is the angle between them. This connects algebraic and geometric views.",
-    "The projection of a onto b is the component of a in the direction of b. proj_b(a) = ((a·b)/(b·b)) b. The orthogonal component is a - proj_b(a), which is perpendicular to b. Repeating this process orthogonalizes a set of vectors."
+    "The dot product of two vectors is computed by multiplying corresponding components and summing the results. Geometrically, it equals the product of the two vectors' lengths and the cosine of the angle between them — so it encodes both magnitude and alignment in a single number.",
+    "The projection of vector a onto vector b finds how much of a points in b's direction. It is a scalar multiple of b in the direction of b. The leftover part — a minus its projection onto b — is perpendicular to b. Repeatedly subtracting projections is how the Gram-Schmidt process builds a set of orthogonal vectors."
   ],
   "visualizationType": "dot-product-projections",
   "deepDive": [
     {
       "heading": "Dot Product Properties",
-      "body": "Commutative: a·b = b·a. Distributive: a·(b+c) = a·b + a·c. Bilinear: (αa)·b = α(a·b). Positive definite: a·a ≥ 0 with equality iff a = 0. Induces the L2 norm: ||a|| = √(a·a).",
+      "body": "The dot product turns two vectors into a single number that reflects both their size and their alignment. It behaves linearly and does not depend on the order of the vectors, which makes it easy to manipulate algebraically. When a vector is dotted with itself, the result is its squared Euclidean length.",
       "formula": "a·b = Σᵢ aᵢbᵢ = ||a|| ||b|| cos(θ)"
     },
     {
       "heading": "Orthogonality",
-      "body": "Vectors are orthogonal if a·b = 0 (perpendicular, θ = 90°). Orthonormal vectors are orthogonal with unit length. An orthogonal matrix has orthonormal columns: QᵀQ = I. Orthogonal transformations preserve lengths and angles.",
-      "formula": "a ⟂ b ⟺ a·b = 0, Q orthogonal ⟺ QᵀQ = I"
+      "body": "Two vectors are orthogonal when they have no component pointing along each other, which is the geometric idea of being perpendicular. Collections of orthonormal vectors are especially valuable because they give clean coordinates and preserve distances. Matrices built from orthonormal columns represent rigid motions such as rotations and reflections.",
+      "formula": "a ⟂ b ⟺ a·b = 0,   Q orthogonal ⟺ QᵀQ = I"
     },
     {
       "heading": "Vector Projection",
-      "body": "The projection of a onto b is the closest point to a in the direction of b. It's the 'shadow' of a cast perpendicular to b. The scalar projection gives the signed length; vector projection gives the actual vector.",
+      "body": "Projecting one vector onto another isolates the part that points along the chosen direction. The result is the closest vector on that line to the original vector, and the leftover difference is perpendicular to the line. This is the geometric idea behind least squares and many matrix factorizations.",
       "formula": "proj_b(a) = ((a·b)/(b·b)) b = ((a·b)/||b||²) b"
     },
     {
       "heading": "Gram-Schmidt Process",
-      "body": "Given vectors {a₁,…,aₙ}, construct orthonormal {q₁,…,qₙ}: q₁ = a₁/||a₁||, then for each subsequent vector, subtract projections onto all previous q's, then normalize. This is numerically unstable; modified Gram-Schmidt or Householder reflections are preferred.",
-      "formula": "uₖ = aₖ - Σⱼ₌₁ᵏ⁻¹ proj_qⱼ(aₖ), qₖ = uₖ/||uₖ||"
+      "body": "The Gram-Schmidt process turns a linearly independent set of vectors into an orthogonal or orthonormal basis. It works by repeatedly removing the parts already explained by earlier directions and then rescaling what remains. More stable variants are preferred in numerical software because repeated subtraction can amplify round-off error.",
+      "formula": "uₖ = aₖ − Σⱼ₌₁ᵏ⁻¹ proj_qⱼ(aₖ),  qₖ = uₖ/||uₖ||"
     },
     {
       "heading": "Cauchy-Schwarz Inequality",
-      "body": "|a·b| ≤ ||a|| ||b|| with equality iff a and b are linearly dependent. This fundamental inequality underlies many optimization bounds and convergence proofs. It ensures cos(θ) is well-defined (between -1 and 1).",
-      "formula": "|a·b| ≤ ||a|| ||b||, equality ⟺ a = cb for some scalar c"
+      "body": "The Cauchy-Schwarz inequality says that the alignment between two vectors can never exceed the product of their lengths. This is why cosine similarity always stays between negative one and one. The result appears everywhere in geometry, probability, and optimization because it gives a universal upper bound on inner products.",
+      "formula": "|a·b| ≤ ||a|| ||b||,  equality iff a = cb for some scalar c"
     }
   ],
   "youtubeLabel": "Dot Products and Projections — 3Blue1Brown",

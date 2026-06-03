@@ -30,27 +30,28 @@
   "deepDive": [
     {
       "heading": "Definition and Properties",
-      "body": "D(p||q) = E_p[log(p/q)] = Σ p(x) log(p(x)/q(x)). Non-negative (Gibbs' inequality). Zero iff p = q. Convex in pair (p,q). Additive for independent distributions: D(p₁p₂||q₁q₂) = D(p₁||q₁) + D(p₂||q₂). Not symmetric, not a metric.",
+      "body": "KL divergence measures how much information is lost when one distribution is used to approximate another. It is zero only when the two distributions agree, and it grows as the mismatch becomes more severe. Because swapping the two arguments changes the meaning, KL divergence should be read as a directed comparison rather than a geometric distance.",
       "formula": "D(p||q) ≥ 0, equality iff p = q"
     },
     {
       "heading": "Forward vs Reverse KL",
-      "body": "Forward: D(p||q). Mean-seeking: q must cover all modes of p to avoid infinite penalty. Reverse: D(q||p). Mode-seeking: q can focus on single mode. Variational inference typically uses reverse KL (KL(q||p)) for computational tractability, leading to posterior collapse issues.",
+      "body": "The two directions of KL divergence behave differently. Forward KL strongly penalizes missing regions where the true distribution has probability mass, so it tends to spread the approximation out to cover everything important. Reverse KL is more willing to focus on a few high-probability regions, which is why it often behaves like a mode-seeking objective in variational inference.",
       "formula": "Forward (moment projection): D(p||q). Reverse (information projection): D(q||p)"
     },
     {
       "heading": "Connection to Maximum Likelihood",
-      "body": "Minimizing KL(p||q_θ) over θ is equivalent to maximizing E_p[log q_θ(X)] — expected log-likelihood. With samples from p, this is approximately maximizing Σ log q_θ(xᵢ), i.e., maximum likelihood estimation. MLE minimizes KL between true and model distributions.",
+      "body": "Maximum likelihood can be understood as choosing model parameters so the model distribution gets as close as possible to the true data-generating distribution in the KL sense. When you average log-likelihood over data, you are rewarding models that place high probability on what actually occurs. That is why likelihood maximization and KL minimization point to the same fitted model under the usual setup.",
       "formula": "argmin_θ D(p||q_θ) = argmax_θ E_p[log q_θ(X)]"
     },
     {
       "heading": "Variational Inference",
-      "body": "Minimize KL(q(z)||p(z|x)) to approximate posterior. Equivalent to maximizing ELBO: E_q[log p(x|z)] - KL(q(z)||p(z)). First term is reconstruction; second is regularization toward prior. Reverse KL leads to mode-seeking approximation.",
+      "body": "Variational inference uses KL divergence to replace an intractable posterior with a simpler approximation. Instead of matching the posterior directly, it optimizes a lower bound that balances data fit against staying close to the prior. This turns Bayesian inference into an optimization problem that is practical for large models.",
       "formula": "ELBO = E_q[log p(x,z)] - E_q[log q(z)] = log p(x) - KL(q||p)"
     },
     {
       "heading": "Information Projection and I-Projection",
-      "body": "I-projection: minimize D(p||q) over q in some family. Moment-matching (mean-seeking). M-projection (reverse): minimize D(q||p). Mode-matching. For exponential families, I-projection has closed form and matches moments."
+      "body": "Projection language highlights that KL divergence depends on which distribution is treated as the target and which one must live inside a restricted family. One direction tends to preserve overall average behavior, while the other tends to lock onto the most probable regions. This distinction is important when choosing approximation methods for probabilistic models.",
+      "formula": "I-projection: min D(p||q),   M-projection: min D(q||p)"
     }
   ],
   "youtubeLabel": "KL Divergence — Machine Learning Street Talk",

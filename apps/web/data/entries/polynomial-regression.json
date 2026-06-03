@@ -30,25 +30,25 @@
   "deepDive": [
     {
       "heading": "Model & Basis Expansion",
-      "body": "For a single feature x, polynomial regression of degree m constructs m features and fits a standard linear model. The design matrix Φ (Vandermonde matrix) has Φᵢⱼ = xᵢʲ⁻¹ for j = 1, …, m+1. The OLS solution is identical to standard linear regression. [1]",
+      "body": "For a single feature x, polynomial regression of degree m constructs m features and fits a standard linear model. The OLS solution is identical to standard linear regression.",
       "formula": "ŷ = β₀ + β₁x + β₂x² + ··· + βₘxᵐ  =  Φβ"
     },
     {
       "heading": "Fitting: OLS on Expanded Features",
-      "body": "Once Φ is constructed, β̂ = (ΦᵀΦ)⁻¹Φᵀy — the standard normal equations. No new algorithm is needed. All standard linear regression diagnostics (residual plots, VIF, confidence intervals) apply to the expanded model. Ridge or Lasso regularisation can be added to control overfitting at high degree. [1]",
+      "body": "No new algorithm is needed. All standard linear regression diagnostics (residual plots, VIF, confidence intervals) apply to the expanded model. Ridge or Lasso regularisation can be added to control overfitting at high degree.",
       "formula": "β̂ = (ΦᵀΦ)⁻¹ Φᵀy"
     },
     {
       "heading": "Bias–Variance and Degree Selection",
-      "body": "Degree m is a hyperparameter controlling model complexity. Low m → high bias (underfitting). High m → high variance (overfitting). Cross-validation (or adjusted R², AIC, BIC) is used to select m. In practice, degrees above 4–5 are rarely justified — they produce erratic extrapolations and Runge's phenomenon near the boundaries of the data. [1][2]"
+      "body": "Degree m is a hyperparameter controlling model complexity. Cross-validation (or adjusted R², AIC, BIC) is used to select m. In practice, degrees above 4–5 are rarely justified — they produce erratic extrapolations and Runge's phenomenon near the boundaries of the data."
     },
     {
       "heading": "Runge's Phenomenon",
-      "body": "At high polynomial degrees, the fitted curve oscillates wildly near the edges of the x-range — even if the fit is nearly perfect at interior points. This is the polynomial equivalent of overfitting and is especially severe with equally-spaced training points. Natural cubic splines (piecewise degree-3 polynomials with continuity constraints) avoid this and are preferred when m > 3 is needed. [2]"
+      "body": "This section explains the main idea behind this part of the method in plain language."
     },
     {
       "heading": "Extension to Multiple Features",
-      "body": "With p features, polynomial expansion includes all monomials up to degree d: x₁, x₂, x₁², x₁x₂, x₂², etc. The number of terms grows as O(pᵈ) — for p = 10, d = 3 this is over 200 terms. Interaction terms (x₁x₂) capture feature interactions. Regularise with Ridge or Lasso to control the combinatorial explosion; or use a kernel method (polynomial kernel in SVR/SVM) which implicitly computes the expansion without materialising it. [2]"
+      "body": "Regularise with Ridge or Lasso to control the combinatorial explosion; or use a kernel method (polynomial kernel in SVR/SVM) which implicitly computes the expansion without materialising it."
     }
   ],
   "youtubeLabel": "StatQuest: Polynomial Regression",

@@ -23,34 +23,35 @@
     }
   ],
   "deepDiveIntro": [
-    "For a square matrix A ∈ ℝⁿˣⁿ, a nonzero vector v ∈ ℝⁿ is an eigenvector with eigenvalue λ if Av = λv. This means v spans an invariant subspace: A maps the line through v to itself. The eigenvalues are roots of the characteristic polynomial det(A - λI) = 0.",
-    "A matrix is diagonalizable if it has n linearly independent eigenvectors, forming a basis. Then A = PDP⁻¹ where D = diag(λ₁,…,λₙ) and P has eigenvectors as columns. This simplifies computing functions of A: f(A) = P f(D) P⁻¹."
+    "An eigenvector of a square matrix is a nonzero vector that the matrix stretches or shrinks but does not rotate — it stays pointing in the same direction. The eigenvalue is the stretch factor: negative means the vector flips direction; zero means it gets annihilated. The eigenvalues are the roots of the characteristic polynomial formed by setting the determinant of (A minus lambda times the identity) to zero.",
+    "If a matrix has enough independent eigenvectors to form a basis, it can be diagonalised: written as a product where the middle factor is a diagonal matrix of eigenvalues. This diagonal form makes computing powers and exponentials of the matrix trivial — just apply the function to each eigenvalue separately, then transform back."
   ],
   "visualizationType": "eigenvalues-eigenvectors",
   "deepDive": [
     {
       "heading": "Characteristic Equation",
-      "body": "Eigenvalues satisfy det(A - λI) = 0. For an n×n matrix, this is an nth degree polynomial with n roots (counting multiplicity, possibly complex). The sum of eigenvalues equals tr(A); product equals det(A).",
+      "body": "Eigenvalues are the special scaling factors that make a shifted version of the matrix lose invertibility. Solving the characteristic equation gives all of those factors, including repeated ones and, in some cases, complex ones. The trace and determinant provide quick checks because they match the sum and product of the eigenvalues.",
       "formula": "det(A - λI) = 0, Σλᵢ = tr(A), Πλᵢ = det(A)"
     },
     {
       "heading": "Eigendecomposition",
-      "body": "If A has n linearly independent eigenvectors, A = PDP⁻¹. D is diagonal of eigenvalues; P has eigenvectors as columns. This diagonalizes A. Not all matrices are diagonalizable (defective matrices lack enough eigenvectors).",
+      "body": "If a matrix has enough independent eigenvectors, it can be rewritten in a form that cleanly separates directions from scaling factors. In that form, powers and other matrix functions become much easier because the hard part reduces to working with a diagonal matrix. Some matrices do not have enough eigenvectors for this simplification, so the factorization is not always available.",
       "formula": "A = PDP⁻¹, D = diag(λ₁,…,λₙ)"
     },
     {
       "heading": "Symmetric Matrices",
-      "body": "Real symmetric matrices have real eigenvalues and orthogonal eigenvectors. They are always diagonalizable: A = QΛQᵀ where Q is orthogonal (QᵀQ = I). This is the spectral theorem — foundation of PCA and many optimization methods.",
+      "body": "Real symmetric matrices behave especially well: their eigenvalues stay real, and their eigenvectors can be chosen to be perpendicular. That gives a clean orthogonal decomposition that is both easy to interpret and numerically stable. This is one reason covariance matrices work so naturally in methods such as principal component analysis.",
       "formula": "A = Aᵀ ⟹ λᵢ ∈ ℝ, vᵢ ⟂ vⱼ, A = QΛQᵀ"
     },
     {
       "heading": "Power Iteration",
-      "body": "To find the dominant eigenvector (largest |λ|), iterate vₖ₊₁ = Avₖ / ||Avₖ||. Converges to eigenvector of largest eigenvalue. With deflation, can find subsequent eigenvectors. Basis of PageRank and many iterative eigenvalue algorithms.",
+      "body": "Power iteration repeatedly applies the matrix to a starting vector until the strongest stretching direction overwhelms the rest. After renormalizing at each step, the vector settles toward the dominant eigenvector. It is a simple and memory-efficient method for large problems where computing every eigenvector would be too expensive.",
       "formula": "vₖ₊₁ = Avₖ / ||Avₖ|| → v₁ (dominant eigenvector)"
     },
     {
       "heading": "Generalized Eigenvalue Problem",
-      "body": "In optimization and physics, we often solve Av = λBv where B is positive definite. This arises in constrained optimization (Lagrange multipliers), vibration analysis, and canonical correlation analysis (CCA)."
+      "body": "Sometimes the important directions are defined relative to two matrices instead of one. In that setting, you look for directions where one matrix acts like a scaled version of the other. This appears in constrained optimization, vibration analysis, and several statistical methods.",
+      "formula": "Av = λBv"
     }
   ],
   "youtubeLabel": "Eigenvectors and Eigenvalues — 3Blue1Brown",

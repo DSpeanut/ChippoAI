@@ -24,22 +24,22 @@
     }
   ],
   "deepDiveIntro": [
-    "Curriculum learning (Bengio et al., 2009) formalises the idea of a 'meaningful' data order for gradient-based training. For a dataset D with difficulty function d(x, y): at training step t, sample from the subset D_t = {(x,y): d(x,y) ≤ θ_t} where θ_t is an increasing threshold. As θ_t → max_d, D_t → D (full dataset). The key result: under certain conditions on the loss landscape, curriculum training converges faster and to better local minima than random ordering (IID training). [1]",
-    "Self-Paced Learning (Kumar et al., 2010) solves the joint optimisation: min_{w,v∈[0,1]^n} Σᵢ vᵢ·L(xᵢ,yᵢ;w) − (1/λ)Σᵢvᵢ. The binary weight vᵢ ∈ {0,1} indicates whether example i is included. Optimal vᵢ* = 1{L(xᵢ;w) < 1/λ} — include example if its current loss is below threshold 1/λ. Gradually increase λ to include more (harder) examples as training progresses. [2]"
+    "Curriculum learning (Bengio et al., 2009) formalizes a data ordering strategy: define a difficulty score for each example, then gradually expand the training pool from easy examples toward harder ones as training progresses. The theoretical motivation is that under certain conditions on the loss landscape, an ordered curriculum converges faster and to better local minima than random ordering. [1]",
+    "Self-Paced Learning (Kumar et al., 2010) makes the curriculum selection explicit: jointly optimize model weights and binary inclusion weights for each example. The optimal inclusion rule is simple — include an example if its current loss is below a threshold determined by the pacing parameter lambda. Gradually increasing lambda over time includes progressively harder examples. [2]"
   ],
   "deepDive": [
     {
       "heading": "Defining Difficulty",
-      "body": "Difficulty metrics: (1) Curriculum by loss: d(x,y;w) = L(x,y;w) at current model — examples with low loss are 'easy'. (2) Curriculum by length: for NLP, d = sequence length; for images, d = number of objects. (3) Curriculum by label noise: estimate clean probability (CleanLab, Confident Learning) and exclude likely-mislabelled examples. (4) Human-defined: domain expert assigns difficulty levels (medical: healthy vs pathological cases). (5) Transfer learning: d = loss under a strong pretrained model — examples the strong model gets right are easy. [1]"
+      "body": "Difficulty metrics: (1) Curriculum by loss: examples with low loss under the current model are 'easy'. (2) Curriculum by length: for NLP, use sequence length; for images, use number of objects. (3) Curriculum by label noise: estimate clean probability (CleanLab, Confident Learning) and exclude likely-mislabelled examples. (4) Human-defined: domain expert assigns difficulty levels (medical: healthy vs pathological cases). (5) Transfer learning: examples the strong model gets right are easy; use them first. [1]"
     },
     {
       "heading": "Self-Paced Learning Objective",
-      "body": "SPL: min_{w,v∈{0,1}^n} Σᵢ vᵢL(xᵢ;w) − (1/λ)Σᵢvᵢ. The −(1/λ)Σvᵢ term is a reward for including more examples (incentivises curriculum to grow). Optimal v for fixed w: vᵢ* = 1{Lᵢ < 1/λ}. Algorithm: (1) Fix v, optimise w (standard gradient descent on included examples). (2) Fix w, solve for v (closed form). (3) Increase λ (include more examples). Converges to a stationary point. Soft SPL: v ∈ [0,1] (continuous weights); vᵢ = max(0, 1 − λLᵢ). [2]",
+      "body": "The self-paced learning loss jointly optimizes model parameters and per-example inclusion weights. The inclusion rule for each example follows directly from minimizing the joint objective: include an example if its current loss is below the pacing threshold (1 divided by lambda). A reward term incentivizes the curriculum to grow over time. As lambda increases, more examples become eligible, gradually expanding the training set from easy to hard. Soft variants allow continuous inclusion weights between 0 and 1 instead of hard binary decisions. [2]",
       "formula": "vᵢ* = 1{L(xᵢ; w) < 1/λ}"
     },
     {
       "heading": "Progressive Image Resizing",
-      "body": "Stage 1: train at resolution r₁ (e.g., 64×64) for E₁ epochs. Stage 2: resize model inputs to r₂ (e.g., 128×128), train for E₂ epochs. Stage 3: final resolution r₃ = 224×224, train for E₃ epochs. Memory and computation scale as r². Going from 64 to 224 quadruples pixels — but at 64×64, effective batch size can be 4× larger. Total compute budget: roughly the same as a single 224×224 run, but features are learned at multiple scales progressively. ViT progressive training: train at 224×224 then fine-tune at 384×384 for 2% accuracy gain with much lower cost than training at 384 from scratch. [1]"
+      "body": "Start training at a small resolution (e.g., 64×64) for some epochs, then increase to a medium resolution (128×128), and finally train at full resolution (224×224). Computation scales with the number of pixels, so early low-resolution training is roughly 10× cheaper per epoch than full-resolution training. The progressive schedule allows the network to learn coarse spatial structure cheaply and then refine details at full resolution. Vision transformers follow the same approach — pre-training at 224×224 then fine-tuning at 384×384 gives a 2% accuracy gain at much lower cost than training at 384 from scratch. [1]"
     }
   ],
   "youtubeLabel": "Curriculum Learning — Self-Paced Training",

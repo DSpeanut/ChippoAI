@@ -30,27 +30,27 @@
   "deepDive": [
     {
       "heading": "Singular Value Decomposition",
-      "body": "A = UΣVᵀ. U contains eigenvectors of AAᵀ; V contains eigenvectors of AᵀA; Σ contains square roots of eigenvalues of both (same nonzero eigenvalues). The factorization exists for any matrix, even rectangular or rank-deficient.",
+      "body": "The singular value decomposition rewrites any matrix as an input rotation, a stretching step, and an output rotation. The left and right singular vectors describe the important directions before and after the transformation, and the singular values tell you how much stretching occurs along those directions. Unlike eigendecomposition, this factorization works for any matrix shape.",
       "formula": "A = UΣVᵀ, UᵀU = I, VᵀV = I, Σ = diag(σ₁,…,σᵣ)"
     },
     {
       "heading": "Low-Rank Approximation",
-      "body": "The best rank-k approximation (in Frobenius or spectral norm) is Aₖ = UₖΣₖVₖᵀ keeping top k singular values. Error = σₖ₊₁. This is the Eckart-Young-Mirsky theorem. Compression ratio: store k(m+n+1) vs mn numbers.",
+      "body": "If you keep only the largest singular values, you get the best simpler matrix of the chosen rank. That is why singular value decomposition is so useful for compression, denoising, and latent structure discovery. The first singular value you throw away determines the worst-case error in the spectral norm.",
       "formula": "Aₖ = Σᵢ₌₁ᵏ σᵢuᵢvᵢᵀ, ||A - Aₖ||₂ = σₖ₊₁"
     },
     {
       "heading": "Pseudo-inverse",
-      "body": "The Moore-Penrose pseudo-inverse A⁺ = VΣ⁺Uᵀ where Σ⁺ inverts nonzero singular values. A⁺ gives the minimum-norm least-squares solution to Ax = b: x = A⁺b. Essential for underdetermined or overdetermined systems.",
+      "body": "The pseudo-inverse extends the idea of an inverse to matrices that are rectangular or not full rank. It returns the least-squares solution when an exact solution does not exist, and among all least-squares solutions it picks the one with the smallest length. This makes it central in regression and other linear inverse problems.",
       "formula": "A⁺ = VΣ⁺Uᵀ, x = A⁺b minimizes ||Ax - b||² and ||x||²"
     },
     {
       "heading": "Condition Number",
-      "body": "κ(A) = σₘₐₓ/σₘᵢₙ measures sensitivity of linear systems. Large κ means small errors in b cause large errors in x. In double precision, expect to lose log₁₀(κ) digits of accuracy. κ > 10¹⁶ is essentially singular.",
+      "body": "The condition number measures how sensitive a linear problem is to small perturbations in the data. When it is large, tiny input errors can create large output errors, so the computation becomes unreliable. Singular value decomposition reveals this directly by comparing the largest and smallest nonzero singular values.",
       "formula": "κ(A) = σ₁/σᵣ, large κ ⟹ ill-conditioned"
     },
     {
       "heading": "Computing SVD",
-      "body": "Algorithms: Golub-Kahan bidiagonalization followed by QR iteration or divide-and-conquer. Complexity is O(mn²) for m ≥ n. For large matrices, use randomized SVD (Halko et al.) which samples column space with random projections."
+      "body": "Modern singular value decomposition algorithms first reduce a matrix to a simpler intermediate form and then extract the singular values and vectors efficiently. For very large problems, randomized methods approximate the important subspace without computing everything exactly. The best approach depends on matrix size, sparsity, and whether you need the full decomposition or only the leading components."
     }
   ],
   "youtubeLabel": "SVD — MIT OpenCourseWare",

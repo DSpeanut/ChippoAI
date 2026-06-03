@@ -30,27 +30,28 @@
   "deepDive": [
     {
       "heading": "Definition and Computation",
-      "body": "Partial derivative ∂f/∂xᵢ computed by holding other variables constant. Notation: f_{xᵢ}, ∂_{xᵢ}f, fᵢ. Geometrically, it's the slope of the tangent line in the xᵢ-direction (intersecting the surface with a plane holding other variables fixed).",
+      "body": "A partial derivative measures how a multivariable function changes when you vary one input and hold the others fixed. Geometrically, it is the slope you see by slicing the surface along one coordinate direction. This makes partial derivatives the basic local measurements of multivariable calculus.",
       "formula": "∂f/∂xᵢ = lim_{h→0} (f(x+heᵢ) - f(x))/h"
     },
     {
       "heading": "Gradient as Vector of Partials",
-      "body": "∇f = [∂f/∂x₁, …, ∂f/∂xₙ]ᵀ collects all first partials. Directional derivative D_vf = ∇fᵀv = Σ vᵢ(∂f/∂xᵢ). The gradient is orthogonal to level sets and points in direction of maximum increase.",
+      "body": "Putting all first partial derivatives together gives the gradient. It summarizes how the function responds in every coordinate direction and points toward the direction of steepest increase. Directional derivatives are simply the slopes you get when you ask for change along one chosen direction.",
       "formula": "∇f = [∂f/∂x₁, …, ∂f/∂xₙ]ᵀ, D_vf = Σᵢ vᵢ(∂f/∂xᵢ)"
     },
     {
       "heading": "Higher-Order Partials",
-      "body": "Second partials: ∂²f/∂xᵢ² (pure) and ∂²f/∂xᵢ∂xⱼ (mixed). Hessian Hᵢⱼ = ∂²f/∂xᵢ∂xⱼ. When continuous, mixed partials commute (Clairaut's theorem). Higher-order partials used in Taylor expansions and optimization analysis.",
+      "body": "Second partial derivatives describe how the first slopes themselves change. Pure second partials track curvature along one coordinate direction, while mixed partials capture how two directions interact. When the function is smooth enough, the order of taking mixed partials does not matter.",
       "formula": "∂²f/∂xᵢ∂xⱼ = ∂²f/∂xⱼ∂xᵢ (when continuous)"
     },
     {
       "heading": "Total Derivative",
-      "body": "If x depends on t, total derivative df/dt accounts for all paths: df/dt = Σᵢ (∂f/∂xᵢ)(dxᵢ/dt). This is the chain rule. Differential form: df = Σᵢ (∂f/∂xᵢ)dxᵢ = ∇fᵀdx. Exact differential if f is continuously differentiable.",
+      "body": "When each input depends on an underlying variable such as time, you must combine all of the partial changes to get the total rate of change. This is the multivariable version of the chain rule. It explains how local sensitivities and changing inputs work together.",
       "formula": "df/dt = Σᵢ (∂f/∂xᵢ)(dxᵢ/dt)"
     },
     {
       "heading": "Implicit Differentiation",
-      "body": "For F(x,y) = 0 defining y implicitly as function of x, differentiate both sides: ∂F/∂x + (∂F/∂y)(dy/dx) = 0, so dy/dx = -(∂F/∂x)/(∂F/∂y). Extends to multiple variables via implicit function theorem."
+      "body": "Sometimes a relationship defines one variable only indirectly instead of giving an explicit formula. Implicit differentiation treats both variables as linked by that relationship and differentiates the whole statement at once. This lets you recover the slope of the hidden curve without first solving for one variable in terms of the other.",
+      "formula": "dy/dx = -(∂F/∂x)/(∂F/∂y)"
     }
   ],
   "youtubeLabel": "Partial Derivatives — Khan Academy",

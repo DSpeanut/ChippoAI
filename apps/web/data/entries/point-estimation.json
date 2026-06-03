@@ -29,22 +29,23 @@
   "deepDive": [
     {
       "heading": "Bias, Variance, and MSE",
-      "body": "For the sample variance with divisor n: Bias = −σ²/n (biased), Var = 2σ⁴(n−1)/n². For divisor n−1 (unbiased): Bias = 0, Var = 2σ⁴/(n−1). The biased version has smaller MSE for small n because the variance reduction outweighs the squared bias. Unbiasedness is not always optimal under MSE. [1]",
+      "body": "Bias, variance, and mean squared error are the main criteria for judging point estimators. A useful estimator should not systematically miss the target, but low variance can matter just as much as low bias. This is why a slightly biased estimator can sometimes be preferable when it delivers a much more stable estimate overall.",
       "formula": "MSE(θ̂) = Var(θ̂) + [Bias(θ̂)]²"
     },
     {
       "heading": "Maximum Likelihood Estimation",
-      "body": "Given iid sample X₁,…,Xₙ ~ f(x|θ), the likelihood is L(θ|x) = Πᵢ f(xᵢ|θ). The log-likelihood ℓ(θ) = Σᵢ log f(xᵢ|θ) is maximized via ∂ℓ/∂θ = 0. For Normal(μ,σ²): μ̂_MLE = x̄ (unbiased), σ̂²_MLE = Σ(xᵢ−x̄)²/n (biased). Invariance property: if θ̂ is MLE of θ, then g(θ̂) is MLE of g(θ). [1]",
+      "body": "Maximum likelihood estimation chooses the parameter value that makes the observed sample look most plausible under the model. It is the default estimation method for many parametric procedures because it often has strong large-sample properties and works well with optimization algorithms. In practice, the same framework underlies regression, generalized linear models, and many modern machine learning estimators.",
       "formula": "θ̂_MLE = argmax_θ  Σᵢ log f(xᵢ | θ)"
     },
     {
       "heading": "Cramér-Rao Lower Bound",
-      "body": "For any unbiased estimator δ(X) of θ, under regularity conditions: Var(δ) ≥ 1/I(θ), where I(θ) = −E[∂² log f(X|θ)/∂θ²] is the Fisher information. The MLE achieves this bound asymptotically: √n(θ̂_MLE − θ) →ᵈ N(0, 1/I(θ)). An estimator achieving CRLB exactly for all n is called uniformly minimum variance unbiased (UMVUE). [1]",
+      "body": "The Cramér-Rao lower bound gives a theoretical limit on how precise an unbiased estimator can be. It says that information in the data sets a floor beneath estimator variance, so no unbiased method can beat that bound. This makes the bound a benchmark for discussing efficiency and for explaining why some estimators are asymptotically optimal.",
       "formula": "Var(δ) ≥ 1 / I(θ),   I(θ) = E[(∂ log f(X|θ) / ∂θ)²]"
     },
     {
       "heading": "Consistency and Asymptotic Normality of MLE",
-      "body": "Under standard regularity conditions (identifiability, differentiable log-likelihood, finite Fisher information), MLE is: (1) consistent — θ̂_MLE →ᵖ θ as n→∞; (2) asymptotically normal — √n(θ̂_MLE − θ) →ᵈ N(0, I(θ)⁻¹); (3) asymptotically efficient — achieves CRLB in the limit. These properties justify using MLE for large-sample inference and standard error computation. [1]"
+      "body": "Under regular conditions, maximum likelihood estimators improve predictably as the sample size grows. They converge to the true parameter, become approximately normal, and eventually achieve the best possible variance among a wide class of estimators. These properties explain why large-sample inference is so often built around likelihood theory.",
+      "formula": "√n(θ̂_MLE − θ) → N(0, I(θ)⁻¹)"
     }
   ],
   "youtubeLabel": "MLE Explained — StatQuest",

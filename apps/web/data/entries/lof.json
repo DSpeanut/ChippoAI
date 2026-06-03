@@ -30,16 +30,16 @@
   "deepDive": [
     {
       "heading": "LOF Score Derivation",
-      "body": "Step 1: for each point A, compute k-nearest neighbours N_k(A) and the k-distance k-dist(A). Step 2: reachability distance reach-dist_k(A,B) = max(k-dist(B), dist(A,B)). This prevents numerical instability when A and B are very close (avoids dividing by tiny distances). Step 3: local reachability density lrd_k(A) = |N_k(A)| / Σ_{B∈N_k(A)} reach-dist_k(A,B) — inverse average reachability distance to k-neighbours (higher density = lower average reach distance). Step 4: LOF_k(A) = mean_{B∈N_k(A)} [lrd_k(B) / lrd_k(A)]. If all neighbours have similar lrd, LOF ≈ 1. If A's lrd << neighbours' lrd, LOF >> 1 → anomaly. [1]",
+      "body": "Step 1: for each point A, compute k-nearest neighbours N_k(A) and the k-distance k-dist(A). This prevents numerical instability when A and B are very close (avoids dividing by tiny distances).",
       "formula": "LOF_k(A) = (1/|N_k(A)|) · Σ_{B∈N_k(A)} [lrd_k(B) / lrd_k(A)]"
     },
     {
       "heading": "Choosing k (n_neighbors)",
-      "body": "k controls the locality of the density estimate. Small k: very local — captures fine-grained local structure but noisy (sensitive to individual point positions). Large k: smoother — more global perspective, misses local anomalies. Breunig et al. suggest: k should be at least as large as the minimum cluster size you expect (so that all members of a legitimate cluster are in each other's neighbourhood). k in [10, 50] is a common practical range. If the dataset has clusters of size ~20, use k=20. For mixed-density data, there's no single optimal k — running LOF for multiple k values and aggregating scores (averaging LOF scores across k=5,10,20,50) is more robust than a single k. [1]"
+      "body": "k controls the locality of the density estimate. Small k: very local — captures fine-grained local structure but noisy (sensitive to individual point positions). Large k: smoother — more global perspective, misses local anomalies. Breunig et al. suggest: k should be at least as large as the minimum cluster size you expect (so that all members of a legitimate cluster are in each other's neighbourhood). k in [10, 50] is a common practical range."
     },
     {
       "heading": "LOF vs Isolation Forest vs One-Class SVM",
-      "body": "LOF: density-based, local perspective, detects contextual anomalies. O(n²) training (or O(n log n) with ball tree). Fails in very high dimensions (curse of dimensionality on k-NN). Best for: low-to-medium dimensional data (<20 features) with varying density clusters. Isolation Forest: tree-based, global perspective, excellent scalability (O(n·t·log ψ)), robust to high dimensions. Best for: large-scale, high-dimensional tabular data. One-Class SVM: boundary-based in kernel space, compact boundary. Best for: well-defined compact normal class, medium-dimensional data. Common practice: run all three, compare anomaly score rankings, investigate points consistently flagged by multiple methods. [2]"
+      "body": "This section explains the main idea behind this part of the method in plain language."
     }
   ],
   "youtubeLabel": "Local Outlier Factor (LOF) — ritvikmath",
@@ -62,7 +62,13 @@
     }
   ],
   "sources": [
-    { "label": "Breunig, M.M. et al. — LOF: Identifying Density-Based Local Outliers, ACM SIGMOD 2000", "url": "https://doi.org/10.1145/342009.335388" },
-    { "label": "Aggarwal, C.C. — Outlier Analysis, 2nd Ed., Ch. 4 (Springer, 2017)", "url": "https://link.springer.com/book/10.1007/978-3-319-47578-3" }
+    {
+      "label": "Breunig, M.M. et al. — LOF: Identifying Density-Based Local Outliers, ACM SIGMOD 2000",
+      "url": "https://doi.org/10.1145/342009.335388"
+    },
+    {
+      "label": "Aggarwal, C.C. — Outlier Analysis, 2nd Ed., Ch. 4 (Springer, 2017)",
+      "url": "https://link.springer.com/book/10.1007/978-3-319-47578-3"
+    }
   ]
 }

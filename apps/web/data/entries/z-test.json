@@ -30,21 +30,21 @@
   "deepDive": [
     {
       "heading": "One-Sample Z-Test",
-      "body": "Test H₀: μ = μ₀, σ known. Statistic: Z = (x̄ − μ₀)/(σ/√n). Under H₀: Z ~ N(0,1). Two-sided p-value: p = 2·Φ(−|Z|). Reject at level α if p < α, equivalently if |Z| > z_{α/2}. Critical values: z_{0.025} = 1.96 (α=0.05), z_{0.005} = 2.576 (α=0.01). [1]",
+      "body": "The one-sample z-test compares a sample mean to a hypothesized population mean when the population standard deviation is known or treated as effectively known. It works by converting the observed deviation into standard-error units and then comparing that result with the standard normal distribution. This is the cleanest textbook example of hypothesis testing with a known null distribution.",
       "formula": "Z = (x̄ − μ₀) / (σ / √n) ~ N(0,1) under H₀"
     },
     {
       "heading": "Two-Sample Z-Test",
-      "body": "H₀: μ₁ = μ₂, both σᵢ known. Statistic: Z = (x̄₁ − x̄₂) / √(σ₁²/n₁ + σ₂²/n₂). Under H₀: Z ~ N(0,1). Assumptions: independent samples from normal populations with known variances. For proportions: Z = (p̂₁−p̂₂)/√[p̂(1−p̂)(1/n₁+1/n₂)]. [1]",
+      "body": "The two-sample z-test compares two independent group means when the group variances are known. It standardizes the difference between sample means using the combined sampling variability from both groups. Closely related ideas are used in large-sample proportion tests, especially in online experiments and quality control.",
       "formula": "Z = (x̄₁ − x̄₂) / √(σ₁²/n₁ + σ₂²/n₂)"
     },
     {
       "heading": "Type I Error, Type II Error, and Power",
-      "body": "Type I error (α): P(reject H₀ | H₀ true) — false positive rate, set by the researcher. Type II error (β): P(fail to reject H₀ | H₁ true) — false negative. Power = 1−β = P(reject H₀ | H₁ true). For the one-sample z-test: β = Φ(z_{α/2} − δ√n/σ) − Φ(−z_{α/2} − δ√n/σ) where δ = μ₁−μ₀ is the true effect size. Power increases with n, effect size, and α. [1]"
+      "body": "The z-test fits directly into the usual framework of false positives, false negatives, and statistical power. Once you specify a threshold for rejection, you fix the long-run false-positive rate and can then analyze how sample size and effect size determine the chance of detection. This makes the z-test a useful prototype for power calculations."
     },
     {
       "heading": "p-value Interpretation",
-      "body": "The p-value is P(|Z| ≥ |z_obs| | H₀ true) — the probability of observing a test statistic at least as extreme as observed, assuming H₀ is true. It is NOT: the probability that H₀ is true, the probability the result is due to chance, or a measure of effect size. p < α means the result is 'statistically significant' at level α — it says nothing about practical significance. [1][2]"
+      "body": "The p-value from a z-test quantifies how unusual the observed standardized deviation would be if the null hypothesis were exactly correct. It is a measure of incompatibility with the null model, not a direct measure of effect size or scientific importance. That is why practical interpretation always needs the estimate itself and its uncertainty interval."
     }
   ],
   "youtubeLabel": "Z-test vs t-test — StatQuest",

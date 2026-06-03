@@ -24,22 +24,22 @@
     }
   ],
   "deepDiveIntro": [
-    "k-fold cross-validation partitions D = {(x₁,y₁),...,(xₙ,yₙ)} into k disjoint folds D₁,...,Dₖ. The CV error is: CV(f̂) = (1/k)·Σᵢ₌₁ᵏ L(f̂₋ᵢ, Dᵢ) where f̂₋ᵢ is the model trained on all folds except Dᵢ. LOOCV is k=n: CV(f̂) = (1/n)·Σᵢ₌₁ⁿ L(f̂₋ᵢ, {(xᵢ,yᵢ)}). Hastie et al. (ESL): CV is approximately an estimate of the expected test error E_D[L(f̂, (x_new, y_new))] — the expectation being over random training sets of size n. [1]",
-    "Bias-variance tradeoff in CV fold count k: LOOCV (k=n) is nearly unbiased — each model is trained on n-1 samples, close to n. But high variance: the n fold models are trained on nearly identical datasets, producing correlated estimates. k=5 or k=10 fold: slightly higher bias (models trained on only (k-1)/k × n samples) but much lower variance. Empirical finding (Kohavi, 1995): k=10 minimises the combination of bias and variance for classification accuracy estimation across many datasets. [2]"
+    "k-fold cross-validation splits the dataset into k equal parts, trains the model on k-1 parts, evaluates on the remaining part, and repeats k times. The reported CV error is the average loss across all k held-out folds. Leave-one-out (k=n) uses every single example as its own test set exactly once. CV estimates the expected error on new data drawn from the same distribution as the training set. [1]",
+    "Choosing k involves a bias-variance tradeoff. Leave-one-out CV is nearly unbiased because each model trains on almost all the data, but it has high variance because the k models are trained on nearly identical datasets and give correlated estimates. k=5 or k=10 introduces a small bias (training on only 80-90% of data) but yields much more stable estimates. Kohavi (1995) showed empirically that k=10 hits the sweet spot across many datasets. [2]"
   ],
   "deepDive": [
     {
       "heading": "k-Fold CV Procedure and Computation",
-      "body": "Algorithm: (1) Shuffle data randomly. (2) Split into k equal-size folds. (3) For i=1..k: train f̂₋ᵢ on D\\Dᵢ, compute Lᵢ = L(f̂₋ᵢ, Dᵢ). (4) Report CV_err = (1/k)·ΣLᵢ and std(Lᵢ)/√k as the standard error. Computation: k times the cost of a single training run. k=5: 5× cost; LOOCV: n× cost. For linear models: LOOCV has a closed form: LOO_err = (1/n)·Σᵢ ((yᵢ - ŷᵢ)/(1 - Hᵢᵢ))² where H is the hat matrix (influence matrix) — computable in one matrix inversion, not n training runs. [1]",
+      "body": "Shuffle the data, split into k equal folds, then for each fold train on the remaining k-1 folds and evaluate on the held-out fold. Report the average loss and its standard error across folds. The total computation is k times the cost of one training run. For linear models there is a shortcut: leave-one-out error can be computed from a single matrix inversion using the hat matrix, avoiding n separate training runs. [1]",
       "formula": "CV(f̂) = (1/k)·Σᵢ₌₁ᵏ L(f̂₋ᵢ, Dᵢ)"
     },
     {
       "heading": "Nested Cross-Validation",
-      "body": "Problem: if you use k-fold CV to select hyperparameters and report the CV error, that error is biased downward (hyperparameters were optimised to the CV folds). Nested CV separates these concerns. Outer k-fold: for each outer fold, hold out a test fold. Inner j-fold: on the remaining data, run hyperparameter search via CV. Train final model with best hyperparameters on all non-test data. Evaluate on outer test fold. Repeat for all outer folds. The outer CV score is an unbiased estimate of the generalisation performance of the model selection procedure. Cost: k×j×H training runs (H = number of HPO configs). Common setup: outer k=5, inner j=3, HPO with 20 random configs → 300 training runs. [1]"
+      "body": "Using the same CV folds to both select hyperparameters and report performance biases the result — the selected hyperparameters are implicitly tuned to those folds. Nested CV fixes this by separating concerns: an outer k-fold loop provides an unbiased performance estimate, while an inner j-fold loop handles hyperparameter selection within each outer training set. A typical setup uses 5 outer folds and 3 inner folds with 20 random hyperparameter configurations, costing 300 training runs total. [1]"
     },
     {
       "heading": "Stratified and Group CV",
-      "body": "Stratified k-fold: in each fold, maintain class proportions equal to the full dataset. For binary classification with 90/10 class split: each train fold has ~90/10 and each val fold has ~90/10. Prevents folds where all rare-class examples are in training or validation. Group k-fold: guarantee that no group appears in both training and validation in any fold. Use cases: patient medical records (don't split a patient across folds), news articles (don't split articles from the same source), graph nodes (don't train on neighbors of test nodes). Failure to use GroupKFold when groups exist causes data leakage and inflated CV scores. [1]"
+      "body": "Stratified k-fold ensures each fold has the same class proportions as the full dataset — critical for imbalanced problems where a random split might put all rare-class examples in one fold. Group k-fold ensures no group (e.g. all samples from one patient or one document) appears in both training and validation within any fold, preventing data leakage from correlated observations. Always check whether your data has a group structure before using standard k-fold. [1]"
     }
   ],
   "youtubeLabel": "Cross-Validation: k-Fold, Nested, and Best Practices",

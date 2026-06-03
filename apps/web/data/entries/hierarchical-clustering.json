@@ -30,11 +30,11 @@
   "deepDive": [
     {
       "heading": "Linkage Criteria",
-      "body": "Single linkage: d(A,B) = min_{a∈A, b∈B} d(a,b). Produces elongated, chained clusters; susceptible to outliers. Complete linkage: d(A,B) = max d(a,b). Produces compact, roughly equal-sized clusters. Average linkage (UPGMA): d(A,B) = (1/|A||B|) Σ_{a,b} d(a,b). Ward linkage: minimises the increase in total within-cluster variance when merging. Ward is usually the default and performs best in practice. [1][2]"
+      "body": "Produces elongated, chained clusters; susceptible to outliers. Produces compact, roughly equal-sized clusters. Ward linkage: minimises the increase in total within-cluster variance when merging. Ward is usually the default and performs best in practice."
     },
     {
       "heading": "Ward's Method",
-      "body": "Ward's linkage merges the two clusters whose merger minimises the increase in total WCSS. For clusters A and B with centroids c_A, c_B and sizes n_A, n_B: Δ = (n_A·n_B)/(n_A+n_B) · ‖c_A − c_B‖². This produces compact, spherical clusters and generally outperforms other linkage choices when clusters are of similar size. [1]",
+      "body": "Ward's linkage merges the two clusters whose merger minimises the increase in total WCSS. This produces compact, spherical clusters and generally outperforms other linkage choices when clusters are of similar size.",
       "formula": "d_Ward(A,B) = (n_A · n_B)/(n_A + n_B) · ‖c_A − c_B‖²"
     },
     {
@@ -47,7 +47,7 @@
     },
     {
       "heading": "Divisive vs Agglomerative",
-      "body": "Divisive (top-down) clustering starts with all points in one cluster and recursively splits. It is more expensive (NP-hard to find the optimal split), but can be approximated by repeatedly applying K-Means with K=2. In practice, agglomerative methods dominate because they are more efficient and the dendrogram is easier to interpret. [1]"
+      "body": "Divisive (top-down) clustering starts with all points in one cluster and recursively splits. In practice, agglomerative methods dominate because they are more efficient and the dendrogram is easier to interpret."
     }
   ],
   "youtubeLabel": "StatQuest: Hierarchical Clustering",
@@ -83,7 +83,13 @@
     }
   ],
   "sources": [
-    { "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 14.3", "url": "https://hastie.su.domains/ElemStatLearn/" },
-    { "label": "Bishop — Pattern Recognition and Machine Learning, Ch. 9", "url": "https://www.microsoft.com/en-us/research/publication/pattern-recognition-machine-learning/" }
+    {
+      "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 14.3",
+      "url": "https://hastie.su.domains/ElemStatLearn/"
+    },
+    {
+      "label": "Bishop — Pattern Recognition and Machine Learning, Ch. 9",
+      "url": "https://www.microsoft.com/en-us/research/publication/pattern-recognition-machine-learning/"
+    }
   ]
 }

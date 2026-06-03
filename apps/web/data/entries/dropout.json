@@ -24,26 +24,26 @@
     }
   ],
   "deepDiveIntro": [
-    "Dropout (Srivastava et al., 2014): At each forward pass during training, each unit hⱼ is independently zeroed with probability p. The remaining units are scaled by 1/(1−p) (inverted dropout), so the expected activation is preserved: E[h̃ⱼ] = (1−p)·hⱼ/(1−p) = hⱼ. This ensures the network doesn't need rescaling at test time. Alternative (non-inverted): train with unscaled dropout, multiply all outputs by (1−p) at test — equivalent in expectation but less convenient. [1]",
-    "Dropout can be viewed as training 2ᵈ thinned networks (d = number of units) with shared weights, and averaging their predictions at test time. The number of possible masked networks is exponential; in practice, each training step samples one, and test-time prediction uses the full network (which approximates the average over all thinned networks). [1]"
+    "Dropout (Srivastava et al., 2014) works by independently zeroing each neuron with probability p during training and scaling the surviving neurons up by 1/(1-p) to keep the expected activation unchanged. This 'inverted' scaling means no adjustment is needed at test time — you just use the full network. An equivalent but less convenient approach scales down outputs at test time instead. [1]",
+    "Conceptually, dropout trains an exponential number of different thinned network architectures with shared weights, then approximates their average at test time using the full network. Each training step randomly samples one of these sub-networks, so no single neuron can become indispensable — the network must learn redundant representations. [1]"
   ],
   "deepDive": [
     {
       "heading": "Inverted Dropout",
-      "body": "Training: h̃ⱼ = hⱼ · Bernoulli(1−p) / (1−p). The division by (1−p) ensures E[h̃ⱼ] = hⱼ. This is 'inverted' dropout — scaling happens during training. At test time: use h directly (no scaling). Without inversion: training uses h·Bernoulli(1−p), test uses (1−p)·h. Both are equivalent in expectation but inverted is more convenient. PyTorch's nn.Dropout implements inverted dropout. The key: the scaling factor 1/(1−p) ensures gradient magnitudes are also roughly preserved during training. [1]",
+      "body": "Inverted dropout scales surviving neurons up by the factor 1/(1-p) during training, so that their expected value matches what the next layer would receive if dropout were off. This means no rescaling is needed at inference time — the network can run exactly as-is. Without inversion, you'd have to multiply all outputs by (1-p) at test time, which is less convenient and error-prone. PyTorch's nn.Dropout implements the inverted version. [1]",
       "formula": "h̃ⱼ = {hⱼ/(1−p) with prob 1−p;  0 with prob p}"
     },
     {
       "heading": "Dropout as Regularisation: Weight Tying",
-      "body": "The 2ᵈ thinned networks share weights — each sub-network uses the same w. This weight tying means each weight is trained on (on average) half the data in a different random context each time. The resulting weight is the 'democratic average' over all contexts. This is regularisation: the weight cannot overfit to any specific feature combination because it needs to work well in combination with many different subsets of other features. [1]"
+      "body": "Although dropout samples a different sub-network each training step, all sub-networks share the same underlying weights. This means each weight gets updated in many different random contexts — it has to be useful regardless of which other neurons happen to be active. A weight that only works when combined with a specific set of other neurons will be penalised across most training steps, pushing the network to learn more robust, general representations. [1]"
     },
     {
       "heading": "Monte Carlo Dropout for Uncertainty",
-      "body": "At test time, run T forward passes with dropout active (model.train() mode or set each Dropout layer to train). Predictions: ŷᵢ for i=1,...,T. Mean: ȳ = (1/T)Σŷᵢ ≈ E_q[y|x] (predictive mean). Variance: Var = (1/T)Σ(ŷᵢ−ȳ)² ≈ predictive uncertainty. Gal & Ghahramani (2016) showed this is a variational approximation to a deep GP. Practically: T=30–100 forward passes for reliable uncertainty estimates. Computational cost: T× inference cost. [2]"
+      "body": "At test time, you can leave dropout on and run multiple forward passes with different random neuron masks. The mean of these predictions estimates the model's best answer; the variance estimates how uncertain the model is. Gal and Ghahramani (2016) showed this is a principled Bayesian approximation. In practice, 30 to 100 stochastic passes give reliable uncertainty estimates at a cost of proportionally more inference time. [2]"
     },
     {
       "heading": "Dropout Rate Choice",
-      "body": "Optimal p depends on network capacity and overfitting. Heuristics: (1) Large FC layers (>1000 units): p=0.5. (2) Smaller layers: p=0.2–0.3. (3) Convolutional layers: p=0.1–0.2 (or skip — BatchNorm + weight decay is usually enough). (4) Transformer attention/FFN: p=0.1. (5) Embeddings: p=0.1. Too high p (>0.7) causes underfitting — model can't maintain information flow. Too low p (<0.05): insufficient regularisation. p=0 = no dropout. [1]"
+      "body": "The right dropout rate depends on layer size and how much overfitting you observe. Large fully-connected layers (more than 1,000 units) typically use p=0.5; smaller layers use 0.2–0.3. Transformer attention and feed-forward sublayers usually use p=0.1. Going above p=0.7 tends to underfit because too much information is lost in each forward pass. Convolutional layers are usually fine without dropout because batch normalisation and weight sharing already provide regularisation. [1]"
     }
   ],
   "youtubeLabel": "Dropout Regularization — Deep Learning.ai",

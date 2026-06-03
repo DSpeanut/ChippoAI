@@ -23,33 +23,33 @@
     }
   ],
   "deepDiveIntro": [
-    "AdaBoost (Freund & Schapire, 1997) fits a sequence of weak classifiers hₘ on reweighted versions of the training data. The weights wᵢ are updated after each round — misclassified points get higher weights, correctly classified points get lower weights. The final model is a weighted majority vote: H(x) = sign(Σₘ αₘ hₘ(x)).",
-    "AdaBoost can be derived as forward stagewise additive modelling with exponential loss L(y, F) = exp(−y·F(x)), y ∈ {−1,+1}. This connection, established by Friedman et al. (2000), unified AdaBoost with the gradient boosting framework."
+    "AdaBoost (Freund & Schapire, 1997) trains a sequence of weak classifiers on reweighted versions of the training data. After each round, misclassified examples get higher weights and correctly classified ones get lower weights. The final model is a weighted majority vote across all the weak classifiers.",
+    "AdaBoost can be understood as minimising an exponential loss function — the penalty for misclassified examples grows exponentially the more confidently they are misclassified. This connection, established by Friedman et al. (2000), unified AdaBoost with the broader gradient boosting framework."
   ],
   "visualizationType": "adaboost",
   "deepDive": [
     {
       "heading": "The AdaBoost Algorithm",
-      "body": "Initialise weights wᵢ = 1/n. For m = 1, …, M: (1) Fit weak classifier hₘ(x) ∈ {−1,+1} minimising weighted error εₘ = Σᵢ wᵢ 𝟙[hₘ(xᵢ) ≠ yᵢ] / Σᵢ wᵢ. (2) Compute learner weight αₘ = ½ log((1−εₘ)/εₘ). (3) Update sample weights: wᵢ ← wᵢ exp(−αₘ yᵢ hₘ(xᵢ)). (4) Normalise wᵢ. Final: H(x) = sign(Σₘ αₘ hₘ(x)). [1]",
+      "body": "Start every training example with equal weight. In each round, fit a weak classifier on the weighted data, then compute how accurate it was. Better classifiers earn a higher vote weight. Misclassified examples get their weights boosted so the next classifier pays more attention to them, while correctly classified examples get their weights reduced. Repeat for M rounds, then take a weighted vote of all classifiers. [1]",
       "formula": "αₘ = ½ log((1 − εₘ) / εₘ),    wᵢ ← wᵢ · exp(−αₘ yᵢ hₘ(xᵢ))"
     },
     {
-      "heading": "Learner Weight αₘ",
-      "body": "If εₘ = 0 (perfect classifier): αₘ → ∞ — dominates all other learners. If εₘ = 0.5 (random guessing): αₘ = 0 — gets no vote. If εₘ > 0.5 (worse than random): αₘ < 0 — vote is negated (a flipped bad classifier is a good one). Only weak learners with εₘ < 0.5 are required. [1]"
+      "heading": "Learner Weight",
+      "body": "A perfect classifier gets a very high vote weight; a random-guessing classifier gets zero weight. A classifier that is worse than random actually gets a negative weight — its predictions are flipped, which is still useful. AdaBoost only requires each weak learner to do slightly better than random guessing to guarantee overall improvement. [1]"
     },
     {
       "heading": "Training Error Bound",
-      "body": "A key theoretical guarantee: the training error of the final ensemble decreases exponentially with M. Specifically, training error ≤ exp(−2 Σₘ γₘ²) where γₘ = 0.5 − εₘ is the edge of the m-th weak learner above random. If each weak learner has edge γ > 0, training error → 0 as M → ∞. [1][2]",
+      "body": "AdaBoost comes with a theoretical guarantee: as long as each weak learner does just a little better than random guessing, the training error of the final ensemble drops exponentially as you add more rounds. Add enough rounds and the training error can be driven to zero. [1][2]",
       "formula": "Training error ≤ exp(−2 Σₘ γₘ²)"
     },
     {
       "heading": "Connection to Exponential Loss",
-      "body": "AdaBoost minimises the exponential loss L(y, F) = Σᵢ exp(−yᵢ F(xᵢ)) via forward stagewise additive modelling. The sample weights wᵢ at round m equal exp(−yᵢ F_{m-1}(xᵢ)) — the per-example exponential loss at the current ensemble. Minimising weighted error εₘ is equivalent to taking one gradient step in function space. [1]",
+      "body": "AdaBoost can be interpreted as greedily minimising an exponential loss: examples that are confidently misclassified pay an exponentially large penalty. The sample weights AdaBoost maintains at each round are exactly these per-example losses, which is why fitting a new classifier on the current weights is equivalent to taking a gradient step. [1]",
       "formula": "L(y, F) = Σᵢ exp(−yᵢ F(xᵢ))"
     },
     {
       "heading": "Sensitivity to Outliers & Noise",
-      "body": "Exponential loss grows exponentially for misclassified points (unlike log-loss which grows linearly). Points that are consistently misclassified — whether because they are boundary cases, mislabelled noise, or true outliers — receive exponentially increasing weights, forcing the model to focus on them. This is both AdaBoost's strength (focuses on hard cases) and weakness (overfits to noise). [1]"
+      "body": "The exponential penalty grows much faster than a log penalty for wrong predictions. Points that are always misclassified — whether they are genuinely hard, mislabelled, or just noise — get exponentially increasing weights, and the model fixates on them. This is AdaBoost's double-edged sword: it focuses on hard cases, but also overfits badly to noisy labels. [1]"
     }
   ],
   "youtubeLabel": "StatQuest: AdaBoost",

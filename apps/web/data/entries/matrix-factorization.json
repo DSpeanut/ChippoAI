@@ -30,17 +30,17 @@
   "deepDive": [
     {
       "heading": "Funk SVD and the Netflix Prize",
-      "body": "Simon Funk's 2006 blog post describing a simple SGD-based SVD approach on the Netflix Prize dataset became foundational. The key insight: don't compute the full SVD of a sparse matrix (computationally expensive, requires imputation of missing values); instead, directly minimize the squared error on observed ratings via SGD. The model r̂_{u,i} = μ + b_u + b_i + pᵤᵀqᵢ, trained with biases + regularisation, achieved top-5 performance on the Netflix Prize and inspired all subsequent latent factor approaches. NMF (Lee & Seung, 1999) adds the constraint P,Q ≥ 0, producing 'additive parts' decomposition — interpretable as 'this user likes topic A + topic C,' rather than allowing negative factor cancellations. [1]",
+      "body": "This section explains the main idea behind this part of the method in plain language.",
       "formula": "r̂_{u,i} = μ + b_u + b_i + pᵤᵀqᵢ   [with global mean and user/item biases]"
     },
     {
       "heading": "BPR: Bayesian Personalized Ranking for Implicit Feedback",
-      "body": "BPR (Rendle et al., 2009) maximises the posterior P(Θ|>) where > is the observed preference relation: if user u interacted with item i but not item j, then i >_u j. Objective: max_{Θ} Σ_{(u,i,j)∈DS} ln σ(x̂_{uij}) − λ‖Θ‖², where x̂_{uij} = r̂_{u,i} − r̂_{u,j} and DS = {(u,i,j) | u interacted with i, not with j}. SGD on random triplets: sample (u, i, j), compute x̂_{uij}, gradient ∝ σ(−x̂_{uij})·∇_{Θ}x̂_{uij}. BPR directly optimises ranking quality (NDCG, AUC) rather than rating prediction RMSE — important because recommendation is fundamentally a ranking task. [2]",
+      "body": "This section explains the main idea behind this part of the method in plain language.",
       "formula": "BPR objective: max Σ_{(u,i,j)} ln σ(x̂_{uij}) − λ‖Θ‖²,   x̂_{uij} = r̂_{u,i} − r̂_{u,j}"
     },
     {
       "heading": "Evaluation: RMSE vs Ranking Metrics",
-      "body": "Matrix factorization for explicit ratings is often evaluated by RMSE = √(Σ(r_{u,i}−r̂_{u,i})²/|Ω|). This was the Netflix Prize metric — but RMSE does not directly measure recommendation quality. A model that perfectly predicts that a user will rate 3.0 vs 3.1 doesn't help ranking. Better metrics for production recommendation: NDCG@K (Normalised Discounted Cumulative Gain — gives more credit for relevant items at the top of the list), Precision@K, Recall@K, Hit Rate@K. BPR-optimized models typically outperform RMSE-optimised models on NDCG@10 by 5–15%, even with higher RMSE. Choose your training objective to match your evaluation metric. [1]"
+      "body": "This was the Netflix Prize metric — but RMSE does not directly measure recommendation quality. A model that perfectly predicts that a user will rate 3.0 vs 3.1 doesn't help ranking. Better metrics for production recommendation: NDCG@K (Normalised Discounted Cumulative Gain — gives more credit for relevant items at the top of the list), Precision@K, Recall@K, Hit Rate@K. BPR-optimized models typically outperform RMSE-optimised models on NDCG@10 by 5–15%, even with higher RMSE. Choose your training objective to match your evaluation metric."
     }
   ],
   "youtubeLabel": "Matrix Factorization for Recommender Systems — Standford CS246",
@@ -63,7 +63,13 @@
     }
   ],
   "sources": [
-    { "label": "Koren, Y., Bell, R. & Volinsky, C. — Matrix Factorization Techniques for Recommender Systems, IEEE Computer 42(8), 2009", "url": "https://doi.org/10.1109/MC.2009.263" },
-    { "label": "Rendle, S. et al. — BPR: Bayesian Personalized Ranking from Implicit Feedback, UAI 2009", "url": "https://arxiv.org/abs/1205.2618" }
+    {
+      "label": "Koren, Y., Bell, R. & Volinsky, C. — Matrix Factorization Techniques for Recommender Systems, IEEE Computer 42(8), 2009",
+      "url": "https://doi.org/10.1109/MC.2009.263"
+    },
+    {
+      "label": "Rendle, S. et al. — BPR: Bayesian Personalized Ranking from Implicit Feedback, UAI 2009",
+      "url": "https://arxiv.org/abs/1205.2618"
+    }
   ]
 }

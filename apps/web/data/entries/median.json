@@ -30,25 +30,26 @@
   "deepDive": [
     {
       "heading": "Definition and Computation",
-      "body": "Sort x₁ ≤ x₂ ≤ … ≤ xₙ. Median = x₍ₙ₊₁₎/₂ if n is odd; (x₍ₙ/₂₎ + x₍ₙ/₂₊₁₎)/2 if n is even. For large datasets, algorithms based on partial sorting (quickselect, O(n) average) or counting (for integers) are more efficient than full sorting. [1]"
+      "body": "The median is the middle value after the data is ordered. It depends only on rank, not on how far extreme observations sit from the center, which is why it is much more resistant to outliers than the mean. In large datasets, specialized selection algorithms can find the median without fully sorting everything.",
+      "formula": "odd n: x₍ₙ₊₁₎/₂,   even n: (x₍ₙ/₂₎ + x₍ₙ/₂₊₁₎)/2"
     },
     {
       "heading": "Asymptotic Distribution",
-      "body": "Under regularity conditions (f(m) > 0 and continuous at m), √n(m̂ − m) →_d N(0, 1/(4f(m)²)), where f(m) is the population density at the true median m. Compare to the mean: √n(x̄−μ) →_d N(0, σ²). The asymptotic relative efficiency (ARE) of the median to the mean for the normal distribution is ARE = 2/π ≈ 0.637 — the median loses ~36% efficiency relative to the mean for normal data. [1]",
+      "body": "For smooth distributions, the sample median becomes more stable as the sample grows and has a well-behaved large-sample distribution. Compared with the mean, it usually pays a price in efficiency when the data is truly normal. That trade-off is the classic cost of robustness: you lose some precision under ideal conditions in exchange for much better protection against outliers and skew.",
       "formula": "Var(m̂) ≈ 1 / (4n f(m)²)"
     },
     {
       "heading": "Breakdown Point and Robustness",
-      "body": "The breakdown point of the sample median is 0.5 — up to 50% of observations can be arbitrarily corrupted without the estimate becoming unbounded. The mean has breakdown point 0. The influence function of the median is IF(x; F, T) = sign(x−m)/(2f(m)) — bounded and finite, confirming robustness. [1][2]"
+      "body": "The median is one of the most robust basic estimators in statistics. It can tolerate a very large fraction of contaminated data before it breaks down, unlike the mean, which can be destabilized by a single extreme observation. This is why the median is a standard choice for skewed data, heavy tails, and robust summaries."
     },
     {
       "heading": "Median as Optimal Predictor under MAE",
-      "body": "argmin_c E[|X − c|] = median(X). Proof: dE[|X−c|]/dc = −P(X > c) + P(X < c) = 0 → P(X ≤ c) = 0.5. This is the statistical basis for median regression (LAD): the optimal point prediction under L1 loss is the conditional median E_MAE[Y|X], not the conditional mean E_MSE[Y|X]. [1]",
+      "body": "The median is the best prediction when error is measured with absolute loss rather than squared loss. That makes it the natural target for least-absolute-deviations regression and for settings where large mistakes should not be overly amplified. This connection is the main reason the median appears in robust regression and quantile methods.",
       "formula": "argmin_c E[|X − c|] = median(X)"
     },
     {
       "heading": "Comparison: Mean vs Median vs Mode",
-      "body": "Symmetric unimodal distributions: mean = median = mode. Right-skewed: mean > median > mode (e.g. income). Left-skewed: mean < median < mode. For normal data: both mean and median are unbiased for μ, but mean is more efficient (lower variance). For heavy-tailed distributions: median is more robust and may be more practical. [1]"
+      "body": "Mean, median, and mode agree for symmetric unimodal distributions, but they separate when the distribution becomes skewed. In right-skewed data, the mean is pulled furthest into the long tail, while the median stays closer to the middle mass. That ordering is a quick visual clue about asymmetry and about which summary is likely to be most representative."
     }
   ],
   "youtubeLabel": "Mean vs Median — StatQuest",

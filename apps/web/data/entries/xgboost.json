@@ -30,21 +30,21 @@
   "deepDive": [
     {
       "heading": "Second-Order Taylor Approximation",
-      "body": "At step m, XGBoost approximates the loss for adding tree f as: ℓ_approx = Σᵢ [gᵢ f(xᵢ) + ½hᵢ f(xᵢ)²] + Ω(f), where gᵢ = ∂L(yᵢ,ŷᵢ)/∂ŷᵢ is the first-order gradient (same as GBM) and hᵢ = ∂²L(yᵢ,ŷᵢ)/∂ŷᵢ² is the second-order Hessian. Using the Hessian makes the update adaptive to local curvature of the loss. [1]",
+      "body": "Using the Hessian makes the update adaptive to local curvature of the loss.",
       "formula": "ℒ_approx = Σᵢ [ gᵢ f(xᵢ) + ½hᵢ f(xᵢ)² ] + Ω(f)"
     },
     {
       "heading": "Optimal Leaf Weights & Split Score",
-      "body": "For a fixed tree structure (which samples go to which leaves), the optimal leaf weight for leaf j is: w*ⱼ = −Gⱼ/(Hⱼ + λ), where Gⱼ = Σᵢ∈leaf_j gᵢ and Hⱼ = Σᵢ∈leaf_j hᵢ. The gain from splitting a leaf into left/right children is: Gain = ½[G²_L/(H_L+λ) + G²_R/(H_R+λ) − (G_L+G_R)²/(H_L+H_R+λ)] − γ. Only accept splits with Gain > 0. [1]",
+      "body": "This section explains the main idea behind this part of the method in plain language.",
       "formula": "w*ⱼ = −Gⱼ / (Hⱼ + λ),    Gain = ½[G²_L/(H_L+λ) + G²_R/(H_R+λ) − (G_L+G_R)²/(H_L+H_R+λ)] − γ"
     },
     {
       "heading": "Regularisation Parameters",
-      "body": "γ (min_split_loss): minimum gain required to make a split. Increase γ to prune more aggressively. λ (reg_lambda, default 1): L2 penalty on leaf weights — smoothes predictions. α (reg_alpha, default 0): L1 penalty on leaf weights — induces sparsity. max_depth and min_child_weight (minimum Hessian sum in a leaf) provide additional tree-level regularisation. [1]"
+      "body": "γ (min_split_loss): minimum gain required to make a split. Increase γ to prune more aggressively. α (reg_alpha, default 0): L1 penalty on leaf weights — induces sparsity. max_depth and min_child_weight (minimum Hessian sum in a leaf) provide additional tree-level regularisation."
     },
     {
       "heading": "Approximate Split Finding",
-      "body": "Exact split finding requires sorting all feature values for each split — O(n log n) per feature. For large n, XGBoost uses an approximate algorithm: bin feature values into quantile-based buckets, evaluate splits only at bucket boundaries. This reduces O(n) to O(bins) ≈ O(256) per feature without meaningful accuracy loss. [1]"
+      "body": "Exact split finding requires sorting all feature values for each split — O(n log n) per feature. For large n, XGBoost uses an approximate algorithm: bin feature values into quantile-based buckets, evaluate splits only at bucket boundaries."
     },
     {
       "heading": "Sparsity-Aware Split Assignment",
@@ -84,7 +84,13 @@
     }
   ],
   "sources": [
-    { "label": "Chen & Guestrin — XGBoost: A Scalable Tree Boosting System (2016)", "url": "https://arxiv.org/abs/1603.02754" },
-    { "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 10", "url": "https://hastie.su.domains/ElemStatLearn/" }
+    {
+      "label": "Chen & Guestrin — XGBoost: A Scalable Tree Boosting System (2016)",
+      "url": "https://arxiv.org/abs/1603.02754"
+    },
+    {
+      "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 10",
+      "url": "https://hastie.su.domains/ElemStatLearn/"
+    }
   ]
 }

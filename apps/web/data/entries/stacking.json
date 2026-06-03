@@ -35,7 +35,7 @@
     },
     {
       "heading": "Meta-Learner Training",
-      "body": "The meta-feature matrix Z ∈ ℝⁿˣᴷ (rows = training examples, columns = base model OOF predictions) is the training input for the meta-learner. The meta-learner predicts y from Z. Common meta-learner choices: linear/logistic regression (interpretable, low variance), Ridge/Lasso, GBM, or another stacking layer. Use a simple, regularised meta-learner to avoid overfitting. [1]"
+      "body": "The meta-learner predicts y from Z. Common meta-learner choices: linear/logistic regression (interpretable, low variance), Ridge/Lasso, GBM, or another stacking layer. Use a simple, regularised meta-learner to avoid overfitting."
     },
     {
       "heading": "Test Set Predictions",
@@ -79,7 +79,13 @@
     }
   ],
   "sources": [
-    { "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 8.8", "url": "https://hastie.su.domains/ElemStatLearn/" },
-    { "label": "Wolpert — Stacked Generalization (1992), Neural Networks 5(2)", "url": "https://www.sciencedirect.com/science/article/abs/pii/S0893608005800231" }
+    {
+      "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 8.8",
+      "url": "https://hastie.su.domains/ElemStatLearn/"
+    },
+    {
+      "label": "Wolpert — Stacked Generalization (1992), Neural Networks 5(2)",
+      "url": "https://www.sciencedirect.com/science/article/abs/pii/S0893608005800231"
+    }
   ]
 }

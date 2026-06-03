@@ -24,27 +24,27 @@
     }
   ],
   "deepDiveIntro": [
-    "For a K-class classification problem with one-hot label y ∈ {0,1}^K and predicted probabilities p̂ = softmax(z): CE = −Σₖ yₖ log p̂ₖ = −log p̂_{true}. Since only the true class has yₖ=1, only one term survives. The gradient of CE + softmax with respect to logit zⱼ is (p̂ⱼ − yⱼ) — clean, linear, and non-vanishing even when the model is confident and wrong. [1]",
-    "Cross-entropy equals KL divergence plus the entropy of the true distribution: H(y, p̂) = H(y) + D_KL(y||p̂). Since H(y) = 0 for one-hot labels, minimising CE is equivalent to minimising KL(y||p̂). This is also equivalent to maximising the log-likelihood of the data under a categorical model: L_CE = −Σᵢ log p̂(yᵢ|xᵢ). [1][2]"
+    "For a multi-class problem, cross-entropy is simply the negative log probability assigned to the correct class. Because only the true class contributes (all other terms in the sum are zero), the loss is −log(predicted probability of the true class). The gradient of the combined softmax plus cross-entropy with respect to the raw logits has an elegant closed form: it is just the predicted probability minus the one-hot target — a clean, non-vanishing signal even when the model is confidently wrong. [1]",
+    "Minimising cross-entropy is equivalent to minimising the KL divergence between the target distribution and the model's predictions, and also equivalent to maximising the log-likelihood of the data under a categorical model. These three perspectives all point to the same objective, which is why cross-entropy is the canonical loss for classification. [1][2]"
   ],
   "deepDive": [
     {
       "heading": "Gradient of CE + Softmax",
-      "body": "For logit vector z with softmax p̂ₖ = exp(zₖ)/Σⱼ exp(zⱼ), the gradient of L = −log p̂_c (true class c) with respect to zⱼ is: ∂L/∂zⱼ = p̂ⱼ − 1{j=c}. This is simply (prediction − label). This clean gradient avoids the vanishing gradient problem that plagues MSE + sigmoid. It is the primary reason cross-entropy is preferred over MSE for classification. [1]",
+      "body": "The gradient of cross-entropy with softmax outputs has a beautifully clean form: it equals the model's predicted probability minus the one-hot target label. For the correct class, the gradient is negative (loss decreases when you increase that logit), and for all other classes it is positive. This gradient is never zero even when the model is confidently wrong, which is why cross-entropy trains much faster than MSE on classification problems where a sigmoid saturates with vanishing gradient. [1]",
       "formula": "∂L/∂zⱼ = p̂ⱼ − 1{j = true class}"
     },
     {
       "heading": "Numerical Stability: Log-Sum-Exp Trick",
-      "body": "Computing log(softmax(z)) naively: exp(z) can overflow for large logits. The numerically stable version subtracts max(z) first: log p̂ₖ = zₖ − log(Σⱼ exp(zⱼ − max(z))) − max(z). This doesn't change the result but prevents overflow. PyTorch's F.cross_entropy and nn.LogSoftmax implement this. Never apply softmax then log separately — precision loss compounds. [1]"
+      "body": "Computing the softmax of large logits naively leads to overflow because the exponentials get astronomically large. The fix is to subtract the maximum logit before exponentiating — the result is mathematically identical but stays within floating-point range. PyTorch's cross-entropy function and LogSoftmax implement this automatically. Never manually apply softmax and then take the log separately — precision loss compounds and you lose digits. [1]"
     },
     {
       "heading": "Label Smoothing",
-      "body": "Hard one-hot targets push the model to predict extreme probabilities, causing overconfidence. Label smoothing replaces target y_c = 1 with y_c = 1 − ε, distributing ε/(K−1) to other classes. Smoothed CE = −[(1−ε) log p̂_c + (ε/(K−1)) Σ_{k≠c} log p̂_k]. Used in training transformers (Vaswani et al., 2017: ε=0.1) and image classifiers (EfficientNet). Reduces calibration error and improves generalisation. [2]",
+      "body": "With hard one-hot targets, the model is pushed to assign all the probability to the correct class, which leads to overconfident predictions that generalise poorly. Label smoothing softens the target by spreading a small fraction (typically 0.1) of probability mass evenly across all other classes. This regularises the model, reduces calibration error, and was used in the original transformer paper and in training EfficientNet. [2]",
       "formula": "ỹₖ = 1−ε if k=true, ε/(K−1) otherwise"
     },
     {
       "heading": "Focal Loss: Addressing Class Imbalance",
-      "body": "RetinaNet (Lin et al., 2017) introduced focal loss to handle extreme foreground/background imbalance in object detection: FL = −(1−p̂_c)^γ log p̂_c, γ ≥ 0. The modulating factor (1−p̂_c)^γ down-weights easy examples (high p̂_c → small factor) so the model focuses on hard, misclassified examples. At γ=0 it reduces to CE; typical γ=2 works well. Reduces the effective loss from the 99.9% easy negatives by ~100×. [3]",
+      "body": "Focal loss multiplies the standard cross-entropy by a factor that shrinks toward zero when the model is already confident about an example. This down-weights the contribution of easy examples — where the model correctly assigns high probability to the true class — so the training signal is dominated by the hard cases the model is getting wrong. With a typical exponent of 2, the contribution from easy negatives is reduced by roughly 100x compared to standard cross-entropy. This was introduced for object detection where the vast majority of background patches are easy negatives. [3]",
       "formula": "FL = −(1 − p̂_c)^γ log p̂_c"
     }
   ],

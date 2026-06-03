@@ -30,30 +30,30 @@
   "deepDive": [
     {
       "heading": "The Model",
-      "body": "The log-odds (logit) of the positive class is assumed to be linear in x. Exponentiating and solving gives the sigmoid form. For p features: P(Y=1|x) = σ(β₀ + β₁x₁ + … + βₚxₚ) where σ(z) = 1/(1+e⁻ᶻ). [1][2]",
+      "body": "This section describes the core structure of the method and the assumptions it makes about how inputs, outputs, or latent components relate.",
       "formula": "P(Y=1|x) = σ(βᵀx) = 1 / (1 + e^{−βᵀx})"
     },
     {
       "heading": "Loss Function — Binary Cross-Entropy",
-      "body": "The model is trained by maximising the conditional log-likelihood over n observations. This is equivalent to minimising the binary cross-entropy (negative log-likelihood). There is no closed-form solution because the sigmoid is non-linear. [1]",
+      "body": "The model is trained by maximising the conditional log-likelihood over n observations. This is equivalent to minimising the binary cross-entropy (negative log-likelihood).",
       "formula": "ℓ(β) = −(1/n) Σᵢ [ yᵢ log p̂ᵢ + (1−yᵢ) log(1−p̂ᵢ) ]"
     },
     {
       "heading": "Decision Boundary",
-      "body": "The boundary between classes is the set of points where P(Y=1|x) = 0.5, i.e. where βᵀx = 0. This is a hyperplane — logistic regression produces a linear decision boundary in the original feature space. Use polynomial features or a kernel to get non-linear boundaries. [2]"
+      "body": "This is a hyperplane — logistic regression produces a linear decision boundary in the original feature space. Use polynomial features or a kernel to get non-linear boundaries."
     },
     {
       "heading": "Optimisation: Gradient Descent & Newton-Raphson",
-      "body": "The gradient of the loss with respect to β is (1/n)Xᵀ(p̂ − y), where p̂ is the vector of predicted probabilities. Newton-Raphson (used by scikit-learn's 'lbfgs' and 'newton-cg' solvers) converges quadratically by using the Hessian. For large datasets, mini-batch SGD is preferred. [1]",
+      "body": "Newton-Raphson (used by scikit-learn's 'lbfgs' and 'newton-cg' solvers) converges quadratically by using the Hessian.",
       "formula": "β := β − α · (1/n) Xᵀ(p̂ − y)"
     },
     {
       "heading": "Regularisation",
-      "body": "L2 regularisation (C in scikit-learn is the inverse of λ) prevents overfitting and handles multicollinearity. L1 produces sparse coefficients. The regularised objective adds λ||β||₂² (L2) or λ||β||₁ (L1) to the cross-entropy loss. [1][2]"
+      "body": "This section explains how the method controls flexibility, reduces overfitting, and balances fit against generalization."
     },
     {
       "heading": "Multinomial Extension (Softmax)",
-      "body": "For K classes, the softmax function generalises the sigmoid: P(Y=k|x) = exp(βₖᵀx) / Σⱼ exp(βⱼᵀx). This is multinomial logistic regression. The loss is categorical cross-entropy. [1]",
+      "body": "This is multinomial logistic regression. The loss is categorical cross-entropy.",
       "formula": "P(Y=k|x) = exp(βₖᵀx) / Σⱼ₌₁ᴷ exp(βⱼᵀx)"
     }
   ],
@@ -90,7 +90,13 @@
     }
   ],
   "sources": [
-    { "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 4", "url": "https://hastie.su.domains/ElemStatLearn/" },
-    { "label": "James et al. — An Introduction to Statistical Learning, Ch. 4", "url": "https://www.statlearning.com/" }
+    {
+      "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 4",
+      "url": "https://hastie.su.domains/ElemStatLearn/"
+    },
+    {
+      "label": "James et al. — An Introduction to Statistical Learning, Ch. 4",
+      "url": "https://www.statlearning.com/"
+    }
   ]
 }

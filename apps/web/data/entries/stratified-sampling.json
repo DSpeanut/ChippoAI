@@ -25,21 +25,21 @@
   "deepDive": [
     {
       "heading": "Stratified Estimator and Variance",
-      "body": "x̄_st = Σᴴₕ₌₁ wₕx̄ₕ, wₕ = Nₕ/N. Var(x̄_st) = Σwₕ²·Varₕ(x̄ₕ) = Σwₕ²·σₕ²(1−fₕ)/nₕ. Estimated variance: Σwₕ²·sₕ²(1−fₕ)/nₕ. Variance reduction vs SRS: Var_SRS − Var_strat_prop = Σwₕ(μₕ−μ)²/n (the between-stratum variance divided by n). Larger between-stratum differences → larger variance reduction from stratification. [1]",
+      "body": "The stratified mean combines separate within-stratum averages using population weights. Its main advantage is that it removes between-stratum variation from the estimator, which can reduce variance substantially when the strata are meaningfully different from one another. Stratification therefore buys precision by organizing the population before sampling.",
       "formula": "Var(x̄_st) = Σ wₕ² · σₕ²(1 − fₕ) / nₕ"
     },
     {
       "heading": "Proportional vs Neyman Allocation",
-      "body": "Proportional: nₕ = n·wₕ. Simple, ensures proportional representation. Var_prop = (1−f)/n · Σwₕσₕ². Neyman: nₕ = n·wₕσₕ/(Σwₕσₕ). Minimizes Var(x̄_st) for fixed n. Var_opt = (Σwₕσₕ)²/n − Σwₕσₕ²/N. Neyman requires σₕ estimates (from pilot data or prior knowledge). When σₕ are equal: Neyman = proportional. When σₕ differ substantially, Neyman can be much more efficient. [1]",
+      "body": "Allocation determines how the total sample is spread across strata. Proportional allocation is simple and preserves representation, while Neyman allocation puts more effort into strata that are larger or more variable in order to maximize precision. The best choice depends on whether representativeness, subgroup precision, or overall efficiency is the main goal.",
       "formula": "Neyman:  nₕ = n · wₕσₕ / (Σ wₖσₖ)"
     },
     {
       "heading": "Post-Stratification",
-      "body": "When stratification is not feasible at design stage, post-stratification weights can be applied after data collection: ȳ_ps = Σwₕȳₕ, where wₕ = Nₕ/N from auxiliary population data. Post-stratification adjusts for unequal sampling probabilities and non-response within strata. It reduces bias if non-response is ignorable within strata (missing at random given stratum) and increases precision by aligning sample composition with population. Raking (iterative proportional fitting) extends this to multiple stratification variables. [1]"
+      "body": "Post-stratification uses known population composition after data collection to reweight the sample into better alignment with the target population. It can reduce both bias and variance when response rates differ across important groups. The method is especially useful when full design-stage stratification was not possible but good auxiliary totals are available."
     },
     {
       "heading": "Optimal Stratification: Choosing Strata Boundaries",
-      "body": "Optimal stratum boundaries minimize total within-stratum variance for a given H. For a single stratifying variable, the cumulative square root of frequency rule (√fₕ) approximately equalizes Nₕσₕ across strata — the Neyman allocation becomes equal allocation. In practice: use quantiles of the stratifying variable as boundaries, ensuring approximately equal Nₕσₕ per stratum. More strata are better up to a point; beyond H ≈ 5–6, gains are marginal. [1]"
+      "body": "Good strata are internally homogeneous and externally different. In practice, that means choosing boundaries so that units inside a stratum resemble one another on variables related to the outcome. Beyond a modest number of strata, the extra precision gains often flatten out, so design simplicity starts to matter more."
     }
   ],
   "takeaways": [

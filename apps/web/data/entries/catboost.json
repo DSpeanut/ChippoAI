@@ -24,26 +24,26 @@
   ],
   "deepDiveIntro": [
     "CatBoost (Prokhorenkova et al., 2018) introduces two key innovations: Ordered Target Statistics for categorical encoding and Ordered Boosting to eliminate prediction shift (gradient bias on training data).",
-    "Prediction shift is a form of target leakage: when computing residuals for a training example xᵢ, the current model F was trained on data including xᵢ. This means the residual is systematically underestimated — the model already 'knows' xᵢ. CatBoost uses a separate model for each example, breaking this circular dependency."
+    "Prediction shift is a form of target leakage: when computing residuals for a training example, the current model was trained on data including that same example. This means the residual is systematically underestimated — the model already 'knows' the answer. CatBoost uses a separate model for each example, trained without seeing that example, which removes the circular dependency."
   ],
   "visualizationType": "catboost",
   "deepDive": [
     {
       "heading": "Ordered Target Statistics (Categorical Encoding)",
-      "body": "For a categorical feature, CatBoost estimates P(target | category) using a random permutation σ of training examples. For example xσ(i), the estimate uses only the first i−1 examples in the permutation: cat_stat(σ(i)) = (Σⱼ<ᵢ 𝟙[catⱼ=catᵢ]·yⱼ + a·p) / (Σⱼ<ᵢ 𝟙[catⱼ=catᵢ] + a), where p is the global target mean and a is a smoothing constant. Multiple permutations are averaged for stability. [1]",
+      "body": "For each categorical feature, CatBoost estimates the target probability for each category using only the examples that came before in a random permutation of the training data. A smoothing constant blends in the overall target mean so that rare categories are not estimated from just one or two examples. Multiple permutations are averaged to improve stability. This prevents the target leakage that occurs when standard target encoding uses the full training set including the current example. [1]",
       "formula": "cat_stat(xᵢ) = (Σⱼ<ᵢ 𝟙[xⱼ=xᵢ]·yⱼ + a·p̄) / (Σⱼ<ᵢ 𝟙[xⱼ=xᵢ] + a)"
     },
     {
       "heading": "Ordered Boosting",
-      "body": "In standard GBM, tree tₘ is trained on residuals rᵢₘ = −∂L/∂F_{m-1}(xᵢ), where F_{m-1} was fit on the full training set including xᵢ. This introduces bias (prediction shift). CatBoost uses a separate model F^(i)_{m-1} for each point xᵢ, trained without xᵢ. Residuals rᵢₘ = yᵢ − F^(i)_{m-1}(xᵢ) are then unbiased estimates. This is implemented efficiently using a set of models trained on growing prefixes of a random permutation. [1]"
+      "body": "In standard gradient boosting, each new tree is trained on residuals computed using a model that already saw all training examples including the ones being residualized. This creates a systematic bias because the model is overfitted to those exact examples. CatBoost eliminates this by maintaining a separate model for each training point — one that was never trained on that point. This is implemented efficiently using models trained on growing prefixes of a random permutation. [1]"
     },
     {
       "heading": "Symmetric (Oblivious) Decision Trees",
-      "body": "CatBoost uses oblivious trees: the same feature and threshold are applied at every node of the same depth level. This creates balanced binary trees where each depth level is a single (feature, threshold) decision. Oblivious trees are faster to evaluate (a depth-d tree requires exactly d comparisons), more regularised, and easier to implement on GPU. [1]"
+      "body": "CatBoost uses oblivious trees where the same feature and threshold are applied at every node of the same depth level, creating a balanced binary tree. Each depth level is just a single (feature, threshold) decision. Oblivious trees are faster to evaluate — a depth-d tree requires exactly d comparisons — and more regularised than standard trees because they use fewer distinct thresholds. [1]"
     },
     {
       "heading": "Feature Combinations",
-      "body": "CatBoost automatically considers combinations of categorical features (e.g. [country, browser] together) as new composite features. Combinations are added greedily: after each tree, the most informative two-feature combination is added to the feature set for the next tree. This captures interaction effects without manual feature engineering. [1]"
+      "body": "CatBoost automatically considers combinations of categorical features (e.g. country and browser together) as new composite features. Combinations are added greedily: after each tree, the most informative two-feature combination is added to the feature set for the next tree. This captures interaction effects without manual feature engineering. [1]"
     },
     {
       "heading": "Key Hyperparameters",

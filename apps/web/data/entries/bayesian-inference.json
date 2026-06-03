@@ -23,27 +23,27 @@
     }
   ],
   "deepDiveIntro": [
-    "The posterior is P(θ|x) = P(x|θ)P(θ)/P(x), where the marginal likelihood P(x) = ∫P(x|θ)P(θ)dθ is often intractable in closed form. For non-conjugate models, computation requires approximation: MCMC (exact in the limit), variational Bayes (approximate but fast), Laplace approximation (Gaussian approximation at the MAP).",
-    "The Bernstein-von Mises (BvM) theorem: under regularity conditions, as n→∞, the posterior P(θ|x) concentrates in an O(1/√n) neighborhood of the true θ₀ and is approximately N(θ₀, I(θ₀)⁻¹/n), regardless of the prior. This justifies large-sample Bayesian analysis and shows frequentist and Bayesian inference converge for large samples."
+    "The posterior combines the likelihood of the data given your parameters with your prior beliefs, then normalises by the total probability of the data. Computing that normalising constant requires integrating over all possible parameter values — which is usually analytically intractable. In practice you use MCMC (which samples the posterior exactly in the long run), variational Bayes (faster but approximate), or a Laplace approximation (treating the posterior as a bell curve centred on its peak).",
+    "A key theoretical result: with enough data, the posterior becomes approximately normal regardless of what prior you started with, concentrating tightly around the true parameter value. This means frequentist and Bayesian inference give the same answers for large samples."
   ],
   "deepDive": [
     {
       "heading": "Posterior Predictive Distribution",
-      "body": "The posterior predictive for new data x̃: P(x̃|x) = ∫P(x̃|θ)P(θ|x)dθ. For the Normal model with unknown μ (known σ²) and prior μ ~ N(μ₀,τ²): the posterior predictive is N(μₙ, σ² + τₙ²), where τₙ² is the posterior variance of μ. The extra τₙ² term reflects parameter uncertainty. Compare to the plug-in predictive N(x̄, σ²), which ignores estimation uncertainty. [1]",
+      "body": "To predict new data, Bayesian inference averages the prediction over all plausible parameter values, weighted by how likely each is given the data you have seen. This produces wider prediction intervals than simply plugging in a point estimate, because it honestly accounts for uncertainty about the parameters themselves — not just uncertainty in the data. The extra spread in predictions is a feature, not a bug. [1]",
       "formula": "P(x̃ | x) = ∫ P(x̃ | θ) P(θ | x) dθ"
     },
     {
       "heading": "Marginal Likelihood and Occam's Razor",
-      "body": "P(x|M) = ∫P(x|θ,M)P(θ|M)dθ is the marginal likelihood (evidence) for model M. It penalizes overly complex models: a complex model spreads its prior mass over a large parameter space, most of which predicts the data poorly, so its average likelihood P(x|M) is lower than a simpler, well-specified model. This automatic Occam's razor favors simpler explanations without explicit regularization. The log of the ratio is the log Bayes factor. [1]"
+      "body": "The marginal likelihood measures how well a model predicts the data on average, integrating over all possible parameter values. A complex model with many free parameters spreads its prior probability mass very thin across a huge space; most of those configurations predict the data poorly. A simpler, well-specified model concentrates its prior on fewer configurations and thus achieves a higher average likelihood. This is Bayesian Occam's razor: complexity is automatically penalised without any explicit regularisation term. [1]"
     },
     {
       "heading": "Laplace Approximation",
-      "body": "Approximates the posterior with a Gaussian centered at the MAP estimate θ̂_MAP: P(θ|x) ≈ N(θ̂_MAP, [−H]⁻¹), where H = ∂²ℓ/∂θ² is the Hessian of the log posterior at the MAP. The log marginal likelihood is approximated as: log P(x) ≈ ℓ(θ̂_MAP) + log P(θ̂_MAP) + (d/2)log(2π) − ½log|−H|. Setting log P(θ) = const gives the BIC approximation. [1]",
+      "body": "Rather than running full MCMC, the Laplace approximation fits a bell curve to the posterior around its peak. You find the peak (the MAP estimate), then measure how curved the posterior is at that point — a steeper curve means a narrower bell. This gives a Gaussian approximation to the full posterior that is fast to compute and enables uncertainty estimates without sampling. Setting a flat prior in this framework gives the BIC model selection criterion. [1]",
       "formula": "P(θ|x) ≈ N(θ̂_MAP,  [−∇² log P(θ|x)|_{θ̂_MAP}]⁻¹)"
     },
     {
       "heading": "Hierarchical Bayesian Models",
-      "body": "For K groups, each with data xₖ and group-level parameter θₖ, a two-level model: θₖ ~ P(θ|φ) (hyperprior on φ), xₖ|θₖ ~ P(x|θₖ). The joint posterior P(θ₁,…,θₖ,φ|x) is computed via MCMC. Group estimates are shrunk toward the pooled mean: groups with little data are pulled more strongly. This partial pooling reduces total estimation error vs no pooling (Stein's result). [1]"
+      "body": "Hierarchical models treat group-level parameters as drawn from a shared distribution with its own parameters learned from the data. Groups with a lot of data trust their own observations; groups with sparse data borrow strength from the others and are pulled toward the overall average. This partial pooling consistently reduces estimation error compared to either treating all groups as identical or fitting each group completely independently. [1]"
     }
   ],
   "youtubeLabel": "Bayesian Inference Fundamentals — StatQuest",

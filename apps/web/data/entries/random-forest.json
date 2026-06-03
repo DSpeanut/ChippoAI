@@ -30,21 +30,21 @@
   "deepDive": [
     {
       "heading": "Bootstrap Sampling & Bagging",
-      "body": "For each of B trees, draw n samples with replacement from the training set (a bootstrap sample). About 63.2% of unique samples appear in each bootstrap (1 − (1−1/n)ⁿ → 1−1/e ≈ 0.632). The remaining ~36.8% are the OOB samples for that tree. Average predictions over all B trees. Bagging reduces variance proportional to 1/B for uncorrelated trees. [1]",
+      "body": "For each of B trees, draw n samples with replacement from the training set (a bootstrap sample). The remaining ~36.8% are the OOB samples for that tree. Average predictions over all B trees. Bagging reduces variance proportional to 1/B for uncorrelated trees.",
       "formula": "ŷ_RF(x) = (1/B) Σᵦ₌₁ᴮ Tᵦ(x)"
     },
     {
       "heading": "Feature Subsampling (the 'Random' in Random Forest)",
-      "body": "At each split in each tree, instead of searching all p features, randomly select m features and choose the best split among only those m. Default: m = √p for classification, m = p/3 for regression (Breiman 2001). This is the key innovation over plain bagging — it de-correlates trees even when one feature dominates, preventing all trees from making the same first split. [1]"
+      "body": "At each split in each tree, instead of searching all p features, randomly select m features and choose the best split among only those m. This is the key innovation over plain bagging — it de-correlates trees even when one feature dominates, preventing all trees from making the same first split."
     },
     {
       "heading": "Bias-Variance Analysis",
-      "body": "The expected MSE of a B-tree average is: Var(ŷ_RF) = ρ·σ² + (1−ρ)σ²/B, where ρ is the pairwise tree correlation and σ² is the variance of a single tree. As B → ∞, variance → ρ·σ². Feature subsampling reduces ρ, directly reducing the irreducible ensemble variance. Deep trees keep bias low. [1]",
+      "body": "This section explains how the method controls flexibility, reduces overfitting, and balances fit against generalization.",
       "formula": "Var(ŷ_RF) → ρ·σ²  as  B → ∞"
     },
     {
       "heading": "Out-of-Bag (OOB) Error",
-      "body": "For each training point xᵢ, predict using only trees for which xᵢ was OOB (not used in training). Average these predictions to get ŷ_OOB(xᵢ). OOB error = error rate of {ŷ_OOB(xᵢ)} across all i. This is a nearly unbiased estimate of test error — equivalent to leave-one-out CV for bagging. No separate validation set needed. [1]"
+      "body": "For each training point xᵢ, predict using only trees for which xᵢ was OOB (not used in training). Average these predictions to get ŷ_OOB(xᵢ). This is a nearly unbiased estimate of test error — equivalent to leave-one-out CV for bagging. No separate validation set needed."
     },
     {
       "heading": "Feature Importance",
@@ -84,7 +84,13 @@
     }
   ],
   "sources": [
-    { "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 15", "url": "https://hastie.su.domains/ElemStatLearn/" },
-    { "label": "James et al. — An Introduction to Statistical Learning, Ch. 8", "url": "https://www.statlearning.com/" }
+    {
+      "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 15",
+      "url": "https://hastie.su.domains/ElemStatLearn/"
+    },
+    {
+      "label": "James et al. — An Introduction to Statistical Learning, Ch. 8",
+      "url": "https://www.statlearning.com/"
+    }
   ]
 }

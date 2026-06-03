@@ -30,22 +30,22 @@
   "deepDive": [
     {
       "heading": "One-Sample t-Test",
-      "body": "H₀: μ = μ₀. Statistic: T = (x̄ − μ₀)/(s/√n) ~ t(n−1) under H₀. Two-sided critical region: |T| > t_{n−1, α/2}. As n→∞, t(n−1) → N(0,1). The 95% CI for μ is x̄ ± t_{n−1, 0.025} · s/√n. [1]",
+      "body": "The one-sample t-test is the standard tool for checking whether a sample mean differs from a hypothesized value when the population standard deviation is unknown. It adjusts for the extra uncertainty that comes from estimating variability from the same sample. This adjustment matters most in small datasets, which is why the t distribution has heavier tails than the normal.",
       "formula": "T = (x̄ − μ₀) / (s / √n)  ~  t(n−1)"
     },
     {
       "heading": "Two-Sample Welch t-Test (unequal variances)",
-      "body": "H₀: μ₁ = μ₂. Statistic: T = (x̄₁−x̄₂)/√(s₁²/n₁ + s₂²/n₂). Degrees of freedom (Welch-Satterthwaite): ν = (s₁²/n₁ + s₂²/n₂)² / [(s₁²/n₁)²/(n₁−1) + (s₂²/n₂)²/(n₂−1)]. Under H₀: T ~ t(ν) approximately. Default over pooled (Student's) t-test — pooling assumes σ₁² = σ₂², Welch does not. [1]",
+      "body": "Welch's two-sample t-test compares group means without assuming the groups have equal variance. That makes it safer than the classical pooled version and a good default for real-world data, where spread often differs across groups. It keeps the same basic logic as the ordinary t-test while using an adjusted degrees-of-freedom calculation.",
       "formula": "T = (x̄₁ − x̄₂) / √(s₁²/n₁ + s₂²/n₂)"
     },
     {
       "heading": "Paired t-Test",
-      "body": "For matched pairs (x₁,y₁), …, (xₙ,yₙ), compute dᵢ = xᵢ − yᵢ and apply the one-sample t-test to d: T = d̄/(s_d/√n). By focusing on within-pair differences, it eliminates between-subject variability — the error variance is Var(d) = Var(x) + Var(y) − 2Cov(x,y), which can be much smaller than Var(x) + Var(y) when pairs are positively correlated. [1]",
+      "body": "The paired t-test is used when observations naturally come in matched pairs, such as before-and-after measurements on the same person. Instead of comparing two raw samples, it analyzes the differences within each pair. This often improves efficiency because much of the between-subject variation cancels out.",
       "formula": "T = d̄ / (s_d / √n),   dᵢ = xᵢ − yᵢ"
     },
     {
       "heading": "Assumptions and Robustness",
-      "body": "Strict assumption: X ~ N(μ, σ²). In practice, t-test is robust to non-normality for n ≥ 30 by the CLT. It is NOT robust to extreme outliers (which violate the normality assumption and inflate s). Sensitivity to outliers is the main practical failure mode. For small non-normal samples: Wilcoxon signed-rank (one-sample/paired) or Mann-Whitney U (two-sample). [1]"
+      "body": "The t-test is exact under normal sampling assumptions and often works well beyond that setting once the sample is reasonably large. Its main weakness is sensitivity to strong outliers and severe non-normality in small samples. In those cases, nonparametric or resampling-based alternatives can be more reliable."
     }
   ],
   "youtubeLabel": "t-test Explained — StatQuest",

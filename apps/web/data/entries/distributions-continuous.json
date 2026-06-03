@@ -23,34 +23,34 @@
     }
   ],
   "deepDiveIntro": [
-    "A continuous random variable X has probability density function f(x) ≥ 0 with ∫_{-∞}^{∞} f(x)dx = 1. P(a ≤ X ≤ b) = ∫_a^b f(x)dx. CDF F(x) = P(X ≤ x) = ∫_{-∞}^x f(t)dt, and f(x) = F'(x) where differentiable. Expectation E[X] = ∫ x f(x)dx. Variance Var(X) = E[(X-μ)²] = ∫ (x-μ)² f(x)dx. Key distributions: Normal (bell-shaped, CLT), Exponential (memoryless waiting times), Gamma (flexible positive support), Beta ([0,1] support, conjugate prior).",
-    "Transformations: if Y = g(X) with g monotonic, f_Y(y) = f_X(g⁻¹(y)) |d/dy g⁻¹(y)|. This change-of-variables formula accounts for how g stretches or compresses space."
+    "A continuous random variable is described by a probability density function — a curve where the area under it between two values equals the probability of falling in that interval. The total area under the curve must be exactly 1. The cumulative distribution function gives the probability of being at or below any value, and its derivative gives back the density. The mean is a weighted average of all possible values, with the density as weights.",
+    "When you apply a function to a random variable to get a new one, the density of the result is related to the original density by the change-of-variables formula, which accounts for how the function stretches or compresses the number line locally."
   ],
   "visualizationType": "distributions-continuous",
   "deepDive": [
     {
       "heading": "Normal (Gaussian) Distribution",
-      "body": "X ~ N(μ, σ²). PDF: f(x) = (1/√(2πσ²)) exp(-(x-μ)²/(2σ²)). Symmetric, bell-shaped. 68-95-99.7 rule: P(|X-μ| < kσ) ≈ 0.68, 0.95, 0.997 for k=1,2,3. Linear combinations of Normals are Normal. Central Limit Theorem foundation.",
+      "body": "The Normal distribution is the classic symmetric bell curve, fully described by its mean and standard deviation. The empirical rule gives three useful benchmarks: about 68% of values fall within one standard deviation of the mean, 95% within two, and 99.7% within three. The Central Limit Theorem says that sums of many independent random variables converge to Normal, which is why it appears everywhere in statistics.",
       "formula": "f(x) = (1/√(2πσ²)) exp(-(x-μ)²/(2σ²))"
     },
     {
       "heading": "Exponential Distribution",
-      "body": "Models waiting times with constant hazard rate λ. Memoryless: P(X > s+t | X > s) = P(X > t). PDF: f(x) = λe^(-λx) for x ≥ 0. E[X] = 1/λ, Var = 1/λ². Related to Poisson: inter-arrival times in Poisson process are Exponential.",
+      "body": "The Exponential distribution models waiting times when the chance of an event happening in any small interval is constant — for example, the time until the next customer arrives or the next server failure occurs. Its defining feature is memorylessness: knowing you have already waited a certain amount of time gives you no information about how much longer you will wait.",
       "formula": "f(x) = λe^(-λx), x ≥ 0; F(x) = 1 - e^(-λx)"
     },
     {
       "heading": "Gamma Distribution",
-      "body": "Flexible positive distribution. Shape α, rate β (or scale θ=1/β). Includes Exponential (α=1) and Chi-squared (α=k/2, β=1/2). PDF: f(x) = (β^α/Γ(α)) x^(α-1) e^(-βx). Used for waiting times, rainfall, Bayesian precision priors.",
+      "body": "The Gamma distribution is a flexible family for positive-valued data with a shape parameter and a rate parameter. It includes the Exponential (shape = 1) and the chi-squared distribution as special cases. It is commonly used for modelling waiting times, rainfall amounts, and as a conjugate prior for Poisson rate parameters in Bayesian analysis.",
       "formula": "f(x) = (β^α/Γ(α)) x^(α-1) e^(-βx), x > 0"
     },
     {
       "heading": "Beta Distribution",
-      "body": "Supported on [0,1], models probabilities and proportions. Parameters α, β > 0. PDF: f(x) ∝ x^(α-1)(1-x)^(β-1). Mean = α/(α+β). Conjugate prior for Binomial. Uniform when α=β=1. U-shaped when α,β < 1 (bimodal).",
+      "body": "The Beta distribution lives on the interval from 0 to 1, making it natural for modelling probabilities, proportions, and rates. Its shape is controlled by two parameters — values above 1 create a unimodal hump, values below 1 create a U-shape, and equal values of 1 give a flat uniform distribution. It is the conjugate prior for the Binomial likelihood, making Bayesian updating on coin-flip type data analytically simple.",
       "formula": "f(x) = x^(α-1)(1-x)^(β-1)/B(α,β), x ∈ [0,1]"
     },
     {
       "heading": "Log-Normal Distribution",
-      "body": "If log(X) ~ Normal, then X ~ Log-Normal. X > 0, right-skewed. Models income, stock prices, particle sizes. Multiplicative central limit theorem: product of many positive i.i.d. variables tends to Log-Normal."
+      "body": "A variable is Log-Normal when its logarithm is normally distributed. Log-Normal variables are always positive and right-skewed — a small number of very large values pull the mean well above the median. It arises naturally from multiplicative processes: just as sums of many independent variables converge to Normal, products of many positive independent variables converge to Log-Normal. Income distributions, stock prices, and file sizes are classic examples."
     }
   ],
   "youtubeLabel": "Continuous Distributions — Khan Academy",

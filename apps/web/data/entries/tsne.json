@@ -30,26 +30,26 @@
   "deepDive": [
     {
       "heading": "High-Dimensional Similarities (pᵢⱼ)",
-      "body": "For each point xᵢ, compute conditional probabilities pⱼ|ᵢ ∝ exp(−||xᵢ−xⱼ||²/2σᵢ²), where σᵢ is chosen so that the perplexity of the distribution equals the user-specified Perplexity parameter. Symmetrise: pᵢⱼ = (pⱼ|ᵢ + pᵢ|ⱼ)/2n. The perplexity is effectively the number of effective nearest neighbours (typically 5–50). [1]",
+      "body": "The perplexity is effectively the number of effective nearest neighbours (typically 5–50).",
       "formula": "pⱼ|ᵢ = exp(−‖xᵢ−xⱼ‖²/2σᵢ²) / Σₖ≠ᵢ exp(−‖xᵢ−xₖ‖²/2σᵢ²)"
     },
     {
       "heading": "Low-Dimensional Similarities (qᵢⱼ) — Student-t Kernel",
-      "body": "In the 2D embedding, similarities are defined using the Student-t distribution with 1 degree of freedom: qᵢⱼ = (1 + ||yᵢ−yⱼ||²)⁻¹ / Σₖ≠ₗ (1 + ||yₖ−yₗ||²)⁻¹. The heavy tail means that moderately close pairs in high-d map to further pairs in 2D — solving the crowding problem. [1]",
+      "body": "The heavy tail means that moderately close pairs in high-d map to further pairs in 2D — solving the crowding problem.",
       "formula": "qᵢⱼ = (1 + ‖yᵢ − yⱼ‖²)⁻¹ / Σₖ≠ₗ (1 + ‖yₖ − yₗ‖²)⁻¹"
     },
     {
       "heading": "Objective: KL Divergence Minimisation",
-      "body": "t-SNE minimises the KL divergence from P to Q: C = KL(P||Q) = Σᵢⱼ pᵢⱼ log(pᵢⱼ/qᵢⱼ). The gradient is: ∂C/∂yᵢ = 4 Σⱼ (pᵢⱼ − qᵢⱼ)(yᵢ−yⱼ)(1+||yᵢ−yⱼ||²)⁻¹. Close pairs (pᵢⱼ > qᵢⱼ) attract; distant pairs (pᵢⱼ < qᵢⱼ) repel. KL(P||Q) penalises placing nearby high-d points far apart in 2D more than placing distant points nearby. [1]",
+      "body": "This section explains the objective or theoretical result that drives the method and what it means in practice.",
       "formula": "C = KL(P||Q) = Σᵢⱼ pᵢⱼ log(pᵢⱼ/qᵢⱼ)"
     },
     {
       "heading": "Perplexity Hyperparameter",
-      "body": "Perplexity ≈ 2^{H(Pᵢ)} where H is the entropy of the conditional distribution. Intuitively: the effective number of nearest neighbours considered per point. Low perplexity (5–15): focuses on very local structure, may fragment clusters. High perplexity (30–100): considers broader neighbourhood, smoother clusters. Perplexity should be set between 5 and 50; the default of 30 works for most datasets. [1]"
+      "body": "Intuitively: the effective number of nearest neighbours considered per point. Low perplexity (5–15): focuses on very local structure, may fragment clusters. High perplexity (30–100): considers broader neighbourhood, smoother clusters. Perplexity should be set between 5 and 50; the default of 30 works for most datasets."
     },
     {
       "heading": "Barnes-Hut Approximation (O(n log n))",
-      "body": "The naive gradient computation is O(n²) — expensive for n > 10,000. Barnes-Hut t-SNE groups clusters of distant points and approximates their repulsive force as a single body (multipole approximation). This reduces complexity to O(n log n) with a small accuracy trade-off controlled by the theta parameter (default 0.5). scikit-learn uses this by default. [1]"
+      "body": "This section explains the main idea behind this part of the method in plain language."
     }
   ],
   "youtubeLabel": "StatQuest: t-SNE",
@@ -81,7 +81,13 @@
     }
   ],
   "sources": [
-    { "label": "van der Maaten & Hinton — Visualizing Data using t-SNE (JMLR 2008)", "url": "https://jmlr.org/papers/v9/vandermaaten08a.html" },
-    { "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 14", "url": "https://hastie.su.domains/ElemStatLearn/" }
+    {
+      "label": "van der Maaten & Hinton — Visualizing Data using t-SNE (JMLR 2008)",
+      "url": "https://jmlr.org/papers/v9/vandermaaten08a.html"
+    },
+    {
+      "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 14",
+      "url": "https://hastie.su.domains/ElemStatLearn/"
+    }
   ]
 }

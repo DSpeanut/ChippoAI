@@ -30,16 +30,16 @@
   "deepDive": [
     {
       "heading": "Weighted vs Switching Hybrids",
-      "body": "Weighted hybrid: s_hybrid(u,i) = α·s_CF(u,i) + (1−α)·s_CB(u,i). Tuning α: if you have labels, optimise α to maximise NDCG@10 on a validation set. Learned α: train a meta-learner (logistic regression, gradient boosted trees) to predict engagement given [s_CF, s_CB, user_features, item_features]. This stacking approach typically outperforms a fixed α. Switching hybrid: if interaction_count(u) < threshold, use CB; else use CF. Threshold is typically 5–20 interactions. Problem: sharp switch at the threshold creates discontinuities. Smooth switching: α = sigmoid(k·(interactions − threshold)), a smooth function that blends from CB to CF as history grows. [1]",
+      "body": "This section explains the main idea behind this part of the method in plain language.",
       "formula": "s_hybrid(u,i) = α · s_CF(u,i) + (1−α) · s_CB(u,i),   α ∈ [0,1]"
     },
     {
       "heading": "Two-Tower Neural Architecture",
-      "body": "User tower fθ: takes user ID embedding + sequence of recent item IDs (average pooled) + user features → MLP → d-dimensional vector. Item tower gφ: takes item ID embedding + content features (TF-IDF, category, price range) → MLP → d-dimensional vector. Training: for each (user, positive_item, negative_item) triplet, maximize s(u,i+) − s(u,i−). In-batch negatives: treat other users' positive items as negatives for the current user — efficient, no need to sample negatives explicitly. Dot product scoring: s(u,i) = fθ(u)·gφ(i) (enables FAISS inner product index for retrieval). Cross-attention / cross-encoder: score = mlp([fθ(u); gφ(i)]) — more expressive but cannot pre-compute item embeddings → only used in reranking, not retrieval. [2]"
+      "body": "Training: for each (user, positive_item, negative_item) triplet, maximize s(u,i+) − s(u,i−). In-batch negatives: treat other users' positive items as negatives for the current user — efficient, no need to sample negatives explicitly."
     },
     {
       "heading": "Feature Augmentation and SVD++",
-      "body": "Feature augmentation: incorporate CF latent factors as features into a content-based or contextual bandit model. Example: train MF to get user embedding p_u and item embedding q_i, then feed [p_u; q_i; item_features; user_features] into a gradient boosted tree ranker. SVD++ (Koren, 2008): extends MF by adding implicit feedback. User latent factor = p_u + |N(u)|^{-½} Σ_{j∈N(u)} y_j, where y_j is an additional item factor (implicit item embedding) and N(u) = set of items user u has interacted with. SVD++ consistently outperforms standard MF in RMSE on the Netflix Prize dataset — the implicit feedback term captures 'what you've browsed' separately from 'how you rated it.' [1]",
+      "body": "Feature augmentation: incorporate CF latent factors as features into a content-based or contextual bandit model. Example: train MF to get user embedding p_u and item embedding q_i, then feed [p_u; q_i; item_features; user_features] into a gradient boosted tree ranker. SVD++ (Koren, 2008): extends MF by adding implicit feedback. SVD++ consistently outperforms standard MF in RMSE on the Netflix Prize dataset — the implicit feedback term captures 'what you've browsed' separately from 'how you rated it.'",
       "formula": "SVD++: p̂_u = p_u + |N(u)|^{-½} Σ_{j∈N(u)} y_j"
     }
   ],
@@ -63,7 +63,13 @@
     }
   ],
   "sources": [
-    { "label": "Burke, R. — Hybrid Recommender Systems: Survey and Experiments, User Modeling & User-Adapted Interaction 12(4), 2002", "url": "https://doi.org/10.1023/A:1021240730564" },
-    { "label": "Covington, P., Adams, J. & Sargin, E. — Deep Neural Networks for YouTube Recommendations, ACM RecSys 2016", "url": "https://doi.org/10.1145/2959100.2959190" }
+    {
+      "label": "Burke, R. — Hybrid Recommender Systems: Survey and Experiments, User Modeling & User-Adapted Interaction 12(4), 2002",
+      "url": "https://doi.org/10.1023/A:1021240730564"
+    },
+    {
+      "label": "Covington, P., Adams, J. & Sargin, E. — Deep Neural Networks for YouTube Recommendations, ACM RecSys 2016",
+      "url": "https://doi.org/10.1145/2959100.2959190"
+    }
   ]
 }

@@ -23,28 +23,28 @@
     }
   ],
   "deepDiveIntro": [
-    "Bagging (Breiman, 1996) addresses the instability of high-variance estimators by averaging. The theoretical guarantee is simple: if B models with variance σ² are independently trained, their average has variance σ²/B. In practice, models are correlated (trained on overlapping bootstrap samples), so the reduction is σ²(ρ + (1−ρ)/B) where ρ is the pairwise correlation.",
-    "The bias of the ensemble equals the bias of each individual model (averaging does not change bias). Bagging is therefore only useful when the individual models have low bias — i.e. complex, expressive models that can fit the data closely."
+    "Bagging (Breiman, 1996) addresses the instability of high-variance estimators by averaging. If B models with variance sigma-squared are independently trained, their average has variance sigma-squared divided by B. In practice, models are correlated because they share overlapping bootstrap samples, so the variance reduction is smaller — it depends on the pairwise correlation between models.",
+    "The bias of the ensemble equals the bias of each individual model — averaging does not change bias. Bagging is therefore only useful when the individual models have low bias — i.e. complex, expressive models that can fit the data closely."
   ],
   "visualizationType": "bagging",
   "deepDive": [
     {
       "heading": "Bootstrap Sampling",
-      "body": "A bootstrap sample of size n is drawn with replacement from the training set. By the birthday paradox, approximately 1 − (1−1/n)ⁿ → 1 − 1/e ≈ 63.2% of unique training points appear in any given bootstrap sample. The remaining ~36.8% are the OOB (out-of-bag) samples for that model. [1]",
+      "body": "A bootstrap sample of size n is drawn with replacement from the training set. On average, about 63.2% of unique training points appear in any given bootstrap sample. The remaining 36.8% are the out-of-bag (OOB) samples for that model — they can be used for free validation without any additional data splitting. [1]",
       "formula": "P(point appears) = 1 − (1 − 1/n)ⁿ → 1 − e⁻¹ ≈ 0.632"
     },
     {
       "heading": "Aggregation",
-      "body": "Regression: ŷ_bag(x) = (1/B) Σᵦ ŷᵦ(x). Classification: majority vote ŷ_bag(x) = mode{ŷᵦ(x)}, or soft vote (average of predicted probabilities). Soft voting is generally preferred as it retains probability information. B ≥ 50 is usually sufficient; more trees help but with diminishing returns. [1]"
+      "body": "For regression, the ensemble prediction is the simple average of all B individual model predictions. For classification, you can use majority vote (hard voting) or average the predicted probabilities (soft voting). Soft voting is generally preferred because it retains probability information rather than just the winning class. Using 50 or more trees is usually sufficient; more trees help but with diminishing returns. [1]"
     },
     {
       "heading": "Variance Reduction Analysis",
-      "body": "For B models with pairwise correlation ρ and individual variance σ²: Var(ŷ_bag) = ρσ² + (1−ρ)σ²/B. As B → ∞: variance → ρσ². De-correlating models (via feature subsampling in Random Forest) reduces ρ and thus the floor variance. For uncorrelated models (ρ=0), variance → 0 as B → ∞. [1]",
+      "body": "When models are correlated with pairwise correlation rho, the ensemble variance does not drop all the way to zero even with infinitely many models — it floors at rho times the individual variance. Reducing the correlation between models (for example through feature subsampling in Random Forest) lowers this floor and amplifies the variance reduction. Uncorrelated models give the maximum possible reduction. [1]",
       "formula": "Var(ŷ_bag) = ρσ² + (1−ρ)σ²/B"
     },
     {
       "heading": "Out-of-Bag Error",
-      "body": "For each training point xᵢ, compute the prediction using only the B_OOB(i) trees for which xᵢ was OOB: ŷ_OOB(xᵢ) = (1/|B_OOB(i)|) Σᵦ∈B_OOB(i) ŷᵦ(xᵢ). OOB error = L(y, ŷ_OOB) over all i. For large B, each point is OOB for ~37% of trees, giving a reliable estimate without cross-validation. [1]"
+      "body": "For each training point, collect predictions only from the trees that did not see that point during training (the out-of-bag trees). Averaging those predictions gives an OOB estimate for that point. Evaluating the loss across all training points using their OOB predictions gives a reliable error estimate equivalent to cross-validation, at no extra cost. [1]"
     },
     {
       "heading": "When Bagging Fails",

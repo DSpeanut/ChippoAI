@@ -23,27 +23,27 @@
     }
   ],
   "deepDiveIntro": [
-    "A (1−α) confidence interval for θ is a random interval [L(X), U(X)] constructed from the data such that P(L(X) ≤ θ ≤ U(X)) = 1−α for all θ. The key: [L(X), U(X)] is random (varies with the sample); θ is fixed. Coverage probability is a pre-experiment property of the procedure, not a post-experiment probability for a specific interval.",
-    "For a single observation X ~ N(θ, σ²) with σ known, a 95% CI is [X − 1.96σ, X + 1.96σ] because P(|X−θ|/σ ≤ 1.96) = 0.95. The pivot (X−θ)/σ ~ N(0,1) has a distribution free of the unknown parameter θ — this pivot-based construction generalizes to other settings."
+    "A confidence interval is a random interval constructed from the data such that the probability of it containing the true parameter equals the stated confidence level, for all possible values of the parameter. The key point: the interval is random (it varies across samples) while the true parameter is fixed. Coverage probability is a property of the procedure before data is collected, not a probability statement about any specific interval after data is observed.",
+    "The derivation uses a pivot — a function of the data and the parameter whose distribution does not depend on the unknown parameter. For a normal sample with known variance, the standardized sample mean is normally distributed with mean zero and variance one regardless of the true mean. Inverting this pivot — finding all parameter values consistent with the observed data — yields the confidence interval."
   ],
   "deepDive": [
     {
       "heading": "z-interval (known σ)",
-      "body": "With X₁,…,Xₙ iid N(μ,σ²) and σ known: x̄ ~ N(μ, σ²/n). Pivot: Z = (x̄−μ)/(σ/√n) ~ N(0,1). 95% CI: x̄ ± 1.96·σ/√n. By CLT, this is approximately valid for large n from any distribution. Width = 2·z_{α/2}·σ/√n → to halve the width, quadruple n. [1]",
+      "body": "When the population standard deviation is known and the data is normally distributed (or n is large enough for the CLT), the sample mean standardized by the known standard error follows a standard normal distribution. The 95% confidence interval is the sample mean plus or minus 1.96 standard errors. To halve the width of the interval you must quadruple the sample size, because the standard error shrinks only as fast as the square root of n. [1]",
       "formula": "CI: x̄ ± z_{α/2} · σ/√n"
     },
     {
       "heading": "t-interval (unknown σ)",
-      "body": "With σ unknown, replace σ with sample std s: T = (x̄−μ)/(s/√n) ~ t(n−1). 95% CI: x̄ ± t_{n−1,0.025}·s/√n. For n = 10, t_{9,0.025} = 2.262 (wider than 1.96). For n > 30, t ≈ z. The t-interval is exact for normal data; approximately valid for large n from non-normal distributions by the CLT. [1]",
+      "body": "When the population standard deviation must be estimated from the data, the standardized sample mean follows a t-distribution with n−1 degrees of freedom rather than a standard normal. For small samples (n = 10), the t critical value of 2.26 is noticeably larger than the normal critical value of 1.96, producing a wider and more honest interval. For n greater than 30 the two distributions are nearly identical. The t-interval is exact for normal data and approximately valid for large samples from any distribution. [1]",
       "formula": "CI: x̄ ± t_{n−1,α/2} · s/√n"
     },
     {
       "heading": "Wilson CI for Proportions",
-      "body": "Wald CI: p̂ ± z_{α/2}√(p̂(1−p̂)/n) — poorly calibrated near p = 0 or 1. Wilson (score) CI inverts the score test statistic and has near-nominal coverage for all p and moderate n: center = (p̂ + z²/2n)/(1 + z²/n), half-width = z/(1+z²/n) · √(p̂(1−p̂)/n + z²/4n²), where z = z_{α/2}. Default recommendation for binary data. [1]"
+      "body": "The standard Wald interval for a proportion can have actual coverage well below the nominal level when p is near 0 or 1. The Wilson interval inverts the score test statistic and adjusts the center slightly toward 0.5. It maintains near-nominal coverage across all values of p and moderate sample sizes. For binary data, Wilson is the default recommendation over the simpler but less reliable Wald interval. [1]"
     },
     {
       "heading": "Common Misconceptions",
-      "body": "WRONG: 'There is a 95% probability that μ is in [2.1, 4.3].' μ is fixed; probability doesn't apply to it post hoc. WRONG: 'This specific interval [2.1, 4.3] was constructed by a procedure that is correct 95% of the time.' RIGHT: 'If this procedure were repeated many times, 95% of the resulting intervals would contain μ.' — Neyman (1937). The Bayesian credible interval IS a probability statement about the parameter, but requires a prior. [2]"
+      "body": "The most common mistake is saying 'there is a 95% probability that the true mean lies in [2.1, 4.3].' The true mean is fixed, so this statement has no frequentist meaning. The 95% refers to the procedure generating many intervals, not the probability content of any one realized interval. If you want a direct probability statement about the parameter, you need a Bayesian credible interval, which requires a prior distribution on the parameter. [2]"
     }
   ],
   "youtubeLabel": "Confidence Intervals — StatQuest",

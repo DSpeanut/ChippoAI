@@ -30,19 +30,19 @@
   "deepDive": [
     {
       "heading": "3×3 Filter Efficiency Argument",
-      "body": "A 5×5 convolution has 25 parameters per filter. Two stacked 3×3 convolutions achieve the same 5×5 receptive field with 2×9=18 parameters (28% fewer) and two non-linearities instead of one. A 7×7 filter has 49 parameters; three stacked 3×3 filters achieve a 7×7 receptive field with 3×9=27 parameters (45% fewer) and three non-linearities. The non-linearity argument: more activations = more complex decision boundaries per parameter. The empirical result: VGG networks consistently outperform AlexNet-style networks with large filters at equivalent parameter counts. This design choice became a standard principle, replicated in ResNet (all 3×3 spatial filters), MobileNet (3×3 depthwise), and EfficientNet. [1]"
+      "body": "A 5×5 convolution has 25 parameters per filter. The empirical result: VGG networks consistently outperform AlexNet-style networks with large filters at equivalent parameter counts. This design choice became a standard principle, replicated in ResNet (all 3×3 spatial filters), MobileNet (3×3 depthwise), and EfficientNet."
     },
     {
       "heading": "VGG-16 Architecture and Parameter Budget",
-      "body": "VGG-16 has 5 stages separated by MaxPool2d(2,2): Stage 1 (2×Conv64, Pool): 224→112; Stage 2 (2×Conv128, Pool): 112→56; Stage 3 (3×Conv256, Pool): 56→28; Stage 4 (3×Conv512, Pool): 28→14; Stage 5 (3×Conv512, Pool): 14→7. After 5 pooling steps: 224/2^5 = 7. Then Flatten(512×7×7=25088) → FC4096 → FC4096 → FC1000. Parameter breakdown: conv layers ~14.7M; FC layers ~123.6M (~89% of total). This extreme imbalance — most parameters in two FC layers — motivates replacing them with Global Average Pooling, which ResNet, MobileNet, and EfficientNet all do. [2]"
+      "body": "Parameter breakdown: conv layers ~14.7M; FC layers ~123.6M (~89% of total). This extreme imbalance — most parameters in two FC layers — motivates replacing them with Global Average Pooling, which ResNet, MobileNet, and EfficientNet all do."
     },
     {
       "heading": "Memory and Compute Cost",
-      "body": "VGG-16 is compute-intensive: ~15.5 GFLOPs for a single 224×224 forward pass, compared to ResNet-50's ~4.1 GFLOPs. Memory during training: ~100MB for activations per image in a batch (activations must be stored for backpropagation). The FC layers require 25088×4096 = 103M float32 values ≈ 412MB just for that weight matrix — making VGGNet impractical on mobile/edge hardware. For inference, VGG-16 requires 528MB for weights. Modern equivalents (MobileNetV3, EfficientNet-B0) achieve comparable ImageNet accuracy in <5MB — a 100× reduction. VGGNet is thus primarily a research and feature-extraction tool rather than a production architecture. [1]"
+      "body": "This section explains the main computational trade-offs of the method and why they matter in practice."
     },
     {
       "heading": "VGGNet Features for Transfer Learning",
-      "body": "VGG-16 and VGG-19 features are among the most transferred in deep learning, particularly for artistic and perceptual tasks. The VGG feature hierarchy: early layers (relu1_1, relu1_2) → oriented edges; mid layers (relu3_3, relu4_3) → textures, complex shapes; deep layers (relu5_3) → high-level object parts. Gatys et al. (2015) exploited this by defining content loss as the MSE between relu4_2 features of generated and target image, and style loss as the MSE between Gram matrices (G = FFᵀ, where F is the feature map reshaped as channels × spatial) at multiple layers. This Gram matrix captures texture statistics independent of spatial arrangement. VGG features for perceptual loss are used in SRGAN, pix2pix, and many GAN-based image synthesis models. [2]"
+      "body": "VGG-16 and VGG-19 features are among the most transferred in deep learning, particularly for artistic and perceptual tasks. Gatys et al. This Gram matrix captures texture statistics independent of spatial arrangement. VGG features for perceptual loss are used in SRGAN, pix2pix, and many GAN-based image synthesis models."
     }
   ],
   "takeaways": [

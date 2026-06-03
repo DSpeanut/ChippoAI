@@ -29,21 +29,21 @@
   "deepDive": [
     {
       "heading": "Beta-Binomial Conjugate Model",
-      "body": "Prior: θ ~ Beta(α,β). Likelihood: X|θ ~ Binomial(n,θ). Posterior: θ|X=k ~ Beta(α+k, β+n−k). Posterior mean: (α+k)/(α+β+n) — a weighted average of prior mean α/(α+β) and MLE k/n. As n→∞, the prior is overwhelmed and the posterior concentrates at k/n. Jeffreys' prior for Binomial: Beta(0.5, 0.5). [1]",
+      "body": "The Beta-Binomial model is the classic example of Bayesian updating in closed form. The prior contributes pseudo-count information, the data adds real successes and failures, and the posterior combines them into an updated distribution with the same family shape. This example makes it easy to see how priors matter most in small samples and fade as data accumulates.",
       "formula": "θ | X=k  ~  Beta(α + k,  β + n − k)"
     },
     {
       "heading": "Normal-Normal Conjugate Model",
-      "body": "Known variance σ²: Prior μ ~ N(μ₀, τ²). Likelihood X̄|μ ~ N(μ, σ²/n). Posterior: μ|X̄ ~ N(μₙ, τₙ²) where posterior mean μₙ = (μ₀/τ² + n·X̄/σ²)/(1/τ² + n/σ²) — a precision-weighted average of prior mean and MLE. Posterior precision 1/τₙ² = 1/τ² + n/σ². As n→∞, τₙ²→0 and μₙ→X̄. [1]",
+      "body": "In the normal-normal model, prior information and sample information combine by weighting each source according to its precision. A more precise prior has more influence, and a larger or less noisy sample pushes the posterior more strongly toward the observed data. This is one of the clearest demonstrations of Bayesian learning as weighted averaging.",
       "formula": "μₙ = (μ₀/τ² + nX̄/σ²) / (1/τ² + n/σ²)"
     },
     {
       "heading": "Credible Intervals vs Confidence Intervals",
-      "body": "A 95% Bayesian credible interval [a,b] satisfies P(θ ∈ [a,b] | x) = 0.95 — a direct probability statement about θ. For the Beta posterior: the 95% HPD (highest posterior density) interval is the shortest interval containing 95% of the posterior mass. By contrast, a frequentist 95% CI is defined by the procedure, not by a probability about θ given this data. For symmetric, unimodal posteriors, HPD ≈ equal-tails interval. [1]"
+      "body": "A credible interval summarizes uncertainty directly in posterior language. It tells you which parameter values retain high posterior support after seeing the data, whereas a confidence interval is defined by repeated-sampling performance of a procedure. The two can look similar numerically, but they answer different questions."
     },
     {
       "heading": "Choosing Priors: Informative vs Non-informative",
-      "body": "Non-informative priors: flat (improper: ∝ 1), Jeffreys' (invariant under reparametrization: P(θ) ∝ √I(θ)), reference priors. Weakly informative priors (Gelman et al.): regularize without strong prior claims, e.g. N(0,1) for standardized coefficients in logistic regression. Strongly informative priors: encode genuine domain knowledge. Prior predictive checks (simulate data from prior and assess plausibility) help validate prior choices. [1]"
+      "body": "Choosing a prior is a modeling decision rather than a mechanical step. Some priors intentionally contribute strong domain knowledge, while others are chosen mainly to regularize or to stay weak enough that the data can dominate. Prior predictive checks are useful because they reveal whether a prior implies plausible data before any fitting happens."
     }
   ],
   "youtubeLabel": "Bayesian Statistics: Prior, Likelihood & Posterior — StatQuest",

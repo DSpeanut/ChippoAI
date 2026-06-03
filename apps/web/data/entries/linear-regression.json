@@ -30,12 +30,12 @@
   "deepDive": [
     {
       "heading": "The Model",
-      "body": "In simple linear regression (one feature) the model predicts ŷ = β₀ + β₁x. In multiple linear regression (p features) this extends to ŷ = β₀ + β₁x₁ + · · · + βₚxₚ. In matrix form with n observations: ŷ = Xβ where X ∈ ℝⁿˣ⁽ᵖ⁺¹⁾, β ∈ ℝᵖ⁺¹. [1][2]",
+      "body": "This section describes the core structure of the method and the assumptions it makes about how inputs, outputs, or latent components relate.",
       "formula": "ŷ = Xβ"
     },
     {
       "heading": "Ordinary Least Squares (OLS)",
-      "body": "The objective is to minimise the Residual Sum of Squares (RSS). Taking the derivative with respect to β and setting to zero yields the Normal Equations, giving the closed-form solution below. This requires XᵀX to be invertible (full column rank), and matrix inversion is O(p³), which becomes expensive for very high-dimensional data. In those cases, gradient descent is preferred. [1]",
+      "body": "The objective is to minimise the Residual Sum of Squares (RSS). Taking the derivative with respect to β and setting to zero yields the Normal Equations, giving the closed-form solution below. In those cases, gradient descent is preferred.",
       "formula": "β̂ = (XᵀX)⁻¹ Xᵀy"
     },
     {
@@ -44,12 +44,12 @@
     },
     {
       "heading": "Model Evaluation",
-      "body": "R² (coefficient of determination) measures the proportion of variance in y explained by the model: R² = 1 − RSS/TSS. R² always increases with more features even useless ones. Use Adjusted R² to penalise unnecessary complexity. [2]",
+      "body": "R² always increases with more features even useless ones. Use Adjusted R² to penalise unnecessary complexity.",
       "formula": "R²_adj = 1 − (1 − R²) · (n − 1) / (n − p − 1)"
     },
     {
       "heading": "Gradient Descent Alternative",
-      "body": "When p is very large, inverting XᵀX is infeasible (O(p³)). Use gradient descent with learning rate α to iteratively update coefficients. This converges to the same solution as OLS since the cost surface is convex for linear regression with MSE loss. [1]",
+      "body": "Use gradient descent with learning rate α to iteratively update coefficients. This converges to the same solution as OLS since the cost surface is convex for linear regression with MSE loss.",
       "formula": "βⱼ := βⱼ − α · (1/n) Σᵢ (ŷᵢ − yᵢ) xᵢⱼ"
     }
   ],
@@ -85,7 +85,13 @@
     }
   ],
   "sources": [
-    { "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 3", "url": "https://hastie.su.domains/ElemStatLearn/" },
-    { "label": "James et al. — An Introduction to Statistical Learning, Ch. 3", "url": "https://www.statlearning.com/" }
+    {
+      "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 3",
+      "url": "https://hastie.su.domains/ElemStatLearn/"
+    },
+    {
+      "label": "James et al. — An Introduction to Statistical Learning, Ch. 3",
+      "url": "https://www.statlearning.com/"
+    }
   ]
 }

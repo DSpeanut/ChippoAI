@@ -23,34 +23,34 @@
     }
   ],
   "deepDiveIntro": [
-    "For distributions p (true) and q (predicted/approximating), cross-entropy is H(p,q) = -Σ_x p(x) log q(x) = E_p[-log q(X)]. For continuous: -∫ p(x) log q(x) dx. Related to KL: H(p,q) = H(p) + D(p||q) = entropy + KL divergence. Since H(p) is constant w.r.t. q, minimizing cross-entropy ≡ minimizing KL.",
-    "In ML, p is typically the empirical distribution (one-hot for classification: p(k) = 1 if k = true label, else 0). Then H(p,q) = -log q(true label). This is the negative log-likelihood for categorical distributions, justifying cross-entropy as maximum likelihood estimation."
+    "Cross-entropy between two distributions measures the average surprise when you assume distribution q but the true distribution is p. It equals the entropy of the true distribution plus the KL divergence from p to q. Because the entropy of p is a constant (it doesn't depend on your model q), minimising cross-entropy is exactly equivalent to minimising KL divergence — which means pushing your predicted distribution as close to the true one as possible.",
+    "In classification, the true distribution is a one-hot vector (probability 1 on the correct class, 0 elsewhere). Cross-entropy then reduces to just the negative log of the predicted probability assigned to the correct class. Minimising this is the same as maximising the likelihood of the training labels under your model — cross-entropy loss and maximum likelihood estimation are the same thing."
   ],
   "visualizationType": "cross-entropy",
   "deepDive": [
     {
       "heading": "Definition and Relation to KL",
-      "body": "H(p,q) = -Σ p(x) log q(x). H(p,q) = H(p) + D(p||q). Cross-entropy = entropy of true distribution + KL divergence from true to predicted. Minimizing H(p,q) over q is equivalent to minimizing D(p||q) since H(p) is constant.",
+      "body": "Cross-entropy is the average log-probability assigned to true outcomes by your model, negated. It decomposes into the irreducible entropy of the true distribution plus the KL divergence — the extra penalty for using the wrong distribution. Since the true distribution's entropy is fixed, the only way to reduce cross-entropy is to reduce the KL divergence, meaning your predictions must match the true distribution more closely.",
       "formula": "H(p,q) = H(p) + D(p||q) = -Σ p(x) log q(x)"
     },
     {
       "heading": "Binary Cross-Entropy",
-      "body": "For binary classification with labels y ∈ {0,1} and predictions p = P(Y=1): BCE = -[y log p + (1-y) log(1-p)]. Convex in p. For multiple independent labels, sum BCE over each. Used in multi-label classification, GANs (discriminator loss).",
+      "body": "For binary classification (yes/no outcomes), the loss penalises confident wrong predictions heavily and barely penalises confident correct predictions. If the true label is 1 and the model outputs probability 0.01, the loss is enormous; if the model outputs 0.99, the loss is tiny. This asymmetry gives strong gradient signals when the model is confidently wrong, enabling fast learning. For multi-label problems, binary cross-entropy is applied independently to each label.",
       "formula": "L = -[y log(p) + (1-y) log(1-p)]"
     },
     {
       "heading": "Categorical Cross-Entropy",
-      "body": "For K classes with one-hot target y and softmax probabilities ŷ: CE = -Σₖ₌₁ᴷ yₖ log(ŷₖ) = -log(ŷ_{true}). If prediction is confident and wrong (ŷ_{true} ≈ 0), loss → ∞. Numerically stable computation: subtract max(logits) before softmax.",
+      "body": "For multi-class classification, the loss simplifies to just the negative log of the probability assigned to the correct class — all the other classes drop out because their one-hot targets are zero. If the model is confident and correct the loss is near zero; if the model confidently picks the wrong class the loss approaches infinity. For numerical stability, always compute the softmax and log together by subtracting the maximum logit first before exponentiating.",
       "formula": "L = -Σₖ yₖ log(ŷₖ) = -log(softmax(z)_{true})"
     },
     {
       "heading": "Label Smoothing",
-      "body": "Replace one-hot targets (0,1) with smoothed (ε/(K-1), 1-ε). Prevents overconfident predictions, acts as regularization. Cross-entropy with smoothing: -(1-ε)log ŷ_{true} - Σ_{k≠true} (ε/(K-1)) log ŷₖ. Used in training transformers and image classifiers.",
+      "body": "Instead of training the model to output probability 1 for the correct class and 0 for everything else, label smoothing assigns a small probability (typically 0.1 divided across all other classes) to the wrong classes. This prevents the model from becoming overconfident, acts as a regulariser, and tends to improve calibration — the model's stated confidence more accurately reflects its actual accuracy. Label smoothing is standard in training modern transformers and image classifiers.",
       "formula": "y'_k = 1 - ε if k = true, ε/(K-1) otherwise"
     },
     {
       "heading": "Focal Loss",
-      "body": "Addresses class imbalance by down-weighting easy examples. FL = -Σ (1-ŷₖ)^γ yₖ log(ŷₖ) where γ ≥ 0. When γ=0, recovers CE. As γ increases, easy examples (high ŷₖ) contribute less. Used in object detection (RetinaNet) with extreme imbalance.",
+      "body": "In object detection, the vast majority of image regions contain background (easy negatives) and only a few contain actual objects. Standard cross-entropy gets overwhelmed by the easy background examples and barely updates on the rare, hard foreground examples. Focal loss multiplies the standard cross-entropy by a factor that down-weights examples the model already classifies confidently, directing gradient signal toward the hard cases. The parameter gamma controls how aggressively easy examples are suppressed.",
       "formula": "FL = -Σ (1-ŷₖ)^γ yₖ log(ŷₖ)"
     }
   ],

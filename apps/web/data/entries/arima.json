@@ -19,27 +19,27 @@
     }
   ],
   "deepDiveIntro": [
-    "Backshift operator B: BYₜ = Yₜ₋₁, B²Yₜ = Yₜ₋₂. Difference operator ∇ = 1−B: ∇Yₜ = Yₜ − Yₜ₋₁. ARIMA(p,d,q): φ(B)∇ᵈYₜ = θ(B)εₜ, where φ(B) = 1−φ₁B−…−φₚBᵖ (AR polynomial), θ(B) = 1−θ₁B−…−θqBq (MA polynomial, note sign convention varies), εₜ ~ WN(0,σ²).",
-    "Stationarity: roots of φ(B) outside unit circle. Invertibility: roots of θ(B) outside unit circle — needed for unique MA representation and infinite AR expansion. For ARMA(1,1): φ(B) = 1−φB, θ(B) = 1−θB. Stationary if |φ| < 1; invertible if |θ| < 1. MLE estimation: Kalman filter computes the exact likelihood for ARIMA models; conditional MLE assumes presample values at their expectations."
+    "ARIMA(p,d,q) is written using the backshift operator B: the AR polynomial acts on d-times-differenced observations, and the MA polynomial acts on the noise. The AR polynomial requires all its roots to lie outside the unit circle for stationarity, and the MA polynomial requires the same for invertibility. Likelihood estimation typically uses the Kalman filter to evaluate the exact likelihood; conditional least squares assumes presample values at their expected values.",
+    "Stationarity means the AR roots are outside the unit circle. Invertibility means the MA roots are also outside the unit circle — needed for a unique MA representation and stable forecasting. For a simple ARMA(1,1), stationarity requires the AR coefficient to be less than one in absolute value, and invertibility requires the same of the MA coefficient. These conditions are checked automatically by good software."
   ],
   "deepDive": [
     {
       "heading": "ARIMA(p,d,q) Model and Backshift Notation",
-      "body": "ARIMA(p,d,q): φ(B)(1−B)ᵈYₜ = c + θ(B)εₜ. For d=1 (ARIMA(p,1,q)): φ(B)ΔYₜ = c + θ(B)εₜ. Special cases: ARIMA(0,1,0) = random walk with drift; ARIMA(1,1,0) = differenced AR(1); ARIMA(0,1,1) = IMA(1,1) = exponential smoothing (Holt 1957 showed equivalence). Parameters: φ₁,…,φₚ (AR), θ₁,…,θq (MA), c (constant/drift), σ² (noise variance). Estimated by MLE via Kalman filter. [1]",
+      "body": "The ARIMA model applies the AR polynomial to the d-times-differenced series. Special cases reveal the model's generality: ARIMA(0,1,0) is a random walk with drift, meaning the best forecast is always the last observed value plus the drift. ARIMA(1,1,0) is a differenced AR(1). ARIMA(0,1,1) is exactly equivalent to Holt's exponential smoothing — it weights past observations with exponentially declining weights. Parameters are estimated by maximum likelihood using the Kalman filter. [1]",
       "formula": "φ(B) · (1−B)ᵈ · Yₜ = c + θ(B) · εₜ"
     },
     {
       "heading": "Box-Jenkins Model Selection",
-      "body": "Step 1 — Stationarity: ADF test. If non-stationary, determine d (usually d=1 for most series). Step 2 — Identify (p,q): plot ACF and PACF of ΔᵈYₜ. AR(p) signature: PACF cuts off at p, ACF decays. MA(q) signature: ACF cuts off at q, PACF decays. ARMA: both decay. Step 3 — Estimate multiple candidate models by MLE. Step 4 — Select via AIC = −2ℓ + 2k or BIC = −2ℓ + k·log(n) (k = p+q+1+d; BIC penalizes more heavily). Step 5 — Diagnose residuals: Ljung-Box test, residual ACF, Q-Q plot. [1]"
+      "body": "The Box-Jenkins approach has four steps. First, check stationarity using the ADF test and difference if needed to determine d. Second, plot the autocorrelation function (ACF) and partial autocorrelation function (PACF) of the differenced series: a sharp ACF cutoff suggests an MA term, a sharp PACF cutoff suggests an AR term, and both decaying suggests ARMA. Third, estimate several candidate models by maximum likelihood. Fourth, compare models using AIC or BIC (BIC penalises complexity more heavily), and validate by checking that residuals look like white noise on the Ljung-Box test and ACF plot. [1]"
     },
     {
       "heading": "ARIMA Forecasting and Prediction Intervals",
-      "body": "h-step ahead forecast: Ŷₜ₊ₕ|ₜ = E[Yₜ₊ₕ | Y₁,…,Yₜ]. For AR(1): Ŷₜ₊ₕ|ₜ = φ₁ʰYₜ → 0 as h→∞ (stationary AR). For ARIMA(0,1,0): Ŷₜ₊ₕ|ₜ = Yₜ (random walk — last value is optimal forecast). Prediction interval: Ŷₜ₊ₕ|ₜ ± z_{α/2}·√(Var(eₜ₊ₕ)), where Var(eₜ₊ₕ) = σ²·Σⱼ₌₀ʰ⁻¹ψⱼ² and ψⱼ are the MA(∞) coefficients of Yₜ. PI widens with forecast horizon h. [1]",
+      "body": "The h-step ahead forecast is the conditional expectation of the future value given all past observations. For a stationary AR(1), long-horizon forecasts decay toward the series mean. For a random walk (ARIMA(0,1,0)), the forecast stays flat at the last observed value — the last value is the best guess of anything in the future. Prediction intervals widen as the horizon grows because forecast uncertainty accumulates over multiple steps. [1]",
       "formula": "Ŷₜ₊ₕ|ₜ = E[Yₜ₊ₕ | Y₁,…,Yₜ]"
     },
     {
       "heading": "Seasonal ARIMA (SARIMA)",
-      "body": "SARIMA(p,d,q)(P,D,Q)_s: Φ(Bˢ)φ(B)∇ˢᴰ∇ᵈYₜ = Θ(Bˢ)θ(B)εₜ, where s is the seasonal period (s=12 for monthly, s=4 for quarterly), Φ(Bˢ) and Θ(Bˢ) are seasonal AR and MA polynomials of order P and Q in Bˢ, ∇ˢ = 1−Bˢ is the seasonal difference. Standard for monthly economic series: SARIMA(0,1,1)(0,1,1)₁₂ (airline model, Box-Jenkins 1976). Seasonal differencing ∇ˢYₜ = Yₜ − Yₜ₋ₛ removes seasonal non-stationarity. [1]"
+      "body": "SARIMA extends ARIMA by adding seasonal AR and MA polynomials that operate at the seasonal lag (e.g., lag 12 for monthly data, lag 4 for quarterly). A seasonal difference removes seasonal nonstationarity by subtracting the value from the same season one year ago. The standard airline model — SARIMA(0,1,1)(0,1,1) at lag 12 — was fitted by Box and Jenkins to monthly airline passenger counts and remains a textbook benchmark for seasonal time series. [1]"
     }
   ],
   "youtubeLabel": "ARIMA Models — StatQuest",

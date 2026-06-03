@@ -24,26 +24,26 @@
     }
   ],
   "deepDiveIntro": [
-    "Adam (Kingma & Ba, 2014): mₜ = β₁mₜ₋₁ + (1−β₁)gₜ; vₜ = β₂vₜ₋₁ + (1−β₂)gₜ²; m̂ₜ = mₜ/(1−β₁ᵗ); v̂ₜ = vₜ/(1−β₂ᵗ); wₜ = wₜ₋₁ − η·m̂ₜ/(√v̂ₜ + ε). The bias correction (1−β^t) fixes initialisation bias: at t=1, m₁ = (1−β₁)g₁ which underestimates the true gradient; dividing by (1−β₁) corrects this. Defaults: β₁=0.9, β₂=0.999, ε=1e-8. The effective step size is approximately η — unlike SGD where the step is η·‖gₜ‖. [1]",
-    "The denominator √v̂ₜ is approximately the RMS of recent gradients, so the update η·m̂ₜ/(√v̂ₜ+ε) is a signal-to-noise ratio: the average gradient direction (m̂) divided by gradient magnitude (√v̂). This makes Adam approximately scale-invariant: multiplying all gradients by a constant doesn't change the direction or magnitude of the update (it cancels out in m/√v). [1]"
+    "Adam (Kingma & Ba, 2014) maintains two running averages per parameter: a first moment (exponential moving average of gradients) and a second moment (exponential moving average of squared gradients). Both are bias-corrected to account for the zero initialization. The parameter update is the bias-corrected first moment divided by the square root of the bias-corrected second moment, scaled by the learning rate. Default settings: beta_1=0.9, beta_2=0.999, epsilon=1e-8. The effective step size stays approximately equal to the learning rate regardless of gradient magnitude. [1]",
+    "The denominator (square root of the second moment) approximates the recent root-mean-square of gradients, so the update is effectively a signal-to-noise ratio: average gradient direction divided by gradient magnitude. This makes Adam approximately scale-invariant — multiplying all gradients by a constant does not change the direction or magnitude of the update, because the factor cancels between the numerator and denominator. [1]"
   ],
   "deepDive": [
     {
       "heading": "Full Algorithm",
-      "body": "At step t: g = ∇L(w). First moment: m = β₁·m + (1−β₁)·g. Second moment: v = β₂·v + (1−β₂)·g². Bias correction: m̂ = m/(1−β₁ᵗ), v̂ = v/(1−β₂ᵗ). Update: w = w − η·m̂/(√v̂ + ε). Intuition for each component: β₁=0.9 gives a 10-step EMA of gradients (momentum). β₂=0.999 gives a 1000-step EMA of squared gradients (slow-moving estimate of gradient variance). The ratio m̂/√v̂ is like a normalised gradient — approximately unit variance in each direction when training is stable. [1]",
+      "body": "At each step, Adam computes the gradient, then updates a slow-moving average of the gradient (first moment, controlled by beta_1=0.9) and a slow-moving average of the squared gradient (second moment, controlled by beta_2=0.999). Both are divided by a bias-correction term to fix the underestimation caused by zero initialization. The parameter update is the corrected first moment divided by the square root of the corrected second moment plus a tiny epsilon for numerical safety. The ratio of first to second moment is like a normalized gradient — approximately unit variance when training is stable. [1]",
       "formula": "wₜ = wₜ₋₁ − η · m̂ₜ / (√v̂ₜ + ε)"
     },
     {
       "heading": "Bias Correction: Why It Matters Early",
-      "body": "At t=1 with m₀=v₀=0: m₁ = (1−β₁)g₁ ≈ 0.1g₁. Without bias correction, the first step would be 10× too small. Dividing by (1−β₁¹) = 0.1 corrects this to g₁. By t=10: (1−β₁¹⁰) ≈ 0.65, still significant. By t=100: ≈ 0.99999 — correction is negligible. The bias correction is critical in the first ~1/(1−β) steps (10 for β₁=0.9, 1000 for β₂=0.999). It prevents the slow start that uncorrected Adam exhibits. [1]"
+      "body": "At the very first step, the first-moment estimate is only a small fraction of the true gradient because the exponential average starts at zero. Without bias correction, the first update would be far too small. Dividing by the correction factor restores the proper scale. By around step 10, the correction for beta_1=0.9 is still significant (about 35%). By step 100 it is negligible (less than 0.001%). The bias correction is critical in the first few dozen steps and becomes irrelevant after training is underway. [1]"
     },
     {
       "heading": "Adam vs AdaGrad vs RMSProp",
-      "body": "AdaGrad: accumulates all squared gradients G_t = G_{t-1} + gₜ². Step: η/√G_t — shrinks monotonically, eventually → 0. Fails for non-convex problems with long training. RMSProp (Hinton, unpublished): vₜ = γvₜ₋₁ + (1−γ)gₜ². Exponential decay of G_t fixes AdaGrad's monotone shrinkage. No bias correction, no first moment. Adam = RMSProp + momentum (first moment) + bias correction. Adam is strictly more capable: it uses both gradient direction (momentum) and gradient scale (RMSProp), each with independent decay rates. [1][2]"
+      "body": "AdaGrad accumulates all squared gradients forever, so the effective learning rate shrinks monotonically toward zero — it fails for long non-convex training runs. RMSProp (Hinton) fixes this with an exponential decay that forgets old squared gradients. Adam adds momentum (the first moment) on top of RMSProp, plus bias correction. Adam is strictly more capable than either: it uses gradient direction (momentum) and gradient magnitude (RMSProp) with independent decay rates and proper initialization correction. [1][2]"
     },
     {
       "heading": "Adam's Generalisation Gap and AdamW",
-      "body": "L2 regularisation in Adam (weight_decay in PyTorch Adam) adds λw to the gradient: w ← w − η·(m̂ + λw)/√(v̂ + ε). This couples regularisation with the adaptive scaling — parameter directions with small gradients get larger λ relative to the update, inconsistent regularisation. AdamW (Loshchilov & Hutter, 2019) decouples: w ← w − η·m̂/√(v̂+ε) − η·λ·w. Decoupled weight decay provides consistent regularisation independent of gradient history. AdamW almost always outperforms Adam on LLM training. [3]",
+      "body": "Adding L2 regularization inside Adam (via the gradient) couples the regularization strength to the adaptive scaling — parameters with small historical gradients get disproportionately large relative regularization. AdamW (Loshchilov & Hutter, 2019) fixes this by subtracting the weight decay term directly from the parameter after the adaptive update, keeping regularization independent of gradient history. AdamW almost always outperforms Adam on LLM training tasks. [3]",
       "formula": "AdamW: w ← w − η·m̂/(√v̂+ε) − η·λ·w"
     }
   ],

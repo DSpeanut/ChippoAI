@@ -30,21 +30,21 @@
   "deepDive": [
     {
       "heading": "Quartiles: Q1, Q2, Q3",
-      "body": "Q1 = 25th percentile (lower quartile), Q2 = 50th percentile (median), Q3 = 75th percentile (upper quartile). IQR = Q3 − Q1 contains the middle 50% of data. The five-number summary {min, Q1, Q2, Q3, max} fully describes the spread without distributional assumptions. Boxplot whiskers extend to min(Q3 + 1.5×IQR, x_max) and max(Q1 − 1.5×IQR, x_min). [1]",
+      "body": "Quartiles divide ordered data into four equal parts and give a compact description of location and spread. The interquartile range focuses on the middle half of the sample, which makes it much more robust than variance-based summaries when outliers are present. Together with the minimum, median, and maximum, quartiles form the standard five-number summary used in boxplots.",
       "formula": "IQR = Q3 − Q1"
     },
     {
       "heading": "Outlier Detection: Tukey's Fence",
-      "body": "Inner fences: [Q1−1.5×IQR, Q3+1.5×IQR]. Outer fences: [Q1−3×IQR, Q3+3×IQR]. Points beyond the inner fence are mild outliers; beyond the outer fence are extreme outliers. For normal data, the inner fence marks approximately ±2.7σ, so about 0.7% of normal observations are flagged — a non-parametric approximation to the ±3σ rule. [1]",
+      "body": "Tukey's fence is a simple rule for flagging unusually small or unusually large observations relative to the central bulk of the data. It is entirely rank-based, so it works without assuming normality. The rule is best viewed as a screening device for unusual points, not as a proof that those points are errors.",
       "formula": "Outlier if x < Q1 − 1.5·IQR  or  x > Q3 + 1.5·IQR"
     },
     {
       "heading": "Quantile Function and Q-Q Plots",
-      "body": "Q-Q plot: plot the quantiles of sample data against the theoretical quantiles of a reference distribution (usually normal). Points lie on a straight line if data follows the reference distribution. Deviations from the line reveal: S-curves (heavier or lighter tails), systematic shifts (location mismatch), or bends (skewness). More sensitive than histograms for detecting distributional departures. [1]"
+      "body": "Q-Q plots compare the ordered values in your sample to the ordered values expected under a reference distribution. If the points lie near a straight line, the fitted distribution is plausible; systematic bends reveal skewness, heavy tails, or other mismatches. They are one of the most informative visual diagnostics for distributional shape."
     },
     {
       "heading": "Probability Integral Transform",
-      "body": "If X has CDF F, then U = F(X) ~ Uniform(0,1). Inverse: if U ~ Uniform(0,1), then F⁻¹(U) ~ F. This transform is fundamental to: (1) generating random variables from F given uniform random numbers; (2) copulas which model dependence by transforming margins to uniform; (3) Kolmogorov-Smirnov test which tests uniformity of F(xᵢ). [1][2]",
+      "body": "Quantiles are also central to the probability integral transform. This result lets you convert arbitrary distributions into uniform ones and back again, which is why it appears in random-number generation, copulas, simulation, and goodness-of-fit testing. It is one of the key bridges between distribution functions and sampling algorithms.",
       "formula": "If X ~ F, then F(X) ~ Uniform(0,1)"
     }
   ],

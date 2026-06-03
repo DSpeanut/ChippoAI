@@ -23,34 +23,34 @@
     }
   ],
   "deepDiveIntro": [
-    "For f: ℝ → ℝ, the derivative at x is f'(x) = lim_{h→0} [f(x+h) - f(x)]/h if the limit exists. Geometrically, it's the slope of the tangent line. For f: ℝⁿ → ℝ, the gradient ∇f(x) = [∂f/∂x₁, …, ∂f/∂xₙ]ᵀ points in the direction of maximum rate of increase.",
-    "The directional derivative D_vf(x) = ∇f(x)ᵀv tells us the rate of change in direction v (unit vector). This is maximized when v aligns with ∇f, giving rate ||∇f||. The gradient is orthogonal to level sets {x : f(x) = c}."
+    "For a function from one real number to another, the derivative at a point is the limit of the slope of secant lines as the two points approach each other — the instantaneous slope of the tangent. For a function from many dimensions to one number, the gradient is the vector of all partial derivatives, pointing in the direction of steepest increase.",
+    "The directional derivative measures how fast a function changes as you move in a particular direction. It equals the dot product of the gradient with a unit vector in that direction. The direction that maximizes this rate of change is exactly the gradient direction, and the maximum rate equals the gradient's magnitude. The gradient is always perpendicular to the level sets of the function."
   ],
   "visualizationType": "derivatives-gradients",
   "deepDive": [
     {
       "heading": "Definition and Interpretation",
-      "body": "Derivative as limit of difference quotient. Represents instantaneous rate of change, slope of tangent, or linear approximation: f(x+h) ≈ f(x) + f'(x)h. Differentiability implies continuity, but not conversely (e.g., |x| at 0).",
+      "body": "The derivative captures the local rate of change of a one-variable function. You can think of it as the slope of the tangent line or as the best linear approximation near a point. A function may be continuous without being differentiable, so smooth-looking behavior is not enough by itself.",
       "formula": "f'(x) = lim_{h→0} (f(x+h) - f(x))/h"
     },
     {
       "heading": "Gradient Vector",
-      "body": "For f: ℝⁿ → ℝ, ∇f = [∂f/∂x₁, …, ∂f/∂xₙ]ᵀ. Direction of steepest ascent. Orthogonal to level curves/surfaces. Magnitude ||∇f|| gives rate of steepest increase. In optimization, critical points satisfy ∇f = 0.",
+      "body": "For a function of many variables, the gradient gathers the slope in each coordinate direction into one vector. That vector points toward the direction of fastest increase, and its length tells you how steep that best uphill direction is. Points where the gradient becomes zero are natural candidates for minima, maxima, or saddle points.",
       "formula": "∇f(x) = [∂f/∂x₁, …, ∂f/∂xₙ]ᵀ, D_vf(x) = ∇f(x)ᵀv"
     },
     {
       "heading": "Jacobian Matrix",
-      "body": "For f: ℝⁿ → ℝᵐ, the Jacobian Jf ∈ ℝᵐˣⁿ contains all first partial derivatives: (Jf)ᵢⱼ = ∂fᵢ/∂xⱼ. It's the matrix representation of the derivative (linear approximation). The chain rule for vector functions uses Jacobians: J(g∘f)(x) = Jg(f(x)) · Jf(x).",
+      "body": "When a function produces several outputs, the Jacobian records how each output responds to each input. It is the matrix form of the best local linear approximation to the function near a point. This is the object that makes the chain rule work naturally for vector-valued functions.",
       "formula": "(Jf)ᵢⱼ = ∂fᵢ/∂xⱼ"
     },
     {
       "heading": "Hessian Matrix",
-      "body": "For f: ℝⁿ → ℝ, the Hessian H = ∇²f is the matrix of second partial derivatives: Hᵢⱼ = ∂²f/∂xᵢ∂xⱼ. Symmetric when f is twice continuously differentiable (Schwarz's theorem). Determines convexity (H ≽ 0) and optimization convergence.",
+      "body": "The Hessian describes second-order behavior, so it tells you how curvature changes near a point. Around a critical point, its sign pattern helps distinguish bowls, hills, and saddles. In optimization, it explains why some directions feel steep while others feel flat.",
       "formula": "H = ∇²f, Hᵢⱼ = ∂²f/∂xᵢ∂xⱼ"
     },
     {
       "heading": "Subgradients",
-      "body": "For non-differentiable convex functions (e.g., L1 norm, ReLU), the subgradient generalizes the gradient. Any vector g satisfying f(y) ≥ f(x) + gᵀ(y-x) for all y is a subgradient at x. The set of all subgradients is the subdifferential ∂f(x).",
+      "body": "Some useful functions have corners, so an ordinary derivative does not exist everywhere. For convex functions, subgradients provide a replacement that still supports optimization and optimality conditions. Instead of one exact slope, you allow any supporting slope that stays below the function everywhere else.",
       "formula": "g ∈ ∂f(x) ⟺ f(y) ≥ f(x) + gᵀ(y-x) ∀y"
     }
   ],

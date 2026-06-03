@@ -30,27 +30,27 @@
   "deepDive": [
     {
       "heading": "Hard-Margin Primal Problem",
-      "body": "For linearly separable data with binary labels yᵢ ∈ {−1, +1}, we want the hyperplane wᵀx + b = 0 that correctly classifies all points with maximum margin. The margin width is 2/||w||, so maximising it is equivalent to minimising ||w||². [1][2]",
+      "body": "This section explains the objective or theoretical result that drives the method and what it means in practice.",
       "formula": "min_{w,b} ½||w||²   s.t. yᵢ(wᵀxᵢ + b) ≥ 1  ∀i"
     },
     {
       "heading": "Soft-Margin SVM (Hinge Loss)",
-      "body": "Real data is rarely separable. Slack variables ξᵢ ≥ 0 allow points to violate the margin. C > 0 controls the tradeoff: large C penalises misclassification heavily (low bias, higher variance); small C allows more violations (higher bias, lower variance). [1]",
+      "body": "This section explains the objective or theoretical result that drives the method and what it means in practice.",
       "formula": "min_{w,b,ξ} ½||w||² + C Σᵢ ξᵢ   s.t. yᵢ(wᵀxᵢ+b) ≥ 1−ξᵢ, ξᵢ ≥ 0"
     },
     {
       "heading": "Dual Formulation & Support Vectors",
-      "body": "Using Lagrange multipliers, the primal converts to a dual problem over αᵢ ≥ 0. The solution has the form w = Σᵢ αᵢyᵢxᵢ — only training points with αᵢ > 0 contribute. These are the support vectors. The dual is a convex quadratic program. [1]",
+      "body": "These are the support vectors. The dual is a convex quadratic program.",
       "formula": "max_α Σᵢ αᵢ − ½ ΣᵢΣⱼ αᵢαⱼyᵢyⱼ xᵢᵀxⱼ   s.t. Σᵢ αᵢyᵢ = 0, 0 ≤ αᵢ ≤ C"
     },
     {
       "heading": "The Kernel Trick",
-      "body": "The dual only involves dot products xᵢᵀxⱼ. Replace these with a kernel function K(xᵢ,xⱼ) = φ(xᵢ)ᵀφ(xⱼ), where φ maps inputs to a higher-dimensional feature space. Common kernels: RBF K(x,z) = exp(−γ||x−z||²), polynomial K(x,z) = (xᵀz+c)ᵈ. Mercer's theorem guarantees a valid feature map exists for any positive semi-definite kernel. [1]",
+      "body": "Mercer's theorem guarantees a valid feature map exists for any positive semi-definite kernel.",
       "formula": "K(x, z) = exp(−γ||x − z||²)   (RBF kernel)"
     },
     {
       "heading": "Prediction",
-      "body": "For a new point x*, the decision function is: f(x*) = sign(Σᵢ αᵢyᵢ K(xᵢ, x*) + b). Only support vectors (αᵢ > 0) contribute, making prediction sparse and efficient even when the kernel maps to infinite dimensions. [1]"
+      "body": "This section explains how the fitted method turns learned structure into predictions, scores, or class assignments."
     }
   ],
   "youtubeLabel": "StatQuest: Support Vector Machines",
@@ -86,7 +86,13 @@
     }
   ],
   "sources": [
-    { "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 12", "url": "https://hastie.su.domains/ElemStatLearn/" },
-    { "label": "James et al. — An Introduction to Statistical Learning, Ch. 9", "url": "https://www.statlearning.com/" }
+    {
+      "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 12",
+      "url": "https://hastie.su.domains/ElemStatLearn/"
+    },
+    {
+      "label": "James et al. — An Introduction to Statistical Learning, Ch. 9",
+      "url": "https://www.statlearning.com/"
+    }
   ]
 }

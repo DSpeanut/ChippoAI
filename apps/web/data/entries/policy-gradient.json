@@ -30,16 +30,16 @@
   "deepDive": [
     {
       "heading": "Policy Gradient Theorem and REINFORCE",
-      "body": "The policy gradient theorem provides the exact gradient formula: ∇J(θ) = E_π[∇ log π(A|S;θ) · Q^π(S,A)]. Williams (1992) coined REINFORCE: use Monte Carlo returns G_t as an estimate of Q^π(S_t, A_t). Algorithm: (1) Run episode under π_θ, collect (s_t, a_t, r_t). (2) Compute G_t = Σ_{k≥t} γ^{k−t} r_k. (3) Compute loss L = −Σ_t log π(a_t|s_t;θ) · G_t. (4) Backward + gradient step. The score function ∇ log π(a|s;θ) is the direction in parameter space that increases the probability of action a in state s. Multiplying by G_t means: if G_t > 0 (good episode), reinforce those actions; if G_t < 0 (bad episode), suppress them. [1]",
+      "body": "This section explains the objective or theoretical result that drives the method and what it means in practice.",
       "formula": "∇_θ J(θ) = E_π[∇_θ log π(A|S;θ) · G_t]   [REINFORCE, no baseline]"
     },
     {
       "heading": "Baseline and Advantage Estimation",
-      "body": "Without a baseline, REINFORCE has high gradient variance — G_t depends on the entire episode trajectory and can be very large or small depending on luck. A baseline b(S_t) subtracted from G_t does not introduce bias (can be shown by the fact that E[∇ log π(a|s;θ) · b(s)] = 0 for any b(s) not depending on a). Common baselines: (1) Constant baseline: b = mean(G_t) over the episode — simple, effective. (2) State-value baseline: b(s) = V^π(s) — leads to the advantage A^π(s,a) = G_t − V^π(s_t). (3) Normalised returns: (G_t − mean) / std — practical default in many implementations. The advantage A^π(s,a) = Q^π(s,a) − V^π(s) is the core quantity used by Actor-Critic, PPO, and A3C. [1]"
+      "body": "Without a baseline, REINFORCE has high gradient variance — G_t depends on the entire episode trajectory and can be very large or small depending on luck. (3) Normalised returns: (G_t − mean) / std — practical default in many implementations."
     },
     {
       "heading": "REINFORCE vs Actor-Critic vs PPO",
-      "body": "REINFORCE (Monte Carlo PG): unbiased gradient, very high variance (full-episode returns), sample inefficient. No critic needed. Actor-Critic (TD PG): replace G_t with a bootstrapped advantage estimate A_t = r_t + γV(s_{t+1}) − V(s_t). Lower variance (TD error vs MC return), slight bias due to bootstrapping. Learns a critic V(s;w) alongside the policy. A2C/A3C (synchronous/asynchronous actor-critic): parallelise data collection across multiple workers, combine their gradients. PPO (Proximal Policy Optimization, Schulman et al., 2017): clips the policy update to prevent large changes: L_CLIP = E[min(r_t(θ)Â_t, clip(r_t(θ), 1−ε, 1+ε)Â_t)], where r_t(θ) = π(a|s;θ)/π_old(a|s). The clip prevents the updated policy from deviating too far from the old policy — prevents destructive updates. PPO is the dominant on-policy RL algorithm as of 2024 for both continuous control and RLHF. [2]",
+      "body": "REINFORCE (Monte Carlo PG): unbiased gradient, very high variance (full-episode returns), sample inefficient. No critic needed. Lower variance (TD error vs MC return), slight bias due to bootstrapping. Learns a critic V(s;w) alongside the policy. A2C/A3C (synchronous/asynchronous actor-critic): parallelise data collection across multiple workers, combine their gradients. The clip prevents the updated policy from deviating too far from the old policy — prevents destructive updates. PPO is the dominant on-policy RL algorithm as of 2024 for both continuous control and RLHF.",
       "formula": "PPO clip: L = E[min(r_t(θ)Â, clip(r_t(θ), 1−ε, 1+ε)Â)],  r_t=π_new/π_old"
     }
   ],
@@ -63,7 +63,13 @@
     }
   ],
   "sources": [
-    { "label": "Sutton, R.S. & Barto, A.G. — Reinforcement Learning: An Introduction, 2nd Ed., MIT Press, 2018", "url": "http://incompleteideas.net/book/the-book-2nd.html" },
-    { "label": "Schulman, J. et al. — Proximal Policy Optimization Algorithms, arXiv:1707.06347, 2017", "url": "https://arxiv.org/abs/1707.06347" }
+    {
+      "label": "Sutton, R.S. & Barto, A.G. — Reinforcement Learning: An Introduction, 2nd Ed., MIT Press, 2018",
+      "url": "http://incompleteideas.net/book/the-book-2nd.html"
+    },
+    {
+      "label": "Schulman, J. et al. — Proximal Policy Optimization Algorithms, arXiv:1707.06347, 2017",
+      "url": "https://arxiv.org/abs/1707.06347"
+    }
   ]
 }

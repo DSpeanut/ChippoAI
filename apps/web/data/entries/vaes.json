@@ -30,15 +30,15 @@
   "deepDive": [
     {
       "heading": "ELBO Derivation",
-      "body": "Starting from log p_θ(x): log p_θ(x) = log ∫ p_θ(x,z)dz. Introduce q_φ(z|x): = log E_{q_φ(z|x)}[p_θ(x,z)/q_φ(z|x)]. By Jensen's inequality (log is concave): ≥ E_{q_φ(z|x)}[log p_θ(x,z)/q_φ(z|x)] = E_{q_φ}[log p_θ(x|z)] + E_{q_φ}[log p(z)/q_φ(z|x)] = E_{q_φ}[log p_θ(x|z)] − KL(q_φ(z|x)||p(z)). The gap is KL(q_φ(z|x)||p_θ(z|x)) ≥ 0 (KL of approximate vs true posterior). For a Gaussian posterior q_φ = N(μ, σ²I) and standard normal prior p(z) = N(0,I), KL has a closed form: KL = −1/2 Σ_j (1 + log σ_j² − μ_j² − σ_j²). The reconstruction term E[log p_θ(x|z)] is approximated by one sample of z per x (using the reparameterisation trick). [1]"
+      "body": "This section explains the main idea behind this part of the method in plain language."
     },
     {
       "heading": "KL Collapse and Posterior Collapse",
-      "body": "Posterior collapse (also called KL vanishing) is a critical failure mode: during training, the encoder learns to output the prior (μ≈0, σ≈1 for all inputs), making the KL term ≈ 0 and the latent code uninformative. The decoder then learns to ignore z entirely, modelling p_θ(x) independently of the latent code. Causes: for powerful decoders (e.g., autoregressive decoders), it's easier to ignore z and model p(x) directly than to coordinate with the encoder. Mitigations: (1) KL annealing — gradually increase the KL weight from 0 to 1 during training (β-VAE annealing schedule); (2) free bits — allow each latent dimension a 'free' KL budget of λ bits; (3) weaker decoder (remove autoregressive connections); (4) δ-VAE — maintain a minimum KL per latent dimension. [2]"
+      "body": "The decoder then learns to ignore z entirely, modelling p_θ(x) independently of the latent code. Causes: for powerful decoders (e.g., autoregressive decoders), it's easier to ignore z and model p(x) directly than to coordinate with the encoder."
     },
     {
       "heading": "β-VAE and Disentanglement",
-      "body": "Higgins et al. (2017) introduced β-VAE: scale the KL term by β > 1 in the ELBO: L_β = E[log p_θ(x|z)] − β·KL(q_φ(z|x)||p(z)). Higher β forces stronger independence between latent dimensions, promoting disentanglement: each dimension of z captures an independent factor of variation (e.g., one dimension controls lighting, another controls pose, another controls object colour). β=1 is the standard VAE; β=4–10 improves disentanglement at the cost of reconstruction quality. Measuring disentanglement: β-VAE score (Higgins et al.), DCI framework (Eastwood & Williams, 2018). Disentangled representations are valuable for downstream tasks requiring compositional generalisation (style transfer, data augmentation, causal reasoning). [2]"
+      "body": "Higgins et al. Higher β forces stronger independence between latent dimensions, promoting disentanglement: each dimension of z captures an independent factor of variation (e.g., one dimension controls lighting, another controls pose, another controls object colour). Measuring disentanglement: β-VAE score (Higgins et al.), DCI framework (Eastwood & Williams, 2018). Disentangled representations are valuable for downstream tasks requiring compositional generalisation (style transfer, data augmentation, causal reasoning)."
     },
     {
       "heading": "VAE vs GAN: Comparison",

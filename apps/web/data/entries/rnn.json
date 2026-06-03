@@ -30,19 +30,19 @@
   "deepDive": [
     {
       "heading": "Vanishing and Exploding Gradients in BPTT",
-      "body": "During BPTT, the gradient of the loss at timestep T with respect to the hidden state at timestep t is: ∂L_T/∂h_t = ∂L_T/∂h_T · ∏_{k=t+1}^{T} W_h^T · diag(f'(z_k)). For tanh, f'(z) ≤ 1; for the product of T terms with ‖W_h‖ < 1, the gradient decays exponentially toward early timesteps. For ‖W_h‖ > 1, it grows exponentially. Vanishing means early-timestep weights receive near-zero gradients and never update — the network cannot learn long-range dependencies. Exploding causes training instability. Exploding is easier to fix (gradient clipping: clip ‖g‖ to a threshold), but vanishing requires architectural changes (LSTM, GRU) or replacing sequential processing (Transformer). [2]"
+      "body": "This section explains the main training instability and why it makes long-range learning difficult in recurrent models."
     },
     {
       "heading": "Truncated BPTT and Memory Efficiency",
-      "body": "Full BPTT stores activations for all T timesteps to compute gradients — O(T·n) memory for a sequence of length T with hidden size n. For long sequences (T=1000, n=512), this is 512K floats per sequence — expensive. Truncated BPTT (T-BPTT): split the sequence into chunks of length k, backpropagate only within each chunk, carry the hidden state forward (but not gradients) across chunks. This limits gradient flow to k steps (reducing long-range dependency learning) but reduces memory to O(k·n) and improves training speed. k=20–50 is typical for language models. The detach() operation in PyTorch stops gradient flow across chunks: h = h.detach() at the start of each chunk. [1]"
+      "body": "Full BPTT stores activations for all T timesteps to compute gradients — O(T·n) memory for a sequence of length T with hidden size n. Truncated BPTT (T-BPTT): split the sequence into chunks of length k, backpropagate only within each chunk, carry the hidden state forward (but not gradients) across chunks. This limits gradient flow to k steps (reducing long-range dependency learning) but reduces memory to O(k·n) and improves training speed."
     },
     {
       "heading": "Bidirectional RNNs",
-      "body": "A standard RNN processes sequences left-to-right: h_t depends only on x_1,...,x_t (causal). For tasks where future context is available at training time (e.g., NER, sequence labelling, translation encoder), a bidirectional RNN (BiRNN) runs two RNNs — one forward (→) and one backward (←) — and concatenates their hidden states: h_t = [h_t^→; h_t^←]. This doubles the hidden dimension and allows each position to see the full sequence context. BiRNNs are used as encoders in seq2seq models and were the basis of ELMo (2018), the first large contextual language model, before BERT replaced them with bidirectional Transformers. [1]"
+      "body": "A standard RNN processes sequences left-to-right: h_t depends only on x_1,...,x_t (causal). This doubles the hidden dimension and allows each position to see the full sequence context. BiRNNs are used as encoders in seq2seq models and were the basis of ELMo (2018), the first large contextual language model, before BERT replaced them with bidirectional Transformers."
     },
     {
       "heading": "Stacked (Deep) RNNs",
-      "body": "Multiple RNN layers can be stacked: the output sequence of layer l becomes the input to layer l+1, with each layer maintaining its own hidden state. A 2-layer RNN with hidden size n has 2×(n² + n·d + n) parameters (plus biases). Stacking allows hierarchical feature extraction: lower layers learn local patterns (phonemes, n-grams), higher layers learn longer-range structure (words, phrases). PyTorch's nn.RNN supports num_layers > 1 directly and applies dropout between layers for regularisation. Empirically, 2–4 stacked LSTM layers are the standard for sequence-to-sequence models (machine translation, speech recognition) before Transformers took over. [2]"
+      "body": "This section explains the main idea behind this part of the method in plain language."
     }
   ],
   "takeaways": [

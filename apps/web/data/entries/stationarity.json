@@ -25,20 +25,20 @@
   "deepDive": [
     {
       "heading": "Stationarity Conditions for AR(1)",
-      "body": "AR(1): Yₜ = φ₁Yₜ₋₁ + εₜ. Stationarity condition: |φ₁| < 1. Under stationarity: E[Yₜ] = 0, Var(Yₜ) = σ²/(1−φ₁²), γ(k) = φ₁ᵏ·σ²/(1−φ₁²). For |φ₁| = 1: random walk (unit root, non-stationary). For |φ₁| > 1: explosive (unstable). For AR(p): Yₜ = φ₁Yₜ₋₁+…+φₚYₜ₋ₚ+εₜ. Stationarity ↔ all roots of the characteristic polynomial φ(z) = 1−φ₁z−…−φₚzᵖ lie outside the unit circle |z| > 1. [1]",
+      "body": "For autoregressive models, stationarity means shocks eventually die out rather than accumulate forever. In the simplest case, this happens only when the autoregressive coefficient is small enough in magnitude to pull the process back toward its center. The same idea generalizes to higher-order models through the location of the characteristic roots.",
       "formula": "AR(1) stationary ↔ |φ₁| < 1;  AR(p) stationary ↔ roots of φ(z)=0 lie outside unit circle"
     },
     {
       "heading": "Unit Root and Integration",
-      "body": "A series is I(0) (integrated of order 0) if stationary. I(1): ΔYₜ = Yₜ − Yₜ₋₁ is I(0). I(d): d-th difference is I(0). Most macro/financial time series are I(1): GDP, prices, interest rates (level), stock prices. I(2) series (e.g., price level with accelerating inflation) are rarer. The order of integration determines the appropriate transformation: for I(1), use first differences; for I(d), apply d differences before fitting ARMA. [1]"
+      "body": "The language of integration keeps track of how many times a series must be differenced before it behaves like a stationary process. This matters because many economic and financial series look stable only after trends or accumulated shocks are removed. Getting the integration order wrong can lead to misleading models and false relationships."
     },
     {
       "heading": "Trend Stationarity vs Difference Stationarity",
-      "body": "Trend stationary (TS): Yₜ = μ + βt + εₜ where εₜ is stationary. The series has a deterministic trend; detrending (subtracting β̂t) renders it stationary. Difference stationary (DS, unit root): Yₜ = Yₜ₋₁ + εₜ (random walk with or without drift). Differencing renders it stationary. TS and DS have different implications: TS — shocks are transitory (series returns to trend); DS — shocks are permanent. Distinguishing TS vs DS requires unit root tests (ADF) — the choice affects forecasting behavior dramatically. [1]"
+      "body": "A series can look non-stationary either because it fluctuates around a deterministic trend or because shocks permanently shift its level. Those two cases behave very differently in forecasting and policy interpretation. Distinguishing them is therefore one of the most important early steps in time-series analysis."
     },
     {
       "heading": "Cointegration and Error Correction",
-      "body": "If Yₜ and Xₜ are I(1) and cointegrated with β: Yₜ − βXₜ = uₜ ~ I(0). The error correction model (ECM): ΔYₜ = α(Yₜ₋₁ − βXₜ₋₁) + γΔXₜ₋₁ + εₜ. The term α(Yₜ₋₁ − βXₜ₋₁) is the error correction term: when the series deviates from equilibrium, it is pulled back at rate α. Engle & Granger (1987, Nobel Prize 2003): spurious regression is avoided by testing for cointegration before modeling the long-run relationship. [1]"
+      "body": "Cointegration describes the case where two non-stationary series share a stable long-run relationship even though each series wanders on its own. Error-correction models capture both the short-run changes and the tendency to move back toward that long-run equilibrium. This is the main way time-series analysis avoids spurious regression while still modeling meaningful long-run structure."
     }
   ],
   "takeaways": [

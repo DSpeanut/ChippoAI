@@ -30,15 +30,15 @@
   "deepDive": [
     {
       "heading": "Bottleneck Dimension and Underfitting vs Overfitting",
-      "body": "The latent dimension d controls the compression ratio. Too small d (aggressive compression): the encoder cannot represent even normal patterns accurately → high reconstruction error for both normal and anomalous samples → poor discrimination. Too large d: the autoencoder can represent anomalies as well as normal data (it has enough capacity) → low reconstruction error for anomalies → misses anomalies. Optimal d: compresses enough to force learning the normal manifold, but not so much that normal data cannot be reconstructed accurately. Heuristic: start with d = input_dim / 8 to input_dim / 4 and validate on a held-out normal set (reconstruction error should be low) and a few known anomalies (error should be higher). [1]"
+      "body": "The latent dimension d controls the compression ratio. Optimal d: compresses enough to force learning the normal manifold, but not so much that normal data cannot be reconstructed accurately."
     },
     {
       "heading": "Threshold Setting",
-      "body": "Reconstruction error is a continuous score — converting to binary anomaly labels requires a threshold. Methods: (1) Percentile of training reconstruction errors: threshold = percentile_p(train_errors). p=95 flags ~5% of training data as anomalies; p=99 flags ~1%. Choose p based on expected contamination rate. (2) If some labelled anomalies are available: ROC curve on anomaly scores, choose threshold maximising F1 or satisfying precision/recall requirements. (3) Extreme value theory: fit a Generalised Pareto Distribution to the tail of training reconstruction errors; use a tail probability threshold. This is the most principled approach for non-Gaussian error distributions. [2]"
+      "body": "Reconstruction error is a continuous score — converting to binary anomaly labels requires a threshold. Choose p based on expected contamination rate. (2) If some labelled anomalies are available: ROC curve on anomaly scores, choose threshold maximising F1 or satisfying precision/recall requirements. (3) Extreme value theory: fit a Generalised Pareto Distribution to the tail of training reconstruction errors; use a tail probability threshold. This is the most principled approach for non-Gaussian error distributions."
     },
     {
       "heading": "Variational Autoencoder (VAE) for Anomaly Detection",
-      "body": "VAE anomaly score: −ELBO(x) = E[−log p(x|z)] + KL(q(z|x) ‖ N(0,I)). The reconstruction term penalizes poor reconstruction; the KL term penalizes latent representations that deviate from a standard normal prior. A normal data point with a typical latent representation contributes low KL; an anomaly that maps to an unusual z contributes high KL. This prevents the 'anomaly sneaking through' problem: if an anomaly happens to produce low reconstruction error but an unusual latent code, the KL term flags it. An-VAE: Schlegl et al. (2017) AnoGAN and Kingma & Welling (2013) VAE foundations. [2]",
+      "body": "The reconstruction term penalizes poor reconstruction; the KL term penalizes latent representations that deviate from a standard normal prior. A normal data point with a typical latent representation contributes low KL; an anomaly that maps to an unusual z contributes high KL. This prevents the 'anomaly sneaking through' problem: if an anomaly happens to produce low reconstruction error but an unusual latent code, the KL term flags it. An-VAE: Schlegl et al. (2017) AnoGAN and Kingma & Welling (2013) VAE foundations.",
       "formula": "Anomaly score = −ELBO = reconstruction error + KL(q(z|x) ‖ N(0,I))"
     }
   ],
@@ -62,7 +62,13 @@
     }
   ],
   "sources": [
-    { "label": "Kingma, D.P. & Welling, M. — Auto-Encoding Variational Bayes, arXiv:1312.6114", "url": "https://arxiv.org/abs/1312.6114" },
-    { "label": "Chandola, V., Banerjee, A. & Kumar, V. — Anomaly Detection: A Survey, ACM CSUR 41(3), 2009", "url": "https://doi.org/10.1145/1541880.1541882" }
+    {
+      "label": "Kingma, D.P. & Welling, M. — Auto-Encoding Variational Bayes, arXiv:1312.6114",
+      "url": "https://arxiv.org/abs/1312.6114"
+    },
+    {
+      "label": "Chandola, V., Banerjee, A. & Kumar, V. — Anomaly Detection: A Survey, ACM CSUR 41(3), 2009",
+      "url": "https://doi.org/10.1145/1541880.1541882"
+    }
   ]
 }

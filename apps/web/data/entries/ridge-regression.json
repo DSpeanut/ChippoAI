@@ -30,26 +30,26 @@
   "deepDive": [
     {
       "heading": "The Objective",
-      "body": "Ridge minimises RSS plus a penalty on the squared L2 norm of the coefficients. λ ≥ 0 is the regularisation hyperparameter. Note: the intercept β₀ is conventionally not penalised — only the slope coefficients. [1]",
+      "body": "Ridge minimises RSS plus a penalty on the squared L2 norm of the coefficients.",
       "formula": "min_β  Σᵢ(yᵢ − ŷᵢ)² + λ Σⱼβⱼ²"
     },
     {
       "heading": "Closed-Form Solution",
-      "body": "Unlike other regularised models, Ridge has an analytic solution. Adding λI to XᵀX guarantees invertibility even when XᵀX is singular due to multicollinearity or p > n. The λI term is why Ridge is also called L2-penalised least squares or Tikhonov regularisation. [1]",
+      "body": "Unlike other regularised models, Ridge has an analytic solution.",
       "formula": "β̂_ridge = (XᵀX + λI)⁻¹ Xᵀy"
     },
     {
       "heading": "Effect on Coefficients via SVD",
-      "body": "Using the Singular Value Decomposition X = UDVᵀ, the Ridge solution can be written as a shrunken version of OLS. Each coefficient is multiplied by dⱼ²/(dⱼ² + λ), where dⱼ is the j-th singular value. Features with low variance (small dⱼ) are shrunk most aggressively. [1]",
+      "body": "Features with low variance (small dⱼ) are shrunk most aggressively.",
       "formula": "β̂_ridge = Σⱼ [ dⱼ²/(dⱼ² + λ) ] uⱼvⱼᵀ / dⱼ · y"
     },
     {
       "heading": "Bias–Variance Trade-off",
-      "body": "OLS is unbiased but can have very high variance when features are correlated. Ridge introduces bias by shrinking coefficients, but dramatically reduces variance. For many real datasets the reduction in variance more than compensates for the bias, giving lower test MSE. The optimal λ balances these two forces. [2]"
+      "body": "OLS is unbiased but can have very high variance when features are correlated. Ridge introduces bias by shrinking coefficients, but dramatically reduces variance. For many real datasets the reduction in variance more than compensates for the bias, giving lower test MSE."
     },
     {
       "heading": "Choosing λ",
-      "body": "λ is a hyperparameter — it is not learned from the training loss. Select it via k-fold cross-validation: train Ridge with many λ values and pick the one with the lowest validation MSE. In practice, search over a logarithmic grid (e.g. 10⁻⁴ to 10⁴). sklearn's RidgeCV does this efficiently using the full path. [2]"
+      "body": "In practice, search over a logarithmic grid (e.g. 10⁻⁴ to 10⁴). sklearn's RidgeCV does this efficiently using the full path."
     }
   ],
   "youtubeLabel": "StatQuest: Ridge Regression",
@@ -84,7 +84,13 @@
     }
   ],
   "sources": [
-    { "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 3.4", "url": "https://hastie.su.domains/ElemStatLearn/" },
-    { "label": "James et al. — An Introduction to Statistical Learning, Ch. 6.2", "url": "https://www.statlearning.com/" }
+    {
+      "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 3.4",
+      "url": "https://hastie.su.domains/ElemStatLearn/"
+    },
+    {
+      "label": "James et al. — An Introduction to Statistical Learning, Ch. 6.2",
+      "url": "https://www.statlearning.com/"
+    }
   ]
 }

@@ -30,19 +30,19 @@
   "deepDive": [
     {
       "heading": "Forward Pass: Matrix Algebra",
-      "body": "For a batch of inputs X ∈ ℝ^{N×d_0}, the forward pass through layer l is: Z^(l) = H^(l-1)W^(l)ᵀ + b^(l) (broadcasting b over the batch), H^(l) = f_l(Z^(l)). The pre-activation Z^(l) is a linear transformation; H^(l) is the post-activation. The final output is ŷ = softmax(H^(L)) for classification. Memory cost is O(N·Σ d_l) for storing activations during the forward pass (required for backpropagation). In PyTorch, this is handled automatically; in production inference with no gradient computation (torch.no_grad()), activation storage is skipped, reducing memory. [1]"
+      "body": "In PyTorch, this is handled automatically; in production inference with no gradient computation (torch.no_grad()), activation storage is skipped, reducing memory."
     },
     {
       "heading": "Backpropagation: Chain Rule Through Layers",
-      "body": "Backpropagation computes ∂L/∂W^(l) for all l by applying the chain rule from layer L to layer 1. Define the error signal δ^(l) = ∂L/∂Z^(l). Then: δ^(L) = ∂L/∂ŷ ⊙ f'_L(Z^(L)); δ^(l) = (δ^(l+1)W^(l+1)) ⊙ f'_l(Z^(l)). Weight gradients: ∂L/∂W^(l) = (δ^(l))ᵀ H^(l-1). The ⊙ denotes element-wise product with the activation derivative. Key insight: the error signal δ^(l) is propagated backwards by multiplying with W^(l+1)ᵀ, which is why weight matrix transposes appear in the backward pass. Gradients can vanish when f'_l(Z^(l)) ≈ 0 (saturated activations) or explode when ‖W^(l)‖ >> 1 accumulated over L layers. [1]"
+      "body": "The ⊙ denotes element-wise product with the activation derivative."
     },
     {
       "heading": "Weight Initialisation",
-      "body": "Weights must be initialised to break symmetry (all-zero weights produce identical gradients for all neurons — the symmetry breaking problem). Standard initialisations: Xavier/Glorot (Glorot & Bengio, 2010) for sigmoid/tanh: W ~ U(-√(6/(fan_in+fan_out)), √(6/(fan_in+fan_out))); He/Kaiming (He et al., 2015) for ReLU: W ~ N(0, 2/fan_in). The variance formulas are derived by ensuring the activation variance is preserved across layers. Biases are typically initialised to zero. Bad initialisation (e.g., N(0,1) with no scaling) causes variance explosion or collapse in the first few layers, making training fail immediately. [1]"
+      "body": "Weights must be initialised to break symmetry (all-zero weights produce identical gradients for all neurons — the symmetry breaking problem). The variance formulas are derived by ensuring the activation variance is preserved across layers. Biases are typically initialised to zero. Bad initialisation (e.g., N(0,1) with no scaling) causes variance explosion or collapse in the first few layers, making training fail immediately."
     },
     {
       "heading": "Depth, Width, and the Expressiveness Tradeoff",
-      "body": "Width d_l determines the number of distinct linear pieces the network can compute in a given layer. Depth L allows composing these pieces hierarchically — exponentially more complex functions for the same total parameter count. Formally, Montufar et al. (2014) showed that a depth-L ReLU network with width d can produce O((d/n)^{n(L-1)} · d^n) linear regions in n-dimensional input space — exponential in depth. In practice, deeper networks (ResNet, VGG) outperform shallower wide networks with the same parameter count on image tasks. However, depth increases training difficulty (vanishing gradients, optimisation landscape complexity), motivating residual connections and normalisation. [2]"
+      "body": "Width d_l determines the number of distinct linear pieces the network can compute in a given layer. Depth L allows composing these pieces hierarchically — exponentially more complex functions for the same total parameter count. Formally, Montufar et al. In practice, deeper networks (ResNet, VGG) outperform shallower wide networks with the same parameter count on image tasks. However, depth increases training difficulty (vanishing gradients, optimisation landscape complexity), motivating residual connections and normalisation."
     }
   ],
   "takeaways": [

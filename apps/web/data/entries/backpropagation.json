@@ -24,22 +24,22 @@
     }
   ],
   "deepDiveIntro": [
-    "Backpropagation computes ∂L/∂wₗ for all weights wₗ in layer l using the chain rule. For a network with L layers: ∂L/∂wₗ = (∂L/∂aL)·(∂aL/∂aL₋₁)·...·(∂aₗ/∂wₗ). The key efficiency: the intermediate quantities δₗ = ∂L/∂zₗ (error signals at layer l) are computed recursively from the output: δₗ = (Wₗ₊₁)ᵀδₗ₊₁ ⊙ f'(zₗ). This recursion costs O(nₗ·nₗ₊₁) per layer — the same as the forward pass. Total cost: O(2·FLOPs_forward). [1]",
-    "Reverse-mode automatic differentiation (the general framework): define a computation graph where each node computes a function of its inputs. Backprop traverses this graph in reverse topological order, computing the gradient of L w.r.t. each intermediate value using the local Jacobian of each operation. This is exactly what PyTorch's autograd implements. [2]"
+    "Backpropagation computes how much each weight contributed to the error by applying the chain rule of calculus backwards through the network. The key efficiency is that intermediate error signals are computed once per layer and reused — so the total cost is about twice the forward pass, not multiplied by the number of weights. [1]",
+    "Frameworks like PyTorch implement this as reverse-mode automatic differentiation: they build a computation graph during the forward pass, then traverse it backwards in topological order to compute gradients. This is exactly what happens when you call loss.backward(). [2]"
   ],
   "deepDive": [
     {
       "heading": "The Chain Rule in Matrix Form",
-      "body": "For layer l with input aₗ₋₁, weights Wₗ, biases bₗ: forward: zₗ = Wₗaₗ₋₁ + bₗ; aₗ = f(zₗ). Backward: δₗ = ∂L/∂zₗ = (Wₗ₊₁)ᵀδₗ₊₁ ⊙ f'(zₗ) (propagate error from next layer, element-wise multiply by activation derivative). ∂L/∂Wₗ = δₗ · aₗ₋₁ᵀ (outer product). ∂L/∂bₗ = δₗ. Output layer: δL = ∂L/∂zL = ∂L/∂aL ⊙ f'(zL) (gradient of loss w.r.t. logits). [1]",
+      "body": "Each layer produces an error signal by taking the next layer's error signal, passing it backwards through the weight matrix, then multiplying element-wise by the derivative of the activation function. This error signal tells you how much each pre-activation value contributed to the final loss. The gradient for the weight matrix is then just an outer product of the error signal and the layer's input from the forward pass. [1]",
       "formula": "δₗ = (Wₗ₊₁)ᵀδₗ₊₁ ⊙ f'(zₗ);  ∂L/∂Wₗ = δₗ aₗ₋₁ᵀ"
     },
     {
       "heading": "Computational Cost",
-      "body": "Forward pass: O(Σₗ nₗ·nₗ₋₁) multiplications (matrix-vector products). Backward pass: O(2·Σₗ nₗ·nₗ₋₁) — exactly 2× the forward pass cost. For a batch of B samples: forward costs B·Σ(nₗ·nₗ₋₁); backward costs the same. Memory: backprop stores all intermediate activations aₗ for use in ∂L/∂Wₗ = δₗaₗ₋₁ᵀ — O(Σnₗ) memory per sample. For large networks (transformer with 10B+ params), this memory dominates. Gradient checkpointing trades computation for memory by recomputing some activations during the backward pass. [1]"
+      "body": "The backward pass costs about twice the forward pass in compute. The bigger problem is memory: to compute gradients for each layer's weights, backpropagation needs to know what the activations were during the forward pass — so all intermediate layer outputs must be stored. For large transformers, this activation memory often exceeds GPU RAM. Gradient checkpointing solves this by recomputing some activations during the backward pass instead of storing them, trading extra compute for lower peak memory. [1]"
     },
     {
       "heading": "Forward vs Reverse Mode Autodiff",
-      "body": "Two modes of automatic differentiation: (1) Forward mode (tangent vector propagation): computes ∂fᵢ/∂xⱼ for all outputs fᵢ w.r.t. one input xⱼ per pass. Cost: O(n_inputs) passes to get full Jacobian. Efficient when n_inputs << n_outputs (rare in ML). (2) Reverse mode (backprop): computes ∂L/∂xᵢ for all inputs xᵢ given one scalar output L per pass. Cost: O(1) passes. Efficient when n_inputs >> n_outputs — exactly the case in ML (many weights, one scalar loss). PyTorch uses reverse mode. [2]"
+      "body": "Forward-mode autodiff computes how one input affects all outputs — useful when there are far fewer inputs than outputs. Reverse-mode autodiff (backpropagation) computes how all inputs affect one scalar output, which is exactly what you need in machine learning: many weights, one loss value. That's why PyTorch uses reverse mode — you only need one backward pass to get gradients for every weight in the network, no matter how many millions there are. [2]"
     }
   ],
   "youtubeLabel": "Backpropagation — 3Blue1Brown",

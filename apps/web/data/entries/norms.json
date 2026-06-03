@@ -30,26 +30,27 @@
   "deepDive": [
     {
       "heading": "Lp Norms",
-      "body": "For p ≥ 1: ||x||ₚ = (Σ |xᵢ|ᵖ)^(1/p). L2 is rotationally invariant and differentiable (except at 0). L1 promotes sparsity — the unit ball has corners on axes. As p → ∞, we get L∞ = max |xᵢ|. For 0 < p < 1, not true norms (violate triangle inequality) but still used for sparsity.",
+      "body": "Different norms measure vector size in different ways. The two-norm emphasizes overall length, the one-norm adds absolute magnitudes and tends to encourage sparse solutions, and the infinity norm only cares about the largest component. Changing the norm changes the geometry of distance, optimization, and regularization.",
       "formula": "||x||ₚ = (Σᵢ₌₁ⁿ |xᵢ|ᵖ)^(1/p), ||x||∞ = maxᵢ |xᵢ|"
     },
     {
       "heading": "Dual Norms",
-      "body": "The dual norm ||y||_* = max_{||x||≤1} yᵀx. L2 is self-dual. L1 and L∞ are dual: ||y||∞ is dual to ||x||₁. This appears in optimization duality, support vector machines, and the relationship between L1 regularization and L∞ constraints.",
+      "body": "Every norm has a companion dual norm that describes the largest inner product you can get using a vector of unit size under the original norm. This idea is central in optimization because it links linear objectives, constraints, and penalties. Familiar pairings include the one-norm with the infinity norm and the two-norm with itself.",
       "formula": "||y||_* = sup{yᵀx : ||x|| ≤ 1}"
     },
     {
       "heading": "Matrix Norms",
-      "body": "Frobenius norm ||A||_F = √(Σ Aᵢⱼ²) = √(tr(AᵀA)) = ||σ||₂ (Euclidean norm of singular values). Spectral norm (operator 2-norm) ||A||₂ = σₘₐₓ (largest singular value). Nuclear norm ||A||_* = Σ σᵢ (sum of singular values), used for low-rank matrix recovery.",
+      "body": "Matrix norms measure the size of a linear transformation rather than just the size of a list of numbers. The Frobenius norm summarizes all entries at once, while the spectral norm captures the largest stretching effect on any input vector. Different matrix norms matter depending on whether you care about total energy or worst-case amplification.",
       "formula": "||A||_F = √(tr(AᵀA)), ||A||₂ = σₘₐₓ(A)"
     },
     {
       "heading": "Unit Balls and Geometry",
-      "body": "The unit ball {x : ||x|| ≤ 1} has different shapes: L2 is round, L1 is a diamond (cross-polytope), L∞ is a square (hypercube). L1's corners align with axes, explaining why it promotes sparsity — the minimum L1 point touching a constraint plane tends to be at a corner (sparse)."
+      "body": "Each norm creates its own unit ball, and the shape of that ball explains the behavior of optimization problems built on the norm. Round balls lead to smooth trade-offs, while balls with sharp corners make it easier for solutions to land exactly on coordinate axes. That geometric picture explains why one-norm penalties often produce sparse solutions."
     },
     {
       "heading": "Norm Equivalence",
-      "body": "In finite dimensions, all norms are equivalent: for any two norms ||·||_a, ||·||_b, there exist c, C > 0 such that c||x||_a ≤ ||x||_b ≤ C||x||_a. This means convergence in one norm implies convergence in all norms. However, the constants depend on dimension and can be large."
+      "body": "In a finite-dimensional space, different norms may assign different numerical sizes but they agree on the big qualitative questions such as boundedness and convergence. A sequence that converges under one norm will also converge under any other. The practical difference is in the comparison constants, which can become large as dimension grows.",
+      "formula": "c||x||ₐ ≤ ||x||ᵦ ≤ C||x||ₐ"
     }
   ],
   "youtubeLabel": "Lp Norms — Khan Academy",

@@ -24,27 +24,27 @@
     }
   ],
   "deepDiveIntro": [
-    "Original contrastive loss (Hadsell et al., 2006): L = (1−y)·D(aᵢ,bᵢ)² + y·max(0, m − D(aᵢ,bᵢ))², where y=0 for similar pairs, y=1 for dissimilar, D is Euclidean distance, m is margin. For similar pairs, loss is the squared distance (pull together). For dissimilar pairs, loss is (margin − D)² if D < m (push apart until separated by margin), else 0. [1]",
-    "InfoNCE (Oord et al., 2018), used in CPC, SimCLR, and MoCo, is a more powerful variant: L = −log[exp(z·z⁺/τ) / Σⱼ exp(z·zⱼ/τ)] where z⁺ is the positive embedding and the denominator sums over all 2N−1 other embeddings in the batch. This is a softmax cross-entropy over one positive vs many negatives, similar to N-way classification. [2]"
+    "The original contrastive loss (Hadsell et al., 2006) operates on pairs labelled as similar or dissimilar. For a similar pair, the loss penalises any distance between the embeddings — you want them as close as possible. For a dissimilar pair, the loss penalises proximity only when the embeddings are closer than a margin — once they are already far enough apart, there is no further gradient signal. [1]",
+    "InfoNCE (Oord et al., 2018), used in SimCLR and MoCo, is a more powerful variant. Rather than working with labelled pairs, it treats one augmented view of an image as the positive and all other images in the batch as negatives. The loss is a softmax cross-entropy over the positive versus all negatives, scaled by a temperature parameter. This formulation naturally mines hard negatives from the batch and provides a much richer gradient signal than pairwise contrastive loss. [2]"
   ],
   "deepDive": [
     {
       "heading": "Original Contrastive Loss",
-      "body": "L(a, b, y) = (1−y)/2 · D² + y/2 · max(0, m−D)². For similar pair (y=0): ∂L/∂D = (1−y)·D. Gradient pulls embeddings together proportionally to distance. For dissimilar pair (y=1) with D < m: ∂L/∂D = −y·(m−D). Gradient pushes embeddings apart proportionally to how close they are relative to margin. For D ≥ m: gradient = 0, no update needed. Requires hand-crafted positive/negative pair sampling — quality of pairs matters enormously. [1]",
+      "body": "For a similar pair, the gradient pulls the embeddings together in proportion to how far apart they currently are — the closer they already are, the smaller the nudge. For a dissimilar pair that is already beyond the margin, the gradient is zero — no update is needed because the requirement is already satisfied. For a dissimilar pair that is too close, the gradient pushes them apart proportionally to how much closer they are than the margin. This design means training focuses effort where it is needed rather than wasting capacity on well-separated pairs. [1]",
       "formula": "L = (1−y)D² + y·max(0, m−D)²"
     },
     {
       "heading": "InfoNCE / NT-Xent",
-      "body": "For anchor z and positive z⁺ from N augmented pairs (batch size 2N): L = −log[exp(sim(z,z⁺)/τ) / (Σⱼ≠z exp(sim(z,zⱼ)/τ))]. sim is cosine similarity: z·z' = ‖z‖‖z'‖ cos θ (so z should be L2-normalised first). Temperature τ controls hardness: low τ sharpens the distribution, emphasising hard negatives. Chen et al. (SimCLR) found τ=0.07 optimal with large batch. Gradient pushes z toward z⁺ and away from all 2N−2 negatives simultaneously. [2]",
+      "body": "InfoNCE frames contrastive learning as classification: given an anchor embedding, the model must identify its positive pair from a large set of negatives. The temperature parameter controls how sharp the competition is — low temperature concentrates the loss on the single hardest negative while high temperature spreads the gradient across all negatives equally. SimCLR found a temperature of 0.07 optimal for image representations with large batches, while DINOv2 uses even lower temperatures in self-distillation. L2-normalising all embeddings before computing cosine similarity is essential for stable training. [2]",
       "formula": "L = −log[exp(sim(z,z⁺)/τ) / Σⱼ≠z exp(sim(z,zⱼ)/τ)]"
     },
     {
       "heading": "Hard Negative Mining",
-      "body": "Random negatives become easy as training progresses — embeddings from different classes are already well-separated. Hard negatives (near the anchor in embedding space but from different classes) provide more informative gradient signal. Strategies: (1) Online hard negative mining — in each batch, select the hardest negatives; (2) Queue-based memory (MoCo) — maintain a large queue of recent embeddings as a negative bank; (3) Semi-hard negatives (FaceNet): negatives farther than the positive but within the margin, avoiding collapsed gradients. [3]"
+      "body": "Early in training, random negatives provide useful signal because the embedding space is not well-organised. As training progresses, random negatives become too easy — the model already pushes different classes far apart — and the gradient from easy negatives is nearly zero. Hard negatives (embeddings that are close to the anchor but belong to different classes) provide much more useful gradient signal. Strategies include online mining (select the hardest negatives within each batch), MoCo's memory queue (a large bank of recent embeddings serving as negatives), and semi-hard mining (negatives just outside the positive-to-anchor distance). [3]"
     },
     {
       "heading": "Collapse Problem and Solutions",
-      "body": "Contrastive methods can collapse to a trivial solution where all embeddings are identical (loss=0 for all dissimilar pairs if D=0... no: if D=0, the dissimilar loss is max(0,m)² = m² ≠ 0). For InfoNCE: collapse to a constant means all cosine similarities are equal — CE loss would be log(2N−1) (uniform). Practical collapse prevention: L2 normalisation of embeddings (keeps them on the unit sphere), large batch size or memory bank for diverse negatives, careful augmentation policies. [2]"
+      "body": "A failure mode called collapse occurs when all embeddings converge to the same constant vector — the model learns nothing. For InfoNCE, collapse to a constant makes all pairwise similarities identical, which maximises the cross-entropy loss rather than minimising it, so collapse is less likely than with pairwise contrastive loss. Practical defences include L2-normalising all embeddings (constraining them to the unit sphere), using a large and diverse negative bank, and carefully selecting augmentation policies so positive pairs remain semantically meaningful. [2]"
     }
   ],
   "youtubeLabel": "Contrastive Learning & SimCLR — Yannic Kilcher",

@@ -23,34 +23,34 @@
     }
   ],
   "deepDiveIntro": [
-    "Bayes' theorem: P(A|B) = P(B|A)P(A)/P(B). Derived from definition of conditional probability: P(A|B)P(B) = P(A ∩ B) = P(B|A)P(A). The theorem inverts the conditioning direction, which is crucial when one conditional is easier to specify than the other.",
-    "In Bayesian inference, A represents parameters θ and B represents data D. Posterior ∝ Likelihood × Prior. The marginal likelihood P(D) = ∫ P(D|θ)P(θ)dθ normalizes the posterior. For conjugate priors, posterior has same form as prior with updated parameters."
+    "Bayes' theorem is derived directly from the definition of conditional probability: P(A and B) can be written in two ways, and setting them equal and dividing gives the theorem. The key power is inversion — it lets you go from P(evidence given cause) to P(cause given evidence), which is usually what you actually want to know.",
+    "In Bayesian inference, the theorem is applied with parameters as the unknown and data as the evidence. The posterior belief about the parameters is proportional to how likely the data is under those parameters (the likelihood) times your prior belief. The denominator — the total probability of the data — normalises everything so the posterior sums to one; for conjugate priors, this normalisation has a closed-form solution."
   ],
   "visualizationType": "bayes-theorem",
   "deepDive": [
     {
       "heading": "The Theorem",
-      "body": "P(A|B) = P(B|A)P(A)/P(B). Three equivalent forms: (1) odds form for ratios, (2) with law of total probability for denominator, (3) continuous version with densities. The factor P(B|A)/P(B) is the likelihood ratio updating the odds.",
+      "body": "The theorem flips the direction of a conditional probability. To get P(A given B), multiply P(B given A) by the prior probability of A, then divide by the total probability of B. The denominator can be expanded using the law of total probability — sum P(B given each possible cause) weighted by the prior of each cause.",
       "formula": "P(A|B) = P(B|A)P(A)/P(B) = P(B|A)P(A)/Σᵢ P(B|Aᵢ)P(Aᵢ)"
     },
     {
       "heading": "Bayesian Inference Framework",
-      "body": "Prior P(θ) encodes beliefs before data. Likelihood P(D|θ) is probability of data given parameters. Posterior P(θ|D) ∝ P(D|θ)P(θ). Normalize by marginal likelihood P(D) = ∫ P(D|θ)P(θ)dθ. Posterior becomes prior for next observation (sequential updating).",
+      "body": "The prior captures what you believe about the parameters before seeing any data. The likelihood measures how well each possible parameter value explains the observed data. Multiply them and normalise to get the posterior — your updated belief after seeing the data. Because the posterior is proportional to likelihood times prior, each new batch of data can update the current posterior, which then becomes the prior for the next update.",
       "formula": "Posterior ∝ Likelihood × Prior, P(θ|D) = P(D|θ)P(θ)/∫P(D|θ)P(θ)dθ"
     },
     {
       "heading": "Conjugate Priors",
-      "body": "When prior and posterior belong to same family given likelihood. Examples: Beta prior + Binomial likelihood → Beta posterior. Normal prior + Normal likelihood → Normal posterior. Conjugacy gives closed-form updates: add successes to α, failures to β for Beta-Binomial.",
+      "body": "A conjugate prior is one where the posterior has the same distributional family as the prior, just with updated parameters. For example, if you start with a Beta prior over a probability and observe coin flips (Binomial likelihood), the posterior is another Beta with the counts of heads and tails added to the original parameters. This makes Bayesian updating exact and computationally trivial — no numerical integration needed.",
       "formula": "θ ~ Beta(α,β), X|θ ~ Bin(n,θ) ⟹ θ|X ~ Beta(α+X, β+n-X)"
     },
     {
       "heading": "Maximum A Posteriori (MAP)",
-      "body": "Point estimate: θ_MAP = argmax P(θ|D) = argmax P(D|θ)P(θ). Generalizes MLE with prior as regularization. Gaussian prior → L2 regularization (Ridge). Laplace prior → L1 regularization (Lasso).",
+      "body": "Rather than working with the full posterior distribution, MAP gives you a single point estimate: the parameter value that maximises the posterior. This is like maximum likelihood estimation but with a prior acting as a regulariser. A Gaussian prior on the parameters corresponds to L2 (Ridge) regularisation, and a Laplace prior corresponds to L1 (Lasso) regularisation.",
       "formula": "θ_MAP = argmax_θ [log P(D|θ) + log P(θ)]"
     },
     {
       "heading": "Marginal Likelihood and Model Selection",
-      "body": "P(D|M) = ∫ P(D|θ,M)P(θ|M)dθ is the evidence for model M. Bayes factor BF₁₂ = P(D|M₁)/P(D|M₂) compares models. Automatically penalizes complexity (Occam's razor) because complex models spread prior mass thinly."
+      "body": "The marginal likelihood (also called the evidence) is the probability of the data averaged over all parameter values under a given model. Comparing the evidence between two models gives the Bayes factor — a ratio that tells you how strongly the data favours one model over another. Complex models with many free parameters are automatically penalised because their prior probability mass is spread more thinly, providing a built-in Occam's razor."
     }
   ],
   "youtubeLabel": "Bayes' Theorem — 3Blue1Brown",

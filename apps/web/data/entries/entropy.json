@@ -30,27 +30,28 @@
   "deepDive": [
     {
       "heading": "Shannon Entropy",
-      "body": "H(X) = -Σ p(x) log p(x). Measures expected surprise (information content). Properties: H(X) ≥ 0; H(X) ≤ log|X| with equality for uniform; H(X) = 0 iff X deterministic. Concave function of p — maximum at uniform.",
+      "body": "Shannon entropy measures the average uncertainty in a random variable. It is high when outcomes are spread out and hard to predict, and low when one outcome is overwhelmingly likely. Among finite distributions, the uniform distribution has the most entropy because it is the hardest to guess in advance.",
       "formula": "H(X) = -Σₓ p(x) log p(x) = E[log(1/p(X))]"
     },
     {
       "heading": "Joint and Conditional Entropy",
-      "body": "Joint: H(X,Y) measures uncertainty in pair. Conditional: H(Y|X) = H(X,Y) - H(X) measures remaining uncertainty in Y given X. H(Y|X) = 0 iff Y is function of X. Chain rule: joint = sum of conditionals.",
+      "body": "Joint entropy measures the uncertainty in two variables taken together. Conditional entropy asks how much uncertainty remains in one variable after the other is known. This lets you separate total uncertainty into what is shared and what is still left over after observing related information.",
       "formula": "H(Y|X) = H(X,Y) - H(X) = Σₓ p(x)H(Y|X=x)"
     },
     {
       "heading": "Relative Entropy (KL Divergence)",
-      "body": "D(p||q) = Σ p(x) log(p(x)/q(x)) = E_p[log(p/q)]. Not symmetric, not a metric. Measures extra bits needed to encode from p using code optimized for q. D(p||q) ≥ 0 with equality iff p = q.",
+      "body": "Relative entropy, usually called KL divergence, compares two probability distributions by asking how costly it is to use the wrong one. It tells you how much extra coding cost or modeling error you incur when you design for one distribution but the data actually comes from another. It is always nonnegative, but it is not a true distance because the order matters.",
       "formula": "D(p||q) = Σₓ p(x) log(p(x)/q(x)) ≥ 0"
     },
     {
       "heading": "Mutual Information",
-      "body": "I(X;Y) = H(X) - H(X|Y) = H(Y) - H(Y|X) = H(X) + H(Y) - H(X,Y). Measures reduction in uncertainty about X from knowing Y. Symmetric, non-negative, I(X;Y) = 0 iff X ⟂ Y. I(X;Y) = D(p(x,y)||p(x)p(y)).",
+      "body": "Mutual information measures how much knowing one variable reduces uncertainty about another. It is zero when the variables are independent and grows as their relationship becomes more informative. Because the definition is symmetric, it does not matter which variable you treat as the one being predicted.",
       "formula": "I(X;Y) = Σₓ,ᵧ p(x,y) log(p(x,y)/(p(x)p(y)))"
     },
     {
       "heading": "Data Inequality and Compression",
-      "body": "Source coding theorem: expected length of optimal prefix code satisfies H(X) ≤ L* < H(X) + 1. Asymptotically achievable with block coding. Huffman coding is optimal symbol-by-symbol; arithmetic coding approaches entropy for long blocks."
+      "body": "Entropy sets the fundamental limit for lossless data compression. It says that no coding scheme can beat the average information content of the source, although good codes can get very close. Practical methods such as Huffman and arithmetic coding are built to approach that limit.",
+      "formula": "H(X) ≤ L* < H(X) + 1"
     }
   ],
   "youtubeLabel": "Information Entropy — 3Blue1Brown",

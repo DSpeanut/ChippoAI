@@ -30,27 +30,28 @@
   "deepDive": [
     {
       "heading": "Vector Spaces",
-      "body": "A vector space over a field F (usually ℝ) is a set V with addition and scalar multiplication satisfying: closure, associativity, commutativity, identity (0 vector), inverses, and distributivity. Basis {v₁,…,vₙ} spans V linearly independently. Every v ∈ V has unique coordinates in a basis. Dimension = size of any basis.",
+      "body": "A vector space is a collection of objects you can add together and scale without leaving the collection. A basis is a smallest set of building blocks that can describe every vector uniquely, and the number of basis vectors is the dimension. Once you choose a basis, every vector can be represented by one and only one set of coordinates.",
       "formula": "v = Σᵢ αᵢvᵢ (unique linear combination)"
     },
     {
       "heading": "Matrix Multiplication",
-      "body": "For A ∈ ℝᵐˣⁿ and B ∈ ℝⁿˣᵖ, the product AB ∈ ℝᵐˣᵖ has (AB)ᵢₖ = Σⱼ AᵢⱼBⱼₖ. Not commutative: AB ≠ BA in general. Associative: (AB)C = A(BC). Transpose: (AB)ᵀ = BᵀAᵀ. Computational complexity: O(mnp) for naive multiplication.",
+      "body": "Matrix multiplication combines two linear transformations into one. Each output entry is built by matching a row from the first matrix with a column from the second, so the middle dimensions must agree. Order matters because doing one transformation and then another usually gives a different result than reversing them.",
       "formula": "(AB)ᵢₖ = Σⱼ₌₁ⁿ AᵢⱼBⱼₖ"
     },
     {
       "heading": "Rank and Null Space",
-      "body": "The column space C(A) = span of columns, dimension = rank(A). The null space N(A) = {x: Ax = 0}. Rank-nullity theorem: rank(A) + nullity(A) = n (number of columns). Full rank means rank = min(m, n). For square matrices, full rank ↔ invertible.",
+      "body": "The rank tells you how many genuinely independent output directions a matrix can create. The null space collects all inputs that the matrix sends to zero, so it describes exactly what information is lost. Looking at rank and null space together tells you whether a system has unique solutions, many solutions, or no way to recover certain directions.",
       "formula": "dim(C(A)) + dim(N(A)) = n"
     },
     {
       "heading": "Special Matrix Types",
-      "body": "Symmetric: A = Aᵀ. Positive definite: xᵀAx > 0 for all x ≠ 0. Orthogonal: QᵀQ = I (preserves lengths and angles). Diagonal: nonzeros only on diagonal. Triangular: all zeros above (lower) or below (upper) diagonal. Sparse: mostly zeros — stored efficiently for large systems.",
-      "formula": "Q orthogonal ⟹ QᵀQ = I, ||Qx|| = ||x||"
+      "body": "Certain matrix families have especially useful behavior. Symmetric matrices have a clean eigenstructure, positive definite matrices bend upward in every direction, and orthogonal matrices preserve lengths and angles. Diagonal and triangular matrices are easy to compute with, while sparse matrices are mostly zeros and can be stored efficiently.",
+      "formula": "A = Aᵀ, xᵀAx > 0, QᵀQ = I"
     },
     {
       "heading": "Geometric Interpretation",
-      "body": "Matrices encode linear transformations: scaling (diagonal), rotation (orthogonal with det=1), reflection (orthogonal with det=-1), shearing, projection (idempotent: P² = P). Singular Value Decomposition (SVD) reveals that every matrix is a rotation-scale-rotation composition."
+      "body": "A matrix is best understood as a geometric action on space. It can stretch, rotate, reflect, shear, or project vectors, and those effects explain what the numbers in the matrix are doing. Decompositions such as the singular value decomposition break a complicated transformation into simpler geometric steps.",
+      "formula": "P² = P"
     }
   ],
   "youtubeLabel": "Linear Algebra — 3Blue1Brown Essence",

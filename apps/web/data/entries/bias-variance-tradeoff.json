@@ -24,22 +24,22 @@
     }
   ],
   "deepDiveIntro": [
-    "For regression with target y = f(x) + ε where E[ε]=0, Var[ε]=σ², the expected squared error of estimator f̂ at a point x is: E[(y - f̂(x))²] = (E[f̂(x)] - f(x))² + E[(f̂(x) - E[f̂(x)])²] + σ² = Bias²[f̂(x)] + Var[f̂(x)] + σ². The expectation is over both the noise ε in the test point and the randomness in the training set D. The irreducible error σ² cannot be reduced by any model — it's the noise floor. Minimising MSE requires balancing Bias² and Variance. [1]",
-    "The decomposition requires expectations over training sets: Bias[f̂(x)] = E_D[f̂(x)] - f(x) (systematic error averaged over many training sets); Var[f̂(x)] = E_D[(f̂(x) - E_D[f̂(x)])²] (variability of predictions over training sets). In practice: we observe one training set. Cross-validation error estimates total error; the bias-variance split must be inferred from error curves vs complexity or regularization strength. [1]"
+    "The expected prediction error of any model can be decomposed into three parts: systematic error (bias, from making wrong assumptions), sensitivity to the specific training data used (variance), and irreducible noise in the data. The noise floor cannot be reduced by any model — it is inherent in the problem. Lowering bias without raising variance, or vice versa, is the fundamental challenge in supervised learning. [1]",
+    "Bias measures how wrong the model is on average if you trained it many times on different datasets. Variance measures how much the predictions fluctuate across those datasets. In practice you only see one training set, so you estimate total error with cross-validation and infer the bias-variance split by watching how the validation error changes as you vary model complexity or regularisation strength. [1]"
   ],
   "deepDive": [
     {
-      "heading": "Bias-Variance Decomposition Derivation",
-      "body": "Let ȳ = E_D[f̂(x)] (mean prediction over training sets). MSE(x) = E[(y-f̂)²] = E[(y-ȳ+ȳ-f̂)²] = E[(y-ȳ)²] + 2E[(y-ȳ)(ȳ-f̂)] + E[(ȳ-f̂)²]. The cross-term E[(y-ȳ)(ȳ-f̂)] = (f(x)-ȳ)·E[(ȳ-f̂)] = 0 (since E[f̂]=ȳ). So: MSE(x) = E[(y-ȳ)²] + E[(ȳ-f̂)²] = [σ²+(f(x)-ȳ)²] + Var[f̂(x)] = σ² + Bias² + Variance. The decomposition is exact — not an approximation. [1]",
+      "heading": "Bias-Variance Decomposition",
+      "body": "The expected mean squared error at any point decomposes exactly into three non-negative terms: the irreducible noise variance, the squared bias (how far the average prediction is from the truth), and the model variance (how much predictions scatter around their average). There are no cross-terms because bias and variance are independent by construction. This exact decomposition is the mathematical foundation for understanding why model complexity has diminishing returns. [1]",
       "formula": "E[(y−f̂(x))²] = Bias²[f̂(x)] + Var[f̂(x)] + σ²"
     },
     {
       "heading": "Complexity vs Error Curves",
-      "body": "Training error: monotonically decreases with complexity (more complex model → lower training loss). Validation error: U-shaped in classical theory — decreases (bias decreasing) then increases (variance increasing). The minimum of the U-curve is the optimal complexity. In practice: plot validation error vs model complexity (polynomial degree, tree depth, number of neurons) or regularization strength (λ). The classical plot: x-axis = log λ (decreasing), y-axis = MSE — as λ decreases: bias decreases, variance increases, optimum in between. [1]"
+      "body": "Training error always drops as model complexity increases — a more complex model can always fit its training data better. Validation error follows a U-shape: it first falls as the model stops being too simple, then rises as the model starts memorising noise. The bottom of the U is the optimal complexity. In practice, you plot validation error against polynomial degree, tree depth, or regularisation strength and pick the setting that minimises the held-out error. [1]"
     },
     {
       "heading": "Double Descent Phenomenon",
-      "body": "Modern deep learning shows two descent phases: (1) Classical regime (n_params < n_data): bias decreases, variance increases — U-shaped curve as predicted by classical theory. (2) Interpolation threshold: model exactly fits training data (training loss = 0). (3) Modern regime (n_params > n_data): as model is further over-parameterized, test error decreases again. Explanation: gradient descent implicitly regularizes by finding the minimum-norm solution. In the overparameterized regime, the minimum-norm interpolant is smooth and generalises well. Implication: classical early stopping based on U-shaped validation curve may be suboptimal for very large models — continue training well past interpolation. [2]"
+      "body": "Classical theory predicts a U-shaped error curve — but modern deep learning breaks this. After a model reaches the point where it perfectly memorises its training data, making it even larger causes test error to start falling again. This second descent happens because gradient descent has an implicit preference for simpler solutions, so a massively over-parameterised model finds a smooth interpolation rather than a jagged one. The practical implication: for very large models, the standard early-stopping heuristic based on the U-shaped validation curve may be unnecessarily conservative. [2]"
     }
   ],
   "youtubeLabel": "Bias-Variance Tradeoff Explained",

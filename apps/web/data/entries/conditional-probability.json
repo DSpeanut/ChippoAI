@@ -23,35 +23,35 @@
     }
   ],
   "deepDiveIntro": [
-    "For events A, B with P(B) > 0, the conditional probability of A given B is P(A|B) = P(A ∩ B)/P(B). This defines a new probability measure on the restricted space where B occurred. Intuitively, we 'zoom in' to outcomes consistent with B.",
-    "Independence means P(A ∩ B) = P(A)P(B), equivalently P(A|B) = P(A) — knowing B doesn't change A's probability. Conditional independence generalizes: P(A ∩ B|C) = P(A|C)P(B|C). Chain rule: P(A₁ ∩ … ∩ Aₙ) = P(A₁)P(A₂|A₁)P(A₃|A₁∩A₂)…"
+    "Conditional probability restricts attention to a smaller world where event B has already occurred. Within that restricted world, P(A|B) measures what fraction of outcomes also have A. Intuitively, you zoom in from the full sample space to only the part consistent with B, then ask how much of that part satisfies A.",
+    "Two events are independent when knowing one gives no information about the other — P(A|B) equals P(A) unconditionally. Conditional independence is more subtle: A and B may be dependent overall but independent once you know C. The chain rule for multiple events factors a joint probability into a sequence of conditionals, which is the basis for probabilistic graphical models."
   ],
   "visualizationType": "conditional-probability",
   "deepDive": [
     {
       "heading": "Definition and Intuition",
-      "body": "P(A|B) = P(A ∩ B)/P(B) for P(B) > 0. Geometrically: shrink sample space to B, measure A's share. If A and B are independent, P(A|B) = P(A). Conditioning always increases some probabilities and decreases others relative to unconditional.",
+      "body": "Dividing P(A and B) by P(B) rescales probabilities so they sum to 1 over the restricted world where B happened. If A and B are independent, this rescaling has no effect and P(A|B) equals P(A). Conditioning always shifts some probabilities up and others down relative to the unconditional view — it is simply updating your beliefs to account for new information.",
       "formula": "P(A|B) = P(A ∩ B)/P(B), P(B) > 0"
     },
     {
       "heading": "Law of Total Probability",
-      "body": "If {Bᵢ} partitions Ω: P(A) = Σᵢ P(A|Bᵢ)P(Bᵢ). Allows computing unconditional probability by conditioning on cases. Essential when direct computation of P(A) is hard but conditional probabilities are known. Bayes' theorem inverts this.",
+      "body": "If you can break the world into exhaustive, non-overlapping cases, you can compute an overall probability by weighting the conditional probability under each case by how likely that case is. This is useful whenever it's easier to reason about an event conditional on different scenarios than unconditionally. Bayes' theorem inverts this — it goes from P(evidence|hypothesis) to P(hypothesis|evidence).",
       "formula": "P(A) = Σᵢ P(A|Bᵢ)P(Bᵢ)"
     },
     {
       "heading": "Chain Rule (Product Rule)",
-      "body": "P(A ∩ B) = P(A|B)P(B) = P(B|A)P(A). For multiple events: P(A₁ ∩ … ∩ Aₙ) = P(A₁)P(A₂|A₁)P(A₃|A₁∩A₂)…P(Aₙ|A₁∩…∩Aₙ₋₁). Factorizes joint distributions into conditionals — basis for probabilistic graphical models.",
+      "body": "Any joint probability can be factored into a product of conditional probabilities: the probability that all events happen equals the probability of the first, times the probability of the second given the first, and so on. This factorization is the foundation of probabilistic graphical models, which represent complex joint distributions compactly by exploiting conditional independence to skip unnecessary terms in the product.",
       "formula": "P(A₁∩…∩Aₙ) = Πᵢ P(Aᵢ|A₁∩…∩Aᵢ₋₁)"
     },
     {
       "heading": "Independence and Conditional Independence",
-      "body": "A ⟂ B: P(A ∩ B) = P(A)P(B). A ⟂ B | C: P(A ∩ B|C) = P(A|C)P(B|C). Conditional independence doesn't imply unconditional independence, and vice versa. Key structure in Bayesian networks, Markov random fields, and latent variable models.",
+      "body": "Two events are independent when knowing one tells you nothing about the other. Conditional independence is subtler: A and B might be related overall but become unrelated once you know C (C 'explains away' the connection). The reverse is also possible — independent events can become dependent when conditioned on a common consequence. Bayesian networks exploit conditional independence to represent high-dimensional distributions compactly.",
       "formula": "A ⟂ B|C ⟺ P(A,B|C) = P(A|C)P(B|C)"
     },
     {
       "heading": "Bayes' Theorem",
-      "body": "P(A|B) = P(B|A)P(A)/P(B). Inverts conditioning: from P(effect|cause) to P(cause|effect). Prior P(A) updated by likelihood P(B|A) to give posterior P(A|B). Denominator P(B) = Σ P(B|Aᵢ)P(Aᵢ) normalizes.",
-      "formula": "P(A|B) = P(B|A)P(A)/P(B) = P(B|A)P(A)/Σᵢ P(B|Aᵢ)P(Aᵢ)"
+      "body": "Bayes' theorem inverts conditioning: it converts the probability of evidence given a hypothesis into the probability of the hypothesis given the evidence. Your prior belief P(A) is updated by how well the observed evidence matches hypothesis A (the likelihood), then normalized to sum to 1 over all hypotheses. This update step is the core operation in Bayesian inference and machine learning models like naive Bayes classifiers.",
+      "formula": "P(A|B) = P(B|A)P(A)/P(B)"
     }
   ],
   "youtubeLabel": "Conditional Probability — Khan Academy",

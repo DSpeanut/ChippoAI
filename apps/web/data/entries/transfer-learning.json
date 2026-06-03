@@ -30,11 +30,11 @@
   "deepDive": [
     {
       "heading": "Feature Extraction vs Fine-Tuning — When to Use Each",
-      "body": "Feature extraction (frozen backbone): appropriate when (1) the target dataset is very small (<1000 examples) and fine-tuning would overfit; (2) the source and target domains are similar (both are natural images); (3) compute is limited (only the head needs training). Fine-tuning (unfreezing backbone): appropriate when (1) the target dataset is medium to large (>10k examples); (2) there is significant domain shift (medical vs natural images) — the backbone needs to adapt; (3) you have compute budget. Gradual unfreezing: start by training only the head, then unfreeze the last few backbone layers, then unfreeze all layers — progressively allows the backbone to adapt without catastrophic forgetting of earlier representations. [1]"
+      "body": "This section explains the practical trade-off between reusing pretrained representations and updating the whole model for a new task."
     },
     {
       "heading": "Differential Learning Rates",
-      "body": "During fine-tuning, using a single learning rate for all layers is suboptimal. The head (new task-specific layers) needs to learn from scratch — a higher LR (e.g., 1e-3) is appropriate. Early backbone layers have already learned general features (edges, textures) that are widely transferable — a very low LR (1e-5) or frozen parameters prevent catastrophic forgetting of these. Late backbone layers encode more task-specific features — a moderate LR (1e-4). A practical rule: set LR as η · (1/γ)^l where l=0 for the head and increases toward the input, with decay factor γ ∈ [2, 10]. Fast.ai's discriminative fine-tuning uses this approach: the head LR is the base, each layer group gets LR/γ. [2]"
+      "body": "During fine-tuning, using a single learning rate for all layers is suboptimal. The head (new task-specific layers) needs to learn from scratch — a higher LR (e.g., 1e-3) is appropriate. Early backbone layers have already learned general features (edges, textures) that are widely transferable — a very low LR (1e-5) or frozen parameters prevent catastrophic forgetting of these. Late backbone layers encode more task-specific features — a moderate LR (1e-4). Fast.ai's discriminative fine-tuning uses this approach: the head LR is the base, each layer group gets LR/γ."
     },
     {
       "heading": "Transferability of CNN Features",

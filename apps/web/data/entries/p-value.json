@@ -29,21 +29,21 @@
   "deepDive": [
     {
       "heading": "Definition and Uniformity Under H₀",
-      "body": "p = P(T ≥ t_obs | H₀) where T is the test statistic with known null distribution. If T ~ N(0,1) under H₀ and t_obs = 2.0, then p = P(Z ≥ 2.0) = 0.023 (one-sided). Under H₀, the p-value U = F_{H₀}(T) is Uniform(0,1) (by the probability integral transform) when the null distribution is continuous. This is why P(p ≤ α | H₀) = α exactly. [1]",
+      "body": "A p-value is computed from the sampling distribution of a test statistic under the null hypothesis. Its key calibration property is that, when the null is true and the test is continuous, small p-values occur with exactly the advertised frequency. That is why thresholding at a fixed significance level controls the long-run false-positive rate.",
       "formula": "p-value = P(T ≥ t_obs | H₀)"
     },
     {
       "heading": "Type I and Type II Errors",
-      "body": "Type I error (α): reject H₀ when H₀ is true. P(Type I) = α by construction. Type II error (β): fail to reject H₀ when Hₐ is true. Power = 1 − β. The Neyman-Pearson lemma states that the likelihood ratio test is the most powerful test at a given α. Reducing α increases β (more Type II errors); increasing n reduces β without affecting α. [1]",
+      "body": "P-values are tied to the broader decision framework of hypothesis testing. Lowering the significance threshold reduces false positives but also makes real effects harder to detect, which increases false negatives unless the sample size also grows. This trade-off is why p-values should be interpreted together with power, effect size, and study design.",
       "formula": "P(reject H₀ | H₀ true) = α,   Power = P(reject H₀ | Hₐ true) = 1 − β"
     },
     {
       "heading": "ASA 2016 Principles on p-values",
-      "body": "The American Statistical Association (2016) statement on p-values: (1) P-values can indicate how incompatible data are with H₀. (2) P-values do not measure the probability that H₀ is true. (3) Scientific conclusions should not be based only on whether p < 0.05. (4) Proper inference requires full reporting: effect sizes, CIs, and study design. (5) P-value does not measure effect size or importance. (6) P-value alone does not measure evidence for a model or hypothesis. [2]"
+      "body": "The American Statistical Association emphasized that p-values are only one piece of evidence. They do not tell you whether the null hypothesis is true, how large an effect is, or whether a result matters scientifically. Good reporting therefore pairs p-values with effect sizes, uncertainty intervals, and transparent study design choices."
     },
     {
       "heading": "p-hacking and Reproducibility",
-      "body": "p-hacking: selectively reporting analyses until p < 0.05. Because each test has a 5% false positive rate under H₀, running many analyses inflates Type I errors without correction. Pre-registration (specifying hypotheses and analysis plan before seeing data) and reporting all analyses (significant and non-significant) are essential practices. The replication crisis in psychology/medicine is partly attributable to widespread p-hacking and publication bias. [2]"
+      "body": "P-values are especially vulnerable to misuse when researchers try many analyses and only report the ones that look significant. This practice inflates false discoveries and contributes to non-reproducible findings. Pre-registration, transparent reporting, and multiple-testing correction are the main safeguards against this problem."
     }
   ],
   "youtubeLabel": "p-values: What They Are and How to Interpret Them — StatQuest",

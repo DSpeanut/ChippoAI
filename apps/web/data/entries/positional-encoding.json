@@ -30,19 +30,19 @@
   "deepDive": [
     {
       "heading": "Sinusoidal Encoding Properties",
-      "body": "The sinusoidal encoding has several desirable mathematical properties. (1) Unique encoding: every position has a distinct PE vector — since the frequencies span from 1 (lowest: i=0, period 2π) to 1/10000 (highest: i=d/2, period 2π/10000), the encoding is unique for any position 0 to ~10000. (2) Linear relative offset: for any fixed offset k, PE(pos+k) = T_k · PE(pos) for some fixed (position-independent) matrix T_k. This means the model can learn to compute PE(pos+k) from PE(pos) using a linear projection. (3) Bounded magnitude: ‖PE(pos)‖₂ = √(d/2) for all positions — the encoding magnitude is constant, preventing position information from dominating the token embedding for large positions. [1]"
+      "body": "The sinusoidal encoding has several desirable mathematical properties. This means the model can learn to compute PE(pos+k) from PE(pos) using a linear projection."
     },
     {
       "heading": "Learned vs Sinusoidal vs Relative Positional Encoding",
-      "body": "Absolute learned (BERT, GPT): PE ∈ ℝ^{L×d} is a free parameter optimised via gradient descent. Simple, works well within training length, but cannot extrapolate. Absolute sinusoidal (original Transformer): computed by formula, no parameters. Extrapolates to longer sequences but not as expressive. Relative (Transformer-XL, T5): attention score depends on (pos_q − pos_k) rather than absolute positions. Allows attending to relative distances without encoding absolute positions. RoPE (LLaMA, Falcon, GPT-NeoX): rotates Q and K vectors by angle proportional to position, so dot product Q^T K depends only on relative position. ALiBi (MPT, BLOOM): adds penalty −m|i−j| to attention logits, linearly biasing away from attending to distant tokens. ALiBi requires no change to the embedding layer. [2]"
+      "body": "This section explains how the model represents interactions or sequence order and why that design choice matters."
     },
     {
       "heading": "RoPE — Rotary Position Embedding",
-      "body": "RoPE (Su et al., 2021) encodes position by applying a rotation in complex space. For 2D case: for position pos, rotate the embedding vector (x_1, x_2) by angle θ·pos in the complex plane: [cos(θ·pos)·x_1 − sin(θ·pos)·x_2, sin(θ·pos)·x_1 + cos(θ·pos)·x_2]. For d-dimensional vectors, the embedding is split into d/2 pairs and each pair is rotated by a different frequency θ_i = 10000^{-2i/d}. This ensures that Q^(pos)·K^(pos') = f(pos−pos') — the dot product depends only on relative position. RoPE does not add to the token embedding (unlike sinusoidal) — it modifies Q and K inside each attention layer. This makes it compatible with position-free representations in later layers and enables better length generalisation via YaRN or extended RoPE scaling. [2]"
+      "body": "RoPE (Su et al., 2021) encodes position by applying a rotation in complex space. For 2D case: for position pos, rotate the embedding vector (x_1, x_2) by angle θ·pos in the complex plane: [cos(θ·pos)·x_1 − sin(θ·pos)·x_2, sin(θ·pos)·x_1 + cos(θ·pos)·x_2]. RoPE does not add to the token embedding (unlike sinusoidal) — it modifies Q and K inside each attention layer. This makes it compatible with position-free representations in later layers and enables better length generalisation via YaRN or extended RoPE scaling."
     },
     {
       "heading": "Position Encoding for Vision Transformers",
-      "body": "In ViT (Dosovitskiy et al., 2020), 2D image patches are flattened to a 1D sequence and learned 1D positional embeddings are added to each patch embedding. Ablations in the ViT paper showed that 1D learned embeddings perform comparably to 2D-aware embeddings (sinusoidal or learned 2D grids), suggesting the Transformer can recover 2D spatial relationships from 1D positional information through attention. For high-resolution images (448×448 with 16×16 patches → 784 tokens), fine-tuning requires interpolating the position embeddings from the pretrained 196-token grid to 784 tokens using 2D bicubic interpolation — standard practice for ViT fine-tuning at higher resolutions. [1]"
+      "body": "In ViT (Dosovitskiy et al., 2020), 2D image patches are flattened to a 1D sequence and learned 1D positional embeddings are added to each patch embedding. Ablations in the ViT paper showed that 1D learned embeddings perform comparably to 2D-aware embeddings (sinusoidal or learned 2D grids), suggesting the Transformer can recover 2D spatial relationships from 1D positional information through attention."
     }
   ],
   "takeaways": [

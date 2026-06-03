@@ -23,34 +23,34 @@
     }
   ],
   "deepDiveIntro": [
-    "A discrete random variable X takes values in a countable set (usually integers) with probability mass function p(k) = P(X = k) ≥ 0 where Σ p(k) = 1. CDF: F(k) = P(X ≤ k) = Σ_{j≤k} p(j). Key distributions arise from different sampling scenarios: Bernoulli (single trial), Binomial (n independent Bernoullis), Poisson (rare events limit), Geometric (waiting for first success).",
-    "Expectation E[X] = Σ k·p(k). Variance Var(X) = E[(X-μ)²] = E[X²] - μ². Moment generating function M_X(t) = E[e^{tX}] encodes all moments. Characteristic function φ_X(t) = E[e^{itX}] always exists and uniquely determines distribution."
+    "A discrete random variable takes values from a countable set — usually integers — and each value has an associated probability. The probabilities must all be non-negative and sum to exactly one. Different discrete distributions arise naturally from different counting scenarios: Bernoulli from a single yes/no trial, Binomial from counting successes in n trials, Poisson from counting rare events, Geometric from counting trials until the first success.",
+    "The expected value is the probability-weighted average of all possible outcomes; variance measures the average squared deviation from that average. The moment generating function encodes all moments of a distribution and is a useful tool for deriving properties and proving limit theorems."
   ],
   "visualizationType": "distributions-discrete",
   "deepDive": [
     {
       "heading": "Bernoulli and Binomial",
-      "body": "Bernoulli: one trial, success prob p. X ∈ {0,1}, E[X]=p, Var=p(1-p). Binomial: n independent Bernoullis, X = sum. X ∈ {0,…,n}, E[X]=np, Var=np(1-p). As n→∞ with np fixed, approaches Poisson.",
+      "body": "A Bernoulli trial is a single experiment with two outcomes — success or failure — with probability p of success. The Binomial distribution counts successes across n independent Bernoulli trials; its mean is n times p and variance is n times p times one minus p. As n grows large with the expected number of successes held constant, the Binomial approaches a Poisson distribution.",
       "formula": "P(X=k) = C(n,k) pᵏ(1-p)ⁿ⁻ᵏ, k=0,…,n"
     },
     {
       "heading": "Poisson Distribution",
-      "body": "Models rare events with rate λ. X ∈ {0,1,2,…}, E[X]=Var(X)=λ. Arises as Binomial limit (n→∞, p→0, np=λ). Additive: sum of independent Poissons is Poisson. Used for call centers, radioactive decay, web traffic.",
+      "body": "The Poisson distribution models the number of rare, independent events in a fixed interval — customer arrivals per minute, website requests per second, radioactive decays per hour. Its key property is that the mean and variance are both equal to the rate parameter. The sum of independent Poisson random variables is also Poisson, making it easy to combine counts from different sources.",
       "formula": "P(X=k) = λᵏe⁻λ/k!, k=0,1,2,…"
     },
     {
       "heading": "Geometric and Negative Binomial",
-      "body": "Geometric: trials until first success. P(X=k) = (1-p)ᵏ⁻¹p, k=1,2,… Memoryless. Negative Binomial: trials until r successes. Generalizes Geometric (r=1). Can be overdispersed alternative to Poisson.",
+      "body": "The Geometric distribution models how many trials you need until you get the first success. It has the memoryless property — past failures provide no information about future success, so each trial is like starting fresh. The Negative Binomial generalises this to counting trials until r successes and is also used as an overdispersed alternative to the Poisson when the variance in count data exceeds the mean.",
       "formula": "Geometric: P(X=k) = (1-p)ᵏ⁻¹p, E[X]=1/p, Var=(1-p)/p²"
     },
     {
       "heading": "Multinomial Distribution",
-      "body": "Generalizes Binomial to k categories. n trials, probabilities p₁,…,pₖ summing to 1. Count vector (X₁,…,Xₖ) where ΣXᵢ = n. Models categorical data, document topic distributions, dice with k sides.",
+      "body": "The Multinomial distribution extends Binomial to more than two outcomes — think rolling a six-sided die n times and counting how many times each face appears. Each trial produces one of k categories; the result is a vector of counts that must sum to n. This distribution is the foundation for topic models in NLP and Bayesian categorical modelling.",
       "formula": "P(X₁=n₁,…,Xₖ=nₖ) = n!/(n₁!…nₖ!) p₁ⁿ¹…pₖⁿᵏ"
     },
     {
       "heading": "Hypergeometric Distribution",
-      "body": "Sampling without replacement. Population N with K successes, draw n without replacement. X = successes in sample. Different from Binomial (which samples with replacement). Important in survey sampling, quality control, card games.",
+      "body": "The Hypergeometric distribution describes sampling without replacement. You have a population of N items, K of which are 'successes'; if you draw n without replacing, the count of successes follows the Hypergeometric distribution. It differs from the Binomial (which assumes replacement, so each draw is independent). Used in quality control audits, survey sampling, and card probability problems.",
       "formula": "P(X=k) = C(K,k) C(N-K,n-k) / C(N,n)"
     }
   ],

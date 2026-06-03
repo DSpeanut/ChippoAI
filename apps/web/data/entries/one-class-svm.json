@@ -30,12 +30,12 @@
   "deepDive": [
     {
       "heading": "Primal and Dual Formulation",
-      "body": "Primal: minimize (1/2)‖w‖² − ρ + (1/νn)Σᵢξᵢ subject to ⟨w,ϕ(xᵢ)⟩ ≥ ρ−ξᵢ, ξᵢ ≥ 0. The term −ρ maximizes the margin from the origin; (1/νn)Σξᵢ penalizes points inside the origin (violations). Dual: maximize −(1/2)Σᵢⱼ αᵢαⱼK(xᵢ,xⱼ) subject to 0 ≤ αᵢ ≤ 1/(νn), Σᵢαᵢ = 1. Decision function: f(x) = Σᵢ αᵢK(xᵢ,x) − ρ. Support vectors: training points with αᵢ > 0. Points on the boundary: f(xᵢ) = 0. ν exactly controls the fraction of points that become support vectors: for ν=0.05, exactly 5% of training points are on the boundary or inside it. [1]",
+      "body": "This section explains the objective the algorithm optimizes and what trade-offs it balances during training.",
       "formula": "min w,ξ,ρ: ½‖w‖² − ρ + (1/νn)Σᵢξᵢ,   s.t. ⟨w,ϕ(xᵢ)⟩ ≥ ρ−ξᵢ, ξᵢ≥0"
     },
     {
       "heading": "Kernel Choice and Gamma Tuning",
-      "body": "RBF kernel: K(x,x') = exp(−γ‖x−x'‖²). gamma controls the kernel bandwidth. gamma='scale': γ = 1/(n_features × Var(X)) — the sklearn default, generally good. gamma='auto': γ = 1/n_features. Manual gamma: small γ → broad kernel → smooth boundary, may miss local anomalies. Large γ → tight kernel → boundary closely follows training points, prone to overfitting. Tuning: use a small validation set of known anomalies to select gamma and nu via grid search. Without labels, use the silhouette score or visual inspection of decision boundaries. [2]"
+      "body": "gamma controls the kernel bandwidth. Tuning: use a small validation set of known anomalies to select gamma and nu via grid search. Without labels, use the silhouette score or visual inspection of decision boundaries."
     },
     {
       "heading": "One-Class SVM vs Isolation Forest vs LOF",
@@ -62,7 +62,13 @@
     }
   ],
   "sources": [
-    { "label": "Schölkopf, B. et al. — Estimating the Support of a High-Dimensional Distribution, Neural Computation 13(7), 2001", "url": "https://doi.org/10.1162/089976601750264965" },
-    { "label": "sklearn Documentation — Novelty and Outlier Detection", "url": "https://scikit-learn.org/stable/modules/outlier_detection.html" }
+    {
+      "label": "Schölkopf, B. et al. — Estimating the Support of a High-Dimensional Distribution, Neural Computation 13(7), 2001",
+      "url": "https://doi.org/10.1162/089976601750264965"
+    },
+    {
+      "label": "sklearn Documentation — Novelty and Outlier Detection",
+      "url": "https://scikit-learn.org/stable/modules/outlier_detection.html"
+    }
   ]
 }

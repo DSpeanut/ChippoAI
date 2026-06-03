@@ -30,21 +30,22 @@
   "deepDive": [
     {
       "heading": "FWER: Bonferroni Correction",
-      "body": "Reject Hᵢ if pᵢ ≤ α/m. Controls FWER ≤ α for any dependence structure among tests (by Boole's inequality: P(∪ᵢAᵢ) ≤ ΣP(Aᵢ)). Conservative when tests are correlated — assumes worst-case independence. Effective number of tests may be much less than m for correlated tests (e.g. gene expression on same pathway). [1]",
+      "body": "Bonferroni correction controls the chance of making even a single false rejection across a family of tests. It is simple, general, and valid regardless of dependence structure, but it can be very conservative when the number of tests is large or the tests are correlated. That conservatism is the price paid for strong error control.",
       "formula": "Reject Hᵢ if pᵢ ≤ α / m"
     },
     {
       "heading": "Holm-Bonferroni Step-Down Procedure",
-      "body": "Sort p-values: p₍₁₎ ≤ p₍₂₎ ≤ … ≤ p₍ₘ₎. Reject H₍ᵢ₎ if p₍ⱼ₎ ≤ α/(m−j+1) for all j ≤ i (step-down: stop at first non-rejection, retain all H₀ beyond). Controls FWER ≤ α for any dependence. Uniformly more powerful than Bonferroni — always rejects at least as many hypotheses. Should be used instead of Bonferroni whenever possible. [1]"
+      "body": "Holm's procedure improves on Bonferroni by using a stepwise comparison rather than the same threshold for every hypothesis. It still controls the family-wise error rate, but it is less wasteful and therefore more powerful. In many practical settings it is a better default than plain Bonferroni while remaining easy to explain.",
+      "formula": "compare ordered p-values to α/(m−j+1)"
     },
     {
       "heading": "Benjamini-Hochberg FDR Procedure",
-      "body": "Sort p-values: p₍₁₎ ≤ … ≤ p₍ₘ₎. Find largest k such that p₍ₖ₎ ≤ k·q/m. Reject all H₍₁₎,…,H₍ₖ₎. Controls FDR ≤ q for independent tests (BH 1995). Under arbitrary positive dependence (PRDS condition), also valid. Controls FDR, not FWER — allows some false positives in expectation. Much more powerful than Bonferroni when m is large and many H₁ are true. [1]",
+      "body": "The Benjamini-Hochberg procedure aims at a different goal: controlling the expected proportion of false discoveries among the rejected hypotheses. Because it tolerates a limited amount of false discovery in exchange for more true findings, it is much more powerful in large-scale screening problems. This is why it is the standard choice in fields like genomics and high-dimensional feature selection.",
       "formula": "Reject H₍ᵢ₎ if p₍ᵢ₎ ≤ i · q / m"
     },
     {
       "heading": "FWER vs FDR: Which to Use",
-      "body": "Use FWER control (Bonferroni/Holm) when false positives are very costly — drug trials, safety decisions, confirmatory studies where any false finding could mislead. Use FDR control (BH) when you accept some false positives in exchange for more discoveries — exploratory genomics, feature screening, scientific hypothesis generation. FDR = 0.05 means 5% of your reported significant findings are expected to be noise. [1][2]"
+      "body": "The right correction depends on the stakes of the problem. If even one false positive would be costly or misleading, strong family-wise control is appropriate. If the goal is broad discovery and a small proportion of false leads is acceptable, false-discovery-rate control is often the better balance."
     }
   ],
   "youtubeLabel": "FDR and Benjamini-Hochberg — StatQuest",

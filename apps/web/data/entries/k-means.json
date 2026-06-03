@@ -30,12 +30,12 @@
   "deepDive": [
     {
       "heading": "Objective: Within-Cluster Sum of Squares",
-      "body": "K-Means minimises the total squared distance from each point to its assigned centroid μₖ. Assign each point xᵢ to the closest centroid (E-step); update each centroid to the mean of its assigned points (M-step). Each step is guaranteed not to increase J, so the algorithm converges. [1]",
+      "body": "Assign each point xᵢ to the closest centroid (E-step); update each centroid to the mean of its assigned points (M-step). Each step is guaranteed not to increase J, so the algorithm converges.",
       "formula": "J = Σₖ₌₁ᴷ Σᵢ∈Cₖ ‖xᵢ − μₖ‖²"
     },
     {
       "heading": "Lloyd's Algorithm",
-      "body": "1. Initialise K centroids (random or K-Means++). 2. Assignment step: assign each point to its nearest centroid: cᵢ = argminₖ ‖xᵢ − μₖ‖². 3. Update step: set each centroid to the mean of its assigned points: μₖ = (1/|Cₖ|) Σᵢ∈Cₖ xᵢ. 4. Repeat steps 2–3 until assignments do not change. Time complexity per iteration: O(n·K·p). [1]",
+      "body": "1. Initialise K centroids (random or K-Means++). 2. 3. 4. Repeat steps 2–3 until assignments do not change. Time complexity per iteration: O(n·K·p).",
       "formula": "μₖ ← (1/|Cₖ|) Σᵢ∈Cₖ xᵢ"
     },
     {
@@ -44,7 +44,7 @@
     },
     {
       "heading": "Choosing K: Elbow Method & Silhouette Score",
-      "body": "Plot WCSS vs K — it decreases monotonically, but the rate slows after the 'true' K creating an elbow. More rigorously, use the Silhouette Score: for each point, s = (b−a)/max(a,b) where a is mean intra-cluster distance and b is mean nearest-cluster distance. s ∈ [−1,1]; higher is better. Choose K maximising mean silhouette. [1]",
+      "body": "Plot WCSS vs K — it decreases monotonically, but the rate slows after the 'true' K creating an elbow. Choose K maximising mean silhouette.",
       "formula": "s(i) = (b(i) − a(i)) / max(a(i), b(i))"
     },
     {
@@ -85,7 +85,13 @@
     }
   ],
   "sources": [
-    { "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 14.3", "url": "https://hastie.su.domains/ElemStatLearn/" },
-    { "label": "Bishop — Pattern Recognition and Machine Learning, Ch. 9.1", "url": "https://www.microsoft.com/en-us/research/publication/pattern-recognition-machine-learning/" }
+    {
+      "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 14.3",
+      "url": "https://hastie.su.domains/ElemStatLearn/"
+    },
+    {
+      "label": "Bishop — Pattern Recognition and Machine Learning, Ch. 9.1",
+      "url": "https://www.microsoft.com/en-us/research/publication/pattern-recognition-machine-learning/"
+    }
   ]
 }

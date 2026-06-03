@@ -24,26 +24,26 @@
     }
   ],
   "deepDiveIntro": [
-    "Standard augmentation pipeline: random resized crop (scale 0.08–1.0, ratio 3/4–4/3) + random horizontal flip (p=0.5) + colour jitter + normalisation. These provide invariance to: scale, position (crop), reflection symmetry (flip), illumination (colour jitter). The random crop is the most important single augmentation — it implicitly provides scale and position invariance across all image sizes. [1]",
-    "MixUp (Zhang et al., 2018): x̃ = λxᵢ + (1−λ)xⱼ; ỹ = λyᵢ + (1−λ)yⱼ where λ ~ Beta(α, α), α ∈ (0, 1]. Training with mixed labels forces the model to produce smooth, interpolated predictions — this regularises the decision boundary and improves calibration. MixUp + CutMix together provide complementary benefits: MixUp mixes globally, CutMix mixes locally (patch swap). [2]"
+    "The standard image augmentation pipeline uses random resized crops (which vary both scale and position), random horizontal flips, and colour jitter (brightness, contrast, saturation). Together these teach the model to be invariant to scale, position, orientation, and lighting changes. The random crop is the single most impactful augmentation — by itself it accounts for most of the regularisation benefit. [1]",
+    "MixUp blends two training images by linearly interpolating both the pixel values and the class labels using a weight drawn randomly from a Beta distribution. Training with these blended labels forces the model to produce smooth, interpolated predictions between classes, which regularises the decision boundary and improves probability calibration. CutMix provides a complementary benefit by swapping rectangular patches between images rather than blending them globally. [2]"
   ],
   "deepDive": [
     {
       "heading": "Standard Pipeline: Random Crop + Flip",
-      "body": "RandomResizedCrop(224, scale=(0.08, 1.0)): randomly select a crop region with scale ∈ [0.08, 1.0] of the original image area and aspect ratio ∈ [3/4, 4/3], then resize to 224×224. This creates diverse crops including small-scale crops (close-up details) and large-scale crops (full scene). It is significantly more powerful than simple center cropping — the model sees the same object at many different scales and positions. RandomHorizontalFlip(0.5): applies to symmetric classes (cats, dogs, vehicles). Never apply vertical flip without domain knowledge. [1]"
+      "body": "A random resized crop selects a portion of the image at a random scale (8% to 100% of the area) and random aspect ratio, then resizes to the target size. This creates enormous diversity — the model sees the same object at different scales and positions in every epoch. It is substantially more powerful than simply cropping the centre of each image. Random horizontal flip is applied with 50% probability for symmetric object classes, but vertical flip should only be used when the task genuinely allows upside-down images (such as satellite imagery). [1]"
     },
     {
       "heading": "MixUp and CutMix",
-      "body": "MixUp: x̃ = λxᵢ + (1−λ)xⱼ; ỹ = λeᵢ + (1−λ)eⱼ (one-hot vectors). Loss = λ·CE(ŷ, yᵢ) + (1−λ)·CE(ŷ, yⱼ). CutMix: paste a rectangular region from xⱼ onto xᵢ; proportion of replaced area = 1−λ. Labels: ỹ = λyᵢ + (1−λ)yⱼ (same mixing ratio). CutMix trains the model on local features — even a patch is sufficient for classification. Both use Beta(α,1) with α=0.2–1.0. DeiT training: α=0.8 for MixUp, α=1.0 for CutMix, with 50% probability of each. [2]",
+      "body": "MixUp creates a blended image by linearly combining two images, and mixes their labels in the same proportion. The model is trained to output probabilities proportional to how much of each class is present. CutMix pastes a rectangular crop from one image onto another and adjusts the label proportionally to the patch area. CutMix teaches the model to classify from local patches rather than global context, which is complementary to MixUp's global blending. Both use a randomly drawn mixing coefficient and are commonly combined in transformer training recipes. [2]",
       "formula": "MixUp: x̃ = λxᵢ+(1−λ)xⱼ, ỹ = λyᵢ+(1−λ)yⱼ, λ∼Beta(α,α)"
     },
     {
       "heading": "RandAugment",
-      "body": "RandAugment (Cubuk et al., 2020): apply N random transformations from a set of K operations (shear, rotate, colour, brightness, contrast, posterize, solarize, equalize, etc.), each at magnitude M ∈ [0, 10]. Hyperparameters: N=2 and M=9 are standard. This unified parameterisation avoids the combinatorial search of AutoAugment. EfficientNet uses RandAugment with N=2, M=10+model_scale. ViT typically uses RandAugment with N=2, M=9. [1]"
+      "body": "RandAugment applies a fixed number of randomly selected transformations (shear, rotate, colour, brightness, contrast, solarize, equalize, etc.) each at the same global magnitude level. Using only two hyperparameters — number of operations and magnitude — it avoids the expensive combinatorial search required by AutoAugment while achieving similar or better performance. N=2 and M=9 are the standard defaults for ViT and EfficientNet training. [1]"
     },
     {
       "heading": "NLP and Tabular Augmentation",
-      "body": "NLP augmentation: (1) Back-translation: translate to another language and back — paraphrases the sentence; (2) Synonym replacement: replace k random non-stop words with synonyms (EDA, Wei & Zou 2019); (3) Random deletion, swapping, and insertion; (4) Token masking (used in BERT pre-training). Tabular augmentation: SMOTE for class imbalance (create synthetic minority examples by interpolating between existing ones); Gaussian noise on continuous features; random column dropout. [1]"
+      "body": "For text, back-translation (translate to another language and back) paraphrases sentences while preserving meaning, and synonym replacement swaps content words with synonyms. Token masking used in BERT pre-training is itself a form of augmentation. For tabular data, SMOTE generates synthetic minority-class examples by interpolating between existing ones to address class imbalance, while Gaussian noise on continuous features and random feature dropout provide additional regularisation. [1]"
     }
   ],
   "youtubeLabel": "Data Augmentation in Deep Learning — PyTorch",

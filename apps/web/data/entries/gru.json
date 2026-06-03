@@ -30,15 +30,15 @@
   "deepDive": [
     {
       "heading": "GRU Gate Mechanics",
-      "body": "The update gate z_t ∈ (0,1) is computed from both the previous hidden state and current input. When z_t ≈ 0 for a dimension: h_t ≈ h_{t-1} (memory preserved unchanged, like an open forget gate in LSTM). When z_t ≈ 1: h_t ≈ h̃_t (full replacement with the candidate, like an open input gate). In practice, z_t is smooth and dimension-specific — different dimensions of h_t can be updated at different rates depending on the input. The reset gate r_t ∈ (0,1) modulates how much the previous state contributes to the candidate h̃_t. When r_t ≈ 0, the candidate ignores the past: h̃_t = tanh(W[:,x_t·]x_t + b) — a standard dense layer on the input alone. This allows GRU to 'start fresh' when it encounters a context-resetting input (e.g., a new topic in a document). [1]"
+      "body": "In practice, z_t is smooth and dimension-specific — different dimensions of h_t can be updated at different rates depending on the input. This allows GRU to 'start fresh' when it encounters a context-resetting input (e.g., a new topic in a document)."
     },
     {
       "heading": "Comparison Table: GRU vs LSTM",
-      "body": "Key differences: Parameters — GRU: 3n(n+d+1); LSTM: 4n(n+d+1); GRU is 25% smaller. Memory vectors — GRU: 1 (h_t); LSTM: 2 (h_t, C_t). Gates — GRU: update z, reset r; LSTM: forget f, input i, output o + candidate C̃. Gradient flow — both improved over vanilla RNN; LSTM's cell state provides an additional gradient highway. Empirical performance: on polyphonic music, speech signals, and short text — comparable. On very long sequences (> 500 steps) — LSTM sometimes edges GRU due to the cell state. Training speed: GRU is faster due to fewer computations. Recommended choice: GRU as default when speed matters; LSTM when you need the extra expressiveness and have the compute budget. [2]"
+      "body": "This section explains the key intuition behind how the method behaves and how it compares with related approaches."
     },
     {
       "heading": "Minimal Gated Unit and Other Variants",
-      "body": "Since LSTM and GRU, several simpler gated units have been proposed. The Minimal Gated Unit (MGU, Zhou et al., 2016) merges the reset and update gates into a single gate f: h̃_t = tanh(W[f_t ⊙ h_{t-1}, x_t]); h_t = (1−f_t) ⊙ h_{t-1} + f_t ⊙ h̃_t. This reduces to 2 gate matrices (vs GRU's 3), with only minimal accuracy loss. Light GRU (Li & Wu, 2018) further simplifies by removing tanh from the candidate update, improving CPU inference speed. At the other extreme, LSTM variants (peephole connections, coupled forget-input gates) add complexity without consistent empirical improvement (Greff et al., 2017). The main lesson: simple gating (2–3 gates) is sufficient for most tasks; the default choice is GRU or LSTM based on empirical comparison. [1]"
+      "body": "Since LSTM and GRU, several simpler gated units have been proposed. This reduces to 2 gate matrices (vs GRU's 3), with only minimal accuracy loss. Light GRU (Li & Wu, 2018) further simplifies by removing tanh from the candidate update, improving CPU inference speed. At the other extreme, LSTM variants (peephole connections, coupled forget-input gates) add complexity without consistent empirical improvement (Greff et al., 2017). The main lesson: simple gating (2–3 gates) is sufficient for most tasks; the default choice is GRU or LSTM based on empirical comparison."
     },
     {
       "heading": "When GRU Underperforms LSTM",

@@ -30,27 +30,27 @@
   "deepDive": [
     {
       "heading": "Arithmetic Mean",
-      "body": "x̄ = (1/n) Σᵢ₌₁ⁿ xᵢ. The sample mean is the UMVUE (uniformly minimum variance unbiased estimator) of μ for the normal distribution by the Lehmann-Scheffé theorem. For non-normal distributions, it remains unbiased but may not be efficient. [1]",
+      "body": "The arithmetic mean is the standard average formed by giving every observation equal weight. For normally distributed data, it is the best unbiased estimator of the population mean among a broad class of estimators. More generally, it remains unbiased whenever the population mean exists, although it may not be the most stable summary when tails are heavy or outliers are present.",
       "formula": "x̄ = (1/n) Σᵢ₌₁ⁿ xᵢ"
     },
     {
       "heading": "Geometric Mean",
-      "body": "G = (∏ᵢ xᵢ)^{1/n} = exp((1/n)Σ log xᵢ). Always ≤ arithmetic mean (AM-GM inequality: G ≤ x̄, with equality iff all xᵢ are equal). Defined only for positive values. Used for growth rates, log-normally distributed data, and index numbers. [1]",
+      "body": "The geometric mean is the right average for multiplicative processes such as compound growth. It summarizes repeated percentage changes in a way that respects how values build on one another over time. It is only defined for positive data and is always less than or equal to the arithmetic mean, with equality only when all observations are identical.",
       "formula": "G = (x₁·x₂·…·xₙ)^{1/n}"
     },
     {
       "heading": "Harmonic Mean",
-      "body": "H = n / Σᵢ(1/xᵢ). Always ≤ geometric mean ≤ arithmetic mean (HM ≤ GM ≤ AM). Appropriate when the values are rates and the denominator quantity is fixed across observations. The F1 score in classification is the harmonic mean of precision and recall. [1]",
+      "body": "The harmonic mean is designed for averaging rates and ratios when each observation is tied to the same underlying denominator, such as equal travel distances or equal work units. It gives more weight to small values, which is why it correctly handles average speed problems and similar rate calculations. It is also widely used in machine learning for metrics such as the F1 score.",
       "formula": "H = n / Σᵢ (1/xᵢ)"
     },
     {
       "heading": "Sensitivity to Outliers",
-      "body": "The arithmetic mean has a breakdown point of 0 — a single extreme value can shift it arbitrarily. The influence function of the mean is unbounded: IF(x; F, T) = x − μ. For skewed distributions or data with heavy tails, the trimmed mean (discard the top and bottom α fraction before averaging) or the median is preferred for robust central tendency estimation. [1][2]"
+      "body": "The arithmetic mean is highly sensitive to outliers because every value contributes directly to the final average. A single extreme observation can move it by a large amount, especially in small samples. When data is skewed or contaminated, trimmed means and medians are often more reliable summaries of center."
     },
     {
       "heading": "Mean vs Expected Value",
-      "body": "E[X] = Σₖ xₖ P(X=xₖ) (discrete) or ∫ x f(x)dx (continuous) is the theoretical population mean. The sample mean x̄ is a realisation of the estimator T(X₁,…,Xₙ) = (1/n)ΣXᵢ. By the Law of Large Numbers, x̄ →ₚ μ. By the CLT, √n(x̄ − μ)/σ →_d N(0,1). [1]",
-      "formula": "E[X] = ∫ x f(x) dx"
+      "body": "Expected value is the long-run average implied by the population distribution, while the sample mean is the estimate computed from observed data. As the sample size grows, the sample mean settles closer to the population mean, and its fluctuations become more predictable. This is why the mean sits at the center of estimation, confidence intervals, and many classical statistical procedures.",
+      "formula": "E[X] = Σₖ xₖ P(X=xₖ) or ∫ x f(x) dx,   √n(x̄ − μ)/σ → N(0,1)"
     }
   ],
   "youtubeLabel": "Mean, Median, Mode — StatQuest",

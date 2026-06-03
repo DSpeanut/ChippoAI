@@ -23,33 +23,33 @@
     }
   ],
   "deepDiveIntro": [
-    "Decision tree classifiers use recursive binary partitioning: at each node, the algorithm searches over all features and all possible thresholds to find the split that maximises the reduction in impurity. The most common impurity measures are Gini impurity (used by CART/scikit-learn) and entropy (information gain).",
-    "Trees are grown greedily — each split is locally optimal but not globally optimal. The resulting tree is then pruned back using cost-complexity pruning to improve generalisation."
+    "Decision tree classifiers work by recursively splitting the data: at each step, the algorithm searches every feature and every possible threshold to find the split that creates the purest child groups. The most common purity measures are Gini impurity and entropy (information gain), which give very similar results in practice.",
+    "Trees are grown greedily — each split is the locally best choice, not a globally optimal one. Full-depth trees memorise the training data, so they are then pruned back using a complexity penalty to improve generalisation on new data."
   ],
   "visualizationType": "decision-tree",
   "deepDive": [
     {
       "heading": "Splitting Criteria: Gini Impurity",
-      "body": "Gini impurity at a node measures the probability of incorrectly classifying a randomly chosen element. For K classes with proportions p₁, …, pₖ at a node, Gini = 1 − Σₖ pₖ². A pure node (all one class) has Gini = 0. CART selects the split that maximises the weighted reduction in Gini across child nodes. [1][2]",
+      "body": "Gini impurity measures how mixed a node is. A perfectly pure node — where all examples belong to the same class — has a Gini of zero. A node with equal numbers of every class has the maximum Gini. The CART algorithm picks the split that produces the biggest weighted reduction in Gini across the two child nodes, effectively making each group as uniform as possible. [1][2]",
       "formula": "Gini = 1 − Σₖ₌₁ᴷ pₖ²"
     },
     {
       "heading": "Splitting Criteria: Entropy & Information Gain",
-      "body": "Entropy H(t) = −Σₖ pₖ log₂(pₖ) measures information content at node t. Information Gain = H(parent) − Σ_children (nᵢ/n)·H(child_i). The algorithm chooses the split maximising information gain. Entropy-based splitting (ID3/C4.5) tends to produce similar trees to Gini; Gini is slightly faster to compute. [1]",
+      "body": "Entropy measures how mixed or uncertain the class labels are at a node — zero for a pure node, maximum when all classes are equally represented. Information gain is the reduction in entropy achieved by a split. Entropy-based splitting (used in ID3 and C4.5) tends to produce very similar trees to Gini impurity; Gini is slightly faster to compute since it avoids logarithms. [1]",
       "formula": "H(t) = −Σₖ pₖ log₂ pₖ"
     },
     {
       "heading": "Tree Growing: CART Algorithm",
-      "body": "Classification and Regression Trees (CART) grows a full binary tree by greedily selecting the best (feature, threshold) pair at each node. It searches all features j and thresholds s, evaluating all binary splits x_j ≤ s vs x_j > s. This is O(p·n log n) per node (sort each feature once). The process repeats recursively until a stopping criterion (max depth, min samples per leaf, min impurity decrease) is reached. [1]"
+      "body": "CART grows a full binary tree by greedily finding the best (feature, threshold) pair at each node — the one that creates the purest split. Sorting each feature's values once makes this efficient: the total cost per node is proportional to the number of features times the number of examples times log of the number of examples. The tree keeps splitting until a stopping rule is hit, such as reaching a maximum depth, having too few examples in a node, or achieving insufficient impurity reduction. [1]"
     },
     {
-      "heading": "Cost-Complexity Pruning (Weakest Link Pruning)",
-      "body": "A full tree overfits. Pruning collapses internal nodes into leaves to reduce variance. The cost-complexity criterion penalises tree size: Rα(T) = R(T) + α|T̃|, where R(T) is misclassification rate, |T̃| is the number of leaf nodes, and α ≥ 0 is the complexity parameter (ccp_alpha in scikit-learn). Cross-validate to find optimal α. [1]",
+      "heading": "Cost-Complexity Pruning",
+      "body": "A full tree overfits by creating a separate leaf for nearly every training example. Pruning folds internal nodes back into leaves, trading a small increase in training error for a large reduction in variance. The cost-complexity criterion adds a penalty for each leaf in the tree; increasing this penalty forces more aggressive pruning. Cross-validation finds the penalty strength that minimises held-out error, and the resulting simpler tree generalises far better. [1]",
       "formula": "Rα(T) = R(T) + α · |T̃|"
     },
     {
       "heading": "Feature Importance",
-      "body": "Scikit-learn computes Mean Decrease in Impurity (MDI) importance: for each feature, sum the weighted impurity decrease across all nodes where it was used as the split feature, normalised so importances sum to 1. Note: MDI is biased towards high-cardinality features; use permutation importance for more reliable estimates. [1]"
+      "body": "Scikit-learn's default feature importance (Mean Decrease in Impurity) sums up how much each feature reduced impurity across all nodes where it was the split variable, normalised to sum to one. This is fast but has a known bias toward features with many unique values, which have more split opportunities. Permutation importance — measuring the drop in accuracy when a feature's values are randomly shuffled — is a more reliable alternative. [1]"
     }
   ],
   "youtubeLabel": "StatQuest: Decision Trees",

@@ -34,7 +34,7 @@
     },
     {
       "heading": "Beam Search vs Greedy Decoding",
-      "body": "Greedy decoding: at each step, select the token with the highest probability. Fast (O(T·V) where V is vocab size) but suboptimal — a token that looks best locally may lead to a poor sequence globally. Beam search: maintain k hypotheses (beams) at each step, expand each with V possible tokens (O(T·k·V)), keep the top-k by cumulative log-probability. k=4 or k=5 is standard for translation. Beam search with length penalty normalises by sequence length: score = log P(y)/|y|^α, with α≈0.6–0.7 to prevent the model from preferring short sequences (short sequences have higher unnormalised probabilities). Diverse beam search (Vijayakumar et al., 2016) adds a diversity penalty to produce beam hypotheses that differ more from each other. [2]"
+      "body": "Greedy decoding: at each step, select the token with the highest probability. Fast (O(T·V) where V is vocab size) but suboptimal — a token that looks best locally may lead to a poor sequence globally. Beam search: maintain k hypotheses (beams) at each step, expand each with V possible tokens (O(T·k·V)), keep the top-k by cumulative log-probability. Diverse beam search (Vijayakumar et al., 2016) adds a diversity penalty to produce beam hypotheses that differ more from each other."
     },
     {
       "heading": "Fixed Context Vector Bottleneck",
@@ -42,7 +42,7 @@
     },
     {
       "heading": "Modern Seq2Seq with Transformers",
-      "body": "The Transformer (Vaswani et al., 2017) replaces LSTM encoder and decoder with multi-head self-attention stacks, while retaining the encoder-decoder seq2seq structure. The cross-attention layer in each Transformer decoder block performs the equivalent of Bahdanau attention — querying encoder outputs for each decoder position. T5 (Raffel et al., 2020) frames every NLP task as text-to-text seq2seq: classification, summarisation, translation, Q&A all become 'input text → output text'. The LSTM seq2seq model is now primarily of historical and pedagogical interest, but its architectural concepts (encoder-decoder, attention, beam search, teacher forcing) are directly inherited by modern LLMs. [2]"
+      "body": "The Transformer (Vaswani et al., 2017) replaces LSTM encoder and decoder with multi-head self-attention stacks, while retaining the encoder-decoder seq2seq structure. The cross-attention layer in each Transformer decoder block performs the equivalent of Bahdanau attention — querying encoder outputs for each decoder position. The LSTM seq2seq model is now primarily of historical and pedagogical interest, but its architectural concepts (encoder-decoder, attention, beam search, teacher forcing) are directly inherited by modern LLMs."
     }
   ],
   "takeaways": [

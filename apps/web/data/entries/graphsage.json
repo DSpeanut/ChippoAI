@@ -30,7 +30,7 @@
   "deepDive": [
     {
       "heading": "Neighbourhood Sampling Strategy",
-      "body": "GraphSAGE samples K-hop neighbourhoods: for a 2-layer model, sample S_1 first-hop neighbours, then S_2 second-hop neighbours for each first-hop neighbour. Total nodes per batch: B × S_1 × S_2. Hamilton et al. use S_1=25, S_2=10 for PPI (total: B×250). Uniform sampling ignores edge importance — all neighbours equally likely regardless of edge weight or relationship strength. PinSage improves on this with importance-based sampling: run a short random walk from target node v, use visit frequencies as sampling probabilities, so closely-related nodes are sampled more often. This biased sampling improved recommendation quality over uniform GraphSAGE. PyTorch Geometric's NeighborLoader implements uniform sampling; custom importance sampling requires overriding the sampler. [1]"
+      "body": "GraphSAGE samples K-hop neighbourhoods: for a 2-layer model, sample S_1 first-hop neighbours, then S_2 second-hop neighbours for each first-hop neighbour. Total nodes per batch: B × S_1 × S_2. Hamilton et al. Uniform sampling ignores edge importance — all neighbours equally likely regardless of edge weight or relationship strength. PinSage improves on this with importance-based sampling: run a short random walk from target node v, use visit frequencies as sampling probabilities, so closely-related nodes are sampled more often. This biased sampling improved recommendation quality over uniform GraphSAGE. PyTorch Geometric's NeighborLoader implements uniform sampling; custom importance sampling requires overriding the sampler."
     },
     {
       "heading": "Inductive vs Transductive Learning",

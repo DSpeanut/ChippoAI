@@ -25,21 +25,21 @@
   "deepDive": [
     {
       "heading": "Logit Link and Odds Ratio Interpretation",
-      "body": "The logit link: logit(p) = log(p/(1−p)) = Xβ. For a binary predictor X ∈ {0,1}: log-odds difference = β₁; OR = exp(β₁) = odds(Y=1|X=1)/odds(Y=1|X=0). For a continuous predictor: OR = exp(β₁) is the multiplicative change in odds per unit increase in X. Critically: OR ≠ RR when the outcome is common. RR = p₁/p₀; OR = [p₁/(1−p₁)]/[p₀/(1−p₀)]. OR overestimates RR when outcome prevalence > 10%. [1]",
+      "body": "The logit link converts probabilities into log-odds so the model can use a linear predictor while still producing valid probabilities. Exponentiating a coefficient gives an odds ratio, which describes the multiplicative change in odds associated with a one-unit change in a predictor. This interpretation is standard in epidemiology and other applied fields, but it should not be confused with a risk ratio.",
       "formula": "log(p / (1−p)) = β₀ + β₁X₁ + … + βₚXₚ"
     },
     {
       "heading": "Likelihood Ratio Test (LRT) and Wald Test",
-      "body": "For H₀: βⱼ = 0: Wald test: W = (β̂ⱼ/SE(β̂ⱼ))² ~ χ²(1). LRT: G² = −2(ℓ(restricted) − ℓ(full)) ~ χ²(q) for q constraints. LRT is generally preferred to Wald for logistic regression — Wald test can be unreliable when β̂ is large (Hauck-Donner effect: Wald test statistic decreases for very large effects, causing conservative inference). [1]",
+      "body": "Logistic regression supports several ways to test hypotheses about coefficients. The likelihood ratio test compares overall model fit between nested models, while the Wald test looks at an estimate relative to its own standard error. In practice, the likelihood ratio test is often preferred because it behaves more reliably when coefficients are large or samples are limited.",
       "formula": "G² = −2[ℓ(β_restricted) − ℓ(β_full)]  ~  χ²(q)"
     },
     {
       "heading": "Complete Separation and Convergence Issues",
-      "body": "Complete separation: a linear combination of predictors perfectly predicts Y (one group has all Y=0, other all Y=1). MLE is undefined (β̂→∞). Symptoms: very large SE, extreme OR, slow convergence. Solutions: Firth's penalized likelihood (penalizes by −½log|I(β)|), Ridge-penalized logistic regression, or reducing predictor dimensionality. Quasi-complete separation (some perfect prediction) is more common and shows similar symptoms. [1]"
+      "body": "Logistic regression can fail when the predictors separate the classes too perfectly. In that case, the model keeps pushing coefficients toward infinity because ever-larger values keep improving the likelihood. Penalization, bias-reduced estimation, or simpler models are common fixes for this instability."
     },
     {
       "heading": "Model Evaluation",
-      "body": "Discrimination: AUC-ROC (area under ROC curve) — probability that a random case scores higher than a random control. AUC = 0.5 (no better than chance), 0.7–0.8 (adequate), > 0.8 (good). Calibration: Hosmer-Lemeshow test — group observations into deciles of predicted probability, compare observed vs expected counts. A non-significant H-L test indicates good calibration. Brier score = (1/n)Σ(ŷᵢ−yᵢ)² measures both discrimination and calibration. [1]"
+      "body": "Logistic models should be judged on both discrimination and calibration. A model may rank cases well while still producing poorly calibrated probabilities, or the reverse. That is why metrics such as AUC, calibration checks, and the Brier score are all useful parts of evaluation."
     }
   ],
   "youtubeLabel": "Logistic Regression — StatQuest",

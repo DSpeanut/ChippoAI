@@ -1,7 +1,7 @@
 {
   "eli3": [
-    "Autocorrelation (serial correlation) measures the correlation between a time series and its lagged values: ACF(k) = Corr(Yₜ, Yₜ₋ₖ). Positive autocorrelation (ACF > 0) means that above-average values tend to be followed by above-average values — the series is 'persistent'. Negative autocorrelation (ACF < 0) means alternating above/below average — the series 'oscillates'.",
-    "The Partial Autocorrelation Function (PACF) measures the correlation between Yₜ and Yₜ₋ₖ after removing the effect of intervening lags 1,…,k−1. The ACF and PACF patterns together identify the order of ARMA models: AR(p) → PACF cuts off after lag p; MA(q) → ACF cuts off after lag q; ARMA(p,q) → both tail off gradually.",
+    "Autocorrelation (serial correlation) measures the correlation between a time series and its lagged values. Positive autocorrelation means that above-average values tend to be followed by above-average values — the series is 'persistent'. Negative autocorrelation means alternating above/below average — the series 'oscillates'.",
+    "The Partial Autocorrelation Function (PACF) measures the correlation between a value and its lagged value after removing the effect of intermediate lags. The ACF and PACF patterns together identify the order of ARMA models: an AR(p) process has a PACF that cuts off after lag p; an MA(q) process has an ACF that cuts off after lag q; an ARMA process has both tailing off gradually.",
     "Autocorrelation in regression residuals violates the OLS assumption of independent errors, causing standard errors to be wrong (typically underestimated) and t-statistics to be inflated. The Durbin-Watson test detects first-order autocorrelation in OLS residuals. Remedies: add lagged dependent variable, use Newey-West (HAC) standard errors, or explicitly model the autocorrelation structure."
   ],
   "whenWhy": [
@@ -11,35 +11,35 @@
     },
     {
       "title": "Detecting residual misspecification",
-      "body": "After fitting a model, residuals should be white noise (ACF ≈ 0 for all lags). The Ljung-Box test on residuals: Q = n(n+2)ΣᵢK₌₁ρ̂²(k)/(n−k) ~ χ²(K−p−q) under H₀: all ρ(k) = 0. Significant Q indicates misspecification (missing AR or MA terms). Use K = 20 lags for financial data; K = 10–15 for monthly macro data. Plot residual ACF with ±1.96/√n bands (95% CI for white noise)."
+      "body": "After fitting a model, residuals should be white noise (ACF approximately zero for all lags). The Ljung-Box test checks this formally: it combines the squared autocorrelations across multiple lags into a single test statistic that follows a chi-squared distribution under the null hypothesis of white noise. A significant result indicates that the model is missing some AR or MA structure. Plot residual ACF with 95% confidence bands (roughly ±1.96 divided by the square root of n) to guide diagnosis."
     },
     {
       "title": "Correcting for autocorrelated errors in regression",
-      "body": "In OLS with AR(1) errors εₜ = ρεₜ₋₁ + ηₜ: OLS estimators are unbiased but inefficient (GLS is better) and standard errors are wrong. Newey-West (HAC) standard errors are consistent under arbitrary autocorrelation and heteroscedasticity — the standard correction for time series regressions. Alternatively, include the lagged dependent variable Yₜ₋₁ as a regressor to absorb AR(1) error structure."
+      "body": "In OLS with autocorrelated errors, estimators are unbiased but inefficient and standard errors are wrong. Newey-West (HAC) standard errors are consistent under arbitrary autocorrelation and heteroscedasticity — the standard correction for time series regressions. Alternatively, include the lagged dependent variable as a regressor to absorb first-order autocorrelation in the error."
     }
   ],
   "deepDiveIntro": [
-    "The autocovariance function: γ(k) = Cov(Yₜ, Yₜ₋ₖ) = E[(Yₜ−μ)(Yₜ₋ₖ−μ)]. The ACF: ρ(k) = γ(k)/γ(0) ∈ [−1,1]. Sample ACF: r(k) = Σₜ₌ₖ₊₁ⁿ(Yₜ−Ȳ)(Yₜ₋ₖ−Ȳ)/Σₜ₌₁ⁿ(Yₜ−Ȳ)². Under H₀ (white noise): r(k) ~ N(0, 1/n) approximately for k ≥ 1. So |r(k)| > 1.96/√n indicates significant autocorrelation at lag k at the 5% level.",
-    "The PACF at lag k: φₖₖ = Corr(Yₜ, Yₜ₋ₖ | Yₜ₋₁,…,Yₜ₋ₖ₊₁) — the partial correlation after removing intermediate lags. For AR(p): φₖₖ = φₖ for k ≤ p and φₖₖ = 0 for k > p (exact cutoff). Estimated via Yule-Walker equations or Durbin-Levinson recursion."
+    "The autocovariance at lag k is the expected product of deviations from the mean at times t and t-k. The ACF is the autocovariance divided by the variance, giving values between -1 and 1. The sample ACF at lag k is estimated from the data by computing this average product over all available pairs. Under the null hypothesis that the series is white noise, each sample ACF value is approximately normally distributed with standard deviation 1 divided by the square root of n, so values outside ±1.96/√n are considered significant at the 5% level.",
+    "The PACF at lag k is the correlation between observations k steps apart after removing the linear influence of all intermediate lags. For an AR(p) process, the PACF drops to zero exactly after lag p. The PACF is estimated via Yule-Walker equations or Durbin-Levinson recursion."
   ],
   "deepDive": [
     {
       "heading": "ACF and PACF for ARMA Models",
-      "body": "AR(p): theoretical ACF ρ(k) satisfies ρ(k) = φ₁ρ(k−1)+…+φₚρ(k−p) (decays geometrically/sinusoidally). PACF: φₖₖ = 0 for k > p (sharp cutoff). MA(q): theoretical ACF ρ(k) = 0 for k > q (sharp cutoff). PACF decays geometrically. ARMA(p,q): both ACF and PACF decay geometrically after max(p,q) lags. In practice: use 95% bands ±1.96/√n to judge significance; AIC/BIC to select orders formally. [1]",
+      "body": "For an AR(p) process, the theoretical ACF decays geometrically or in a sinusoidal pattern, while the PACF cuts off sharply to zero after lag p. For an MA(q) process, the ACF cuts off sharply to zero after lag q, while the PACF decays gradually. For an ARMA(p,q) process, both the ACF and PACF decay gradually without a sharp cutoff. In practice, use 95% significance bands to judge which lags are meaningful, and use AIC/BIC to select orders formally. [1]",
       "formula": "ACF: ρ(k) = γ(k)/γ(0);   PACF: φₖₖ = Corr(Yₜ, Yₜ₋ₖ | Yₜ₋₁,…,Yₜ₋ₖ₊₁)"
     },
     {
       "heading": "Ljung-Box Test for White Noise",
-      "body": "H₀: ρ(1) = … = ρ(K) = 0 (white noise). Ljung-Box statistic: Q(K) = n(n+2)Σᵢₖ₌₁ r²(k)/(n−k) ~ χ²(K) under H₀ (for raw series) or χ²(K−p−q) for ARMA(p,q) residuals. Significant Q: evidence of remaining autocorrelation (model inadequacy or non-white-noise data). Box-Pierce: Q_BP = nΣᵢₖ₌₁r²(k) ~ χ²(K) (simpler but less accurate in small samples — prefer Ljung-Box). [1]",
+      "body": "The Ljung-Box test checks whether a group of autocorrelations are all zero — that is, whether the series (or residuals) behave like white noise. It combines the squared sample autocorrelations up to lag K, weighted by a correction for finite sample size, into a single test statistic that follows a chi-squared distribution. A significant result means some autocorrelation is present and the model needs to be revised. For raw series, use K degrees of freedom; for ARMA(p,q) residuals, subtract p and q from the degrees of freedom. [1]",
       "formula": "Q(K) = n(n+2) Σₖ₌₁ᴷ r²(k)/(n−k)  ~  χ²(K)  [Ljung-Box]"
     },
     {
       "heading": "Newey-West HAC Standard Errors",
-      "body": "For OLS regression with serially correlated errors, the sandwich estimator with HAC (heteroscedasticity-autocorrelation consistent) kernel: Var_HAC(β̂) = (X'X)⁻¹ S (X'X)⁻¹, where S = Σ|k|≤L w(k)Σₜ x̂ₜx̂ₜ₋|k|êₜêₜ₋|k|, and w(k) is a kernel weight (Bartlett: w(k) = 1−|k|/(L+1)) and L is the bandwidth (Andrews 1991: L = floor(4(n/100)^{2/9})). Newey-West SEs are consistent regardless of autocorrelation structure — the standard fix for time series OLS. [1]"
+      "body": "When OLS residuals are serially correlated, the standard error estimates are unreliable — they are typically too small, making t-statistics look more significant than they really are. Newey-West (HAC) standard errors correct for this by using a weighted sum of the autocovariances of the residuals, with weights that decrease for lags further apart (Bartlett kernel). The result is a sandwich-type variance estimator that is consistent under arbitrary autocorrelation and heteroscedasticity. The bandwidth (number of lags to include) is typically chosen using a rule based on the sample size. [1]"
     },
     {
       "heading": "Durbin-Watson Test for AR(1) Errors",
-      "body": "Tests H₀: ρ = 0 (no first-order serial correlation) in OLS residuals. DW = Σᵢ₌₂ⁿ(êᵢ−êᵢ₋₁)²/Σᵢ₌₁ⁿêᵢ² ≈ 2(1−r̂(1)). DW ∈ [0,4]: DW ≈ 2 (no autocorrelation); DW < 2 (positive autocorrelation); DW > 2 (negative). DW in inconclusive zone [d_L, d_U]: test is inconclusive. DW has limitations: only tests AR(1); biased toward 2 when lagged dependent variable is included; use Breusch-Godfrey LM test for general AR(p) and models with lagged Y. [1]"
+      "body": "The Durbin-Watson statistic tests whether consecutive OLS residuals are correlated. It is approximately equal to 2 times (1 minus the first-order autocorrelation of the residuals): a value near 2 indicates no autocorrelation, values below 2 indicate positive autocorrelation, and values above 2 indicate negative autocorrelation. The test has an inconclusive zone and only detects first-order autocorrelation. When the model includes a lagged dependent variable, the Breusch-Godfrey LM test is more appropriate since the Durbin-Watson statistic is biased toward 2 in that case. [1]"
     }
   ],
   "takeaways": [
@@ -52,7 +52,7 @@
   "edgeCases": [
     {
       "q": "Why can the sample ACF be misleading for non-stationary series?",
-      "a": "For a random walk, the theoretical ACF ρ(k) = 1 for all k (the series is perfectly correlated with itself at any lag, as shocks are permanent). The sample ACF decays slowly from 1 — this is the ACF signature of an I(1) series. When you see slowly decaying sample ACF, difference the series before interpreting ACF/PACF for model identification. Fitting ARMA to a non-stationary series produces meaningless coefficient estimates. [1]"
+      "a": "For a random walk, the theoretical ACF is approximately 1 for all lags (shocks are permanent, so the series is highly correlated with itself at any lag). The sample ACF decays slowly from 1 — this is the signature of a non-stationary (I(1)) series. When you see slowly decaying sample ACF, difference the series before interpreting ACF/PACF for model identification. Fitting ARMA to a non-stationary series produces meaningless coefficient estimates. [1]"
     },
     {
       "q": "How many lags should you test in the Ljung-Box test?",

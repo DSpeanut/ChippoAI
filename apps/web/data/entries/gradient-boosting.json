@@ -30,25 +30,25 @@
   "deepDive": [
     {
       "heading": "The Additive Model",
-      "body": "The model is a sum of M shallow trees: F_M(x) = Σₘ₌₁ᴹ γₘ · hₘ(x), where hₘ is a regression tree and γₘ is its weight (learning rate × step size). The key insight: this is forward stagewise additive modelling — at each step, add the function that best reduces the current loss without changing previous trees. [1]",
+      "body": "The key insight: this is forward stagewise additive modelling — at each step, add the function that best reduces the current loss without changing previous trees.",
       "formula": "F_m(x) = F_{m-1}(x) + η · hₘ(x)"
     },
     {
       "heading": "Pseudo-Residuals (Gradient of the Loss)",
-      "body": "At step m, compute the pseudo-residual for each training point: rᵢₘ = −[∂L(yᵢ, F(xᵢ))/∂F(xᵢ)]_{F=F_{m-1}}. For L = MSE: rᵢₘ = yᵢ − F_{m-1}(xᵢ) (true residuals). For log-loss: rᵢₘ = yᵢ − p̂ᵢ. Fit tree hₘ to these pseudo-residuals. The tree learns to correct the current ensemble's mistakes. [1]",
+      "body": "Fit tree hₘ to these pseudo-residuals. The tree learns to correct the current ensemble's mistakes.",
       "formula": "rᵢₘ = −∂L(yᵢ, F_{m-1}(xᵢ)) / ∂F_{m-1}(xᵢ)"
     },
     {
       "heading": "Shrinkage (Learning Rate)",
-      "body": "After fitting hₘ, scale it by η ∈ (0,1] before adding: F_m = F_{m-1} + η·hₘ. Small η means each tree contributes less — more trees are needed but generalisation improves. There is an empirical tradeoff: η·M ≈ constant for optimal performance. Typical: η = 0.05–0.1, M = 500–5000. Always use early stopping to find the optimal M. [1]"
+      "body": "Small η means each tree contributes less — more trees are needed but generalisation improves. Always use early stopping to find the optimal M."
     },
     {
       "heading": "Stochastic Gradient Boosting",
-      "body": "At each step, randomly subsample a fraction f ∈ (0,1] of the training data before fitting hₘ (subsampling). This both reduces overfitting and speeds up training. Column subsampling (subsample features like Random Forest) further reduces correlation between trees. These tricks are implemented in all major GBM libraries. [1]"
+      "body": "This both reduces overfitting and speeds up training. Column subsampling (subsample features like Random Forest) further reduces correlation between trees. These tricks are implemented in all major GBM libraries."
     },
     {
       "heading": "Early Stopping",
-      "body": "GBM can overfit with too many trees. Monitor validation loss during training and stop when it stops improving (patience = 50–100 rounds). This determines the optimal M without cross-validation. Implemented natively in scikit-learn's GradientBoostingClassifier (n_iter_no_change) and all XGBoost/LightGBM APIs. [1][2]"
+      "body": "GBM can overfit with too many trees. This determines the optimal M without cross-validation. Implemented natively in scikit-learn's GradientBoostingClassifier (n_iter_no_change) and all XGBoost/LightGBM APIs."
     }
   ],
   "youtubeLabel": "StatQuest: Gradient Boost",
@@ -84,7 +84,13 @@
     }
   ],
   "sources": [
-    { "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 10", "url": "https://hastie.su.domains/ElemStatLearn/" },
-    { "label": "Friedman — Greedy Function Approximation: A Gradient Boosting Machine (2001)", "url": "https://projecteuclid.org/journals/annals-of-statistics/volume-29/issue-5/Greedy-function-approximation--A-gradient-boosting-machine/10.1214/aos/1013203451.full" }
+    {
+      "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 10",
+      "url": "https://hastie.su.domains/ElemStatLearn/"
+    },
+    {
+      "label": "Friedman — Greedy Function Approximation: A Gradient Boosting Machine (2001)",
+      "url": "https://projecteuclid.org/journals/annals-of-statistics/volume-29/issue-5/Greedy-function-approximation--A-gradient-boosting-machine/10.1214/aos/1013203451.full"
+    }
   ]
 }

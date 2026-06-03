@@ -23,27 +23,27 @@
     }
   ],
   "deepDiveIntro": [
-    "Nonparametric bootstrap: for b = 1,…,B: draw x*₁,…,x*ₙ iid from {x₁,…,xₙ} (SRSWR), compute θ̂*_b = T(x*₁,…,x*ₙ). SE estimate: std({θ̂*_b}). Bias estimate: B̂ias = θ̄* − θ̂ where θ̄* = (1/B)Σθ̂*_b. Bootstrap works because the bootstrap distribution of θ̂* − θ̄* approximates the sampling distribution of θ̂ − θ.",
-    "The BCa confidence interval adjusts the percentile interval for two quantities: bias-correction ẑ₀ = Φ⁻¹(#{θ̂*_b < θ̂}/B) and acceleration â = (1/6)Σᵢ(θ̂₋ᵢ − θ̄₋)³/(Σᵢ(θ̂₋ᵢ − θ̄₋)²)^{3/2} (from jackknife leave-one-out estimates). Adjusted percentiles: α₁ = Φ(ẑ₀ + (ẑ₀+z_α)/(1−â(ẑ₀+z_α))), α₂ = Φ(ẑ₀ + (ẑ₀+z_{1−α})/(1−â(ẑ₀+z_{1−α})))."
+    "The nonparametric bootstrap works by treating your observed data as if it were the full population, then simulating the sampling process by drawing samples with replacement. For each bootstrap sample you compute the statistic of interest. The spread of those B estimates approximates the sampling variability you would see if you drew many fresh samples from the real population.",
+    "The BCa (bias-corrected and accelerated) confidence interval is the most accurate bootstrap CI method. It corrects for two sources of error: bias (the bootstrap distribution may be systematically shifted from the true distribution) and acceleration (the spread of the bootstrap distribution may change with the parameter value). The corrections are computed from the bootstrap samples plus a set of jackknife (leave-one-out) estimates."
   ],
   "deepDive": [
     {
       "heading": "Nonparametric Bootstrap: SE and Bias",
-      "body": "SE_boot = √[(1/(B−1))Σ(θ̂*_b − θ̄*)²]. Bias_boot = θ̄* − θ̂. Bias-corrected estimate: θ̂_BC = θ̂ − Bias_boot = 2θ̂ − θ̄*. The sample median is slightly biased in small samples; the bootstrap bias estimate enables correction. B ≥ 200 for stable SE; B ≥ 1000 for stable CI endpoints. Computational cost: B × (cost of computing θ̂). Parallelizable over B. [1]",
+      "body": "The standard error from bootstrapping is simply the standard deviation of the statistic computed across all B samples. The bias is estimated as the average of the bootstrap statistics minus the original estimate. You can use this bias estimate to correct the original estimate by subtracting the measured bias. Around 200 bootstrap samples suffice for a stable standard error, while 1000 or more are needed for reliable confidence interval endpoints. [1]",
       "formula": "SE_boot = std({θ̂*_b}_{b=1}^B)"
     },
     {
       "heading": "Bootstrap CI Types and Accuracy",
-      "body": "Percentile CI: [θ̂*_{α/2}, θ̂*_{1−α/2}] — first-order accurate (coverage error O(n^{-1/2})). Basic CI: [2θ̂−θ̂*_{1−α/2}, 2θ̂−θ̂*_{α/2}] — first-order accurate. Studentized (bootstrap-t): requires nested bootstrapping, computationally expensive. BCa: second-order accurate (coverage error O(n⁻¹)) — best coverage but requires computing the acceleration â from jackknife estimates. For skewed distributions or biased estimators, BCa substantially outperforms percentile CI. [1]",
+      "body": "The simplest approach — the percentile interval — just takes the lower and upper quantiles of the bootstrap distribution directly. The basic (pivot) interval flips those quantiles around the original estimate to correct for bias. BCa is the most accurate because it corrects for both bias and for the fact that the bootstrap spread may not be constant — it achieves coverage error that shrinks faster with sample size. For skewed or biased statistics, BCa is substantially more reliable than the simple percentile interval. [1]",
       "formula": "Percentile CI: [θ̂*_{α/2},  θ̂*_{1−α/2}]"
     },
     {
       "heading": "When Bootstrap Fails",
-      "body": "The bootstrap is inconsistent for: (1) Non-smooth functionals: sample maximum θ̂ = max(xᵢ) — the bootstrap max does not converge to the correct sampling distribution (the extreme value distribution). (2) Unit root testing (Dickey-Fuller) — bootstrap breaks down near the unit root boundary. (3) Very small samples (n < 10): the discrete empirical distribution is a poor approximation. (4) Heavy-tailed distributions without finite variance: bootstrap SE is inconsistent. For extremes: use the m-out-of-n bootstrap (m << n). [1]"
+      "body": "The bootstrap works by approximating the population with the empirical distribution of your sample. When that approximation breaks down, so does the bootstrap. It fails for the sample maximum (because the extreme value distribution is not well-approximated by resampling), for very small samples (fewer than 10 observations), and for heavy-tailed distributions with infinite variance. It also fails near the unit root boundary in time series, where the special Dickey-Fuller distribution cannot be recovered by standard resampling. [1]"
     },
     {
       "heading": "Parametric Bootstrap",
-      "body": "Instead of resampling from the empirical distribution, the parametric bootstrap draws from a fitted parametric model. Fit θ̂ = T(x₁,…,xₙ), then draw x*₁,…,x*ₙ from the fitted model F(·;θ̂), compute θ̂*. More efficient than nonparametric bootstrap when the model is correctly specified; biased when model is misspecified. Used for model checking: compare observed statistic to its distribution under the fitted model. [1]"
+      "body": "Instead of resampling from the raw data, the parametric bootstrap first fits a parametric model and then draws new samples from that fitted model. This can be much more efficient when the model is correct — you are using all the structure of the model to generate realistic samples. The downside is that if the model is wrong, the bootstrap will be biased in a way that is hard to detect. It is commonly used for model checking: compare the observed statistic to its distribution under the fitted model to see whether the model fits. [1]"
     }
   ],
   "youtubeLabel": "Bootstrap Confidence Intervals — StatQuest",

@@ -35,21 +35,21 @@
     },
     {
       "heading": "Primal Formulation",
-      "body": "The primal optimisation introduces slack variables ξᵢ ≥ 0 (above the tube) and ξᵢ* ≥ 0 (below the tube) for each training point. The trade-off parameter C controls the penalty for violations: large C means fewer allowed violations (less regularisation), small C allows more violations (more regularisation). [1]",
+      "body": "The trade-off parameter C controls the penalty for violations: large C means fewer allowed violations (less regularisation), small C allows more violations (more regularisation).",
       "formula": "min_{w,b,ξ,ξ*}  ½||w||² + C·Σᵢ(ξᵢ + ξᵢ*)  s.t.  yᵢ − wᵀxᵢ − b ≤ ε + ξᵢ,  wᵀxᵢ + b − yᵢ ≤ ε + ξᵢ*"
     },
     {
       "heading": "Dual & the Kernel Trick",
-      "body": "The Lagrangian dual of the primal QP has the form below, where αᵢ, αᵢ* ∈ [0, C] are dual variables. The prediction f(x) = Σᵢ(αᵢ − αᵢ*)⟨xᵢ, x⟩ + b involves only inner products, which can be replaced by a kernel K(xᵢ, x) = ⟨φ(xᵢ), φ(x)⟩ to fit non-linear functions. Common kernels: RBF K(x,x') = exp(−γ||x−x'||²), polynomial K(x,x') = (γxᵀx' + r)ᵈ. [1]",
+      "body": "This section explains the main idea behind this part of the method in plain language.",
       "formula": "f(x) = Σᵢ (αᵢ − αᵢ*) K(xᵢ, x) + b"
     },
     {
       "heading": "Support Vectors",
-      "body": "Only points where αᵢ − αᵢ* ≠ 0 contribute to f(x) — these are the support vectors. They correspond to training points that lie exactly on or outside the ε-tube. Points inside the tube have αᵢ = αᵢ* = 0 and play no role in the model. A small ε creates more support vectors (denser model); a large ε creates fewer (sparser model). [1]"
+      "body": "They correspond to training points that lie exactly on or outside the ε-tube. A small ε creates more support vectors (denser model); a large ε creates fewer (sparser model)."
     },
     {
       "heading": "Key Hyperparameters",
-      "body": "C: regularisation strength. Large C → model tries hard to fit every point, may overfit. Small C → allows more tube violations, smoother function. ε: tube half-width. Large ε → more points inside tube, fewer support vectors, sparser model. Kernel γ (RBF): controls locality. Large γ → very local fit (high variance); small γ → smooth global fit. All three interact and should be tuned jointly via cross-validation. [2]"
+      "body": "C: regularisation strength. ε: tube half-width. Kernel γ (RBF): controls locality. All three interact and should be tuned jointly via cross-validation."
     }
   ],
   "youtubeLabel": "StatQuest: Support Vector Machines (concept applies to SVR)",

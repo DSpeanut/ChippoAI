@@ -30,27 +30,28 @@
   "deepDive": [
     {
       "heading": "LU Decomposition",
-      "body": "A = PLU. P for pivoting (stability). L unit lower triangular (1s on diagonal), U upper triangular. Solve Ax=b: Ly=Pb (forward substitution), Ux=y (back substitution). Cholesky A=LLᵀ for SPD: half storage, half operations, no pivoting needed, always stable.",
+      "body": "LU decomposition rewrites a matrix so solving a linear system becomes two simpler triangular solves. The permutation matrix captures pivoting, which is used to improve numerical stability. When the matrix is symmetric positive definite, Cholesky gives an even cheaper and cleaner factorization specialized to that structure.",
       "formula": "Ax = b → PLUx = b → Ly = Pb → Ux = y"
     },
     {
       "heading": "QR Decomposition",
-      "body": "A = QR: Q orthogonal (QᵀQ=I), R upper triangular. Methods: Gram-Schmidt (unstable), modified Gram-Schmidt, Householder reflections (stable), Givens rotations. Least squares: min||Ax-b||₂ = min||Rx-Qᵀb||₂. Solve Rx = Qᵀb (upper triangular).",
+      "body": "QR decomposition separates a matrix into an orthogonal part and a triangular part. Because orthogonal transformations preserve lengths and angles, QR is especially reliable for least-squares problems and orthogonalization tasks. Stable construction methods such as Householder reflections are usually preferred in serious numerical work.",
       "formula": "A = QR, ||Ax-b||² = ||Rx-Qᵀb||²"
     },
     {
       "heading": "Singular Value Decomposition",
-      "body": "A = UΣVᵀ. U, V orthogonal; Σ diagonal with singular values σ₁ ≥ … ≥ σᵣ > 0. Rank-k approximation: Aₖ = UₖΣₖVₖᵀ. Pseudo-inverse A⁺ = VΣ⁺Uᵀ. Best rank-k approximation in spectral and Frobenius norm (Eckart-Young-Mirsky).",
+      "body": "The singular value decomposition is the most general and versatile of the common matrix factorizations. It reveals the key input and output directions of a transformation, ranks their importance, and supports tasks such as compression, pseudo-inversion, and low-rank approximation. It is also the most robust option when matrices are rectangular, rank-deficient, or poorly conditioned.",
       "formula": "A = UΣVᵀ, A⁺ = V diag(1/σ₁,…,1/σᵣ,0,…) Uᵀ"
     },
     {
       "heading": "Eigendecomposition",
-      "body": "A = VDV⁻¹ for diagonalizable A. D = diag(λ₁,…,λₙ). Powers: Aⁿ = VDⁿV⁻¹. Exponential: e^A = Ve^DV⁻¹. Symmetric A = QΛQᵀ (orthogonal Q, real Λ). Not all matrices diagonalizable (Jordan form for defective matrices).",
+      "body": "Eigendecomposition works when a matrix has enough eigenvectors to form a basis. In that case, many matrix functions become easy because the hard work reduces to applying the function to diagonal entries. Symmetric matrices are the nicest case, while defective matrices may require other decompositions such as Schur form.",
       "formula": "A = VDV⁻¹, Aⁿ = VDⁿV⁻¹, e^A = Ve^DV⁻¹"
     },
     {
       "heading": "Iterative Methods",
-      "body": "For large sparse systems: Conjugate Gradient (CG) for SPD, O(n) per iteration, converges in ≤n steps (exact arithmetic). GMRES for general, BiCGSTAB for non-symmetric. Preconditioning crucial: solve M⁻¹Ax = M⁻¹b with M ≈ A cheap to invert."
+      "body": "For very large sparse systems, forming a full direct factorization can be too expensive in memory or time. Iterative methods instead improve the solution gradually using matrix-vector products, which preserves sparsity and scales better. Their success depends heavily on preconditioning, which reshapes the problem into one that converges faster.",
+      "formula": "M⁻¹Ax = M⁻¹b"
     }
   ],
   "youtubeLabel": "Matrix Decompositions — MIT OCW",

@@ -30,24 +30,24 @@
   "deepDive": [
     {
       "heading": "Generative Model",
-      "body": "Each class k is modelled as a multivariate Gaussian: P(x|y=k) = N(x; μₖ, Σₖ). Unlike LDA, Σₖ is class-specific. Parameters are estimated by maximum likelihood: μ̂ₖ = class-k sample mean; Σ̂ₖ = class-k sample covariance (using nₖ or nₖ−1 denominator); π̂ₖ = nₖ/n. [1][2]"
+      "body": "This section describes the core structure of the method and the assumptions it makes about how inputs, outputs, or latent components relate."
     },
     {
       "heading": "Quadratic Discriminant Function",
-      "body": "Plugging the Gaussian density into Bayes' theorem and taking the log-posterior (without the shared-Σ simplification), the quadratic terms no longer cancel and we get a quadratic function of x. Classify to class k with the largest δₖ(x). [1]",
+      "body": "This section explains how the fitted method turns learned structure into predictions, scores, or class assignments.",
       "formula": "δₖ(x) = −½ log|Σₖ| − ½(x−μₖ)ᵀΣₖ⁻¹(x−μₖ) + log πₖ"
     },
     {
       "heading": "Decision Boundary",
-      "body": "The boundary between classes k and l is {x : δₖ(x) = δₗ(x)}. Because Σₖ ≠ Σₗ, the quadratic terms do not cancel, and the boundary is a general quadratic surface (ellipse, hyperbola, or parabola in 2D). In the special case Σₖ = Σₗ = Σ, the quadratic terms cancel and QDA reduces to LDA. [1]"
+      "body": "This section explains how the fitted method turns learned structure into predictions, scores, or class assignments."
     },
     {
       "heading": "LDA vs QDA: Bias-Variance Tradeoff",
-      "body": "LDA: fewer parameters (p(p+1)/2 + Kp + K), lower variance, higher bias when covariances differ. QDA: more parameters (Kp(p+1)/2 + Kp + K), lower bias, higher variance — needs more data. With small n, LDA often outperforms QDA even when the true covariances differ, because the QDA estimate of Σₖ is noisy. [2]"
+      "body": "LDA: fewer parameters (p(p+1)/2 + Kp + K), lower variance, higher bias when covariances differ. QDA: more parameters (Kp(p+1)/2 + Kp + K), lower bias, higher variance — needs more data."
     },
     {
       "heading": "Regularised QDA",
-      "body": "When a class has fewer observations than features (nₖ < p), Σ̂ₖ is singular. Regularise by shrinking towards a scaled identity or towards the pooled LDA estimate: Σₖ(α) = (1−α)Σ̂ₖ + αΣ̂, where α ∈ [0,1]. α=0 is full QDA; α=1 is LDA. This is Friedman's regularised discriminant analysis (RDA). [1]"
+      "body": "This section explains how the method controls flexibility, reduces overfitting, and balances fit against generalization."
     }
   ],
   "youtubeLabel": "StatQuest: LDA & QDA",
@@ -83,7 +83,13 @@
     }
   ],
   "sources": [
-    { "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 4", "url": "https://hastie.su.domains/ElemStatLearn/" },
-    { "label": "James et al. — An Introduction to Statistical Learning, Ch. 4", "url": "https://www.statlearning.com/" }
+    {
+      "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 4",
+      "url": "https://hastie.su.domains/ElemStatLearn/"
+    },
+    {
+      "label": "James et al. — An Introduction to Statistical Learning, Ch. 4",
+      "url": "https://www.statlearning.com/"
+    }
   ]
 }

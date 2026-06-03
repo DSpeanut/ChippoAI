@@ -30,25 +30,27 @@
   "deepDive": [
     {
       "heading": "Condition Number",
-      "body": "κ measures problem sensitivity. For f(x), κ = |xf'(x)/f(x)|. For Ax=b, κ(A) = ||A|| ||A⁻¹|| = σₘₐₓ/σₘᵢₙ (spectral condition number). κ = 1 is perfect; κ = ∞ is singular. Double precision has 16 digits; κ > 10¹⁶ is numerically singular.",
+      "body": "The condition number measures how sensitive a problem is to tiny input errors. A small condition number means the problem itself is well behaved, while a large one means even perfect algorithms will struggle because the underlying task is fragile. This is why conditioning must be separated from the quality of the algorithm used to solve the problem.",
       "formula": "κ(A) = ||A|| ||A⁻¹|| = σₘₐₓ/σₘᵢₙ (spectral)"
     },
     {
       "heading": "Forward and Backward Stability",
-      "body": "Forward: computed result ≈ exact result (hard to achieve). Backward: computed result = exact result for slightly perturbed input. Backward stability is achievable and useful: if backward error is small and problem is well-conditioned, forward error is small.",
+      "body": "Forward stability asks whether the computed answer is directly close to the true answer. Backward stability asks a slightly different and more practical question: whether the algorithm produced the exact answer to a nearby problem. Backward stability is the standard benchmark because it combines nicely with conditioning to explain overall accuracy.",
       "formula": "Computed f(x) = f(x + δx) where ||δx||/||x|| is small"
     },
     {
       "heading": "Gaussian Elimination and Pivoting",
-      "body": "Without pivoting: can be unstable (growth factor 2ⁿ). Partial pivoting (row swaps): usually stable in practice (growth ≤ 2ⁿ⁻¹ but rare). Complete pivoting: provably stable but expensive. LU with partial pivoting is standard (dgesv in LAPACK)."
+      "body": "Gaussian elimination can amplify rounding error if it eliminates using unlucky pivots. Pivoting reduces that risk by reordering rows, which is why partial pivoting is the standard practical choice in dense linear algebra. More aggressive pivoting can be safer in theory, but it costs more work.",
+      "formula": "growth factor without pivoting can scale like 2ⁿ"
     },
     {
       "heading": "Avoiding Catastrophic Cancellation",
-      "body": "Quadratic formula: for ax² + bx + c = 0, use x = 2c/(-b ∓ √(b²-4ac)) when b is large. Variance: use Welford's algorithm or two-pass. Log-sum-exp: subtract max. These reformulations algebraically equivalent but numerically superior."
+      "body": "Catastrophic cancellation happens when you subtract nearly equal numbers and destroy meaningful digits. A common fix is to rewrite the computation into an algebraically equivalent form that avoids this dangerous subtraction. Many stable numerical tricks, from log-sum-exp to improved quadratic-formula variants, follow exactly this pattern."
     },
     {
       "heading": "Vanishing and Exploding Gradients",
-      "body": "In deep networks, repeated multiplication by weight matrices: Wⁿ for n layers. If eigenvalues > 1, explode; < 1, vanish. Spectral normalization (constrain σₘₐₓ(W)), orthogonal initialization, residual connections help. RNNs use LSTM/GRU gating to control gradient flow."
+      "body": "Deep networks face the same stability issues in a different form: repeated transformations can either shrink gradients toward zero or blow them up. Architecture choices, initialization schemes, normalization, and clipping all try to keep signal and gradient magnitudes in a workable range. This is why numerical stability is not just a classical linear algebra topic but also a core machine learning concern.",
+      "formula": "repeated products behave like Wⁿ"
     }
   ],
   "youtubeLabel": "Numerical Stability — MIT OCW",

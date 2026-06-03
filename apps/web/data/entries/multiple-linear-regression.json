@@ -25,21 +25,22 @@
   "deepDive": [
     {
       "heading": "OLS in Matrix Form",
-      "body": "β̂ = (X'X)⁻¹X'y. Var(β̂) = σ²(X'X)⁻¹, estimated by s²(X'X)⁻¹. The hat matrix H = X(X'X)⁻¹X' is symmetric and idempotent (H² = H), projecting y onto the column space of X. Leverage hᵢᵢ = [H]ᵢᵢ ∈ [1/n, 1] measures how influential observation i is in determining ŷᵢ. High leverage (hᵢᵢ > 2(p+1)/n) means the point can have large influence on estimates even with moderate residuals. [1]",
+      "body": "In matrix form, multiple regression estimates all coefficients at once by projecting the outcome onto the column space spanned by the predictors. This viewpoint makes it easier to understand leverage, fitted values, and uncertainty in the coefficient estimates. It also explains why linear algebra issues such as rank deficiency and collinearity matter so much in regression.",
       "formula": "β̂ = (X'X)⁻¹ X'y,   Var(β̂) = σ²(X'X)⁻¹"
     },
     {
       "heading": "Omitted Variable Bias",
-      "body": "Suppose the true model is Y = Xβ + Zγ + ε but we omit Z. The OLS estimator of β becomes β̂_OVB = (X'X)⁻¹X'y = β + (X'X)⁻¹X'Zγ + (X'X)⁻¹X'ε. Bias = (X'X)⁻¹X'Zγ ≠ 0 when X and Z are correlated (X'Z ≠ 0) AND Z affects Y (γ ≠ 0). Direction of bias: if Z is positively correlated with X and positively affects Y, β̂ is upward biased. Controlling for Z by including it removes this bias. [1]",
+      "body": "Leaving out a relevant predictor can distort the coefficients on variables that remain in the model. The bias appears when the omitted variable both affects the outcome and is correlated with an included predictor. This is why regression coefficients should be interpreted as conditional effects only within a thoughtfully specified model.",
       "formula": "Bias(β̂_OVB) = (X'X)⁻¹ X'Z · γ"
     },
     {
       "heading": "Variance Inflation Factor (VIF)",
-      "body": "VIFⱼ = 1/(1−Rⱼ²), where Rⱼ² is the R² from regressing Xⱼ on all other predictors. VIF = 1: no multicollinearity; VIF = 10: Rⱼ² = 0.9 (Xⱼ is 90% explained by other predictors), inflating SE(β̂ⱼ) by √10 ≈ 3.16×. Remedies: remove one of the correlated predictors, use PCA to form orthogonal components, or apply Ridge regression (explicit regularization). VIF affects inference (wider CIs) but NOT prediction accuracy if X in training and test are similarly distributed. [1]"
+      "body": "Variance inflation factors quantify how much collinearity among predictors weakens coefficient precision. When one predictor is largely explained by the others, its unique contribution becomes hard to isolate and its standard error grows. This hurts interpretation and hypothesis testing even when predictions remain fairly accurate.",
+      "formula": "VIFⱼ = 1/(1−Rⱼ²)"
     },
     {
       "heading": "Influential Observations: Cook's Distance",
-      "body": "Cook's distance Dᵢ = (β̂₋ᵢ − β̂)'X'X(β̂₋ᵢ − β̂)/(p+1)s² measures the change in β̂ when observation i is deleted. Dᵢ can be computed without refitting: Dᵢ = (êᵢ²·hᵢᵢ)/[(p+1)s²(1−hᵢᵢ)²]. Rule of thumb: Dᵢ > 4/(n−p−1) or Dᵢ > 1 flags influential points. Combine with leverage (hᵢᵢ) and standardized residual to characterize the type of influence. [1]"
+      "body": "Some observations matter much more than others because they combine large residuals with unusual predictor values. Cook's distance summarizes how much the fitted model would change if one observation were removed. It is a practical way to identify cases that deserve closer inspection before drawing substantive conclusions."
     }
   ],
   "youtubeLabel": "Multiple Linear Regression — StatQuest",

@@ -30,20 +30,22 @@
   "deepDive": [
     {
       "heading": "Definition: Third Standardised Moment",
-      "body": "Population: γ₁ = E[(X−μ)³] / σ³ = μ₃/σ³. Sample (Fisher's adjusted): ĝ₁ = [n/((n−1)(n−2))] Σᵢ [(xᵢ−x̄)/s]³. The cubing ensures that deviations retain their sign (positive deviations contribute + to skewness, negative contribute −). Standardising by σ³ makes it dimensionless and scale-invariant. [1]",
+      "body": "Skewness measures asymmetry by checking whether one tail stretches farther than the other. Positive values indicate a longer right tail, negative values indicate a longer left tail, and values near zero suggest symmetry. Because the statistic is standardized, it can be compared across variables measured on very different scales.",
       "formula": "γ₁ = E[(X − μ)³] / σ³"
     },
     {
       "heading": "Named Distributions and Their Skewness",
-      "body": "Normal N(μ,σ²): γ₁ = 0. Log-normal LN(μ,σ²): γ₁ = (e^{σ²}+2)√(e^{σ²}−1) > 0 (always right-skewed). Exponential Exp(λ): γ₁ = 2 (always right-skewed). Beta(α,β): γ₁ = 2(β−α)√(α+β+1)/[(α+β+2)√(αβ)] — can be positive, negative, or zero. [1]"
+      "body": "Different distributions have characteristic skewness patterns. Symmetric families such as the normal have zero skewness, while distributions like the exponential and log-normal are inherently right-skewed. This makes skewness a quick diagnostic for whether a familiar distributional assumption is even plausible.",
+      "formula": "Normal: 0,   Exponential: 2"
     },
     {
       "heading": "Pearson's Skewness Coefficients",
-      "body": "Pearson's mode skewness: Sk₁ = (mean−mode)/σ. Pearson's median skewness (more robust): Sk₂ = 3(mean−median)/σ. These are simpler alternatives that don't require computing high-order moments. For the normal distribution: mean = median = mode, so both = 0. [1]"
+      "body": "Pearson proposed simpler skewness summaries based on the relative positions of the mean, median, and mode. These are easier to interpret than third-moment formulas and are useful as descriptive heuristics, especially when you want a quick sense of asymmetry without relying on higher-order moments. They are less general, but often more intuitive.",
+      "formula": "Sk₁ = (mean−mode)/σ,   Sk₂ = 3(mean−median)/σ"
     },
     {
       "heading": "Jarque-Bera Test for Normality",
-      "body": "JB = n/6 · [ĝ₁² + (ĝ₂)²/4] where ĝ₁ = sample skewness, ĝ₂ = sample excess kurtosis. Under H₀ (normality), JB →_d χ²(2). Reject normality if JB > χ²_{2,α}. For α=0.05, critical value ≈ 5.99. The test combines skewness and kurtosis — sensitive to departures from normality in either dimension. [2]",
+      "body": "Skewness is often paired with kurtosis in formal tests of normality. The Jarque-Bera test asks whether the sample looks too asymmetric or too heavy-tailed to be consistent with a normal distribution. It is a compact way to combine two common shape diagnostics into one test statistic.",
       "formula": "JB = (n/6)·[ĝ₁² + ĝ₂²/4] ~ χ²(2)"
     }
   ],

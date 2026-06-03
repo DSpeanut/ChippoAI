@@ -30,7 +30,7 @@
   "deepDive": [
     {
       "heading": "Message, Aggregate, Update: Dissecting GNN Architectures",
-      "body": "Different GNN layers differ only in their M and U functions: GCN — message: M(h_i, h_j) = W·h_j / √(d_i·d_j); aggregate: sum; update: U(h_i, m_i) = σ(m_i) (no concatenation). GraphSAGE — message: M(h_i, h_j) = h_j; aggregate: mean; update: U(h_i, m_i) = σ(W·[h_i||m_i]). GAT — message: M(h_i, h_j) = α_{ij}·W·h_j where α is attention; aggregate: sum; update: U(h_i, m_i) = σ(m_i). GIN — message: M(h_i, h_j) = h_j; aggregate: sum; update: U(h_i, m_i) = MLP((1+ε)h_i + m_i). The GIN update is the most expressive: by using sum (preserves multiset information) + MLP (approximates any function), GIN achieves the maximum 1-WL expressiveness. [1]"
+      "body": "The GIN update is the most expressive: by using sum (preserves multiset information) + MLP (approximates any function), GIN achieves the maximum 1-WL expressiveness."
     },
     {
       "heading": "Aggregation Function Expressiveness",
@@ -38,11 +38,11 @@
     },
     {
       "heading": "Edge Features in Message Passing",
-      "body": "Many real-world graphs have edge features: bond type in molecules, relation type in knowledge graphs, strength in weighted networks. Standard GCN ignores edge features — it only uses edge connectivity for aggregation. MPNN incorporates edge features in the message function: m_{ij} = M(h_i, h_j, e_{ij}). Common implementations: (1) Concatenation: M(h_i, h_j, e_{ij}) = MLP([h_j || e_{ij}]) or MLP([h_i || h_j || e_{ij}]); (2) Edge gating: M(h_i, h_j, e_{ij}) = h_j ⊙ σ(W_e e_{ij}) — edge features gate the message; (3) Edge networks (MPNN original): M(h_j, e_{ij}) = A(e_{ij})·h_j where A is a learned edge-specific matrix. R-GCN (for knowledge graphs) uses relation-specific weight matrices: M_r(h_j) = W_r·h_j, with a separate W_r per relation type r. For graphs with many relation types (KB-237: 237 relations), basis decomposition reduces parameters: W_r = Σ_b a_{rb}·V_b. [1]"
+      "body": "Many real-world graphs have edge features: bond type in molecules, relation type in knowledge graphs, strength in weighted networks. Standard GCN ignores edge features — it only uses edge connectivity for aggregation."
     },
     {
       "heading": "Beyond 1-WL: Higher-Order GNNs",
-      "body": "Standard MPNNs are bounded by the 1-Weisfeiler-Leman (1-WL) test — they cannot distinguish certain pairs of non-isomorphic graphs (e.g., two regular graphs of the same degree). Higher-order WL tests (k-WL) operate on k-tuples of nodes and are more expressive but computationally expensive. Practical higher-order approaches: (1) k-GNN (Morris et al., 2019): operate on sets of k nodes instead of single nodes; k=3 gives strictly more expressive than 1-WL; (2) Structural features: augment node features with local structural information (triangle count, cycle membership, distance encodings) to break symmetries that 1-WL cannot; (3) Random node initialisation: initialise each node with a unique random feature at each inference — equivalent to higher expressiveness but stochastic (Random Graph Neural Networks); (4) OSAN and SWL (subgraph WL): enumerate local subgraphs and aggregate their representations, achieving polynomial expressiveness gains. [2]"
+      "body": "Standard MPNNs are bounded by the 1-Weisfeiler-Leman (1-WL) test — they cannot distinguish certain pairs of non-isomorphic graphs (e.g., two regular graphs of the same degree). Higher-order WL tests (k-WL) operate on k-tuples of nodes and are more expressive but computationally expensive."
     }
   ],
   "takeaways": [

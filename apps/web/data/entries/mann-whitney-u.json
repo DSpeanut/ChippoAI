@@ -30,22 +30,22 @@
   "deepDive": [
     {
       "heading": "Test Statistic U",
-      "body": "U₁ = #{(i,j): Xᵢ > Yⱼ} counts concordant pairs. U₂ = #{(i,j): Yⱼ > Xᵢ}. U₁ + U₂ = n₁n₂ (ties excluded). Rank-sum connection: rank both groups together (1 to n₁+n₂). W₁ = sum of ranks of group 1. U₁ = W₁ − n₁(n₁+1)/2. Under H₀: E[U₁] = n₁n₂/2; Var[U₁] = n₁n₂(n₁+n₂+1)/12 (no ties). [1]",
+      "body": "The Mann-Whitney statistic compares the two groups through pairwise ordering rather than raw numerical distances. It can be interpreted as counting how often an observation from one group exceeds an observation from the other. That is why the test is naturally connected to ranks, stochastic dominance, and discrimination metrics such as AUC.",
       "formula": "U₁ = #{(i,j) : Xᵢ > Yⱼ}"
     },
     {
       "heading": "Large-Sample Normal Approximation",
-      "body": "For n₁,n₂ ≥ 10: z = (U₁ − n₁n₂/2) / √(n₁n₂(n₁+n₂+1)/12) ~ N(0,1) under H₀. With ties: variance correction needed — Var[U₁] = [n₁n₂/(n(n−1))][n³−n−Σtⱼ(tⱼ²−1)]/12 where tⱼ is the size of each tied group. Reject H₀ if |z| > z_{α/2}. [1]",
+      "body": "For larger samples, the rank-based statistic can be converted into an approximately normal score, which makes p-value computation straightforward. Exact calculations are still possible in small samples, but the normal approximation is usually adequate once both groups are moderately sized. Ties require a variance correction because repeated values reduce the amount of ranking information available.",
       "formula": "z = (U₁ − n₁n₂/2) / √(n₁n₂(n₁+n₂+1)/12)"
     },
     {
       "heading": "U as AUC and Effect Size",
-      "body": "U₁/(n₁n₂) estimates P(X > Y) — the probability that a randomly chosen X exceeds a randomly chosen Y. This is exactly the AUC of the ROC curve for classifying group membership using the continuous variable. Under H₀: AUC = 0.5. Effect size measure: r = z/√n (small: 0.1, medium: 0.3, large: 0.5 by Cohen's convention). [1][2]",
+      "body": "A useful interpretation of the test is probabilistic: it estimates how often a randomly chosen value from one group exceeds a randomly chosen value from the other. That same quantity is exactly the area under the ROC curve when the variable is used for classification. This makes the test easy to connect with effect-size language and ranking performance.",
       "formula": "P̂(X > Y) = U₁ / (n₁ n₂) = AUC"
     },
     {
       "heading": "Assumptions and What the Test Actually Tests",
-      "body": "Mann-Whitney tests H₀: F₁ = F₂ (equal distributions), not just equal medians. If distributions have different shapes but same median, H₀ may still be rejected. It assumes: (1) independent random samples; (2) ordinal or continuous outcome; (3) same shape under H₀ (if testing for a location shift only). It does NOT assume normality, equal variances, or equal sample sizes. [1]"
+      "body": "The Mann-Whitney test is often described as a test of medians, but that description is only safe in special cases. More generally, it compares the two full distributions through their rank ordering, so it can react to differences in spread or shape as well as location. That broader interpretation is important when communicating what a significant result really means."
     }
   ],
   "youtubeLabel": "Mann-Whitney U Test — StatQuest",

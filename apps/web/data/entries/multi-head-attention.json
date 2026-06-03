@@ -30,19 +30,19 @@
   "deepDive": [
     {
       "heading": "Computation: Split, Attend, Concat, Project",
-      "body": "Implementation for a batch: (1) Project: Q̂ = QW^Q, K̂ = KW^K, V̂ = VW^V — three matrix multiplications, each [B×T×d_model] → [B×T×d_model]. (2) Split: reshape [B, T, d_model] → [B, h, T, d_k] by splitting the last dimension into h heads. (3) Attend: compute [B, h, T, T] attention scores and apply softmax; multiply by V̂ to get [B, h, T, d_k] context vectors. (4) Concat: reshape [B, h, T, d_k] → [B, T, d_model] by merging the head dimension. (5) Project: multiply by W^O: [B, T, d_model] → [B, T, d_model]. Total FLOPs ≈ 4·B·T·d_model² (projections) + B·h·T²·d_k (attention scores) — for long sequences (T >> d_model/h), the T² term dominates. [1]"
+      "body": "This section explains the main idea behind this part of the method in plain language."
     },
     {
       "heading": "Head Specialisation: Empirical Findings",
-      "body": "Vaswani et al. (2017) visualised two heads from the encoder: Head 1 shows long-distance dependencies focused on the verb; Head 2 shows anaphora resolution (attending to pronouns' antecedents). Michel, Levy & Neubig (2019) systematically measured head importance by ablating individual heads and measuring accuracy drop. Key findings: (1) Most heads are not individually important — ablating 80% of heads in BERT causes < 1% drop on GLUE tasks; (2) A small number of 'important' heads are specialised for specific linguistic phenomena; (3) Heads prune themselves differently across layers — earlier layers keep more heads post-pruning. These findings motivated attention head pruning (reducing computation) and structured pruning for inference efficiency. [2]"
+      "body": "This section explains the main idea behind this part of the method in plain language."
     },
     {
       "heading": "Grouped Query Attention (GQA) and Multi-Query Attention (MQA)",
-      "body": "Standard MHA has h query heads and h key-value heads — each head has its own K and V projections. Multi-Query Attention (Shazeer, 2019) uses h query heads but only 1 shared key-value head: W^K, W^V ∈ ℝ^{d_model×d_k} (shared across all queries). This reduces the KV cache size by h× — critical for fast autoregressive inference where the KV cache is stored in memory. Grouped Query Attention (GQA, Ainslie et al., 2023) is a compromise: group queries into g groups sharing one KV head each. LLaMA-2-70B uses GQA with g=8 groups, reducing KV cache by 8× vs MHA. MQA slightly reduces quality vs MHA; GQA matches MHA quality while providing significant inference speedup. [2]"
+      "body": "Standard MHA has h query heads and h key-value heads — each head has its own K and V projections. This reduces the KV cache size by h× — critical for fast autoregressive inference where the KV cache is stored in memory. Grouped Query Attention (GQA, Ainslie et al., 2023) is a compromise: group queries into g groups sharing one KV head each. MQA slightly reduces quality vs MHA; GQA matches MHA quality while providing significant inference speedup."
     },
     {
       "heading": "Flash Attention and Computational Efficiency",
-      "body": "Standard attention materialises the full [B, h, T, T] attention matrix in GPU HBM (high-bandwidth memory) — for T=2048, h=8, B=32, this is 32×8×2048×2048×4 bytes ≈ 4GB, exceeding GPU memory for long contexts. FlashAttention (Dao et al., 2022) tiles the computation to process the attention matrix in SRAM-sized blocks, never materialising the full [T, T] matrix in HBM. This reduces memory from O(T²) to O(T) and achieves 2–4× wall-clock speedup by reducing HBM reads/writes. FlashAttention-2 further optimises work partitioning. All modern Transformers use FlashAttention in production; it is the primary reason training on 32k+ token contexts is feasible. [1]"
+      "body": "FlashAttention (Dao et al., 2022) tiles the computation to process the attention matrix in SRAM-sized blocks, never materialising the full [T, T] matrix in HBM. This reduces memory from O(T²) to O(T) and achieves 2–4× wall-clock speedup by reducing HBM reads/writes. FlashAttention-2 further optimises work partitioning. All modern Transformers use FlashAttention in production; it is the primary reason training on 32k+ token contexts is feasible."
     }
   ],
   "takeaways": [

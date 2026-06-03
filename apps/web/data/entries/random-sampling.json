@@ -25,21 +25,22 @@
   "deepDive": [
     {
       "heading": "Variance of Sample Mean Under SRSWOR",
-      "body": "E[x̄] = μ (unbiased). Var(x̄) = σ²(1−f)/n where f = n/N (sampling fraction). Estimated variance: Var̂(x̄) = s²(1−f)/n. FPC = (1−f) = (N−n)/(N−1) ≈ (N−n)/N. For n/N < 0.05: FPC ≈ 1, and the estimator behaves like iid sampling. 95% CI: x̄ ± 1.96·s·√(1−f)/√n (for large n). [1]",
+      "body": "Under simple random sampling without replacement, the sample mean is unbiased for the population mean. Its variance is reduced when a noticeable fraction of the population is sampled, because observing one unit gives partial information about the rest. This finite-population effect is what distinguishes survey sampling from idealized independent sampling.",
       "formula": "Var(x̄) = σ²(1 − n/N) / n   [SRSWOR]"
     },
     {
       "heading": "Required Sample Size for Desired Margin of Error",
-      "body": "For a target MOE e at 95% confidence: n₀ = (z_{0.025}·σ/e)² (ignoring FPC). With FPC adjustment for large f: n = n₀/(1 + n₀/N). For proportions: use σ² = p(1−p) ≤ 0.25 (maximum variance at p = 0.5) for a conservative n. Example: for e = 0.03, 95% CI: n₀ = (1.96/0.03)² × 0.25 = 1068. [1]",
+      "body": "Sample-size planning in surveys starts by choosing how much error you are willing to tolerate. You first compute the size needed under an effectively infinite population and then adjust it downward when the population itself is not very large. This is why finite populations often require fewer observations than the usual textbook formulas suggest.",
       "formula": "n₀ = (z_{α/2} · σ / e)²,   n = n₀ / (1 + n₀/N)"
     },
     {
       "heading": "Systematic Sampling",
-      "body": "Select a random start r ∈ {1,…,k} where k = ⌊N/n⌋, then select units r, r+k, r+2k, …. This gives exactly n units and is operationally simple (traverse a list, select every k-th). Under random ordering, it's approximately as efficient as SRS. Problems: if the list has periodicity matching the interval k, systematic sampling can be very biased (e.g., alternating high/low values). A random sort before applying systematic sampling eliminates this. [1]"
+      "body": "Systematic sampling is operationally simpler than full simple random sampling because you only need one random start and then follow a fixed interval through the list. It works well when the frame order is effectively random, but it can perform badly when the list has hidden periodic structure. Good frame ordering is therefore crucial for making systematic sampling behave like a random design."
     },
     {
       "heading": "Cluster Sampling and Design Effect",
-      "body": "Cluster sampling selects M clusters (e.g., schools) from C total, then samples all or some units within each cluster. More practical (one contact point per cluster) but less efficient: within-cluster homogeneity means units in the same cluster provide redundant information. DEFF ≈ 1 + (m−1)·ICC, where m is the cluster size and ICC (intraclass correlation) measures within-cluster similarity. ICC = 0.05 with m = 20 → DEFF ≈ 1.95: need 1.95× the SRS sample size for the same precision. [1]"
+      "body": "Cluster sampling saves cost by grouping data collection, but it usually sacrifices statistical efficiency. Units within the same cluster tend to resemble one another, so each extra observation contributes less new information than it would under simple random sampling. The design effect summarizes how much extra sample size is needed to compensate for that loss.",
+      "formula": "DEFF ≈ 1 + (m−1)·ICC"
     }
   ],
   "takeaways": [

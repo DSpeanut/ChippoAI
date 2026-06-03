@@ -23,26 +23,26 @@
     }
   ],
   "deepDiveIntro": [
-    "Standard A/B test: H₀: μ_A = μ_B. Test statistic: Z = (x̄_B − x̄_A)/SE, where SE = √(s_A²/n_A + s_B²/n_B) (Welch). Reject H₀ if |Z| > z_{α/2}. Power: 1−β = Φ(|δ|/SE − z_{α/2}). For binary metrics: SE = √(p̄(1−p̄)(1/n_A + 1/n_B)), p̄ = pooled proportion. For better variance estimation when traffic splits are unequal, always use Welch (unequal variance) formulation.",
-    "The peeking problem: if you test at each observation and stop when p < 0.05, the actual Type I error rate over the course of the experiment is much higher than 0.05. With 5 peeks: actual α ≈ 0.14; continuous peeking: α→1. The problem is using a fixed-horizon test in a sequential monitoring setting. Sequential testing methods solve this by adjusting the critical value at each look."
+    "A standard A/B test checks whether the means of two groups differ. The test statistic compares the difference in group averages to the combined standard error of both groups, then checks if that ratio is large enough to reject the null hypothesis. For binary metrics, the pooled proportion is used to estimate the standard error.",
+    "The peeking problem arises when you check results repeatedly before reaching the planned sample size. Stopping as soon as p < 0.05 inflates the true Type I error rate well above 0.05. With five interim looks the actual false positive rate can reach 14%; with continuous monitoring it approaches 100%. Sequential testing methods fix this by adjusting the critical value at each look."
   ],
   "deepDive": [
     {
       "heading": "Two-Proportion z-Test for Conversion Rates",
-      "body": "H₀: p_A = p_B. Under H₀: Z = (p̂_B − p̂_A)/√(p̂(1−p̂)(1/n_A+1/n_B)) ~ N(0,1), where p̂ = (n_A p̂_A + n_B p̂_B)/(n_A+n_B) is the pooled proportion. Two-sided: reject if |Z| > z_{α/2}. For one-sided (B > A): reject if Z > z_α. Sample size for equal n per variant: n = (z_{α/2}+z_β)²·(p_A(1−p_A)+p_B(1−p_B))/(p_A−p_B)² ≈ 2·(z_{α/2}+z_β)²·p̄(1−p̄)/δ². [1]",
+      "body": "When the outcome is binary (converted vs. not converted), compute the pooled proportion under the null hypothesis that both groups have the same rate. The z-score measures how many standard errors separate the two observed rates. Reject the null if the absolute z-score exceeds the critical value for your chosen significance level. Sample size per variant depends on the baseline rate, the minimum effect you want to detect, the significance level, and the desired power. [1]",
       "formula": "n ≈ 2(z_{α/2} + z_β)² · p̄(1−p̄) / (p_A − p_B)²"
     },
     {
       "heading": "Peeking and Sequential Testing",
-      "body": "Alpha-spending function approach (Lan & DeMets, 1983): allocate α across K planned interim looks. O'Brien-Fleming (conservative early, liberal late): α(t) = 2(1−Φ(z_{α/2}/√t)) where t = fraction of total n. Pocock (equal spending): α(t) = α·log(1+(e−1)·t). The Haybittle-Peto boundary: use α = 0.001 for interim looks, α = 0.05 for final analysis. Always-valid p-values (AVIP) are another approach that controls Type I error regardless of when you stop. [1]"
+      "body": "Alpha-spending functions (Lan & DeMets, 1983) spread the significance budget across K planned interim looks. The O'Brien-Fleming boundary is very conservative early and more lenient at the end; the Pocock boundary spends equally at each look. The Haybittle-Peto rule uses a very strict threshold (p < 0.001) for all interim looks but keeps the standard threshold for the final analysis. Always-valid p-values are an alternative that remain valid regardless of when you stop. [1]"
     },
     {
       "heading": "Network Effects and SUTVA",
-      "body": "The Stable Unit Treatment Value Assumption (SUTVA): potential outcomes for unit i depend only on its own treatment assignment, not others'. Violated when: users interact (social network effects), treatment affects the control group via shared resources (cannibalization), or there are spillovers (ads shown to some affect purchase probability of others). Solutions: cluster randomization (treat clusters, not individuals), switchback experiments (alternating time periods), or ego-network analysis. [1]"
+      "body": "The Stable Unit Treatment Value Assumption (SUTVA) says that one person's outcome depends only on their own treatment, not others'. This fails when users interact (social networks), when treatment spills over to control via shared resources, or when ads shown to some users affect the purchasing of others. Solutions include cluster randomization (treat whole communities rather than individuals), switchback experiments (alternate treatment periods over time), and ego-network analysis. [1]"
     },
     {
       "heading": "Multiple Testing in A/B Experiments",
-      "body": "Testing K metrics simultaneously at α = 0.05: expected false positives = K·α (when all H₀ true). Bonferroni: use α/K per metric (very conservative). Benjamini-Hochberg: control FDR at level q — sort p-values p_(1) ≤ … ≤ p_(K), reject H_(k) if p_(k) ≤ q·k/K. Industry practice: designate one primary metric (OEC, Overall Evaluation Criterion); secondary metrics are exploratory with FDR control. Any secondary metric driving the decision should be pre-registered. [1]"
+      "body": "Testing many metrics at once inflates the chance of false positives. Bonferroni correction simply divides the significance threshold by the number of metrics — very conservative. Benjamini-Hochberg controls the false discovery rate instead: sort the p-values, compare each to a proportional threshold, and reject all hypotheses up to the largest one that qualifies. Industry best practice is to pre-register one primary metric and treat others as exploratory with FDR control. [1]"
     }
   ],
   "youtubeLabel": "A/B Testing — Khan Academy",

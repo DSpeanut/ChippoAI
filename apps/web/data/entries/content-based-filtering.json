@@ -35,7 +35,7 @@
     },
     {
       "heading": "Profile Drift and Recency Weighting",
-      "body": "A user's profile computed as a simple average over all history gives equal weight to interactions from 3 years ago and yesterday. User tastes evolve — someone who liked action movies in 2020 might prefer drama in 2024. Solutions: (1) Exponential time decay: r_{u,i,t} = r_{u,i} · exp(−λ(T−t)), where T is current time and λ controls recency sensitivity. (2) Sliding window: use only the last k interactions for profile construction. (3) Cluster-based profiles: cluster a user's interaction history (k-means on item vectors) to detect multiple taste facets; recommend from the user's most recently active cluster. Netflix uses a combination: session-based (recent context) and long-term interest profiles. [2]"
+      "body": "A user's profile computed as a simple average over all history gives equal weight to interactions from 3 years ago and yesterday. User tastes evolve — someone who liked action movies in 2020 might prefer drama in 2024. (2) Sliding window: use only the last k interactions for profile construction. (3) Cluster-based profiles: cluster a user's interaction history (k-means on item vectors) to detect multiple taste facets; recommend from the user's most recently active cluster. Netflix uses a combination: session-based (recent context) and long-term interest profiles."
     },
     {
       "heading": "Limitations: Filter Bubble and Diversity",
@@ -62,7 +62,13 @@
     }
   ],
   "sources": [
-    { "label": "Pazzani, M.J. & Billsus, D. — Content-Based Recommendation Systems, The Adaptive Web, LNCS 4321, 2007", "url": "https://doi.org/10.1007/978-3-540-72079-9_10" },
-    { "label": "Ricci, F., Rokach, L. & Shapira, B. (eds.) — Recommender Systems Handbook, 2nd Ed., Springer, 2015", "url": "https://doi.org/10.1007/978-1-4899-7637-6" }
+    {
+      "label": "Pazzani, M.J. & Billsus, D. — Content-Based Recommendation Systems, The Adaptive Web, LNCS 4321, 2007",
+      "url": "https://doi.org/10.1007/978-3-540-72079-9_10"
+    },
+    {
+      "label": "Ricci, F., Rokach, L. & Shapira, B. (eds.) — Recommender Systems Handbook, 2nd Ed., Springer, 2015",
+      "url": "https://doi.org/10.1007/978-1-4899-7637-6"
+    }
   ]
 }

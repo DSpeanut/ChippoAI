@@ -24,22 +24,22 @@
     }
   ],
   "deepDiveIntro": [
-    "AdaGrad (Duchi et al., 2011): Gₜ = Gₜ₋₁ + gₜ ⊙ gₜ (element-wise square accumulation); wₜ = wₜ₋₁ − (η/√(Gₜ+ε)) ⊙ gₜ. Here Gₜ ∈ ℝᵈ accumulates squared gradients per parameter. The effective learning rate for parameter i at step t is η/√(Gᵢ,ₜ + ε). For a parameter with total squared gradient G, this is O(1/√G) — decreasing monotonically. [1]",
-    "The diagonal approximation: AdaGrad uses the diagonal of the empirical Fisher matrix Ĝₜ = diag(Gₜ/t) as a preconditioner. The ideal preconditioner is the full inverse Fisher matrix F⁻¹, but that's O(d²) to store. AdaGrad's diagonal preconditioner is a memory-efficient approximation that works well when parameter gradients have very different scales. [1]"
+    "AdaGrad (Duchi et al., 2011) maintains a running sum of squared gradients for each parameter separately. The effective learning rate for each parameter shrinks in proportion to how much gradient it has accumulated — parameters that have received many large gradient updates slow down, while rarely-updated parameters maintain a higher learning rate. [1]",
+    "This per-parameter scaling approximates the diagonal of the Fisher information matrix, which captures how sensitive the loss is in each weight direction. Using only the diagonal is a memory-efficient approximation — the full Fisher matrix would require storing and inverting a matrix the size of the number of parameters squared. [1]"
   ],
   "deepDive": [
     {
       "heading": "Update Rule",
-      "body": "Gₜ,ᵢ = Gₜ₋₁,ᵢ + gₜ,ᵢ². wₜ,ᵢ = wₜ₋₁,ᵢ − η · gₜ,ᵢ / √(Gₜ,ᵢ + ε). Equivalently: wₜ = wₜ₋₁ − η · (Gₜ + ε·I)^(−1/2) · gₜ. G_t,i grows as Σₖ₌₁ᵗ gₖ,ᵢ². For a parameter i with constant gradient magnitude g: Gₜ,ᵢ = t·g², effective lr = η/(g√t) → 0. This is the key limitation: the learning rate decays at rate 1/√t regardless of whether the model has converged. [1]",
+      "body": "AdaGrad accumulates the squared gradient for each parameter separately across all training steps. The weight update divides the gradient by the square root of this accumulated sum, so parameters with a large history of large gradients get a proportionally smaller step. The key limitation: this accumulated sum only ever grows, so the effective learning rate for every parameter eventually decays toward zero — training can stall before the model has converged. [1]",
       "formula": "Gₜ = Gₜ₋₁ + gₜ²;  wₜ = wₜ₋₁ − η·gₜ/√(Gₜ+ε)"
     },
     {
       "heading": "AdaGrad vs RMSProp: The Dying Learning Rate Fix",
-      "body": "AdaGrad: Gₜ = Σₖ₌₁ᵗ gₖ² (cumulative, monotone increasing). RMSProp: vₜ = γvₜ₋₁ + (1−γ)gₜ² (exponential moving average). RMSProp forgets old gradients: at steady state, vₜ ≈ (1−γ)/(1−γ) E[g²] = E[g²]. The effective learning rate η/√vₜ stabilises at η/√E[g²] rather than decaying to 0. This makes RMSProp suitable for non-stationary problems and long training runs. AdaGrad is appropriate when you want learning rate to decrease over time (online convex optimisation). [2]"
+      "body": "AdaGrad's accumulated gradient sum grows forever, so its effective learning rate only ever decreases. RMSProp fixes this by using an exponential moving average instead of a cumulative sum — old gradients gradually fade out, so the effective learning rate settles at a stable value rather than decaying to zero. This makes RMSProp suitable for long training runs and non-stationary problems. AdaGrad remains useful in settings where you actually want the learning rate to decrease over time, such as online convex optimization with sparse data. [2]"
     },
     {
       "heading": "Full-Matrix AdaGrad",
-      "body": "The full (non-diagonal) AdaGrad update: Gₜ = Gₜ₋₁ + gₜgₜᵀ; wₜ = wₜ₋₁ − η·Gₜ^(−1/2)·gₜ. Uses the full Fisher matrix for preconditioning — optimal for correlated parameters. O(d²) storage and O(d³) matrix square root make this infeasible for large d. Practical approximations: LBFGS (rank-2 inverse Hessian updates), K-FAC (Kronecker-factored Fisher), Shampoo (matrix square root per layer). [1]"
+      "body": "The theoretically ideal version of AdaGrad uses the full matrix of gradient products rather than just the diagonal. This accounts for correlations between parameters and provides optimal preconditioning. In practice it is completely infeasible for large models: storing the matrix requires space proportional to the square of the number of parameters, and inverting it is even more expensive. Methods like K-FAC and Shampoo approximate this using structured matrix factorizations that are cheaper to store and compute. [1]"
     }
   ],
   "youtubeLabel": "AdaGrad Explained — Adaptive Learning Rates",

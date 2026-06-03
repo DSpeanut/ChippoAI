@@ -30,22 +30,22 @@
   "deepDive": [
     {
       "heading": "Definition and Relationship to Variance",
-      "body": "σ = √σ² (population); s = √s² = √[Σ(xᵢ−x̄)²/(n−1)] (sample). Units: same as x. s² is unbiased for σ², but s is not unbiased for σ due to Jensen's inequality. For normal populations, the correction factor is c₄(n) = √(2/(n−1)) · Γ(n/2)/Γ((n−1)/2); for large n, c₄ ≈ 1 − 1/(4(n−1)). [1]",
+      "body": "Standard deviation is the square root version of variance, which brings spread back onto the original units of the data. That makes it much easier to interpret in practice than variance itself. The sample version is based on the unbiased sample variance, although the square root step introduces a small bias that is usually ignored in routine work.",
       "formula": "s = √[ (1/(n−1)) Σᵢ (xᵢ − x̄)² ]"
     },
     {
       "heading": "Empirical Rule (68-95-99.7)",
-      "body": "For X ~ N(μ,σ²): P(|X−μ| ≤ σ) ≈ 0.6827; P(|X−μ| ≤ 2σ) ≈ 0.9545; P(|X−μ| ≤ 3σ) ≈ 0.9973. These follow from the standard normal CDF. For non-normal distributions, Chebyshev's inequality gives a weaker but universal bound: P(|X−μ| ≥ kσ) ≤ 1/k² for any distribution with finite variance. [1]",
+      "body": "For normal data, standard deviation has a direct geometric interpretation through the familiar sixty-eight, ninety-five, and ninety-nine-point-seven rule. That rule does not hold exactly for arbitrary distributions, but it explains why standard deviation is so intuitive in bell-shaped settings. Outside the normal case, broader inequalities give weaker but more general guarantees.",
       "formula": "P(μ − kσ ≤ X ≤ μ + kσ) ≥ 1 − 1/k²   (Chebyshev)"
     },
     {
       "heading": "Standard Error of the Mean",
-      "body": "SE(x̄) = σ/√n (known σ) or s/√n (estimated). This is the standard deviation of the sampling distribution of x̄. It shrinks as 1/√n — doubling precision requires 4× more data. The 95% CI for μ is x̄ ± z_{0.025} · σ/√n = x̄ ± 1.96 · σ/√n for large n, or x̄ ± t_{n−1,0.025} · s/√n for small n. [1]",
+      "body": "The standard error is the standard deviation of an estimator rather than of the raw data. For the sample mean, it shrinks with the square root of sample size, which explains why gaining a little extra precision often requires much more data. This is the scale that drives confidence intervals and many hypothesis tests.",
       "formula": "SE(x̄) = σ / √n"
     },
     {
       "heading": "Z-score Standardisation",
-      "body": "z = (x−μ)/σ. Under N(μ,σ²), z ~ N(0,1). In ML, feature standardisation (sklearn's StandardScaler) applies z = (x−x̄)/s. This is essential for: (1) PCA — so components reflect variance structure, not scale; (2) gradient descent — so learning rates are well-conditioned; (3) regularisation — so L1/L2 penalties are applied equally across features. [1][2]",
+      "body": "Standard deviation is also the scale used to standardize data. Converting values to z-scores puts features onto a common unitless scale, which is why standardization is so important for principal component analysis, regularized models, and many gradient-based learning algorithms. It turns raw differences into comparable distances from the center.",
       "formula": "z = (x − μ) / σ"
     }
   ],

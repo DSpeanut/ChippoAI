@@ -30,24 +30,24 @@
   "deepDive": [
     {
       "heading": "Core, Border, and Noise Points",
-      "body": "A point p is a core point if at least MinPts points lie within distance ε of p (including p itself). A point q is directly density-reachable from p if q ∈ Nε(p) and p is a core point. Density-reachability is transitive but not symmetric. A noise point is not density-reachable from any core point. [1]"
+      "body": "A point is a core point if at least MinPts points lie within distance ε of it (including itself). A point is directly reachable from a core point if it falls within that core point's ε-neighbourhood. Density-reachability chains together such direct connections but is not symmetric — you can reach q from p without being able to reach p from q. A noise point is any point that is not density-reachable from any core point. [1]"
     },
     {
       "heading": "The DBSCAN Algorithm",
-      "body": "For each unvisited point: compute Nε(p). If |Nε(p)| < MinPts, mark as noise (may be reclassified later as border). Otherwise, start a new cluster and expand it by recursively finding all density-reachable points. Time complexity: O(n log n) with a spatial index (k-d tree or ball tree); O(n²) naïvely. [1]"
+      "body": "For each unvisited point, compute its ε-neighbourhood. If it has fewer than MinPts neighbours, mark it as noise (it may be reclassified as a border point later). Otherwise, start a new cluster and expand it by recursively finding all density-reachable points. With a spatial index (k-d tree or ball tree), the algorithm runs in near-linear time; without one it is quadratic in the number of points. [1]"
     },
     {
       "heading": "Choosing ε and MinPts",
-      "body": "Rule of thumb: MinPts ≥ p+1 (where p = number of features); for 2D data MinPts = 4 is common. To choose ε: sort all n points by their k-NN distance (k = MinPts−1) and plot these sorted distances — the 'elbow' (point of maximum curvature) is a good ε. Too small ε: everything is noise. Too large ε: everything merges into one cluster. [1]",
+      "body": "A common rule of thumb is to set MinPts to at least one more than the number of dimensions, with 4 being typical for 2D data. To choose ε, sort all points by their distance to their k-th nearest neighbour (where k equals MinPts minus one) and plot these sorted distances. The elbow — the point of sharpest curvature — is a good value for ε. Too small an ε makes most points noise; too large merges everything into one cluster. [1]",
       "formula": "ε ≈ k-NN distance at the elbow of the sorted k-distance plot"
     },
     {
       "heading": "Density Reachability & Connectivity",
-      "body": "Point q is density-reachable from p if there exists a chain p = p₁, p₂, …, pₙ = q where each pᵢ₊₁ is directly density-reachable from pᵢ (i.e. pᵢ is a core point with pᵢ₊₁ in its ε-neighbourhood). Two points are density-connected if there exists a point o from which both are density-reachable. A cluster is a maximal set of density-connected core points plus their border points. [1]"
+      "body": "Two points are density-connected if there exists a third point from which both are density-reachable. A cluster is the maximal set of density-connected core points, plus all border points (non-core points that are directly reachable from some core point in the cluster). This definition gives clusters their ability to take any shape — any path through dense space creates a single connected cluster. [1]"
     },
     {
       "heading": "Complexity and Scalability",
-      "body": "Naïve implementation: O(n²) — distance between every pair. With a spatial index (k-d tree works well for p ≤ 20; ball tree for higher dimensions): O(n log n) average. For very large datasets, approximate nearest-neighbour methods (FAISS) or HDBSCAN's single-linkage tree are more scalable alternatives. [1]"
+      "body": "The naive implementation computes distances between every pair of points, giving quadratic time and space. With a spatial index such as a k-d tree (works well for up to about 20 dimensions) or ball tree (better for higher dimensions), average-case complexity drops to near-linear. For very large datasets, approximate nearest-neighbour methods (FAISS) or HDBSCAN's single-linkage tree are more scalable alternatives. [1]"
     }
   ],
   "youtubeLabel": "StatQuest: DBSCAN",

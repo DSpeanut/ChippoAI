@@ -25,21 +25,22 @@
   "deepDive": [
     {
       "heading": "MAP with Gaussian Prior = Ridge Regression",
-      "body": "Likelihood: y|X,θ ~ N(Xθ, σ²I). Prior: θ ~ N(0, τ²I). Log-posterior: −||y−Xθ||²/(2σ²) − ||θ||²/(2τ²) + const. Maximizing ↔ minimizing ||y−Xθ||² + λ||θ||² where λ = σ²/τ². MAP solution: θ̂_MAP = (X'X + λI)⁻¹X'y — identical to Ridge regression. Smaller τ² (stronger prior) → larger λ → more shrinkage. [1]",
+      "body": "A Gaussian prior turns maximum a posteriori estimation into ridge regression. The prior favors smaller coefficients, so the resulting estimate balances data fit against shrinkage toward zero. This is the clearest illustration of how Bayesian priors and classical regularization penalties are two views of the same idea.",
       "formula": "θ̂_MAP = (X'X + λI)⁻¹ X'y,  λ = σ²/τ²  [Ridge]"
     },
     {
       "heading": "MAP with Laplace Prior = Lasso",
-      "body": "Prior: θⱼ ~ Laplace(0, b) → log P(θ) = −||θ||₁/b + const. Log-posterior maximization: minimize ||y−Xθ||² + λ||θ||₁ with λ = 2σ²/b. This is the Lasso — the Laplace prior induces sparsity (L1 penalty creates a corner solution at θⱼ = 0). Unlike Ridge, Lasso cannot be solved analytically; coordinate descent (LARS algorithm) is used. [1]",
+      "body": "A Laplace prior leads to a penalty that encourages exact zeros, which is why MAP estimation with this prior matches the lasso. The resulting estimate does not just shrink coefficients; it can remove some of them entirely. That makes MAP useful when prediction and variable selection are both important.",
       "formula": "θ̂_MAP = argmin ||y − Xθ||² + λ||θ||₁  [Lasso]"
     },
     {
       "heading": "Posterior Mode vs Mean vs Median",
-      "body": "For a symmetric, unimodal posterior (e.g., Gaussian): MAP = posterior mean = posterior median. For an asymmetric posterior (e.g., Beta(1,10) for a small probability): MAP < median < mean. Under squared error loss, the optimal Bayes estimator is the posterior mean. Under absolute error loss, the posterior median. Under 0-1 loss (predict the most likely value), the posterior mode (MAP). Choice of loss function dictates which posterior summary to use. [1]"
+      "body": "The posterior mode is only one possible summary of a posterior distribution. In symmetric posteriors it agrees with the mean and median, but in skewed posteriors those summaries can differ substantially. Which summary is best depends on the loss function and on whether you care more about a single best point or about averaging over uncertainty."
     },
     {
       "heading": "Laplace Approximation Around MAP",
-      "body": "The Laplace approximation centers a Gaussian at θ̂_MAP: log P(θ|x) ≈ log P(θ̂_MAP|x) − ½(θ−θ̂_MAP)'[−H](θ−θ̂_MAP), where H = ∂²log P(θ|x)/∂θ² evaluated at θ̂_MAP. The approximate posterior is N(θ̂_MAP, [−H]⁻¹). The approximate log marginal likelihood is: log P(x) ≈ log P(x|θ̂_MAP) + log P(θ̂_MAP) + d/2·log(2π) − ½log|−H|. For the linear regression MAP: [−H]⁻¹ = σ²(X'X + λI)⁻¹. [1]"
+      "body": "The Laplace approximation turns a MAP solution into a local Gaussian approximation to the full posterior. It is most useful when full Bayesian computation is too expensive but a rough uncertainty estimate is still needed. The idea works best when the posterior is smooth, unimodal, and reasonably close to bell-shaped near its peak.",
+      "formula": "Posterior ≈ N(θ̂_MAP, [−H]⁻¹)"
     }
   ],
   "youtubeLabel": "MAP vs MLE — Mutual Information",

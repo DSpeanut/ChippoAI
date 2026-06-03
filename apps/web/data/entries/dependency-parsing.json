@@ -19,26 +19,26 @@
     }
   ],
   "deepDiveIntro": [
-    "Dependency graph formalization: G = (V, A) where V = {w₀, w₁, …, wₙ} (w₀ = artificial root), A = set of directed arcs (wᵢ, wⱼ, l) meaning wᵢ is the head of wⱼ with label l. Projectivity: a dependency arc (wᵢ, wⱼ) is projective if for all wₖ between wᵢ and wⱼ (i<k<j), there is a path from wᵢ to wₖ. Projective trees are fully captured by left-to-right transition systems; non-projective arcs (common in free word order languages) require more complex algorithms.",
-    "Arc-eager transition system (Nivre 2003): configuration = (stack, buffer, arcs). Transitions: SHIFT (push buffer front to stack), LEFT-ARC-l (add arc head=buffer-front, dep=stack-top, pop stack), RIGHT-ARC-l (add arc head=stack-top, dep=buffer-front, push to stack), REDUCE (pop stack, only if stack-top already has head). O(n) transitions for a sentence of n words."
+    "A dependency parse is a directed tree where each word points to its head — the word it grammatically depends on. An arc is projective if it does not cross any other arc when drawn above the sentence, which is the case for most English sentences. Languages with flexible word order (German, Czech) have more non-projective arcs, requiring parsers that can handle crossing dependencies.",
+    "Transition-based parsers work like a stack machine: a classifier decides at each step whether to push the next word onto a stack, draw an arc between the top two items, or pop the stack. The arc-eager system by Nivre (2003) processes a sentence of n words in exactly n transitions, making it very fast for real-time use."
   ],
   "deepDive": [
     {
       "heading": "Biaffine Graph-Based Parser (Dozat & Manning 2017)",
-      "body": "The biaffine attention parser scores every possible arc (i,j) and label l independently. Architecture: BiLSTM over word embeddings → two separate MLP heads (for arc scoring and label scoring). Arc score: s_arc(i,j) = hᵢᵀ W_arc hⱼ + hᵢᵀ u_arc (biaffine form). Find the maximum spanning tree (Chu-Liu/Edmonds algorithm for directed MST) over all arc scores. Label the arcs of the MST. Achieves LAS ~95 on English PTB. [1]",
+      "body": "The biaffine parser scores every possible arc between every pair of words independently using a learned scoring function that combines the head word's representation and the dependent word's representation. After scoring all arcs, it finds the highest-scoring valid tree using the Chu-Liu/Edmonds maximum spanning tree algorithm, then labels each arc in the tree. This globally-optimal decoding approach achieves a labeled attachment score of about 95% on English. [1]",
       "formula": "s_arc(i→j) = MLP_head(hᵢ)ᵀ W_arc MLP_dep(hⱼ)"
     },
     {
       "heading": "Evaluation: UAS and LAS",
-      "body": "UAS (Unlabeled Attachment Score): fraction of tokens where the predicted head is correct. LAS (Labeled Attachment Score): fraction of tokens where both head AND dependency label are correct. Computed excluding punctuation (standard convention). State-of-the-art on UD English: UAS ≈ 95%, LAS ≈ 93%. Common errors: PP attachment ('I saw the man with the telescope'), coordination scope, and relative clause attachment — classic syntactic ambiguities that even humans disagree on. [1]"
+      "body": "Unlabeled attachment score (UAS) measures what fraction of tokens have the correct head word. Labeled attachment score (LAS) additionally requires the dependency label to be correct. Both exclude punctuation tokens by convention. State-of-the-art parsers on Universal Dependencies English reach about 95% UAS and 93% LAS. The remaining errors cluster around classic syntactic ambiguities — prepositional phrase attachment, coordination scope, and relative clause placement — where even human annotators sometimes disagree. [1]"
     },
     {
       "heading": "Transition-Based vs Graph-Based Parsers",
-      "body": "Transition-based (arc-eager, arc-standard): O(n) greedy decoding with a classifier choosing transitions. Fast: O(n) inference. Error propagation: early mistakes affect later decisions (no globally optimal decoding). Beam search mitigates this. Graph-based (biaffine MST): O(n²) arc scoring + O(n² log n) MST decoding. Globally optimal (within the MST framework). Better LAS on standard benchmarks. Transition-based preferred for speed (real-time applications); graph-based for accuracy. [1]"
+      "body": "Transition-based parsers make greedy left-to-right decisions and process a sentence in linear time — a small early mistake can propagate to later decisions, though beam search reduces this. Graph-based parsers score all possible arcs independently and then find the globally best tree, which is more accurate but requires quadratic time in sentence length. In practice, transition-based parsers are preferred for real-time applications where speed matters, and graph-based for offline tasks where accuracy is paramount. [1]"
     },
     {
       "heading": "Dependency vs Constituency Parsing",
-      "body": "Constituency (phrase-structure) parsing groups words into nested phrases: (NP The dog) (VP (V chased) (NP the cat)). Dependency parsing captures binary head-dependent relations directly between words, without phrase nodes. Dependency trees are easier to interpret for semantic tasks (who did what to whom), more consistent cross-linguistically, and more compatible with word-level models. Constituency trees are useful for tasks requiring phrase boundaries (syntactic reordering in MT, span-based NER). [1]"
+      "body": "Constituency parsing groups words into nested phrases with explicit phrase nodes (NP, VP). Dependency parsing captures direct head-to-word relationships without phrase nodes — it tells you who depends on whom without constructing the full phrase hierarchy. Dependency representations are easier to interpret for semantic tasks like information extraction, more consistent across languages, and more natural for word-level neural models. Constituency trees are more useful when explicit phrase boundaries matter, such as span-based NER or syntactic reordering in machine translation. [1]"
     }
   ],
   "takeaways": [

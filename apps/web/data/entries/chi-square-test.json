@@ -23,28 +23,28 @@
     }
   ],
   "deepDiveIntro": [
-    "Chi-square test of independence: for a r×c contingency table with cell counts Oᵢⱼ, expected counts Eᵢⱼ = (Rᵢ × Cⱼ)/n where Rᵢ is row i total, Cⱼ is column j total, n is grand total. Test statistic: χ² = Σᵢⱼ (Oᵢⱼ − Eᵢⱼ)²/Eᵢⱼ. Under H₀ (independence), χ² →_d χ²((r−1)(c−1)) as n→∞ (Pearson 1900).",
-    "The chi-square test is a large-sample test — the approximation is valid when all expected cell counts Eᵢⱼ ≥ 5 (rule of thumb; some sources use ≥ 1 for all cells and ≥ 5 for 80% of cells). For small expected counts, use Fisher's exact test (2×2 tables) or an exact multinomial test."
+    "For a contingency table with r rows and c columns, the expected count in each cell is the product of that cell's row total and column total divided by the grand total. The chi-square statistic sums the squared difference between observed and expected over expected, across all cells. Under the null hypothesis of independence, this statistic follows a chi-square distribution with (r−1)(c−1) degrees of freedom as the sample size grows (Pearson, 1900).",
+    "The chi-square test is a large-sample approximation. It is reliable when all expected cell counts are at least 5 (a common rule of thumb). For small expected counts — especially in 2×2 tables — use Fisher's exact test instead."
   ],
   "visualizationType": "chi-square-test",
   "deepDive": [
     {
       "heading": "Pearson Chi-Square Statistic",
-      "body": "χ² = Σᵢ₌₁ʳ Σⱼ₌₁ᶜ (Oᵢⱼ − Eᵢⱼ)² / Eᵢⱼ where Eᵢⱼ = Rᵢ·Cⱼ/n. Under H₀: χ² →_d χ²((r−1)(c−1)). Degrees of freedom = (r−1)(c−1): r−1 constraints from row marginals, c−1 from column marginals, and 1 for the grand total already fixed. Reject H₀ at level α if χ² > χ²_{(r−1)(c−1), α}. [1]",
+      "body": "The expected count for each cell is the row total times the column total divided by the grand total — this is what you would expect if the row and column categories were completely unrelated. The chi-square statistic accumulates the standardized squared deviation between what was observed and what was expected across every cell. The degrees of freedom are (r−1)(c−1): one constraint per row marginal, one per column marginal, and one for the fixed grand total. Reject independence if the statistic exceeds the critical value for your chosen significance level. [1]",
       "formula": "χ² = Σᵢⱼ (Oᵢⱼ − Eᵢⱼ)² / Eᵢⱼ"
     },
     {
       "heading": "Chi-Square Distribution",
-      "body": "χ²(k) = Σᵢ₌₁ᵏ Zᵢ² where Zᵢ ~ N(0,1) iid. Mean = k, Variance = 2k. Right-skewed for small k; approaches N(k, 2k) for large k. Always non-negative (sum of squares). PDF: f(x) = x^{k/2−1} e^{−x/2} / (2^{k/2} Γ(k/2)) for x > 0. Critical values: χ²(1,0.05)=3.84, χ²(2,0.05)=5.99, χ²(3,0.05)=7.81. [1]"
+      "body": "The chi-square distribution with k degrees of freedom is the sum of k squared independent standard normal variables. Its mean is k and variance is 2k. It is right-skewed for small k and becomes approximately normal for large k. It is always non-negative because it is a sum of squares. Common critical values: for 1 degree of freedom at the 5% level the threshold is 3.84; for 2 it is 5.99; for 3 it is 7.81. [1]"
     },
     {
       "heading": "Goodness-of-Fit Test",
-      "body": "H₀: data follows distribution F₀. Bin data into k cells with observed counts Oᵢ and expected counts Eᵢ = n·pᵢ where pᵢ = P₀(cell i). χ² = Σᵢ(Oᵢ−Eᵢ)²/Eᵢ ~ χ²(k−1−m) where m = number of parameters estimated from data. If testing a specified normal distribution: m=0; if estimating μ and σ from data first: m=2. [1]",
+      "body": "For a goodness-of-fit test, you compare observed counts in k bins to the counts you would expect under a hypothesized distribution. The degrees of freedom are k minus 1 minus the number of parameters estimated from the data. Estimating parameters from the data uses up degrees of freedom because the expected counts become less independent of the observed data. For example, testing normality after estimating both the mean and standard deviation from the data costs 2 degrees of freedom. [1]",
       "formula": "χ² = Σᵢ (Oᵢ − Eᵢ)² / Eᵢ  ~  χ²(k − 1 − m)"
     },
     {
       "heading": "Effect Size: Cramér's V",
-      "body": "χ² is not a measure of effect size — it grows with n even for fixed association. Cramér's V = √(χ²/(n·min(r−1,c−1))) ∈ [0,1]. V=0: complete independence; V=1: perfect association. For 2×2 tables: V = phi coefficient = √(χ²/n). Cohen's conventions: V ≈ 0.1 (small), 0.3 (medium), 0.5 (large). [1][2]",
+      "body": "The chi-square statistic is not a measure of effect size — it grows with sample size even for a fixed association. Cramér's V divides by the sample size and the smaller of (rows−1) and (columns−1) to produce a number between 0 (complete independence) and 1 (perfect association). For a 2×2 table, Cramér's V equals the phi coefficient. Cohen's rough benchmarks: V near 0.1 is small, 0.3 is medium, 0.5 is large. [1][2]",
       "formula": "V = √(χ² / (n · min(r−1, c−1)))"
     }
   ],

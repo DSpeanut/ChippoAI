@@ -25,21 +25,21 @@
   "deepDive": [
     {
       "heading": "GLM Components and Canonical Links",
-      "body": "Random: Y ~ exponential family with mean μ. Systematic: linear predictor η = Xβ. Link: g(μ) = η. Canonical links: Normal → g(μ) = μ (identity); Binomial → g(μ) = log(μ/(1−μ)) (logit); Poisson → g(μ) = log(μ); Gamma → g(μ) = 1/μ (inverse); Inverse Gaussian → g(μ) = 1/μ² (inverse squared). With canonical links, sufficient statistics are Σ yᵢXᵢ, simplifying estimation. [1]",
+      "body": "A generalized linear model combines three choices: a distribution for the response, a linear predictor built from features, and a link function that connects the mean response to that predictor. This framework lets one modeling idea cover normal regression, logistic regression, Poisson regression, and several other common cases. Canonical links are especially convenient because they make estimation cleaner and interpretation more natural.",
       "formula": "g(E[Y|X]) = Xβ,   g = canonical link function"
     },
     {
       "heading": "Deviance and Analysis of Deviance",
-      "body": "Deviance D(y;μ̂) = 2[ℓ(y;y) − ℓ(y;μ̂)], where ℓ(y;y) is the saturated log-likelihood (perfect fit). For Normal: D = SS_res = Σ(yᵢ−ŷᵢ)²/σ². For Poisson: D = 2Σ[yᵢ log(yᵢ/μ̂ᵢ) − (yᵢ−μ̂ᵢ)]. For Binomial: D = 2Σ[yᵢ log(yᵢ/μ̂ᵢ) + (nᵢ−yᵢ)log((nᵢ−yᵢ)/(nᵢ−μ̂ᵢ))]. Deviance difference between nested models: ΔD ~ χ²(df_diff) under H₀. [1]",
+      "body": "Deviance is the GLM version of residual sum of squares. It measures how far the fitted model is from a hypothetical perfect fit, and differences in deviance are used to compare nested models. This makes analysis of deviance the natural extension of ANOVA ideas to non-normal responses.",
       "formula": "D(y; μ̂) = 2[ℓ(y; y) − ℓ(y; μ̂)]"
     },
     {
       "heading": "Overdispersion",
-      "body": "Poisson assumes Var(Y) = μ; Binomial(n,p) assumes Var(Y) = np(1−p). In practice, count data often has Var(Y) > E[Y] (overdispersion) due to unobserved heterogeneity or clustering. Consequences: underestimated SEs, inflated z-statistics, too many 'significant' predictors. Solutions: (1) quasi-likelihood with dispersion parameter φ̂ = Pearson χ²/(n−p); SEs inflated by √φ̂; (2) negative binomial regression; (3) mixed-effects Poisson with random intercepts. [1]"
+      "body": "A major practical issue in GLMs is overdispersion, where the observed variability is larger than the assumed model allows. When this happens, standard errors become too small and significance can be overstated. Quasi-likelihood methods, negative binomial models, and mixed-effects extensions are common ways to address the problem."
     },
     {
       "heading": "Offset in Poisson Regression",
-      "body": "For counts observed over different exposure periods (person-years, population size), include an offset: log(E[Y|X]) = log(T) + Xβ, where T is the exposure. This models the rate (count per unit exposure) rather than the raw count. The offset log(T) has coefficient fixed at 1, not estimated. Example: modeling disease incidence rates across regions with different population sizes — without offset, regions with larger populations would appear to have higher incidence. [1]",
+      "body": "Offsets let Poisson models compare rates rather than raw counts when observations have different exposure levels. They are essential whenever units differ in time at risk, population size, or any other baseline amount of opportunity for events to occur. Without an offset, large-exposure units can appear to have larger effects simply because they were observed longer or covered more people.",
       "formula": "log(E[Y|X]) = offset + Xβ = log(T) + Xβ"
     }
   ],

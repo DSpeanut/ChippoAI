@@ -30,11 +30,11 @@
   "deepDive": [
     {
       "heading": "Max Pooling Gradient Flow",
-      "body": "During backpropagation, max pooling routes the gradient from the output unit back to the input unit that achieved the maximum value (the argmax), and zero to all other units in the pooling window. This means only one position per pooling region receives a gradient signal — max pooling is inherently sparse. In practice this can reduce gradient signal to early layers (fewer neurons receive gradients), but it also acts as a regulariser. Ties in the argmax are handled by routing the gradient to the first occurring maximum by convention. Average pooling distributes the gradient equally among all units in the window (gradient = 1/K² per unit), giving denser gradients but no sparsity effect. [1]"
+      "body": "This means only one position per pooling region receives a gradient signal — max pooling is inherently sparse. In practice this can reduce gradient signal to early layers (fewer neurons receive gradients), but it also acts as a regulariser."
     },
     {
       "heading": "Global Average Pooling vs Flatten + FC",
-      "body": "Traditional classification heads: after the last convolutional block, flatten the feature map (H×W×C → H·W·C) and pass through 1–2 fully connected layers. For VGG-16 with C=512 feature maps of size 7×7, the flatten layer produces 512×7×7=25,088 activations, followed by FC layers with 4096 units — contributing ~100M parameters out of VGG-16's 138M total. Global Average Pooling (GAP) replaces this: average over H×W for each channel → C-dimensional vector → FC(C, n_classes). For ResNet-50, this changes the head from 25,088×2048 (51M parameters) to 2048×1000 (2M parameters) while achieving better accuracy due to reduced overfitting and a regularisation effect. GAP also enables variable-input-size inference. [2]"
+      "body": "For ResNet-50, this changes the head from 25,088×2048 (51M parameters) to 2048×1000 (2M parameters) while achieving better accuracy due to reduced overfitting and a regularisation effect. GAP also enables variable-input-size inference."
     },
     {
       "heading": "Translation Invariance vs Equivariance",

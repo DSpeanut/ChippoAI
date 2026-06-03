@@ -35,16 +35,16 @@
     },
     {
       "heading": "Why L1 Produces Sparsity",
-      "body": "The L1 penalty has non-differentiable kinks at β = 0. The subgradient condition for optimality at zero is |Xⱼᵀr| ≤ λ, where r is the current residual. If the correlation between feature j and the residual is small enough, the optimal solution is βⱼ = 0. For Ridge, this condition is never exact; for Lasso it is exact at corners of the diamond constraint. [1]"
+      "body": "For Ridge, this condition is never exact; for Lasso it is exact at corners of the diamond constraint."
     },
     {
       "heading": "Soft Thresholding (Coordinate Descent)",
-      "body": "Lasso is typically solved via coordinate descent, updating one coefficient at a time while holding the others fixed. The update has a closed form: the soft-threshold operator S(z, λ) clips values in [-λ, λ] to zero and shrinks values outside that range by λ. This is far more efficient than general-purpose convex solvers for high-dimensional data. [2]",
+      "body": "Lasso is typically solved via coordinate descent, updating one coefficient at a time while holding the others fixed. This is far more efficient than general-purpose convex solvers for high-dimensional data.",
       "formula": "β̂ⱼ = sign(zⱼ) · max(|zⱼ| − λ, 0)"
     },
     {
       "heading": "The Lasso Path",
-      "body": "As λ increases from 0 (OLS) to ∞ (all-zero model), coefficients are progressively shrunk to zero at different rates. The sequence of λ values at which features enter the model is called the regularisation path. The LARS (Least Angle Regression) algorithm computes the full Lasso path efficiently. sklearn's LassoCV computes this path and selects λ by cross-validation. [1]"
+      "body": "The LARS (Least Angle Regression) algorithm computes the full Lasso path efficiently."
     },
     {
       "heading": "Lasso vs Ridge — When to Choose",
@@ -83,7 +83,13 @@
     }
   ],
   "sources": [
-    { "label": "Tibshirani — Regression Shrinkage and Selection via the Lasso (JRSS-B, 1996)", "url": "https://statweb.stanford.edu/~tibs/lasso/lasso.pdf" },
-    { "label": "James et al. — An Introduction to Statistical Learning, Ch. 6.2", "url": "https://www.statlearning.com/" }
+    {
+      "label": "Tibshirani — Regression Shrinkage and Selection via the Lasso (JRSS-B, 1996)",
+      "url": "https://statweb.stanford.edu/~tibs/lasso/lasso.pdf"
+    },
+    {
+      "label": "James et al. — An Introduction to Statistical Learning, Ch. 6.2",
+      "url": "https://www.statlearning.com/"
+    }
   ]
 }

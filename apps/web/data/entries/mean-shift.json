@@ -30,26 +30,26 @@
   "deepDive": [
     {
       "heading": "Kernel Density Estimation (KDE)",
-      "body": "The KDE of a dataset X = {x₁, …, xₙ} with kernel K and bandwidth h is: p̂(x) = (1/nhᵖ) Σᵢ K((x−xᵢ)/h). Common kernels: Gaussian K(u) = exp(−‖u‖²/2), Epanechnikov K(u) = max(0, 1−‖u‖²). The bandwidth h controls smoothness — large h = smooth density, few modes; small h = spiky density, many modes. [1]",
+      "body": "This section explains the main idea behind this part of the method in plain language.",
       "formula": "p̂(x) = (1/nhᵖ) Σᵢ K((x−xᵢ)/h)"
     },
     {
       "heading": "The Mean Shift Vector",
-      "body": "The mean shift vector m(x) = (Σᵢ xᵢ k(‖x−xᵢ‖²/h²)) / (Σᵢ k(‖x−xᵢ‖²/h²)) − x, where k is the kernel profile. This vector always points toward the direction of increasing density. The update rule is: x ← x + m(x), i.e. move to the weighted mean of points in the window. [1]",
+      "body": "This vector always points toward the direction of increasing density. move to the weighted mean of points in the window.",
       "formula": "x ← (Σᵢ xᵢ K((x−xᵢ)/h)) / (Σᵢ K((x−xᵢ)/h))"
     },
     {
       "heading": "Connection to Gradient Ascent on KDE",
-      "body": "The mean shift vector is proportional to ∇p̂(x)/p̂(x). So iterating mean shift performs gradient ascent on the KDE surface — converging to local maxima (modes). Points initialised in the same basin of attraction converge to the same mode and form a cluster. This theoretical connection (Comaniciu & Meer, 2002) gives mean shift its non-parametric rigour. [1][2]"
+      "body": "Points initialised in the same basin of attraction converge to the same mode and form a cluster. This theoretical connection (Comaniciu & Meer, 2002) gives mean shift its non-parametric rigour."
     },
     {
       "heading": "Bandwidth Selection",
-      "body": "Bandwidth h is the critical hyperparameter. Too small: many fine-grained clusters (each mode is a tiny peak). Too large: everything merges into one or two clusters. Heuristics: Silverman's rule-of-thumb h ≈ 1.06 σ̂ n^(−1/5) (optimal for Gaussian data); estimate_bandwidth in scikit-learn uses quantile-based heuristics. Cross-validate on downstream task quality when ground truth is unavailable. [1]",
+      "body": "Bandwidth h is the critical hyperparameter. Too small: many fine-grained clusters (each mode is a tiny peak). Too large: everything merges into one or two clusters. Cross-validate on downstream task quality when ground truth is unavailable.",
       "formula": "h_Silverman ≈ 1.06 · σ̂ · n^{-1/5}"
     },
     {
       "heading": "Complexity & Scalability",
-      "body": "Each iteration: O(n²) — every point updates using all n training points. Total: O(n² T) where T ≈ 50–200 iterations in practice. Scikit-learn provides an O(n log n) approximate implementation using ball trees. For large datasets, seed the algorithm from a grid rather than all n points. [1]"
+      "body": "Each iteration: O(n²) — every point updates using all n training points. Scikit-learn provides an O(n log n) approximate implementation using ball trees. For large datasets, seed the algorithm from a grid rather than all n points."
     }
   ],
   "youtubeLabel": "Computerphile: Mean Shift Clustering",
@@ -85,7 +85,13 @@
     }
   ],
   "sources": [
-    { "label": "Comaniciu & Meer — Mean Shift: A Robust Approach Toward Feature Space Analysis (2002)", "url": "https://ieeexplore.ieee.org/document/1000236" },
-    { "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 14.3", "url": "https://hastie.su.domains/ElemStatLearn/" }
+    {
+      "label": "Comaniciu & Meer — Mean Shift: A Robust Approach Toward Feature Space Analysis (2002)",
+      "url": "https://ieeexplore.ieee.org/document/1000236"
+    },
+    {
+      "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 14.3",
+      "url": "https://hastie.su.domains/ElemStatLearn/"
+    }
   ]
 }

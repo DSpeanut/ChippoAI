@@ -30,21 +30,22 @@
   "deepDive": [
     {
       "heading": "Discrete Mode",
-      "body": "Mode = argmax_x P(X = x) or equivalently argmax_x count(x). For a Bernoulli(p): mode = 1 if p > 0.5, mode = 0 if p < 0.5, both if p = 0.5. For a Binomial(n,p): mode = ⌊(n+1)p⌋ or ⌊(n+1)p⌋−1. For a Poisson(λ): mode = ⌊λ⌋ or ⌊λ⌋−1 if λ is integer, else ⌊λ⌋. [1]",
+      "body": "For discrete data, the mode is the most common observed value or category. It is the only standard measure of center that still makes sense for purely nominal variables, which is why it is important in classification, survey summaries, and categorical analysis. A distribution can have one mode, several modes, or no single dominant value at all.",
       "formula": "Mode = argmax_x P(X = x)"
     },
     {
       "heading": "Continuous Mode and Kernel Density Estimation",
-      "body": "For continuous data, estimate the density via KDE: f̂(x) = (1/nh)Σᵢ K((x−xᵢ)/h). The mode is the peak of f̂(x). Bandwidth h controls smoothness — too small: spiky estimate with many local maxima; too large: over-smoothed, bimodality masked. Silverman's rule-of-thumb: h = 1.06 σ̂ n^{−1/5}. [1]"
+      "body": "For continuous data, the exact mode is usually estimated from a smoothed density curve rather than by counting repeated values. The answer depends strongly on how much smoothing is used, because too little smoothing creates artificial bumps while too much smoothing can erase genuine structure. This makes modal estimation more delicate than estimating the mean or median.",
+      "formula": "f̂(x) = (1/nh)Σᵢ K((x−xᵢ)/h)"
     },
     {
       "heading": "Mode as MAP Estimator",
-      "body": "In Bayesian inference, the MAP estimate is θ_MAP = argmax_θ p(θ|data) = argmax_θ [p(data|θ)p(θ)]. With a uniform prior, MAP = MLE. The mode of the posterior is the MAP point estimate — it maximises the probability density, unlike the posterior mean which minimises posterior expected squared error. [2]",
+      "body": "In Bayesian inference, the mode of the posterior distribution is the maximum a posteriori estimate. It gives the single most probable parameter value under the model and prior, which makes it a natural point estimate when the goal is to pick the most likely state rather than average over uncertainty. With a flat prior, this estimate matches maximum likelihood.",
       "formula": "θ_MAP = argmax_θ p(θ|data)"
     },
     {
       "heading": "Mode in Skewed Distributions",
-      "body": "For unimodal right-skewed distributions, mode < median < mean. The relationship is approximate: mean − mode ≈ 3(mean − median) (Pearson's empirical rule — not exact, but a useful heuristic). This ordering also holds for the log-normal distribution: mode = e^{μ−σ²}, median = e^μ, mean = e^{μ+σ²/2}. [1]"
+      "body": "In a right-skewed distribution, the mode typically sits at the peak, the median lies to its right, and the mean is pulled furthest into the long tail. That ordering helps explain why the mode often feels like the most typical value in very skewed settings even though it ignores much of the distribution. It is especially useful as a descriptive cue when exploring shape and asymmetry."
     }
   ],
   "youtubeLabel": "Mean, Median, Mode — StatQuest",

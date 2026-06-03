@@ -30,26 +30,26 @@
   "deepDive": [
     {
       "heading": "Bayes' Theorem & the Naïve Assumption",
-      "body": "By Bayes' theorem, P(y|x) ∝ P(y)·P(x|y). Naïve Bayes factorises the class-conditional likelihood: P(x|y) = ∏ⱼ P(xⱼ|y), assuming features are conditionally independent given y. The predicted class is the argmax over classes. [1][2]",
+      "body": "This section explains the conditions under which the method works well and the types of data where it can struggle.",
       "formula": "ŷ = argmax_y  P(y) · ∏ⱼ₌₁ᵖ P(xⱼ | y)"
     },
     {
       "heading": "Gaussian Naïve Bayes",
-      "body": "For continuous features, each class-conditional distribution is assumed Gaussian: P(xⱼ|y=k) = N(xⱼ; μⱼₖ, σ²ⱼₖ). Parameters μⱼₖ and σ²ⱼₖ are estimated by the sample mean and variance within each class. This is the variant used for general continuous features. [1]",
+      "body": "This section explains the main idea behind this part of the method in plain language.",
       "formula": "P(xⱼ|y=k) = (1/√(2πσ²ⱼₖ)) · exp(−(xⱼ−μⱼₖ)²/(2σ²ⱼₖ))"
     },
     {
       "heading": "Multinomial Naïve Bayes",
-      "body": "For count features (word frequencies in a document), P(x|y) is modelled as a multinomial distribution. The parameter θⱼₖ = P(feature j | class k) is estimated by the relative frequency of feature j among all feature occurrences in class-k documents. Standard for text classification. [1]"
+      "body": "This section explains the main idea behind this part of the method in plain language."
     },
     {
       "heading": "Laplace (Additive) Smoothing",
-      "body": "If a feature–class pair never appears in training, P(xⱼ|y) = 0 and the entire product becomes 0. Laplace smoothing adds a pseudo-count α (typically 1) to every feature count, ensuring no zero probabilities. [1]",
+      "body": "Laplace smoothing adds a pseudo-count α (typically 1) to every feature count, ensuring no zero probabilities.",
       "formula": "θ̂ⱼₖ = (count(xⱼ, y=k) + α) / (Σⱼ count(xⱼ, y=k) + α·p)"
     },
     {
       "heading": "Log-Space Computation",
-      "body": "In practice, probabilities are multiplied across many features, leading to numerical underflow. Use log-probabilities instead: log P(y|x) ∝ log P(y) + Σⱼ log P(xⱼ|y). The argmax is identical, and subtraction in log-space avoids underflow. [1]",
+      "body": "In practice, probabilities are multiplied across many features, leading to numerical underflow.",
       "formula": "ŷ = argmax_y [ log P(y) + Σⱼ log P(xⱼ|y) ]"
     }
   ],
@@ -86,7 +86,13 @@
     }
   ],
   "sources": [
-    { "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 6.6", "url": "https://hastie.su.domains/ElemStatLearn/" },
-    { "label": "James et al. — An Introduction to Statistical Learning, Ch. 4", "url": "https://www.statlearning.com/" }
+    {
+      "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 6.6",
+      "url": "https://hastie.su.domains/ElemStatLearn/"
+    },
+    {
+      "label": "James et al. — An Introduction to Statistical Learning, Ch. 4",
+      "url": "https://www.statlearning.com/"
+    }
   ]
 }

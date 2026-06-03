@@ -20,30 +20,30 @@
     },
     {
       "title": "When regularisation matters more than speed",
-      "body": "AdamW's decoupled weight decay provides consistent L2 regularisation regardless of gradient history. In Adam, parameters with small gradient history get amplified regularisation (because small v̂ → large step → large effective λ). AdamW prevents this from skewing the regularisation landscape. The improvement is most visible in long training runs where some parameters receive sparse gradients."
+      "body": "AdamW's decoupled weight decay provides consistent L2 regularisation regardless of gradient history. In Adam, parameters with small gradient history get amplified regularisation (because a small adaptive denominator means a large step, hence large effective weight decay). AdamW prevents this from skewing the regularisation landscape. The improvement is most visible in long training runs where some parameters receive sparse gradients."
     }
   ],
   "deepDiveIntro": [
-    "Loshchilov & Hutter (2019) identified the bug in Adam's L2 regularisation. In Adam, adding weight_decay modifies the gradient: g_reg = g + λw. This goes through the adaptive scaling: update = η·m̂(g_reg)/√(v̂(g_reg)+ε). The effective weight decay on parameter wᵢ is λ·η/√(v̂ᵢ+ε) — varying per parameter depending on gradient history. Parameters with large gradient history get small effective regularisation; rarely-updated parameters get large effective regularisation. [1]",
-    "AdamW decouples: first compute the Adam update (without weight decay in the gradient), then apply weight decay directly: wₜ = wₜ₋₁ − η·m̂ₜ/(√v̂ₜ+ε) − η·λ·wₜ₋₁. The weight decay step −η·λ·w is constant per parameter (independent of gradient history). Loshchilov & Hutter showed this consistently improves generalisation, especially on NLP tasks, and becomes the standard hyperparameter for transformer training. [1]"
+    "Loshchilov & Hutter (2019) identified the bug in Adam's L2 regularisation. In Adam, adding weight_decay modifies the gradient before the update. This goes through the adaptive scaling, so the effective weight decay on any given parameter varies depending on that parameter's gradient history — parameters that rarely get gradients end up with larger effective regularisation, which is inconsistent. [1]",
+    "AdamW decouples the two steps: first compute the standard Adam update (without weight decay in the gradient), then apply weight decay directly to the weights as a separate multiplicative shrink. The weight decay step is constant per parameter and independent of gradient history. Loshchilov & Hutter showed this consistently improves generalisation, especially on NLP tasks, and it has become the standard for transformer training. [1]"
   ],
   "deepDive": [
     {
       "heading": "L2 Reg in Adam vs AdamW",
-      "body": "Adam with weight_decay λ: grad_modified = gₜ + λ·wₜ. Update: m = β₁m + (1−β₁)(g+λw); v = β₂v + (1−β₂)(g+λw)². Effective weight decay on wᵢ: ≈ η·λ/√(v̂ᵢ+ε) — varies by parameter. AdamW: grad = gₜ (no λ in gradient). First: wₜ' = wₜ₋₁ − η·m̂ₜ/(√v̂ₜ+ε) (Adam step). Then: wₜ = wₜ' − η·λ·wₜ₋₁. The λ term is constant: every parameter shrinks by η·λ regardless of its gradient history. This is true L2 regularisation with consistent strength across all parameters. [1]",
+      "body": "In Adam with weight_decay, the decay term is added to the gradient before the adaptive scaling, so the effective regularisation strength varies per parameter depending on its gradient history. In AdamW, the Adam step is computed first using only the gradient, and then a separate weight decay step shrinks the weight directly by a constant factor. This makes the regularisation uniform across all parameters regardless of their gradient history — true L2 regularisation with consistent strength. [1]",
       "formula": "wₜ = wₜ₋₁ − η·m̂ₜ/(√v̂ₜ+ε) − η·λ·wₜ₋₁"
     },
     {
       "heading": "Which Parameters Get Weight Decay?",
-      "body": "Standard practice: apply weight decay to weight matrices (linear, embedding, conv); do NOT apply to biases, layer norm parameters (γ, β), or batch norm parameters. Rationale: biases are not over-parameterised in the same way as weight matrices. Layer norm parameters γ,β are often small or zero-initialised and should not be shrunk. In Hugging Face transformers, the standard no_decay group excludes: any parameter whose name contains 'bias', 'LayerNorm.weight'. Weight decay 0.1 is the Chinchilla default for LLMs; 0.01 for smaller CNNs."
+      "body": "Standard practice: apply weight decay to weight matrices (linear, embedding, conv); do NOT apply to biases, layer norm parameters, or batch norm parameters. Biases are not over-parameterised in the same way as weight matrices. Layer norm scale and shift parameters are often small or zero-initialised and should not be shrunk. In Hugging Face transformers, the standard no_decay group excludes any parameter whose name contains 'bias' or 'LayerNorm.weight'. Weight decay 0.1 is the Chinchilla default for LLMs; 0.01 for smaller CNNs."
     },
     {
       "heading": "Tuning Weight Decay",
-      "body": "Weight decay λ acts as a scale factor on the L2 regularisation term. Too small (λ < 0.001): no regularisation benefit. Too large (λ > 1): weights shrink to near zero, model underfits. Typical range: 0.01–0.3 for transformers. With cosine LR schedule, higher weight decay is sustainable (lr decreases so the η·λ·w term also decreases late in training). Karpathy's nanoGPT uses weight_decay=0.1, lr=6e-4 for small GPT-2 replicas — a reliable starting point. [1]"
+      "body": "Weight decay acts as a scale factor on L2 regularisation. Too small (below 0.001): no regularisation benefit. Too large (above 1): weights shrink to near zero, model underfits. Typical range: 0.01–0.3 for transformers. With a cosine learning rate schedule, higher weight decay is sustainable because the learning rate decreases late in training, reducing the shrinkage effect. Karpathy's nanoGPT uses weight_decay=0.1 and lr=6e-4 for small GPT-2 replicas — a reliable starting point. [1]"
     },
     {
       "heading": "LAMB: AdamW at Large Batch Scale",
-      "body": "LAMB (Layer-wise Adaptive Moments, You et al. 2020) extends AdamW for extremely large batch training (64K+). AdamW with large batches needs much larger η (linear scaling rule), but large η causes instability. LAMB normalises the update by ‖update‖ and rescales by ‖w‖: wₜ = wₜ₋₁ − η·(‖wₜ₋₁‖/‖m̂ₜ/(√v̂ₜ+ε) + λwₜ₋₁‖) · (m̂ₜ/(√v̂ₜ+ε) + λwₜ₋₁). This allows training BERT in 76 minutes on 1024 TPUs (vs 3 days standard) by enabling batch size 32,768. [2]"
+      "body": "LAMB (Layer-wise Adaptive Moments, You et al. 2020) extends AdamW for extremely large batch training (64K or more samples per batch). With very large batches you need a much larger learning rate, but large learning rates cause instability. LAMB normalises the update direction by its own norm and rescales by the weight norm, allowing stable training at batch size 32,768. This enabled training BERT in 76 minutes on 1024 TPUs compared to 3 days with standard training. [2]"
     }
   ],
   "youtubeLabel": "AdamW vs Adam — Decoupled Weight Decay",

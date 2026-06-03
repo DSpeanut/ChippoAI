@@ -23,28 +23,28 @@
     }
   ],
   "deepDiveIntro": [
-    "One-way ANOVA with k groups and nᵢ observations in group i (total n = Σnᵢ). Model: Xᵢⱼ = μ + αᵢ + εᵢⱼ where αᵢ is the group effect (Σnᵢαᵢ=0) and εᵢⱼ ~ N(0,σ²) iid. H₀: α₁=…=αₖ=0 (all group means equal). H₁: at least one αᵢ ≠ 0.",
-    "Variance partition: SST = SSB + SSW. SST = Σᵢⱼ(xᵢⱼ−x̄)²; SSB = Σᵢnᵢ(x̄ᵢ−x̄)² (between); SSW = Σᵢⱼ(xᵢⱼ−x̄ᵢ)² (within). Under H₀: SSB/σ² ~ χ²(k−1), SSW/σ² ~ χ²(n−k), and they are independent. F = (SSB/(k−1))/(SSW/(n−k)) ~ F(k−1, n−k)."
+    "One-way ANOVA models each observation as a grand mean plus a group-specific offset plus random noise. The null hypothesis is that all group offsets are zero — meaning every group has the same mean. The test partitions the total variation in the data into two parts: how much groups differ from the overall average (between-group) versus how much observations vary within each group (within-group).",
+    "The F-statistic is the ratio of between-group variance to within-group variance. Under the null hypothesis both quantities estimate the same underlying variance, so F should be close to 1. When groups genuinely differ, the between-group variance inflates while the within-group variance stays the same, pushing F above 1. The p-value is the probability of seeing an F this large by chance alone."
   ],
   "visualizationType": "anova",
   "deepDive": [
     {
       "heading": "Variance Decomposition",
-      "body": "SST = SSB + SSW where SST = Σᵢⱼ(xᵢⱼ−x̄)², SSB = Σᵢnᵢ(x̄ᵢ−x̄)² (Between-group), SSW = Σᵢⱼ(xᵢⱼ−x̄ᵢ)² (Within-group). MSB = SSB/(k−1), MSW = SSW/(n−k). Under H₀, both MSB and MSW estimate σ². Under H₁, E[MSB] = σ² + Σnᵢαᵢ²/(k−1) > σ² = E[MSW]. [1]",
+      "body": "Total variation in the data is split into two sources: variation between group means (SSB) and variation of individual observations around their own group mean (SSW). Dividing each by its degrees of freedom gives the mean squares MSB and MSW. Under the null hypothesis both estimate the same underlying noise variance. If groups truly differ, MSB becomes inflated because group means are spread further apart than chance would predict. [1]",
       "formula": "SST = SSB + SSW"
     },
     {
       "heading": "F-Statistic and F-Distribution",
-      "body": "F = MSB / MSW = [SSB/(k−1)] / [SSW/(n−k)] ~ F(k−1, n−k) under H₀. Reject H₀ if F > F_{k−1, n−k, α}. The F-distribution is the ratio of two independent chi-squared variables divided by their degrees of freedom. It is always non-negative and right-skewed. Note: for k=2, F = t² where t is the two-sample t statistic — one-way ANOVA with two groups = two-sample t-test. [1]",
+      "body": "The F-statistic is the ratio of between-group variance to within-group variance. Under the null hypothesis it follows an F-distribution determined by the number of groups and the total sample size. Large F values are unlikely under the null, so a large F gives evidence that at least one group mean differs. For the special case of two groups, F equals the square of the two-sample t-statistic — ANOVA is the direct generalization of the t-test to more than two groups. [1]",
       "formula": "F = MSB / MSW = [SSB/(k−1)] / [SSW/(n−k)]"
     },
     {
       "heading": "Assumptions",
-      "body": "1. Independence: observations are independent within and across groups. 2. Normality: within each group, data ~ N(μᵢ, σ²). Robust to mild non-normality for n ≥ 30 per group by CLT. 3. Homoscedasticity (equal variances): σ₁²=…=σₖ²=σ². Test with Levene's test or Bartlett's test. If violated, use Welch's ANOVA (does not assume equal variances). [1]"
+      "body": "ANOVA requires three conditions: observations must be independent within and across groups; values within each group should be approximately normally distributed (though with 30+ samples per group this matters little due to the central limit theorem); and all groups should have similar variance (homoscedasticity). Levene's test checks whether variances are equal. If groups have very different spreads, use Welch's ANOVA, which relaxes the equal-variance requirement. [1]"
     },
     {
       "heading": "Post-Hoc Tests",
-      "body": "A significant F-test rejects H₀ but does not identify which means differ. Post-hoc tests for pairwise comparisons: Tukey's HSD (controls family-wise error rate for all pairwise comparisons), Bonferroni correction (most conservative, divide α by number of comparisons), Scheffé (most flexible, controls for all possible contrasts), and Dunnett (comparisons to a single control group). [1][2]"
+      "body": "A significant F-test only tells you that at least one group mean differs — it does not say which pair. Post-hoc tests identify which specific pairs are different while controlling the overall false positive rate. Tukey's HSD is the standard choice for all pairwise comparisons. Bonferroni correction is more conservative and simpler. Scheffé allows testing arbitrary contrasts (not just pairs). Dunnett is designed for comparing multiple groups to a single control group. [1][2]"
     }
   ],
   "youtubeLabel": "ANOVA — StatQuest",

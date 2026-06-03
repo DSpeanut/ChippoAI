@@ -25,21 +25,22 @@
   "deepDive": [
     {
       "heading": "Types of Variables in DAGs",
-      "body": "Confounder: Z → X, Z → Y (backdoor path X ← Z → Y). Adjust for Z to remove confounding. Mediator: X → M → Y. Do NOT adjust for M if you want the total effect of X on Y; adjust for M to estimate the direct effect of X on Y not through M. Collider: X → C ← Y. Do NOT adjust for C — conditioning on a collider opens a spurious path. Instrument: IV → X → Y with IV ⊥ Y | X and IV affects Y only through X. [1]",
+      "body": "Directed acyclic graphs distinguish several variable roles that are easy to confuse in practice. Confounders should usually be adjusted for, mediators should only be adjusted for when the estimand requires it, and colliders should generally be left alone because conditioning on them creates bias. Thinking in terms of these roles is the main reason DAGs are so useful for causal reasoning.",
       "formula": "Backdoor criterion: E[Y|do(X=x)] = Σ_s E[Y|X=x,S=s]·P(S=s)"
     },
     {
       "heading": "Regression Adjustment for Confounders",
-      "body": "Adding Z to the regression Y ~ X + Z removes confounding by Z if Z is measured correctly and the regression model is correctly specified (linear relationship, no interactions missed). Key assumption: no residual confounding — all common causes of X and Y are included. The regression coefficient β_X estimates the average direct effect of X on Y, with Z held constant. This only works for measured confounders; unmeasured confounders remain a threat. [1]"
+      "body": "Regression adjustment can remove confounding only when the relevant confounders are actually measured and the model describes their effect adequately. If key common causes are omitted or modeled poorly, the adjusted estimate can still be biased. This is why regression is not a substitute for causal design or substantive knowledge."
     },
     {
       "heading": "Propensity Score Methods",
-      "body": "Propensity score e(Z) = P(X=1|Z) (probability of treatment given measured confounders Z). Rosenbaum & Rubin (1983): conditioning on e(Z) blocks all backdoor paths through measured confounders — the same adjustment as conditioning on Z itself but in a single scalar. Propensity score methods: (1) matching — match treated and control with similar e(Z); (2) IPW — weight observations by 1/e(Z) for treated, 1/(1−e(Z)) for control; (3) stratification — stratify on quintiles of e(Z). Assumption: no unmeasured confounding (conditional exchangeability). [1]",
+      "body": "The propensity score compresses many measured confounders into a single balancing score. Matching, weighting, and stratification all use that score to make treated and control groups more comparable on observed characteristics. These methods can be powerful, but they still rely on the strong assumption that all important confounders were measured.",
       "formula": "e(Z) = P(X=1 | Z)   [propensity score]"
     },
     {
       "heading": "Sensitivity Analysis for Unmeasured Confounding",
-      "body": "When unmeasured confounders exist, sensitivity analysis quantifies how strong an unmeasured confounder would need to be to explain away the observed association. Cornfield conditions (1959): an unmeasured confounder U must be at least as strongly associated with both X and Y as the observed association to explain it away. E-value (VanderWeele & Ding, 2017): E-value = RR + √(RR(RR−1)) — if all unmeasured confounders have associations weaker than the E-value, the observed effect is robust. [1]"
+      "body": "Because unmeasured confounding can never be ruled out from the observed data alone, sensitivity analysis asks how strong such a hidden confounder would need to be to overturn the conclusion. This does not solve the confounding problem, but it makes the remaining uncertainty more explicit. It is a useful bridge between causal claims and humility about what the data can support.",
+      "formula": "E-value = RR + √(RR(RR−1))"
     }
   ],
   "takeaways": [

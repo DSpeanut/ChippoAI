@@ -30,26 +30,27 @@
   "deepDive": [
     {
       "heading": "Taylor Series Expansion",
-      "body": "For infinitely differentiable f near a: f(x) = Σₙ₌₀^∞ f⁽ⁿ⁾(a)(x-a)ⁿ/n!. If derivatives don't grow too fast, series converges. Analytic functions equal their Taylor series within radius of convergence. Examples: eˣ, sin(x), cos(x) have infinite radius.",
+      "body": "A Taylor series approximates a smooth function near a chosen point by adding together polynomial terms built from the function's derivatives at that point. Each extra term captures more local shape information, such as slope, curvature, and higher-order bending. For analytic functions, the full infinite series actually reproduces the original function within its radius of convergence.",
       "formula": "f(x) = Σₙ₌₀^∞ (f⁽ⁿ⁾(a)/n!)(x-a)ⁿ"
     },
     {
       "heading": "First and Second Order Approximations",
-      "body": "Linear (1st order): f(x) ≈ f(a) + f'(a)(x-a). Quadratic (2nd order): f(x) ≈ f(a) + f'(a)(x-a) + ½f''(a)(x-a)². Optimization uses these: gradient descent from linear, Newton's method from quadratic.",
+      "body": "The first-order approximation keeps only the local value and slope, so it behaves like the tangent line. The second-order approximation adds curvature, giving a local quadratic model that is often much more accurate. Optimization methods use exactly these two viewpoints when deciding how to move.",
       "formula": "f(x+h) ≈ f(x) + ∇f(x)ᵀh + ½hᵀH(x)h"
     },
     {
       "heading": "Remainder Terms",
-      "body": "Lagrange remainder: Rₙ(x) = f⁽ⁿ⁺¹⁾(ξ)(x-a)ⁿ⁺¹/(n+1)! for some ξ between a and x. Integral form: Rₙ(x) = ∫ₐˣ f⁽ⁿ⁺¹⁾(t)(x-t)ⁿ/n! dt. These bound approximation error and prove convergence."
+      "body": "Truncating a Taylor series creates an approximation error called the remainder. Remainder formulas tell you how large that error can be, which is what makes Taylor approximations mathematically trustworthy instead of just visually appealing. They are also useful for proving convergence and for deriving numerical error bounds.",
+      "formula": "Rₙ(x) = f⁽ⁿ⁺¹⁾(ξ)(x-a)ⁿ⁺¹/(n+1)!"
     },
     {
       "heading": "Multivariate Taylor Series",
-      "body": "f(x) = f(a) + ∇f(a)ᵀ(x-a) + ½(x-a)ᵀH(a)(x-a) + O(||x-a||³). Hessian Hᵢⱼ = ∂²f/∂xᵢ∂xⱼ. Third-order involves tensor of third derivatives. Key for analyzing critical points: H positive definite → local minimum.",
+      "body": "In several variables, the same idea uses gradients for slope information and the Hessian for curvature information. The result is a local polynomial model of the function around a chosen point. This expansion is a core tool for analyzing critical points and for designing optimization algorithms.",
       "formula": "f(x) = f(a) + Σᵢ ∂f/∂xᵢ (xᵢ-aᵢ) + ½Σᵢⱼ ∂²f/∂xᵢ∂xⱼ (xᵢ-aᵢ)(xⱼ-aⱼ) + …"
     },
     {
       "heading": "Analytic Functions and Convergence",
-      "body": "A function is analytic if it equals its Taylor series in some neighborhood. Not all smooth functions are analytic (e.g., exp(-1/x²) for x≠0, 0 for x=0 has all derivatives 0 at 0, so Taylor series is 0, not the function). Real analytic implies complex analytic (holomorphic)."
+      "body": "A function is analytic when its Taylor series does more than approximate locally and actually equals the function nearby. Not every infinitely differentiable function has this property, so smoothness alone is not enough. The gap between smooth and analytic behavior matters in approximation theory and complex analysis."
     }
   ],
   "youtubeLabel": "Taylor Series — 3Blue1Brown",

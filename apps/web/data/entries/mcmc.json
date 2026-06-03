@@ -25,21 +25,22 @@
   "deepDive": [
     {
       "heading": "Metropolis-Hastings Algorithm",
-      "body": "1. Initialize θ⁽⁰⁾. 2. At step t: propose θ* ~ q(θ*|θ⁽ᵗ⁾). 3. Compute acceptance ratio α = min(1, [P(θ*|x)q(θ⁽ᵗ⁾|θ*)] / [P(θ⁽ᵗ⁾|x)q(θ*|θ⁽ᵗ⁾)]). Note: P(x) cancels. 4. Accept θ⁽ᵗ⁺¹⁾ = θ* with prob α, else θ⁽ᵗ⁺¹⁾ = θ⁽ᵗ⁾. For symmetric proposals q(θ*|θ) = q(θ|θ*) (Metropolis): α = min(1, P(θ*|x)/P(θ⁽ᵗ⁾|x)). Optimal acceptance rate for random walk MH in d dimensions: ≈ 23.4%. [1]",
+      "body": "Metropolis-Hastings builds a chain by proposing moves and then accepting or rejecting them according to how plausible the new state is under the target distribution. The key trick is that the difficult normalizing constant drops out of the acceptance ratio. This makes the method widely applicable, though it can mix slowly in high-dimensional or strongly correlated problems.",
       "formula": "α = min(1,  P(θ*|x)·q(θ_t|θ*) / [P(θ_t|x)·q(θ*|θ_t)])"
     },
     {
       "heading": "Gibbs Sampling",
-      "body": "A special case of MH with acceptance rate 1. For joint target P(θ₁,θ₂|x): cycle between θ₁⁽ᵗ⁺¹⁾ ~ P(θ₁|θ₂⁽ᵗ⁾,x) and θ₂⁽ᵗ⁺¹⁾ ~ P(θ₂|θ₁⁽ᵗ⁺¹⁾,x). Requires closed-form full conditional distributions — satisfied for exponential family models with conjugate priors. Mixes slowly when parameters are highly correlated (the chain zigzags). Blocked Gibbs (sampling correlated parameters jointly) improves mixing. [1]"
+      "body": "Gibbs sampling updates one block of parameters at a time using their full conditional distributions. Because each step is drawn exactly from the corresponding conditional, proposals are always accepted. The method is especially attractive in conjugate models, although it can move inefficiently when parameters are strongly correlated."
     },
     {
       "heading": "Hamiltonian Monte Carlo (HMC) and NUTS",
-      "body": "HMC augments the target with auxiliary momentum variables p: joint distribution P(θ,p) ∝ exp(−U(θ) − K(p)), where U(θ) = −log P(θ|x) (potential energy) and K(p) = p'M⁻¹p/2 (kinetic energy). Hamiltonian dynamics (simulated with leapfrog integration) produce large, directed proposals that explore the posterior efficiently. NUTS (Hoffman & Gelman, 2014) automatically selects the trajectory length, avoiding manual tuning. Stan uses NUTS; it is 10–1000× more efficient than random walk MH for smooth posteriors. [2]",
+      "body": "Hamiltonian Monte Carlo uses gradient information to move through parameter space in long, directed trajectories rather than short random walks. This makes it dramatically more efficient for smooth continuous posteriors. The No-U-Turn Sampler automates the hardest tuning choice, which is why it has become the default engine in modern Bayesian software such as Stan.",
       "formula": "H(θ, p) = U(θ) + K(p) = −log P(θ|x) + p'M⁻¹p/2"
     },
     {
       "heading": "Convergence Diagnostics",
-      "body": "R̂ (Gelman-Rubin): run M chains from overdispersed starts; R̂ = √(Var_between/Var_within). R̂ ≈ 1.0 indicates convergence; R̂ > 1.1 suggests non-convergence. Effective Sample Size (ESS): ESS = T / (1 + 2Σρₖ) where ρₖ is the lag-k autocorrelation. ESS << T indicates high autocorrelation (slow mixing). Trace plots should show no trend, good stationarity. Modern guidance (Vehtari et al., 2021): use rank-normalized R̂ and ESS > 400 (per chain). [1]"
+      "body": "Running a chain is not enough; you also need evidence that it explored the target distribution well. Diagnostics such as the split-chain convergence statistic, effective sample size, and trace plots help detect non-convergence and poor mixing. These tools do not prove correctness, but they are essential for deciding whether posterior summaries are trustworthy.",
+      "formula": "ESS = T / (1 + 2Σρₖ)"
     }
   ],
   "youtubeLabel": "Markov Chain Monte Carlo — StatQuest",

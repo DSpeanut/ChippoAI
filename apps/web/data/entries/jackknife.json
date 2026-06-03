@@ -25,21 +25,22 @@
   "deepDive": [
     {
       "heading": "Jackknife Variance Estimator",
-      "body": "Var_jack(θ̂) = [(n−1)/n]Σᵢ₌₁ⁿ (θ̂₋ᵢ − θ̄₋)². The factor (n−1)/n corrects for the reduced sample size in each leave-one-out estimate. For the sample mean x̄: θ̂₋ᵢ = (nx̄ − xᵢ)/(n−1); θ̄₋ = x̄; Var_jack = [(n−1)/n]·Σ(x̄ − (nx̄−xᵢ)/(n−1))²/n = s²/n — exactly the standard variance formula. Jackknife is exact for linear statistics. [1]",
+      "body": "The jackknife estimates variability by recomputing the statistic after leaving out one observation at a time. If those leave-one-out versions vary a lot, the original estimator is unstable; if they vary little, it is stable. For linear statistics such as the sample mean, the jackknife reproduces the usual variance formula exactly.",
       "formula": "Var_jack(θ̂) = [(n−1)/n] Σᵢ (θ̂₋ᵢ − θ̄₋)²"
     },
     {
       "heading": "Bias Reduction via Jackknife",
-      "body": "If E[θ̂] = θ + a₁/n + a₂/n² + …, then E[θ̂₋ᵢ] = θ + a₁/(n−1) + …. The jackknife estimate θ̂_jack = nθ̂ − (n−1)θ̄₋ has E[θ̂_jack] = θ + O(1/n²) — the O(1/n) bias is removed. Example: sample variance σ̂² = Σ(xᵢ−x̄)²/n has bias −σ²/n; the jackknife-corrected estimate = Σ(xᵢ−x̄)²/(n−1) = s² (the unbiased version). [1]",
+      "body": "The jackknife can also reduce bias by combining the full-sample estimate with the average of the leave-one-out estimates. For many smooth estimators, this removes the leading small-sample bias term. That is why the jackknife is historically important not just as a variance estimator but also as a bias-correction tool.",
       "formula": "θ̂_jack = n·θ̂ − (n−1)·θ̄₋"
     },
     {
       "heading": "Jackknife vs Bootstrap",
-      "body": "Jackknife: deterministic (no randomness), n evaluations, first-order accurate, fails for non-smooth statistics. Bootstrap: randomized (B evaluations), flexible, BCa is second-order accurate, can handle any statistic. For smooth statistics and large n: jackknife SE ≈ bootstrap SE. For the median (non-smooth): jackknife gives Var_jack = 0 (removing any one observation doesn't change the median for a large n), while bootstrap correctly estimates the variance. Default recommendation: use bootstrap; use jackknife for survey variance estimation and the BCa acceleration constant. [1]"
+      "body": "The jackknife is deterministic and computationally cheap, while the bootstrap is more flexible and generally more accurate for complicated statistics. For smooth estimators the two often agree closely, but the bootstrap handles non-smooth statistics much better. In practice, the jackknife is often chosen for speed or for survey designs, and the bootstrap for broader applicability."
     },
     {
       "heading": "Delete-d Jackknife",
-      "body": "Delete-d jackknife (Wu, 1990): remove d > 1 observations at a time. With d = 1: standard jackknife. With d → n: approaches bootstrap behavior. For d growing with n (e.g., d = n^{2/3}), the delete-d jackknife is consistent for non-smooth statistics like quantiles where delete-1 jackknife fails. The m-out-of-n bootstrap achieves similar goals via resampling m << n observations. [1]"
+      "body": "A more general version of the jackknife removes several observations at once instead of just one. This helps when the ordinary leave-one-out version is too fragile or fails for non-smooth statistics such as quantiles. It sits conceptually between the classical jackknife and the bootstrap.",
+      "formula": "delete-d: remove d observations per replicate"
     }
   ],
   "takeaways": [

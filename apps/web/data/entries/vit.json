@@ -30,7 +30,7 @@
   "deepDive": [
     {
       "heading": "Patch Embedding and Input Preparation",
-      "body": "The patch embedding layer (nn.Conv2d with kernel_size=P, stride=P) is functionally equivalent to splitting the image into P×P non-overlapping patches and linearly projecting each. Using Conv2d is computationally efficient — PyTorch optimises this as a single convolution. For P=16, a 224×224 image produces (224/16)²=196 patches, each of dimensionality 3×16×16=768. The linear projection E ∈ ℝ^{D×(P²·C)} maps each patch to D-dimensional space. Total patch embedding parameters: D×P²×C = 768×768=589,824 ≈ 0.6M. The [CLS] token is a learnable vector e^{cls} ∈ ℝ^D (768 parameters) prepended to the patch sequence, giving sequence length 197. Each position gets a learned positional embedding added. [1]"
+      "body": "Using Conv2d is computationally efficient — PyTorch optimises this as a single convolution. Each position gets a learned positional embedding added."
     },
     {
       "heading": "ViT vs CNN: Inductive Biases and Data Efficiency",
@@ -42,7 +42,7 @@
     },
     {
       "heading": "ViT Scaling: Variants and Parameter Counts",
-      "body": "Standard ViT variants: ViT-Ti/16 (5.7M params, D=192, L=12, h=3); ViT-S/16 (22M, D=384, L=12, h=6); ViT-B/16 (86M, D=768, L=12, h=12); ViT-L/16 (307M, D=1024, L=24, h=16); ViT-H/14 (632M, D=1280, L=32, h=16, P=14). The / notation: B/16 means ViT-Base with 16×16 patches; L/32 means ViT-Large with 32×32 patches (fewer, larger patches → fewer tokens → faster). Accuracy vs efficiency: B/16 (86M, 17.6 GFLOPs) achieves 81.8% on ImageNet after fine-tuning from ImageNet-21k; L/16 (307M) achieves 85.2%. DINOv2 ViT-G/14 (1B params) achieves 86.5% without any supervised fine-tuning on ImageNet — just linear probing. [1]"
+      "body": "Accuracy vs efficiency: B/16 (86M, 17.6 GFLOPs) achieves 81.8% on ImageNet after fine-tuning from ImageNet-21k; L/16 (307M) achieves 85.2%. DINOv2 ViT-G/14 (1B params) achieves 86.5% without any supervised fine-tuning on ImageNet — just linear probing."
     }
   ],
   "takeaways": [

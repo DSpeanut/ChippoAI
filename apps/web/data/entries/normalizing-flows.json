@@ -30,19 +30,19 @@
   "deepDive": [
     {
       "heading": "Change of Variables Formula",
-      "body": "For an invertible transformation f: ℝ^d → ℝ^d, the density transforms as: p_X(x) = p_Z(f(x)) · |det J_f(x)|. Taking logarithms: log p_X(x) = log p_Z(f(x)) + log|det J_f(x)|. For a base distribution p_Z = N(0,I): log p_Z(z) = −d/2·log(2π) − ½‖z‖². Training a flow to maximise log p_X(x_i) on training data is equivalent to: (1) computing z_i = f(x_i) (forward pass); (2) computing log|det J_f(x_i)| (Jacobian determinant); (3) maximising log p_Z(z_i) + log|det J_f|. This pushes z to be close to the base distribution (first term) while accounting for volume change (second term). If |det J| > 1, the flow compresses the space (probability increases); if |det J| < 1, it expands (probability decreases). [1]"
+      "body": "This section explains the density transformation rule that makes the method exact and tractable for probabilistic modeling."
     },
     {
       "heading": "RealNVP: Affine Coupling Layers",
-      "body": "RealNVP (Real-valued Non-Volume Preserving transformations, Dinh et al., 2016) achieves tractable Jacobians via coupling layers. Split x into [x_1, x_2]; transform only x_2: x_2' = x_2 · exp(s(x_1)) + t(x_1); x_1' = x_1. The Jacobian J is lower triangular (upper-left identity block, lower-right diagonal of exp(s)), so det J = exp(Σ_j s_j(x_1)) — O(d) computation. The inverse is: x_2 = (x_2' − t(x_1)) · exp(−s(x_1)) — also O(d). The functions s and t can be arbitrary (non-invertible) neural networks — they don't need to be invertible themselves because invertibility is guaranteed by the coupling layer structure. Stacking coupling layers with alternating splits (which dimensions are in x_1 vs x_2) ensures all dimensions are transformed. Glow added invertible 1×1 convolutions (parameterised as LU decomposition) to mix channels between coupling layers. [1]"
+      "body": "RealNVP (Real-valued Non-Volume Preserving transformations, Dinh et al., 2016) achieves tractable Jacobians via coupling layers. The functions s and t can be arbitrary (non-invertible) neural networks — they don't need to be invertible themselves because invertibility is guaranteed by the coupling layer structure. Stacking coupling layers with alternating splits (which dimensions are in x_1 vs x_2) ensures all dimensions are transformed. Glow added invertible 1×1 convolutions (parameterised as LU decomposition) to mix channels between coupling layers."
     },
     {
       "heading": "MAF and IAF: Autoregressive Flows",
-      "body": "Masked Autoregressive Flow (MAF, Papamakarios et al., 2017) uses autoregressive density estimation as a flow: x_i = z_i · σ_θ(x_{<i}) + μ_θ(x_{<i}). The Jacobian is triangular (each x_i depends only on previous x_j, j<i), so det J = ∏_i σ_i — O(d) computation. MAF generates x one dimension at a time (sequential), but evaluates the density of any x in parallel. Inverse Autoregressive Flow (IAF, Kingma et al., 2016) swaps the autoregressive dependency: x_i = z_i · σ_θ(z_{<i}) + μ_θ(z_{<i}). IAF samples in parallel (given z, all x_i independent given z_{<i}) but evaluates density sequentially. Key insight: MAF (fast density, slow sampling) and IAF (fast sampling, slow density) are inverses of each other — their computational properties are complementary. [2]"
+      "body": "This section explains the main idea behind this part of the method in plain language."
     },
     {
       "heading": "Continuous Normalising Flows (Neural ODEs)",
-      "body": "Continuous Normalising Flows (CNFs, Chen et al., 2018) define a continuous-time transformation via an ODE: dx/dt = f_θ(x, t), with x(0) = z (base sample) and x(1) = data. The log-likelihood change along the ODE path is: d log p/dt = −Tr(∂f/∂x), computable via Hutchinson's trace estimator (unbiased stochastic estimate: Tr(J) ≈ ε^T J ε for random ε ~ N(0,I)). CNFs are more flexible than discrete flows (no coupling layer constraints) and are the basis of Flow Matching (Lipman et al., 2022) and Rectified Flows, which define straight-line ODE paths from noise to data, providing a more stable and efficient continuous flow training paradigm. Stable Diffusion 3 uses a Rectified Flow formulation. [2]"
+      "body": "CNFs are more flexible than discrete flows (no coupling layer constraints) and are the basis of Flow Matching (Lipman et al., 2022) and Rectified Flows, which define straight-line ODE paths from noise to data, providing a more stable and efficient continuous flow training paradigm. Stable Diffusion 3 uses a Rectified Flow formulation."
     }
   ],
   "takeaways": [

@@ -30,16 +30,16 @@
   "deepDive": [
     {
       "heading": "UCB1: Optimism in the Face of Uncertainty",
-      "body": "UCB1 principle: always act optimistically — pick the arm that could plausibly be the best, accounting for uncertainty. UCB_k(t) = Q_k + c·√(ln t / N_k). Q_k = empirical mean reward of arm k. c·√(ln t / N_k) = upper confidence bound on μ_k, derived from Hoeffding's inequality: P(|Q_k − μ_k| > ε) ≤ 2exp(−2N_kε²). Setting the confidence width to ensure this bound holds with high probability gives the √(ln t / N_k) term. Properties: (1) Under-explored arms have small N_k → large UCB → will eventually be selected. (2) As N_k grows, UCB shrinks → reduces exploration of known arms. (3) O(ln T) regret bound. Limitation: UCB1 does not use prior knowledge — all arms start equal. [1]",
+      "body": "UCB1 principle: always act optimistically — pick the arm that could plausibly be the best, accounting for uncertainty. Setting the confidence width to ensure this bound holds with high probability gives the √(ln t / N_k) term. (3) O(ln T) regret bound. Limitation: UCB1 does not use prior knowledge — all arms start equal.",
       "formula": "UCB_k(t) = Q_k + c·√(ln t / N_k),   c = √2 gives regret ≤ O(ln T)"
     },
     {
       "heading": "Thompson Sampling: Bayesian Exploration",
-      "body": "Thompson Sampling (TS) is a Bayesian algorithm: model the unknown arm reward μ_k with a prior P(μ_k). After n_k pulls: posterior P(μ_k | data). At each round: (1) sample θ_k ~ P(μ_k | data) for each arm; (2) pull arm k* = argmax_k θ_k. The key intuition: with probability equal to the posterior probability that arm k is optimal, arm k is sampled and pulled. Naturally balances exploration and exploitation: uncertain arms (wide posteriors) are pulled frequently; confident best arms are pulled most. For Bernoulli bandit: Beta prior → Beta posterior (conjugate). For Gaussian rewards: Normal-Inverse-Gamma conjugate or moment-matching. For contextual bandits: Bayesian linear regression or Bayesian neural network as the reward model. [2]"
+      "body": "The key intuition: with probability equal to the posterior probability that arm k is optimal, arm k is sampled and pulled. Naturally balances exploration and exploitation: uncertain arms (wide posteriors) are pulled frequently; confident best arms are pulled most. For Gaussian rewards: Normal-Inverse-Gamma conjugate or moment-matching. For contextual bandits: Bayesian linear regression or Bayesian neural network as the reward model."
     },
     {
       "heading": "Contextual Bandits and LinUCB",
-      "body": "Contextual bandit: at each round, observe context x_t ∈ ℝᵈ (user features, time, device) before choosing arm. Arm k's reward μ_k(x_t) = x_tᵀθ_k + noise, where θ_k is an unknown parameter vector. LinUCB (Li et al., 2010): UCB over the linear model estimate. For each arm k, maintain A_k = Σ x_t x_tᵀ + λI and b_k = Σ x_t r_t (regularised regression). Estimate: θ̂_k = A_k⁻¹ b_k. UCB for arm k: x_tᵀθ̂_k + α√(x_tᵀA_k⁻¹x_t). The second term is the uncertainty of the linear prediction — higher for context directions not well-represented in training. Select arm k* = argmax_k [x_tᵀθ̂_k + α√(x_tᵀA_k⁻¹x_t)]. LinUCB powers news article recommendation at Yahoo and ad targeting at Microsoft. [1]",
+      "body": "LinUCB (Li et al., 2010): UCB over the linear model estimate. The second term is the uncertainty of the linear prediction — higher for context directions not well-represented in training. LinUCB powers news article recommendation at Yahoo and ad targeting at Microsoft.",
       "formula": "LinUCB: a* = argmax_k [x_tᵀθ̂_k + α·√(x_tᵀA_k⁻¹x_t)]"
     }
   ],
@@ -63,7 +63,13 @@
     }
   ],
   "sources": [
-    { "label": "Auer, P., Cesa-Bianchi, N. & Fischer, P. — Finite-time Analysis of the Multiarmed Bandit Problem, Machine Learning 47, 2002", "url": "https://doi.org/10.1023/A:1013689704352" },
-    { "label": "Russo, D. et al. — A Tutorial on Thompson Sampling, Foundations and Trends in Machine Learning 11(1), 2018", "url": "https://arxiv.org/abs/1707.02038" }
+    {
+      "label": "Auer, P., Cesa-Bianchi, N. & Fischer, P. — Finite-time Analysis of the Multiarmed Bandit Problem, Machine Learning 47, 2002",
+      "url": "https://doi.org/10.1023/A:1013689704352"
+    },
+    {
+      "label": "Russo, D. et al. — A Tutorial on Thompson Sampling, Foundations and Trends in Machine Learning 11(1), 2018",
+      "url": "https://arxiv.org/abs/1707.02038"
+    }
   ]
 }

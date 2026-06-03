@@ -23,33 +23,33 @@
     }
   ],
   "deepDiveIntro": [
-    "Classical CLT: Let X₁, X₂, … be i.i.d. with E[X₁] = μ and Var(X₁) = σ² < ∞. Define Sₙ = Σᵢ₌₁ⁿ Xᵢ and X̄ₙ = Sₙ/n. Then (Sₙ - nμ)/(σ√n) = √n(X̄ₙ - μ)/σ →ᵈ Z ~ N(0,1) as n → ∞. Convergence is in distribution (weak convergence): CDFs converge pointwise.",
-    "The Lindeberg-Lévy CLT is the basic i.i.d. version. Extensions: Lindeberg-Feller for independent but not identically distributed (with Lindeberg condition), Lyapunov CLP (sufficient condition), multivariate CLT for random vectors, and functional CLT (Donsker's theorem) for stochastic processes."
+    "The classical CLT says: if you have independent, identically distributed data with a finite mean and variance, then after standardising the sample mean (subtracting the true mean and dividing by the standard error), its distribution converges to a standard normal as sample size grows. 'Convergence in distribution' means the CDFs converge pointwise — the probabilities of falling in any interval approach those of the normal distribution.",
+    "The basic version assumes identical distributions. Extensions handle the non-identical case (Lindeberg-Feller condition: no single variable can dominate the sum), multivariate data (the sample mean vector converges to a multivariate normal), and even entire stochastic processes (Donsker's theorem: partial sum processes converge to Brownian motion)."
   ],
   "visualizationType": "central-limit-theorem",
   "deepDive": [
     {
       "heading": "Classical CLT Statement",
-      "body": "For i.i.d. Xᵢ with mean μ, variance σ²: standardized sum Zₙ = (Sₙ - nμ)/(σ√n) →ᵈ N(0,1). Equivalently: √n(X̄ₙ - μ) →ᵈ N(0, σ²). The factor √n 'blows up' the vanishing error to reveal the limiting Normal shape.",
+      "body": "For independent, identically distributed data with finite mean and variance, the standardised sample mean converges in distribution to a standard normal as sample size grows. The square-root-of-n scaling is critical: without it the average would collapse to a spike at the true mean; with it you get a stable bell-curve shape that reveals the rate of convergence.",
       "formula": "(Sₙ - nμ)/(σ√n) →ᵈ N(0,1), √n(X̄ₙ - μ) →ᵈ N(0, σ²)"
     },
     {
-      "heading": "Characteristic Function Proof",
-      "body": "Proof uses characteristic functions (Fourier transforms of distributions). φ_{Zₙ}(t) = [φ((t/σ√n)) exp(-iμt/σ√n)]ⁿ. Taylor expansion: φ(h) ≈ 1 + iμh - (σ²+μ²)h²/2. After standardization, φ_{Zₙ}(t) → exp(-t²/2), the characteristic function of N(0,1). Lévy's continuity theorem gives convergence."
+      "heading": "Why It Works: Characteristic Function Proof",
+      "body": "The standard proof uses characteristic functions, which are like Fourier transforms of probability distributions. For the standardised sum, you multiply n copies of the individual characteristic function, take a Taylor expansion around zero, and show that as n grows the product converges to the exponential of negative t-squared over 2 — which is precisely the characteristic function of a standard normal. Lévy's continuity theorem then converts this convergence of characteristic functions into convergence in distribution."
     },
     {
       "heading": "Berry-Esseen Theorem",
-      "body": "CLT is asymptotic; Berry-Esseen gives finite-sample bound on approximation error. For i.i.d. with finite third moment ρ = E|X₁-μ|³: sup_x |P(Zₙ ≤ x) - Φ(x)| ≤ Cρ/(σ³√n) where C ≈ 0.4748. Error decreases as O(1/√n).",
+      "body": "The CLT is an asymptotic statement — it says the approximation improves as n grows, but does not say how accurate it is at any given sample size. The Berry-Esseen theorem plugs this gap: the maximum error between the true CDF and the normal approximation shrinks at a rate proportional to one over the square root of n, with a constant that depends on the skewness of the distribution. More skewed data needs a larger sample before the normal approximation is reliable.",
       "formula": "sup_x |Fₙ(x) - Φ(x)| ≤ C·E|X₁-μ|³/(σ³√n)"
     },
     {
       "heading": "Lindeberg-Feller CLT",
-      "body": "Generalizes to independent but not identically distributed. Lindeberg condition: for all ε > 0, (1/sₙ²) Σᵢ E[Xᵢ² 1_{|Xᵢ|>εsₙ}] → 0 where sₙ² = Σ σᵢ². Ensures no single variable dominates. Lyapunov condition (stronger but easier to check): Σ E|Xᵢ|³/sₙ³ → 0.",
+      "body": "When the variables are independent but not identically distributed, the CLT still holds under the Lindeberg condition: no single variable can contribute an outsized fraction of the total variance. Intuitively, the sum must be the result of many small contributions rather than one or two dominant terms. The Lyapunov condition — that the sum of cubed deviations is small relative to the total variance — is a simpler sufficient condition that is easier to verify in practice.",
       "formula": "(1/sₙ²) Σᵢ₌₁ⁿ E[Xᵢ² 1_{|Xᵢ|>εsₙ}] → 0 (Lindeberg)"
     },
     {
       "heading": "Multivariate and Functional CLT",
-      "body": "Multivariate: √n(X̄ₙ - μ) →ᵈ N(0, Σ) for covariance matrix Σ. Donsker's functional CLT: standardized partial sum process converges to Brownian motion. Foundation for stochastic calculus, asymptotic statistics, and empirical process theory."
+      "body": "The multivariate CLT extends the result to vectors: the standardised sample mean vector converges to a multivariate normal with the population covariance matrix. Donsker's theorem goes further, showing that the entire partial-sum process (not just the final average) converges to Brownian motion. This is the foundation for stochastic calculus, empirical process theory, and goodness-of-fit tests based on the entire empirical CDF."
     }
   ],
   "youtubeLabel": "Central Limit Theorem — StatQuest",

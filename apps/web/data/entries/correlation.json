@@ -7,16 +7,16 @@
   "eli3": [
     "Correlation measures how much two variables move together. If income and education both tend to be high or low for the same people, they are positively correlated. If one goes up while the other goes down, they are negatively correlated. If there's no systematic pattern, correlation is near zero.",
     "The famous rule: correlation does not imply causation. Just because ice cream sales and drowning deaths both peak in summer doesn't mean ice cream causes drowning — a third variable (hot weather) drives both. Correlation is symmetric (X correlates with Y just as much as Y correlates with X), while causation has a direction.",
-    "In ML, correlation is used for two things: finding features that predict the target (high |correlation| with target is good), and detecting multicollinearity (two features that correlate strongly with each other are redundant — keeping both confuses linear models)."
+    "In ML, correlation is used for two things: finding features that predict the target (high absolute correlation with target is good), and detecting multicollinearity (two features that correlate strongly with each other are redundant — keeping both confuses linear models)."
   ],
   "whenWhy": [
     {
       "title": "Feature selection before model training",
-      "body": "High |Pearson r| between a feature and the binary target (or high point-biserial correlation) suggests the feature is likely predictive. This is a fast, univariate filter before more expensive feature selection methods. Caveat: zero correlation doesn't mean zero predictive power — a feature with non-linear or interaction effects can have near-zero marginal correlation but high conditional importance."
+      "body": "High absolute Pearson correlation between a feature and the target suggests the feature is likely predictive. This is a fast, univariate filter before more expensive feature selection methods. Caveat: zero correlation doesn't mean zero predictive power — a feature with non-linear or interaction effects can have near-zero marginal correlation but high conditional importance."
     },
     {
       "title": "Diagnosing multicollinearity in linear models",
-      "body": "In multiple linear regression, multicollinear predictors (|r| > 0.9 between two features) cause inflated coefficient standard errors and near-singular design matrices. Individual coefficient estimates become highly sensitive to small data changes (high variance), making interpretation unreliable. The Variance Inflation Factor (VIF) quantifies this: VIF_j = 1/(1 − R²_j), where R²_j is R² from regressing feature j on all others. VIF > 10 (or > 5 conservative) signals problematic multicollinearity."
+      "body": "In multiple linear regression, multicollinear predictors (absolute correlation above 0.9 between two features) cause inflated coefficient standard errors and near-singular design matrices. Individual coefficient estimates become highly sensitive to small data changes, making interpretation unreliable. The Variance Inflation Factor (VIF) quantifies this: VIF for feature j = 1 divided by (1 minus the R-squared from regressing feature j on all others). VIF above 10 (or above 5 using a conservative threshold) signals problematic multicollinearity."
     },
     {
       "title": "EDA correlation heatmap",
@@ -24,23 +24,23 @@
     }
   ],
   "deepDiveIntro": [
-    "Pearson correlation coefficient r = Cov(X,Y)/(σ_X σ_Y) is the normalized covariance. It measures the degree of linear association in [−1, 1]: r = 1 is perfect positive linear, r = −1 perfect negative linear, r = 0 is no linear association. Under bivariate normality and H₀: ρ = 0, the statistic t = r√(n−2)/√(1−r²) follows a t-distribution with n−2 degrees of freedom — used to test significance. [1]",
-    "Spearman's ρ = 1 − 6Σd²ᵢ/(n(n²−1)) (for no ties), where dᵢ = rank(Xᵢ) − rank(Yᵢ), measures monotone (not necessarily linear) association. It is the Pearson correlation of the ranks. Kendall's τ = (C − D) / (n(n−1)/2) counts concordant pairs C minus discordant pairs D normalized by total pairs. Kendall's τ is more robust to outliers and more appropriate for small samples with many ties. [2]"
+    "The Pearson correlation coefficient is the covariance of X and Y divided by the product of their standard deviations. It measures the degree of linear association and always lies between -1 and 1: +1 is perfect positive linear association, -1 is perfect negative, and 0 is no linear association. Under the null hypothesis that the true correlation is zero, a standardised test statistic based on r follows a t-distribution with n-2 degrees of freedom, providing a formal test of significance. [1]",
+    "Spearman's rank correlation is the Pearson correlation of the ranks of the data rather than the raw values. It measures monotone (not necessarily linear) association. Kendall's tau counts the excess of concordant pairs (where both variables rank the same way) over discordant pairs, normalised by the total number of pairs. Kendall's tau is more robust to outliers and more appropriate for small samples with many ties. [2]"
   ],
   "deepDive": [
     {
       "heading": "Pearson, Spearman, Kendall: Which to Use",
-      "body": "Pearson r: assumes both variables are continuous, ideally normally distributed, and the relationship is linear. Sensitive to outliers. Use when: both variables are numeric, relationship appears linear in scatter plot, no extreme outliers. Spearman ρ: non-parametric, assumes monotone relationship. Use when: outliers are present, data is ordinal, or scatter plot suggests monotone but non-linear relationship. Kendall τ: non-parametric, based on concordant/discordant pairs. More interpretable (τ = 0.4 means 40% more concordant pairs than discordant). Better for small samples with many ties. For most ML feature analysis, Spearman is the practical default: robust and correlation coefficients are easily interpreted. [2]",
+      "body": "Pearson assumes both variables are continuous, ideally normally distributed, and the relationship is linear. It is sensitive to outliers. Use it when both variables are numeric, the relationship appears linear in a scatter plot, and there are no extreme outliers. Spearman is non-parametric and robust to outliers — use it when outliers are present, data is ordinal, or the relationship appears monotone but non-linear. Kendall's tau is non-parametric and based on concordant/discordant pairs; it is more interpretable (a value of 0.4 means 40% more concordant than discordant pairs) and better for small samples with many ties. For most ML feature analysis, Spearman is the practical default. [2]",
       "formula": "Pearson r = Cov(X,Y)/(σ_X σ_Y);  Spearman ρ = 1 − 6Σdᵢ²/(n(n²−1))"
     },
     {
       "heading": "Variance Inflation Factor (VIF)",
-      "body": "VIF for predictor j = 1/(1 − R²_j), where R²_j is the coefficient of determination from regressing X_j on all other predictors. Interpretation: VIF = 1 → no multicollinearity (X_j is uncorrelated with others); VIF = 5 → X_j can be predicted from others with R² = 0.8; VIF = 10 → R² = 0.9 (90% variance explained by other predictors). VIF > 10 is conventionally considered problematic. Resolution: drop one of the correlated pair, combine them (PCA, sum), or use regularization (Ridge regression shrinks collinear coefficients jointly). [1]",
+      "body": "VIF for predictor j = 1 divided by (1 minus R-squared from regressing predictor j on all other predictors). A VIF of 1 means no multicollinearity. A VIF of 5 means predictor j can be explained by the others with R-squared 0.8. A VIF of 10 means R-squared 0.9 — 90% of predictor j's variance is explained by the others. VIF above 10 is conventionally considered problematic. Resolution: drop one of the correlated pair, combine them (PCA, sum), or use Ridge regression which shrinks collinear coefficients jointly. [1]",
       "formula": "VIF_j = 1 / (1 − R²_j)"
     },
     {
       "heading": "Spurious Correlation and Confounding",
-      "body": "Spurious correlation: two variables appear correlated due to a shared confounder (third variable). Per-capita cheese consumption correlates r ≈ 0.95 with deaths by bedsheet tangling (Tyler Vigen, 2015) — both are driven by economic/temporal trends, not causality. In ML contexts, spurious correlations in training data become learned model associations that fail at deployment when the confounder is absent. Detection: check if the correlation persists when controlling for candidate confounders (partial correlation) or after stratifying. The correct remedy is understanding the data-generating process, not statistics alone. [1]"
+      "body": "Spurious correlation: two variables appear correlated due to a shared confounder (third variable). Per-capita cheese consumption correlates strongly with deaths by bedsheet tangling (Tyler Vigen, 2015) — both are driven by economic and temporal trends, not causality. In ML contexts, spurious correlations in training data become learned model associations that fail at deployment when the confounder is absent. Detection: check if the correlation persists when controlling for candidate confounders (partial correlation) or after stratifying by the suspected confounder. The correct remedy is understanding the data-generating process, not statistics alone. [1]"
     }
   ],
   "youtubeLabel": "Correlation — StatQuest",
@@ -55,11 +55,11 @@
   "edgeCases": [
     {
       "q": "How can two variables have zero Pearson correlation but be statistically dependent?",
-      "a": "Pearson r only measures linear association. Example: X ~ Uniform(−1, 1) and Y = X². Cov(X, Y) = E[X³] − E[X]E[X²] = 0 (by symmetry), so r = 0 — even though Y is a deterministic function of X. Spearman ρ also fails here: the relationship is non-monotone. Detection: scatter plot immediately reveals the parabola. Statistical tests: Mutual Information I(X;Y) > 0 for any dependence (not just linear/monotone), Distance Correlation (dCor) = 0 iff X and Y are independent (Székely et al., 2007). sklearn's mutual_info_regression estimates I(X;Y) from data."
+      "a": "Pearson r only measures linear association. Example: X drawn from a symmetric distribution and Y = X squared. The covariance is zero by symmetry (positive and negative deviations cancel), so r = 0 — even though Y is a deterministic function of X. Spearman also fails here since the relationship is non-monotone. Detection: scatter plot immediately reveals the parabola. Statistical tests: Mutual Information captures any dependence (not just linear/monotone), Distance Correlation equals zero if and only if X and Y are independent. sklearn's mutual_info_regression estimates mutual information from data."
     },
     {
       "q": "What is partial correlation and when should you use it?",
-      "a": "Partial correlation between X and Y controlling for Z is the Pearson correlation between the residuals of X~Z and Y~Z. It measures the association between X and Y after removing the linear effects of Z. r_{XY.Z} = (r_{XY} − r_{XZ}·r_{YZ}) / √((1−r²_{XZ})(1−r²_{YZ})). Use when: you suspect a confounder Z is inflating the observed correlation between X and Y. Example: price and quality both increase with brand reputation (Z). Partial correlation removes the brand effect to reveal the direct price-quality relationship. In regression, the standardized coefficient β_j is equivalent to the partial correlation between X_j and Y after removing all other predictors."
+      "a": "Partial correlation between X and Y controlling for Z is the Pearson correlation between the residuals of regressing X on Z and the residuals of regressing Y on Z. It measures the association between X and Y after removing the linear effects of Z. The formula involves the pairwise correlations between all three variables. Use when you suspect a confounder Z is inflating the observed correlation between X and Y. Example: price and quality both increase with brand reputation (Z). Partial correlation removes the brand effect to reveal the direct price-quality relationship. In regression, the standardised coefficient for predictor j is equivalent to the partial correlation between predictor j and the outcome after removing all other predictors."
     }
   ],
   "sources": [

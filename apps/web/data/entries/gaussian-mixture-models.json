@@ -30,7 +30,7 @@
   "deepDive": [
     {
       "heading": "The GMM Model",
-      "body": "The marginal density of x is a mixture of K Gaussians. πₖ are the mixing weights (Σπₖ = 1, πₖ ≥ 0). μₖ is the mean of component k. Σₖ is its covariance. This is a universal approximator of smooth densities: with enough components it can represent any continuous distribution. [1][2]",
+      "body": "The marginal density of x is a mixture of K Gaussians. This is a universal approximator of smooth densities: with enough components it can represent any continuous distribution.",
       "formula": "p(x) = Σₖ₌₁ᴷ πₖ · N(x; μₖ, Σₖ)"
     },
     {
@@ -40,16 +40,16 @@
     },
     {
       "heading": "M-Step: Updating Parameters",
-      "body": "Re-estimate parameters using the soft assignments. Let Nₖ = Σᵢ rᵢₖ (effective number of points in component k). Update π̂ₖ = Nₖ/n, μ̂ₖ = (1/Nₖ)Σᵢ rᵢₖ xᵢ, Σ̂ₖ = (1/Nₖ)Σᵢ rᵢₖ (xᵢ−μ̂ₖ)(xᵢ−μ̂ₖ)ᵀ. These are weighted versions of the sample mean and covariance. [1]",
+      "body": "Re-estimate parameters using the soft assignments. These are weighted versions of the sample mean and covariance.",
       "formula": "μ̂ₖ = (1/Nₖ) Σᵢ rᵢₖ xᵢ ,   Σ̂ₖ = (1/Nₖ) Σᵢ rᵢₖ (xᵢ−μ̂ₖ)(xᵢ−μ̂ₖ)ᵀ"
     },
     {
       "heading": "Covariance Types & Regularisation",
-      "body": "Full Σₖ: most flexible, O(p²) parameters per component — needs much data. Diagonal Σₖ: assumes feature independence within each component, O(p) parameters — like Gaussian NB. Spherical: Σₖ = σ²I — equivalent to K-Means with soft assignments. Tied (shared Σ across components): analogous to LDA. Regularise by adding a small constant to the diagonal: Σₖ + εI to prevent singular matrices. [1]"
+      "body": "This section explains how the method controls flexibility, reduces overfitting, and balances fit against generalization."
     },
     {
       "heading": "Model Selection: BIC & AIC",
-      "body": "The log-likelihood increases monotonically with K, so use penalised criteria. BIC = −2 log L̂ + m log n, where m is the number of free parameters. AIC = −2 log L̂ + 2m. BIC penalises complexity more strongly and is consistent (selects true K as n → ∞ if true K is in the candidate set). Choose K minimising BIC. [1]",
+      "body": "The log-likelihood increases monotonically with K, so use penalised criteria. Choose K minimising BIC.",
       "formula": "BIC = −2 log L̂(θ̂) + m log n"
     }
   ],
@@ -86,7 +86,13 @@
     }
   ],
   "sources": [
-    { "label": "Bishop — Pattern Recognition and Machine Learning, Ch. 9.2", "url": "https://www.microsoft.com/en-us/research/publication/pattern-recognition-machine-learning/" },
-    { "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 8.5", "url": "https://hastie.su.domains/ElemStatLearn/" }
+    {
+      "label": "Bishop — Pattern Recognition and Machine Learning, Ch. 9.2",
+      "url": "https://www.microsoft.com/en-us/research/publication/pattern-recognition-machine-learning/"
+    },
+    {
+      "label": "Hastie, Tibshirani & Friedman — The Elements of Statistical Learning, Ch. 8.5",
+      "url": "https://hastie.su.domains/ElemStatLearn/"
+    }
   ]
 }

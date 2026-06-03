@@ -30,22 +30,23 @@
   "deepDive": [
     {
       "heading": "Population vs Sample Variance",
-      "body": "Population: σ² = (1/N)Σᵢ(xᵢ−μ)². Sample (unbiased): s² = (1/(n−1))Σᵢ(xᵢ−x̄)². The denominator n−1 arises because x̄ is estimated from the data: one degree of freedom is 'used up' by x̄. Proof of unbiasedness: E[Σ(xᵢ−x̄)²] = (n−1)σ², so E[s²] = σ². [1]",
+      "body": "Variance measures average squared spread around the mean, but the population and sample versions are not identical. In sample data, one degree of freedom is spent estimating the mean first, which is why the usual unbiased sample variance divides by one less than the sample size. This correction matters most in smaller datasets.",
       "formula": "s² = (1/(n−1)) Σᵢ₌₁ⁿ (xᵢ − x̄)²"
     },
     {
       "heading": "Computational Formula",
-      "body": "σ² = E[X²] − (E[X])², equivalently s² = [Σxᵢ² − n x̄²]/(n−1). This form is efficient for streaming computation (only need to track Σxᵢ and Σxᵢ²), but numerically unstable for large values — catastrophic cancellation. For numerical work, prefer Welford's online algorithm which maintains mean and M₂ in a single pass. [1]",
+      "body": "Variance can be written in an algebraically convenient way using the mean of squares minus the square of the mean. That identity is helpful for derivations and streaming computation, but it can be numerically fragile when large nearly equal quantities are subtracted. In software, stable one-pass algorithms are usually preferred for real data.",
       "formula": "σ² = E[X²] − (E[X])²"
     },
     {
       "heading": "Variance of Linear Combinations",
-      "body": "Var(aX + b) = a²Var(X). For independent variables: Var(X₁ + X₂) = Var(X₁) + Var(X₂). For correlated: Var(X₁ + X₂) = Var(X₁) + Var(X₂) + 2Cov(X₁,X₂). This is why diversification reduces portfolio variance — negative covariance offsets individual variances. [1]",
+      "body": "Variance behaves predictably under scaling and combination. Stretching a variable makes its variance grow quadratically, and adding variables introduces covariance terms that can either increase or decrease total spread. This is the key reason covariance matters in portfolios, ensembles, and multivariable models.",
       "formula": "Var(aX + b) = a²Var(X)"
     },
     {
       "heading": "Bias–Variance Decomposition",
-      "body": "For a predictor ŷ = f̂(x), MSE = E[(ŷ−y)²] = Bias(f̂(x))² + Var(f̂(x)) + σ²_ε, where σ²_ε is irreducible noise. Variance = Var(f̂(x)) = E[(f̂(x)−E[f̂(x)])²] — how much predictions vary across training sets. High-variance models (deep trees, high-degree polynomials) overfit; regularisation and ensemble methods reduce this term. [2]"
+      "body": "Variance is also one of the main ingredients in prediction error. In the bias-variance tradeoff, it captures how much a fitted model would change if you retrained it on a different sample from the same population. Highly flexible models often have large variance, which is why regularization and averaging methods can improve generalization.",
+      "formula": "E[(ŷ−y)²] = Bias(f̂(x))² + Var(f̂(x)) + σ²_ε"
     }
   ],
   "youtubeLabel": "Variance and Standard Deviation — StatQuest",

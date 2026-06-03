@@ -23,27 +23,27 @@
     }
   ],
   "deepDiveIntro": [
-    "Cohen's d for two independent groups: d = (μ₁ − μ₂)/σ_pooled, where σ_pooled = √[(n₁−1)s₁² + (n₂−1)s₂²)/(n₁+n₂−2)]. For a one-sample test: d = (x̄ − μ₀)/s. Hedges' g uses n−1.5 in the denominator for small-sample bias correction. Glass's Δ uses only the control group's SD — preferred when groups have different variances and one serves as the natural reference.",
-    "For correlations, Pearson r is its own effect size: r = 0.1 (small), 0.3 (medium), 0.5 (large). The conversion d = 2r/√(1−r²) allows comparison between d and r. For proportions, Cohen's h = 2 arcsin(√p₁) − 2 arcsin(√p₂) accounts for the arcsine transformation needed to stabilize variance."
+    "Cohen's d for two independent groups is the difference in group means divided by the pooled standard deviation — which is the square root of the variance-weighted average of the two sample variances. For a one-sample test, divide by the sample standard deviation instead. Hedges' g corrects for a small upward bias in Cohen's d when samples are small. Glass's delta uses only the control group's standard deviation — preferred when the groups have different variances and one serves as the natural reference.",
+    "For correlations, Pearson r is its own standardized effect size: small around 0.1, medium around 0.3, large around 0.5. For proportions, Cohen's h applies an arcsine transformation before taking the difference, which stabilizes the variance across different baseline rates."
   ],
   "deepDive": [
     {
       "heading": "Cohen's d",
-      "body": "d = (x̄₁ − x̄₂) / s_pooled, where s_pooled = √[((n₁−1)s₁² + (n₂−1)s₂²)/(n₁+n₂−2)]. Interpretation: d = 0.5 means the group means differ by half a standard deviation. Cohen's (1988) benchmarks (developed for behavioral sciences): small = 0.2, medium = 0.5, large = 0.8. For within-person (paired) designs, d_z = d̄/s_d (using the SD of the differences) is typically used instead. [1]",
+      "body": "Cohen's d is the difference between two group means divided by their pooled standard deviation. A value of 0.5 means the group means differ by half a standard deviation — roughly, the median of group B is at the 69th percentile of group A. Cohen's benchmarks (developed for behavioral sciences) treat 0.2 as small, 0.5 as medium, and 0.8 as large. For within-person (paired) designs, divide the mean difference by the standard deviation of the differences rather than the pooled between-groups standard deviation. [1]",
       "formula": "d = (x̄₁ − x̄₂) / s_pooled,   s_pooled = √[((n₁−1)s₁² + (n₂−1)s₂²) / (n₁+n₂−2)]"
     },
     {
       "heading": "Pearson r and η²",
-      "body": "Pearson r: measures the linear relationship strength between two continuous variables. Benchmarks: r = 0.1 (small), 0.3 (medium), 0.5 (large). r² (coefficient of determination) = proportion of variance in Y explained by X. For ANOVA: η² = SS_effect/SS_total. Partial η² = SS_effect/(SS_effect + SS_error) — removes variance accounted for by other factors. ω² = (SS_effect − df_effect · MS_error)/(SS_total + MS_error) is a less biased alternative to η². [1]",
+      "body": "Pearson r measures linear relationship strength. Its square (coefficient of determination) equals the proportion of variance in Y explained by X — a direct, interpretable effect size for regression. For ANOVA, eta-squared is the proportion of total variance accounted for by the factor. Partial eta-squared removes the variance accounted for by other factors, making it preferable in multi-factor designs. Omega-squared is a less biased alternative to eta-squared for smaller samples. [1]",
       "formula": "η² = SS_effect / SS_total,   partial η² = SS_effect / (SS_effect + SS_error)"
     },
     {
       "heading": "Odds Ratio and Risk Ratio (Categorical Outcomes)",
-      "body": "For 2×2 tables: Odds Ratio OR = (ad)/(bc) where a,b,c,d are cell counts. Risk Ratio RR = [a/(a+b)] / [c/(c+d)]. OR ≈ RR when the outcome is rare. For reporting treatment effects in clinical trials: Number Needed to Treat (NNT) = 1/ARR (absolute risk reduction) is often more interpretable. Cohen's h for proportions: h = 2(arcsin√p₁ − arcsin√p₂). [1]"
+      "body": "For 2×2 tables, the odds ratio compares the odds of the outcome in one group to the odds in another. The risk ratio (relative risk) compares the proportions directly. When the outcome is rare, the odds ratio approximates the risk ratio. In clinical trials, the Number Needed to Treat — the reciprocal of the absolute risk reduction — is often more interpretable to clinicians than either the odds ratio or risk ratio. Cohen's h for proportions applies an arcsine transformation to stabilize variance before computing the standardized difference. [1]"
     },
     {
       "heading": "Context-Dependence of Effect Size Benchmarks",
-      "body": "Cohen's benchmarks are domain-agnostic heuristics and should not be applied mechanically. In education research, d = 0.2 can represent meaningful learning gains over a semester. In pharmacology, an OR of 1.1 for a common disease can represent thousands of lives. In psychology lab studies, d = 0.8 is common due to controlled conditions. Always interpret effect size relative to the practical context, not just against Cohen's labels. [1]"
+      "body": "Cohen's benchmarks are rough heuristics developed for behavioral science research and should not be applied mechanically in other domains. In education, a d of 0.2 can represent meaningful learning gains over a semester. In pharmacology, a small odds ratio for a common disease can represent thousands of lives saved. In psychology lab studies, d = 0.8 is common due to controlled conditions. Always interpret effect size relative to the practical stakes of the domain. [1]"
     }
   ],
   "youtubeLabel": "Effect Size (Cohen's d) — StatQuest",
