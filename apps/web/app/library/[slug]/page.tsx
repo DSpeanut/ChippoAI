@@ -302,6 +302,21 @@ function Visualization({ type }: { type: string }) {
   if (type === "gbm-paths") return <GBMPathsViz />
   if (type === "factor-returns") return <FactorReturnsViz />
   if (type === "equity-multiples") return <EquityMultiplesViz />
+  if (type === "few-shot-viz") return <FewShotViz />
+  if (type === "chain-of-thought-viz") return <ChainOfThoughtViz />
+  if (type === "bert-arch-viz") return <BertArchViz />
+  if (type === "gpt-arch-viz") return <GPTArchViz />
+  if (type === "attention-viz") return <AttentionViz />
+  if (type === "embedding-viz") return <EmbeddingViz />
+  if (type === "gan-viz") return <GANViz />
+  if (type === "lstm-viz") return <LSTMViz />
+  if (type === "rnn-viz") return <RNNViz />
+  if (type === "diffusion-viz") return <DiffusionViz />
+  if (type === "positional-encoding-viz") return <PositionalEncodingViz />
+  if (type === "encoder-decoder-viz") return <EncoderDecoderViz />
+  if (type === "vit-viz") return <ViTViz />
+  if (type === "rag-viz") return <RAGViz />
+  if (type === "context-window-viz") return <ContextWindowViz />
   // ── AI Engineering ────────────────────────────────────────────────────────
   if (type === "agent-loop-viz") return <AgentLoopViz />
   if (type === "tool-use-viz") return <ToolUseViz />
@@ -4138,6 +4153,552 @@ function EquityMultiplesViz() {
         )
       })}
       <text x={pad.l} y={H - 8} fontSize="7.5" fill="#6B7280">Forward P/E by sector (illustrative)</text>
+    </svg>
+  )
+}
+
+function FewShotViz() {
+  const W = 320, H = 240
+  const G = "#10B981", DG = "#064E3B", LG = "#D1FAE5", BG = "#F0FDF9", GR = "#9CA3AF"
+  const examples = [
+    { input: "Sentiment: 'I love this!'", output: "Positive" },
+    { input: "Sentiment: 'Terrible day.'", output: "Negative" },
+    { input: "Sentiment: 'It was okay.'", output: "Neutral" },
+  ]
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
+      <text x={W/2} y={14} textAnchor="middle" fontSize={9} fill={GR} fontWeight="600">FEW-SHOT PROMPT STRUCTURE</text>
+      {examples.map((ex, i) => (
+        <g key={i}>
+          <rect x={8} y={22 + i*52} width={192} height={38} rx={6} fill={BG} stroke={LG} strokeWidth="1.2"/>
+          <text x={16} y={36 + i*52} fontSize={7.5} fill={DG}>{ex.input}</text>
+          <text x={16} y={50 + i*52} fontSize={7.5} fill={G} fontWeight="700">→ {ex.output}</text>
+          <text x={4} y={38 + i*52} fontSize={7} fill={GR}>eg{i+1}</text>
+        </g>
+      ))}
+      <rect x={8} y={186} width={192} height={38} rx={6} fill="#FEF3C7" stroke="#F59E0B" strokeWidth="1.5"/>
+      <text x={16} y={200} fontSize={7.5} fill="#92400E">Query: Sentiment: 'Amazing!'</text>
+      <text x={16} y={214} fontSize={7.5} fill="#B45309" fontWeight="700">→ ?</text>
+      <text x={4} y={202} fontSize={7} fill={GR}>new</text>
+      <rect x={220} y={186} width={92} height={38} rx={6} fill={BG} stroke={G} strokeWidth="2"/>
+      <text x={266} y={200} textAnchor="middle" fontSize={8} fill={DG}>LLM predicts:</text>
+      <text x={266} y={214} textAnchor="middle" fontSize={9} fill={G} fontWeight="700">Positive</text>
+      <line x1={202} y1={205} x2={218} y2={205} stroke={G} strokeWidth="1.5"/>
+      <polygon points="218,202 218,208 224,205" fill={G}/>
+    </svg>
+  )
+}
+
+function ChainOfThoughtViz() {
+  const W = 320, H = 240
+  const G = "#10B981", DG = "#064E3B", LG = "#D1FAE5", BG = "#F0FDF9", GR = "#9CA3AF"
+  const steps = [
+    { label: "Question", text: "If 5 shirts cost $40,\nhow much for 8?", col: "#FEF3C7", stroke: "#F59E0B" },
+    { label: "Step 1", text: "1 shirt = $40 ÷ 5 = $8", col: BG, stroke: LG },
+    { label: "Step 2", text: "8 shirts = 8 × $8", col: BG, stroke: LG },
+    { label: "Answer", text: "= $64", col: "#ECFDF5", stroke: G },
+  ]
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
+      <text x={W/2} y={13} textAnchor="middle" fontSize={9} fill={GR} fontWeight="600">CHAIN-OF-THOUGHT REASONING</text>
+      {steps.map((s, i) => (
+        <g key={i}>
+          <rect x={60} y={18 + i*52} width={200} height={40} rx={7} fill={s.col} stroke={s.stroke} strokeWidth="1.5"/>
+          <text x={70} y={33 + i*52} fontSize={8} fill={DG} fontWeight="700">{s.label}</text>
+          <text x={70} y={46 + i*52} fontSize={8} fill="#374151">{s.text.split('\n')[0]}</text>
+          {s.text.includes('\n') && <text x={70} y={57 + i*52} fontSize={8} fill="#374151">{s.text.split('\n')[1]}</text>}
+          {i < steps.length - 1 && (
+            <>
+              <line x1={160} y1={58 + i*52} x2={160} y2={66 + i*52} stroke={G} strokeWidth="1.5"/>
+              <polygon points={`156,${66+i*52} 164,${66+i*52} 160,${72+i*52}`} fill={G}/>
+            </>
+          )}
+        </g>
+      ))}
+    </svg>
+  )
+}
+
+function BertArchViz() {
+  const W = 320, H = 240
+  const G = "#10B981", DG = "#064E3B", LG = "#D1FAE5", BG = "#F0FDF9", GR = "#9CA3AF"
+  const tokens = ["[CLS]", "bank", "river", "[SEP]"]
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
+      <text x={W/2} y={13} textAnchor="middle" fontSize={9} fill={GR} fontWeight="600">BERT: BIDIRECTIONAL ENCODER</text>
+      {tokens.map((t, i) => (
+        <g key={i}>
+          <rect x={8 + i*78} y={20} width={68} height={24} rx={5} fill="#E0E7FF" stroke="#6366F1" strokeWidth="1.2"/>
+          <text x={42 + i*78} y={36} textAnchor="middle" fontSize={8} fill="#3730A3" fontWeight="600">{t}</text>
+        </g>
+      ))}
+      {[0,1,2].map(i => (
+        <line key={i} x1={42+i*78} y1={44} x2={42+i*78+78} y2={44} stroke={LG} strokeWidth="1" strokeDasharray="3,2"/>
+      ))}
+      {[1,2,3].map(i => (
+        <g key={i}>
+          <rect x={8+i*78-38} y={56} width={76} height={52} rx={6} fill={BG} stroke={LG} strokeWidth="1.2"/>
+          <text x={46+i*78-38} y={76} textAnchor="middle" fontSize={7.5} fill={DG} fontWeight="700">Transformer</text>
+          <text x={46+i*78-38} y={88} textAnchor="middle" fontSize={7.5} fill={DG}>Encoder ×12</text>
+          <text x={46+i*78-38} y={100} textAnchor="middle" fontSize={7} fill={GR}>Self-Attn + FFN</text>
+        </g>
+      ))}
+      <rect x={8} y={118} width={304} height={24} rx={5} fill="#E0E7FF" stroke="#6366F1" strokeWidth="1.2"/>
+      <text x={W/2} y={134} textAnchor="middle" fontSize={8} fill="#3730A3" fontWeight="700">Bidirectional Self-Attention (sees all tokens)</text>
+      {tokens.map((_, i) => (
+        <g key={i}>
+          <line x1={42+i*78} y1={152} x2={42+i*78} y2={168} stroke={G} strokeWidth="1.2"/>
+          <rect x={8+i*78} y={168} width={68} height={24} rx={5} fill={BG} stroke={G} strokeWidth="1.5"/>
+          <text x={42+i*78} y={183} textAnchor="middle" fontSize={7.5} fill={DG} fontWeight="600">Output</text>
+        </g>
+      ))}
+      <text x={W/2} y={230} textAnchor="middle" fontSize={7.5} fill={GR}>Mask tokens → predict → learn context</text>
+    </svg>
+  )
+}
+
+function GPTArchViz() {
+  const W = 320, H = 240
+  const G = "#10B981", DG = "#064E3B", LG = "#D1FAE5", BG = "#F0FDF9", GR = "#9CA3AF"
+  const tokens = ["The", "cat", "sat", "on"]
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
+      <text x={W/2} y={13} textAnchor="middle" fontSize={9} fill={GR} fontWeight="600">GPT: CAUSAL DECODER</text>
+      {tokens.map((t, i) => (
+        <g key={i}>
+          <rect x={10+i*76} y={20} width={66} height={24} rx={5} fill="#FEF3C7" stroke="#F59E0B" strokeWidth="1.2"/>
+          <text x={43+i*76} y={36} textAnchor="middle" fontSize={8} fill="#92400E" fontWeight="600">{t}</text>
+        </g>
+      ))}
+      <rect x={10} y={54} width={290} height={70} rx={7} fill={BG} stroke={LG} strokeWidth="1.5"/>
+      <text x={W/2} y={73} textAnchor="middle" fontSize={8} fill={DG} fontWeight="700">Masked Self-Attention × N layers</text>
+      <text x={W/2} y={87} textAnchor="middle" fontSize={7.5} fill={GR}>(each token only sees past tokens)</text>
+      {[0,1,2,3].map(i => (
+        <g key={i}>
+          <polygon points={`${10+i*76},${100} ${50+i*76},${100} ${80+i*76},${110} ${40+i*76},${110}`}
+            fill={LG} stroke={G} strokeWidth="0.8" opacity="0.6"/>
+        </g>
+      ))}
+      <text x={W/2} y={106} textAnchor="middle" fontSize={7} fill={G}>causal mask ▼</text>
+      <line x1={W/2} y1={126} x2={W/2} y2={148} stroke={G} strokeWidth="1.5"/>
+      <polygon points={`${W/2-5},148 ${W/2+5},148 ${W/2},155`} fill={G}/>
+      <rect x={90} y={155} width={140} height={30} rx={7} fill={G}/>
+      <text x={W/2} y={168} textAnchor="middle" fontSize={8} fill="white" fontWeight="700">Next token: "the"</text>
+      <text x={W/2} y={180} textAnchor="middle" fontSize={7} fill="white">softmax over vocab</text>
+      <text x={W/2} y={230} textAnchor="middle" fontSize={7.5} fill={GR}>Autoregressive — generates one token at a time</text>
+    </svg>
+  )
+}
+
+function AttentionViz() {
+  const W = 320, H = 240
+  const G = "#10B981", DG = "#064E3B", LG = "#D1FAE5", BG = "#F0FDF9", GR = "#9CA3AF"
+  const words = ["The", "cat", "sat"]
+  const weights = [[0.6, 0.3, 0.1], [0.15, 0.7, 0.15], [0.1, 0.4, 0.5]]
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
+      <text x={W/2} y={13} textAnchor="middle" fontSize={9} fill={GR} fontWeight="600">ATTENTION WEIGHTS</text>
+      {words.map((w, i) => (
+        <g key={i}>
+          <rect x={20+i*100} y={20} width={70} height={24} rx={5} fill={BG} stroke={LG} strokeWidth="1.2"/>
+          <text x={55+i*100} y={36} textAnchor="middle" fontSize={9} fill={DG} fontWeight="600">{w}</text>
+        </g>
+      ))}
+      <text x={10} y={72} fontSize={8} fill={GR}>Query</text>
+      {words.map((w, qi) => (
+        <g key={qi}>
+          <rect x={20} y={56+qi*52} width={60} height={24} rx={5} fill="#EDE9FE" stroke="#8B5CF6" strokeWidth="1.2"/>
+          <text x={50} y={72+qi*52} textAnchor="middle" fontSize={8} fill="#5B21B6">Q:{w}</text>
+          {words.map((_, ki) => {
+            const alpha = weights[qi][ki]
+            return (
+              <rect key={ki} x={100+ki*72} y={56+qi*52} width={62} height={24} rx={5}
+                fill={G} fillOpacity={alpha} stroke={LG} strokeWidth="1"/>
+            )
+          })}
+          {words.map((_, ki) => (
+            <text key={ki} x={131+ki*72} y={72+qi*52} textAnchor="middle" fontSize={8}
+              fill={weights[qi][ki] > 0.4 ? "white" : DG} fontWeight="600">
+              {weights[qi][ki]}
+            </text>
+          ))}
+        </g>
+      ))}
+      <text x={100} y={220} fontSize={8} fill={GR}>Keys →</text>
+      <text x={W-10} y={220} textAnchor="end" fontSize={7.5} fill={GR}>darker = higher attention</text>
+    </svg>
+  )
+}
+
+function EmbeddingViz() {
+  const W = 320, H = 240
+  const G = "#10B981", DG = "#064E3B", LG = "#D1FAE5", BG = "#F0FDF9", GR = "#9CA3AF"
+  const points = [
+    { word: "king", x: 240, y: 60, col: "#6366F1" },
+    { word: "queen", x: 260, y: 90, col: "#6366F1" },
+    { word: "prince", x: 210, y: 80, col: "#6366F1" },
+    { word: "dog", x: 80, y: 170, col: G },
+    { word: "cat", x: 110, y: 155, col: G },
+    { word: "puppy", x: 60, y: 150, col: G },
+    { word: "Paris", x: 170, y: 50, col: "#F59E0B" },
+    { word: "London", x: 195, y: 65, col: "#F59E0B" },
+    { word: "Berlin", x: 160, y: 75, col: "#F59E0B" },
+  ]
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
+      <text x={W/2} y={13} textAnchor="middle" fontSize={9} fill={GR} fontWeight="600">WORD EMBEDDING SPACE (2D projection)</text>
+      <rect x={10} y={18} width={300} height={195} rx={8} fill={BG} stroke={LG} strokeWidth="1.2"/>
+      <ellipse cx={235} cy={77} rx={40} ry={28} fill="#EDE9FE" fillOpacity="0.5" stroke="#8B5CF6" strokeWidth="1" strokeDasharray="3,2"/>
+      <text x={235} y={120} textAnchor="middle" fontSize={7} fill="#7C3AED">royalty</text>
+      <ellipse cx={85} cy={160} rx={38} ry={22} fill="#D1FAE5" fillOpacity="0.5" stroke={G} strokeWidth="1" strokeDasharray="3,2"/>
+      <text x={85} y={190} textAnchor="middle" fontSize={7} fill={DG}>animals</text>
+      <ellipse cx={175} cy={63} rx={30} ry={22} fill="#FEF3C7" fillOpacity="0.5" stroke="#F59E0B" strokeWidth="1" strokeDasharray="3,2"/>
+      <text x={175} y={98} textAnchor="middle" fontSize={7} fill="#92400E">cities</text>
+      {points.map((p, i) => (
+        <g key={i}>
+          <circle cx={p.x} cy={p.y} r={4} fill={p.col}/>
+          <text x={p.x+6} y={p.y+3} fontSize={7.5} fill="#374151">{p.word}</text>
+        </g>
+      ))}
+      <line x1={240} y1={62} x2={262} y2={88} stroke="#8B5CF6" strokeWidth="1" strokeDasharray="2,1.5" opacity="0.6"/>
+      <text x={255} y={75} fontSize={7} fill="#8B5CF6">king−man</text>
+      <text x={255} y={83} fontSize={7} fill="#8B5CF6">+woman</text>
+      <text x={255} y={91} fontSize={7} fill="#8B5CF6">≈queen</text>
+    </svg>
+  )
+}
+
+function GANViz() {
+  const W = 320, H = 240
+  const G = "#10B981", DG = "#064E3B", LG = "#D1FAE5", BG = "#F0FDF9", GR = "#9CA3AF"
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
+      <text x={W/2} y={13} textAnchor="middle" fontSize={9} fill={GR} fontWeight="600">GAN ARCHITECTURE</text>
+      <rect x={8} y={22} width={72} height={40} rx={6} fill="#F3F4F6" stroke="#9CA3AF" strokeWidth="1.2"/>
+      <text x={44} y={40} textAnchor="middle" fontSize={8} fill="#374151" fontWeight="600">Random</text>
+      <text x={44} y={53} textAnchor="middle" fontSize={8} fill="#374151">Noise z</text>
+      <rect x={98} y={22} width={80} height={40} rx={6} fill="#EDE9FE" stroke="#8B5CF6" strokeWidth="1.5"/>
+      <text x={138} y={38} textAnchor="middle" fontSize={8.5} fill="#5B21B6" fontWeight="700">Generator</text>
+      <text x={138} y={52} textAnchor="middle" fontSize={7.5} fill="#7C3AED">G(z) → fake</text>
+      <line x1={80} y1={42} x2={96} y2={42} stroke={GR} strokeWidth="1.5"/>
+      <polygon points="96,39 96,45 102,42" fill={GR}/>
+      <rect x={196} y={22} width={80} height={40} rx={6} fill="#FEE2E2" stroke="#EF4444" strokeWidth="1.5"/>
+      <text x={236} y={38} textAnchor="middle" fontSize={8.5} fill="#991B1B" fontWeight="700">Discriminator</text>
+      <text x={236} y={52} textAnchor="middle" fontSize={7.5} fill="#B91C1C">Real or Fake?</text>
+      <line x1={178} y1={42} x2={194} y2={42} stroke="#8B5CF6" strokeWidth="1.5"/>
+      <polygon points="194,39 194,45 200,42" fill="#8B5CF6}"/>
+      <rect x={8} y={90} width={90} height={32} rx={6} fill="#ECFDF5" stroke={G} strokeWidth="1.2"/>
+      <text x={53} y={109} textAnchor="middle" fontSize={8} fill={DG}>Real Images</text>
+      <line x1={98} y1={106} x2={196} y2={80} stroke={G} strokeWidth="1.2" strokeDasharray="4,2"/>
+      <polygon points="193,77 199,83 196,80" fill={G}/>
+      <rect x={210} y={102} width={80} height={30} rx={6} fill={BG} stroke={LG} strokeWidth="1.2"/>
+      <text x={250} y={122} textAnchor="middle" fontSize={8} fill={DG}>Real / Fake</text>
+      <line x1={276} y1={62} x2={276} y2={100} stroke="#EF4444" strokeWidth="1.5"/>
+      <polygon points="273,100 279,100 276,106" fill="#EF4444}"/>
+      <text x={W/2} y={162} textAnchor="middle" fontSize={8} fill={DG} fontWeight="600">Training Signal</text>
+      <rect x={40} y={170} width={110} height={26} rx={5} fill="#EDE9FE" stroke="#8B5CF6" strokeWidth="1"/>
+      <text x={95} y={186} textAnchor="middle" fontSize={7.5} fill="#5B21B6">G: fool discriminator</text>
+      <rect x={170} y={170} width={110} height={26} rx={5} fill="#FEE2E2" stroke="#EF4444" strokeWidth="1"/>
+      <text x={225} y={186} textAnchor="middle" fontSize={7.5} fill="#991B1B">D: detect fakes</text>
+      <text x={W/2} y={225} textAnchor="middle" fontSize={7.5} fill={GR}>Minimax game → Nash equilibrium</text>
+    </svg>
+  )
+}
+
+function LSTMViz() {
+  const W = 320, H = 240
+  const G = "#10B981", DG = "#064E3B", LG = "#D1FAE5", BG = "#F0FDF9", GR = "#9CA3AF"
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
+      <text x={W/2} y={13} textAnchor="middle" fontSize={9} fill={GR} fontWeight="600">LSTM CELL</text>
+      <line x1={10} y1={40} x2={310} y2={40} stroke="#F59E0B" strokeWidth="2.5" strokeLinecap="round"/>
+      <text x={W/2} y={35} textAnchor="middle" fontSize={7.5} fill="#B45309" fontWeight="600">Cell state cₜ (long-term memory)</text>
+      <rect x={30} y={60} width={58} height={34} rx={6} fill="#FEE2E2" stroke="#EF4444" strokeWidth="1.5"/>
+      <text x={59} y={79} textAnchor="middle" fontSize={8} fill="#991B1B" fontWeight="700">Forget</text>
+      <text x={59} y={90} textAnchor="middle" fontSize={7.5} fill="#B91C1C">gate σ</text>
+      <rect x={115} y={60} width={56} height={34} rx={6} fill="#EDE9FE" stroke="#8B5CF6" strokeWidth="1.5"/>
+      <text x={143} y={79} textAnchor="middle" fontSize={8} fill="#5B21B6" fontWeight="700">Input</text>
+      <text x={143} y={90} textAnchor="middle" fontSize={7.5} fill="#7C3AED">gate σ+tanh</text>
+      <rect x={198} y={60} width={56} height={34} rx={6} fill="#ECFDF5" stroke={G} strokeWidth="1.5"/>
+      <text x={226} y={79} textAnchor="middle" fontSize={8} fill={DG} fontWeight="700">Output</text>
+      <text x={226} y={90} textAnchor="middle" fontSize={7.5} fill={DG}>gate σ+tanh</text>
+      <line x1={59} y1={40} x2={59} y2={60} stroke="#EF4444" strokeWidth="1.2"/>
+      <text x={59} y={54} textAnchor="middle" fontSize={7} fill="#EF4444">×</text>
+      <line x1={143} y1={40} x2={143} y2={60} stroke="#8B5CF6" strokeWidth="1.2"/>
+      <text x={143} y={54} textAnchor="middle" fontSize={7} fill="#8B5CF6">+</text>
+      <line x1={226} y1={40} x2={226} y2={60} stroke={G} strokeWidth="1.2"/>
+      <line x1={8} y1={130} x2={300} y2={130} stroke="#3B82F6" strokeWidth="2" strokeDasharray="5,3"/>
+      <text x={W/2} y={148} textAnchor="middle" fontSize={7.5} fill="#1D4ED8">hₜ₋₁ (short-term / hidden state)</text>
+      <text x={8} y={175} fontSize={8} fill={GR}>Input xₜ →</text>
+      <line x1={10} y1={168} x2={60} y2={130} stroke={GR} strokeWidth="1.2"/>
+      <line x1={10} y1={168} x2={143} y2={130} stroke={GR} strokeWidth="1.2"/>
+      <line x1={10} y1={168} x2={226} y2={130} stroke={GR} strokeWidth="1.2"/>
+      <text x={W/2} y={210} textAnchor="middle" fontSize={7.5} fill={GR}>Forget old • Add new • Output filtered</text>
+    </svg>
+  )
+}
+
+function RNNViz() {
+  const W = 320, H = 240
+  const G = "#10B981", DG = "#064E3B", LG = "#D1FAE5", BG = "#F0FDF9", GR = "#9CA3AF"
+  const steps = [{ x: 40, label: "x₁" }, { x: 130, label: "x₂" }, { x: 220, label: "x₃" }]
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
+      <text x={W/2} y={13} textAnchor="middle" fontSize={9} fill={GR} fontWeight="600">RNN UNROLLED THROUGH TIME</text>
+      {steps.map((s, i) => (
+        <g key={i}>
+          <rect x={s.x-28} y={60} width={56} height={44} rx={7} fill={BG} stroke={LG} strokeWidth="1.5"/>
+          <text x={s.x} y={84} textAnchor="middle" fontSize={9} fill={DG} fontWeight="700">RNN</text>
+          <text x={s.x} y={96} textAnchor="middle" fontSize={7.5} fill={GR}>cell {i+1}</text>
+          <line x1={s.x} y1={116} x2={s.x} y2={136} stroke={G} strokeWidth="1.2"/>
+          <polygon points={`${s.x-4},136 ${s.x+4},136 ${s.x},142`} fill={G}/>
+          <rect x={s.x-24} y={142} width={48} height={22} rx={5} fill="#ECFDF5" stroke={G} strokeWidth="1"/>
+          <text x={s.x} y={156} textAnchor="middle" fontSize={8} fill={DG}>h{i+1}</text>
+          <rect x={s.x-18} y={168} width={36} height={20} rx={5} fill="#F3F4F6" stroke={GR} strokeWidth="1"/>
+          <text x={s.x} y={182} textAnchor="middle" fontSize={8} fill="#374151">y{i+1}</text>
+          <line x1={s.x} y1={104} x2={s.x} y2={60} stroke={GR} strokeWidth="1"/>
+          <rect x={s.x-14} y={36} width={28} height={22} rx={4} fill="#FEF3C7" stroke="#F59E0B" strokeWidth="1"/>
+          <text x={s.x} y={51} textAnchor="middle" fontSize={9} fill="#92400E">{s.label}</text>
+          {i < steps.length - 1 && (
+            <>
+              <line x1={s.x+28} y1={82} x2={steps[i+1].x-28} y2={82} stroke={G} strokeWidth="1.8"/>
+              <polygon points={`${steps[i+1].x-28},79 ${steps[i+1].x-28},85 ${steps[i+1].x-22},82`} fill={G}/>
+              <text x={(s.x+steps[i+1].x)/2} y={76} textAnchor="middle" fontSize={7} fill={G}>hₜ</text>
+            </>
+          )}
+        </g>
+      ))}
+      <text x={8} y={86} fontSize={8} fill={GR}>←</text>
+      <text x={W/2} y={224} textAnchor="middle" fontSize={7.5} fill={GR}>Hidden state passes context across time steps</text>
+    </svg>
+  )
+}
+
+function DiffusionViz() {
+  const W = 320, H = 240
+  const G = "#10B981", DG = "#064E3B", LG = "#D1FAE5", BG = "#F0FDF9", GR = "#9CA3AF"
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
+      <text x={W/2} y={13} textAnchor="middle" fontSize={9} fill={GR} fontWeight="600">DIFFUSION PROCESS</text>
+      <text x={W/2} y={26} textAnchor="middle" fontSize={7.5} fill="#F59E0B" fontWeight="600">Forward: add noise → q(xₜ|xₜ₋₁)</text>
+      {[0,1,2,3,4].map(i => {
+        const x = 18 + i * 60
+        const noise = i / 4
+        return (
+          <g key={i}>
+            <rect x={x} y={34} width={46} height={46} rx={5} fill={`rgba(16,185,129,${0.8-noise*0.7})`} stroke={LG} strokeWidth="1"/>
+            {Array.from({length: Math.floor(noise*20)}).map((_, j) => (
+              <circle key={j} cx={x+5+Math.random()*36} cy={38+Math.random()*38} r={1.2} fill={`rgba(156,163,175,${0.3+noise*0.5})`}/>
+            ))}
+            <text x={x+23} y={93} textAnchor="middle" fontSize={7.5} fill={GR}>t={i}</text>
+          </g>
+        )
+      })}
+      <line x1={18} y1={57} x2={298} y2={57} stroke="#F59E0B" strokeWidth="0.8" strokeDasharray="3,2" opacity="0.4"/>
+      {[0,1,2,3].map(i => (
+        <g key={i}>
+          <line x1={68+i*60} y1={57} x2={76+i*60} y2={57} stroke="#F59E0B" strokeWidth="1.2"/>
+          <polygon points={`${76+i*60},54 ${76+i*60},60 ${82+i*60},57`} fill="#F59E0B}"/>
+        </g>
+      ))}
+      <text x={W/2} y={115} textAnchor="middle" fontSize={7.5} fill={G} fontWeight="600">Reverse: denoise → pθ(xₜ₋₁|xₜ)</text>
+      {[4,3,2,1,0].map((step, i) => {
+        const x = 18 + i * 60
+        const noise = step / 4
+        return (
+          <g key={step}>
+            <rect x={x} y={122} width={46} height={46} rx={5} fill={`rgba(16,185,129,${0.8-noise*0.7})`} stroke={LG} strokeWidth="1"/>
+            <text x={x+23} y={181} textAnchor="middle" fontSize={7.5} fill={GR}>t={step}</text>
+          </g>
+        )
+      })}
+      {[0,1,2,3].map(i => (
+        <g key={i}>
+          <line x1={68+i*60} y1={145} x2={76+i*60} y2={145} stroke={G} strokeWidth="1.2"/>
+          <polygon points={`${76+i*60},142 ${76+i*60},148 ${82+i*60},145`} fill={G}/>
+        </g>
+      ))}
+      <text x={18+2*60+23} y={214} textAnchor="middle" fontSize={8} fill={DG} fontWeight="600">Neural net predicts noise εθ</text>
+    </svg>
+  )
+}
+
+function PositionalEncodingViz() {
+  const W = 320, H = 240
+  const G = "#10B981", DG = "#064E3B", LG = "#D1FAE5", BG = "#F0FDF9", GR = "#9CA3AF"
+  const tokens = ["The", "cat", "sat", "on", "mat"]
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
+      <text x={W/2} y={13} textAnchor="middle" fontSize={9} fill={GR} fontWeight="600">POSITIONAL ENCODING</text>
+      {tokens.map((t, i) => (
+        <g key={i}>
+          <rect x={8+i*62} y={20} width={54} height={22} rx={4} fill="#E0E7FF" stroke="#6366F1" strokeWidth="1"/>
+          <text x={35+i*62} y={35} textAnchor="middle" fontSize={8} fill="#3730A3">{t}</text>
+        </g>
+      ))}
+      <text x={4} y={72} fontSize={7.5} fill={GR}>+</text>
+      {tokens.map((_, i) => (
+        <g key={i}>
+          <rect x={8+i*62} y={50} width={54} height={22} rx={4} fill={BG} stroke={G} strokeWidth="1"/>
+          {[0,1,2,3].map(d => {
+            const val = d % 2 === 0
+              ? Math.sin(i / Math.pow(10000, d/4))
+              : Math.cos(i / Math.pow(10000, (d-1)/4))
+            const h = Math.abs(val) * 9 + 1
+            return (
+              <rect key={d} x={13+i*62+d*13} y={61-h/2+11} width={10} height={h} rx={1.5}
+                fill={val >= 0 ? G : "#F87171"} fillOpacity="0.8"/>
+            )
+          })}
+        </g>
+      ))}
+      <text x={4} y={118} fontSize={7.5} fill={GR}>=</text>
+      {tokens.map((_, i) => (
+        <rect key={i} x={8+i*62} y={100} width={54} height={22} rx={4} fill={BG} stroke={LG} strokeWidth="1"/>
+      ))}
+      <text x={W/2} y={140} textAnchor="middle" fontSize={8} fill={DG}>Token Emb + Position Emb</text>
+      <text x={W/2} y={158} textAnchor="middle" fontSize={7.5} fill={GR}>PE(pos,2i) = sin(pos/10000^(2i/d))</text>
+      <text x={W/2} y={172} textAnchor="middle" fontSize={7.5} fill={GR}>PE(pos,2i+1) = cos(pos/10000^(2i/d))</text>
+      <text x={W/2} y={200} textAnchor="middle" fontSize={7.5} fill={GR}>Each position gets a unique pattern</text>
+      <text x={W/2} y={215} textAnchor="middle" fontSize={7.5} fill={GR}>Model learns relative distances</text>
+    </svg>
+  )
+}
+
+function EncoderDecoderViz() {
+  const W = 320, H = 240
+  const G = "#10B981", DG = "#064E3B", LG = "#D1FAE5", BG = "#F0FDF9", GR = "#9CA3AF"
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
+      <text x={W/2} y={13} textAnchor="middle" fontSize={9} fill={GR} fontWeight="600">ENCODER-DECODER TRANSFORMER</text>
+      <rect x={10} y={20} width={128} height={180} rx={8} fill={BG} stroke={LG} strokeWidth="1.5"/>
+      <text x={74} y={36} textAnchor="middle" fontSize={9} fill={DG} fontWeight="700">Encoder</text>
+      {["Self-Attention", "Feed Forward", "Self-Attention", "Feed Forward"].map((l, i) => (
+        <g key={i}>
+          <rect x={18} y={44+i*38} width={112} height={28} rx={5} fill="white" stroke={i%2===0 ? "#6366F1" : G} strokeWidth="1.2"/>
+          <text x={74} y={62+i*38} textAnchor="middle" fontSize={7.5} fill={i%2===0 ? "#4338CA" : DG}>{l}</text>
+        </g>
+      ))}
+      <rect x={182} y={20} width={128} height={180} rx={8} fill={BG} stroke={LG} strokeWidth="1.5"/>
+      <text x={246} y={36} textAnchor="middle" fontSize={9} fill={DG} fontWeight="700">Decoder</text>
+      {["Masked Self-Attn", "Cross-Attention", "Feed Forward"].map((l, i) => (
+        <g key={i}>
+          <rect x={190} y={44+i*50} width={112} height={34} rx={5} fill="white"
+            stroke={i===1 ? "#F59E0B" : i===0 ? "#EF4444" : G} strokeWidth="1.2"/>
+          <text x={246} y={65+i*50} textAnchor="middle" fontSize={7.5}
+            fill={i===1 ? "#92400E" : i===0 ? "#991B1B" : DG}>{l}</text>
+        </g>
+      ))}
+      <line x1={138} y1={108} x2={188} y2={108} stroke="#F59E0B" strokeWidth="1.8" strokeDasharray="4,2"/>
+      <polygon points="184,105 184,111 190,108" fill="#F59E0B}"/>
+      <text x={163} y={104} textAnchor="middle" fontSize={7} fill="#92400E">context</text>
+      <text x={74} y={215} textAnchor="middle" fontSize={7.5} fill={GR}>source (e.g. English)</text>
+      <text x={246} y={215} textAnchor="middle" fontSize={7.5} fill={GR}>target (e.g. French)</text>
+    </svg>
+  )
+}
+
+function ViTViz() {
+  const W = 320, H = 240
+  const G = "#10B981", DG = "#064E3B", LG = "#D1FAE5", BG = "#F0FDF9", GR = "#9CA3AF"
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
+      <text x={W/2} y={13} textAnchor="middle" fontSize={9} fill={GR} fontWeight="600">VISION TRANSFORMER (ViT)</text>
+      <rect x={8} y={20} width={60} height={60} rx={4} fill="#FEF3C7" stroke="#F59E0B" strokeWidth="1.5"/>
+      {[0,1,2,3].map(r => [0,1,2,3].map(c => (
+        <rect key={`${r}${c}`} x={9+c*15} y={21+r*15} width={14} height={14} rx={1}
+          fill="none" stroke="#F59E0B" strokeWidth="0.5" strokeOpacity="0.6"/>
+      )))}
+      <text x={38} y={92} textAnchor="middle" fontSize={7.5} fill={GR}>image</text>
+      <line x1={70} y1={50} x2={90} y2={50} stroke={GR} strokeWidth="1.2"/>
+      <polygon points="90,47 90,53 96,50" fill={GR}/>
+      {[0,1,2,3,4].map(i => (
+        <g key={i}>
+          <rect x={98+i*32} y={36} width={26} height={26} rx={4} fill="#E0E7FF" stroke="#6366F1" strokeWidth="1"/>
+          <text x={111+i*32} y={53} textAnchor="middle" fontSize={6.5} fill="#4338CA">P{i+1}</text>
+        </g>
+      ))}
+      <text x={196} y={76} textAnchor="middle" fontSize={7.5} fill={GR}>patches → embeddings</text>
+      <rect x={88} y={92} width={224} height={40} rx={7} fill={BG} stroke={LG} strokeWidth="1.5"/>
+      <text x={200} y={108} textAnchor="middle" fontSize={8} fill={DG} fontWeight="700">Transformer Encoder × L</text>
+      <text x={200} y={121} textAnchor="middle" fontSize={7.5} fill={GR}>Multi-Head Self-Attention + FFN</text>
+      <line x1={200} y1={132} x2={200} y2={150} stroke={G} strokeWidth="1.5"/>
+      <polygon points="196,150 204,150 200,156" fill={G}/>
+      <rect x={130} y={156} width={140} height={28} rx={6} fill={G}/>
+      <text x={200} y={170} textAnchor="middle" fontSize={8} fill="white" fontWeight="600">Class Prediction</text>
+      <text x={200} y={182} textAnchor="middle" fontSize={7.5} fill="white">via [CLS] token</text>
+      <text x={200} y={222} textAnchor="middle" fontSize={7.5} fill={GR}>No convolutions — patches are "words"</text>
+    </svg>
+  )
+}
+
+function RAGViz() {
+  const W = 320, H = 240
+  const G = "#10B981", DG = "#064E3B", LG = "#D1FAE5", BG = "#F0FDF9", GR = "#9CA3AF"
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
+      <text x={W/2} y={13} textAnchor="middle" fontSize={9} fill={GR} fontWeight="600">RETRIEVAL-AUGMENTED GENERATION</text>
+      <rect x={8} y={22} width={80} height={28} rx={6} fill="#FEF3C7" stroke="#F59E0B" strokeWidth="1.5"/>
+      <text x={48} y={40} textAnchor="middle" fontSize={8} fill="#92400E" fontWeight="600">User Query</text>
+      <line x1={88} y1={36} x2={104} y2={36} stroke={GR} strokeWidth="1.2"/>
+      <polygon points="104,33 104,39 110,36" fill={GR}/>
+      <rect x={112} y={22} width={80} height={28} rx={6} fill="#EDE9FE" stroke="#8B5CF6" strokeWidth="1.5"/>
+      <text x={152} y={36} textAnchor="middle" fontSize={7.5} fill="#5B21B6" fontWeight="600">Embed Query</text>
+      <text x={152} y={46} textAnchor="middle" fontSize={7} fill="#7C3AED">→ vector</text>
+      <line x1={192} y1={36} x2={208} y2={36} stroke={GR} strokeWidth="1.2"/>
+      <polygon points="208,33 208,39 214,36" fill={GR}/>
+      <rect x={216} y={22} width={96} height={50} rx={6} fill={BG} stroke={G} strokeWidth="1.5"/>
+      <text x={264} y={38} textAnchor="middle" fontSize={7.5} fill={DG} fontWeight="600">Vector DB</text>
+      <text x={264} y={50} textAnchor="middle" fontSize={7} fill={GR}>cosine similarity</text>
+      <text x={264} y={62} textAnchor="middle" fontSize={7} fill={GR}>top-k chunks</text>
+      <line x1={264} y1={72} x2={264} y2={92} stroke={G} strokeWidth="1.2"/>
+      <polygon points="260,92 268,92 264,98" fill={G}/>
+      <rect x={196} y={98} width={116} height={34} rx={6} fill={BG} stroke={LG} strokeWidth="1.2"/>
+      <text x={254} y={115} textAnchor="middle" fontSize={7.5} fill={DG}>Retrieved Chunks</text>
+      <text x={254} y={126} textAnchor="middle" fontSize={7} fill={GR}>doc1, doc2, doc3…</text>
+      <line x1={196} y1={115} x2={160} y2={145} stroke={GR} strokeWidth="1.2" strokeDasharray="3,2"/>
+      <line x1={48} y1={50} x2={48} y2={142} stroke="#F59E0B" strokeWidth="1.2" strokeDasharray="3,2"/>
+      <line x1={48} y1={142} x2={90} y2={152} stroke="#F59E0B" strokeWidth="1.2" strokeDasharray="3,2"/>
+      <rect x={90} y={140} width={140} height={40} rx={7} fill="#ECFDF5" stroke={G} strokeWidth="1.5"/>
+      <text x={160} y={157} textAnchor="middle" fontSize={8} fill={DG} fontWeight="700">LLM</text>
+      <text x={160} y={170} textAnchor="middle" fontSize={7.5} fill={GR}>Query + Context → Answer</text>
+      <line x1={160} y1={180} x2={160} y2={200} stroke={G} strokeWidth="1.5"/>
+      <polygon points="156,200 164,200 160,206" fill={G}/>
+      <rect x={100} y={206} width={120} height={24} rx={6} fill={G}/>
+      <text x={160} y={222} textAnchor="middle" fontSize={8} fill="white" fontWeight="600">Grounded Answer</text>
+    </svg>
+  )
+}
+
+function ContextWindowViz() {
+  const W = 320, H = 240
+  const G = "#10B981", DG = "#064E3B", LG = "#D1FAE5", BG = "#F0FDF9", GR = "#9CA3AF"
+  const allTokens = ["Once","upon","a","time","in","a","land","far","away","there","lived","a","brave","knight","who"]
+  const windowStart = 4, windowSize = 6
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
+      <text x={W/2} y={13} textAnchor="middle" fontSize={9} fill={GR} fontWeight="600">CONTEXT WINDOW</text>
+      {allTokens.map((t, i) => {
+        const col = i >= windowStart && i < windowStart + windowSize
+        return (
+          <g key={i}>
+            <rect x={8+(i%8)*38} y={22+Math.floor(i/8)*36} width={34} height={24} rx={4}
+              fill={col ? BG : "#F9FAFB"} stroke={col ? G : "#E5E7EB"} strokeWidth={col ? 1.5 : 1}/>
+            <text x={25+(i%8)*38} y={38+Math.floor(i/8)*36} textAnchor="middle" fontSize={7}
+              fill={col ? DG : GR}>{t}</text>
+          </g>
+        )
+      })}
+      <rect x={8+windowStart%8*38-2} y={20} width={windowSize*38} height={28} rx={6}
+        fill="none" stroke={G} strokeWidth="2" strokeDasharray="5,2"/>
+      <text x={160} y={115} textAnchor="middle" fontSize={8} fill={G} fontWeight="600">← context window →</text>
+      <line x1={8+windowStart*38-2} y1={120} x2={8+windowStart*38-2} y2={134} stroke={G} strokeWidth="1"/>
+      <line x1={8+(windowStart+windowSize)*38-2} y1={120} x2={8+(windowStart+windowSize)*38-2} y2={134} stroke={G} strokeWidth="1"/>
+      <rect x={30} y={150} width={260} height={34} rx={7} fill={BG} stroke={LG} strokeWidth="1.2"/>
+      <text x={W/2} y={165} textAnchor="middle" fontSize={8} fill={DG} fontWeight="600">Transformer attends within window</text>
+      <text x={W/2} y={177} textAnchor="middle" fontSize={7.5} fill={GR}>tokens outside window → not visible</text>
+      <text x={W/2} y={210} textAnchor="middle" fontSize={8} fill={DG}>GPT-4: 128K • Claude: 200K tokens</text>
+      <text x={W/2} y={224} textAnchor="middle" fontSize={7.5} fill={GR}>Longer = more context, more compute</text>
     </svg>
   )
 }

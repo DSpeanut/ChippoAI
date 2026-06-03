@@ -1,4 +1,5 @@
 {
+  "visualizationType": "few-shot-viz",
   "promptExample": {
     "label": "Support Ticket Urgency Classifier",
     "prompt": "System: You are a support ticket triage assistant.\nClassify each ticket by urgency: critical, high, medium, or low.\nRespond with only the urgency label.\n\n---\nTicket: \"My account was charged twice this month. Need a refund ASAP.\"\nUrgency: critical\n\nTicket: \"Can I upgrade my plan mid-cycle?\"\nUrgency: low\n\nTicket: \"The app crashes every time I try to export a report.\"\nUrgency: high\n---\n\nUser: Ticket: \"Would be nice if you added dark mode someday.\"\nUrgency:",

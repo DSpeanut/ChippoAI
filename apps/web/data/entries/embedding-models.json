@@ -70,5 +70,6 @@
     }
   ],
   "youtubeUrl": "https://www.youtube.com/embed/viZrOnJclY0",
-  "youtubeLabel": "Embedding Models"
+  "youtubeLabel": "Embedding Models",
+  "visualizationType": "embedding-viz"
 }

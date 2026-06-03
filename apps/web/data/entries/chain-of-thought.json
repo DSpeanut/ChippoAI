@@ -1,4 +1,5 @@
 {
+  "visualizationType": "chain-of-thought-viz",
   "promptExample": {
     "label": "Multi-Step Math Word Problem",
     "prompt": "User: A store started with 240 units of inventory. They sold 35% of stock on Monday, then sold 60 more units on Tuesday, and received a restock of 18 units on Wednesday. How many units are in stock at the end of Wednesday?\n\nLet's think step by step.",

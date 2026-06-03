@@ -1,4 +1,5 @@
 {
+  "visualizationType": "bert-arch-viz",
   "eli3": [
     "BERT (Bidirectional Encoder Representations from Transformers, Devlin et al. 2019) is an encoder-only transformer pre-trained with Masked Language Modeling (MLM) and Next Sentence Prediction (NSP). Unlike GPT (left-to-right), BERT's self-attention is fully bidirectional — every token attends to every other token. This makes BERT excellent at understanding tasks but incapable of autoregressive generation.",
     "Architecture: token embeddings (WordPiece) + segment embeddings + positional embeddings → N transformer encoder blocks (full self-attention + FFN) → task head. BERT-base: 12 layers, 12 heads, d_model=768, 110M parameters. BERT-large: 24 layers, 16 heads, d_model=1024, 340M parameters. Pre-trained on BooksCorpus + Wikipedia (16GB). Fine-tuning: add a task-specific head (linear classifier, span predictor) and fine-tune all parameters on labeled data.",

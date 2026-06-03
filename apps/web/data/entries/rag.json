@@ -69,5 +69,6 @@
     }
   ],
   "youtubeUrl": "https://www.youtube.com/embed/RosLeHGBLoY",
-  "youtubeLabel": "Rag"
+  "youtubeLabel": "Rag",
+  "visualizationType": "rag-viz"
 }

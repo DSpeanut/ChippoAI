@@ -1,4 +1,5 @@
 {
+  "visualizationType": "gpt-arch-viz",
   "eli3": [
     "GPT (Generative Pre-trained Transformer) is a decoder-only transformer that predicts the next token left-to-right. The architecture: token embeddings + positional embeddings → N transformer decoder blocks (masked self-attention + feed-forward) → linear head → softmax over vocabulary. Pre-trained on massive text with next-token prediction, then fine-tuned or prompted for downstream tasks.",
     "GPT-1 (Radford et al. 2018) showed that a 117M-parameter transformer pre-trained on BooksCorpus transfers well to NLP tasks via fine-tuning. GPT-2 (2019, 1.5B) demonstrated that larger models are better zero-shot learners. GPT-3 (2020, 175B) showed in-context learning: provide a few examples in the prompt and the model performs the task without any gradient update. GPT-4 (2023) is multimodal (text + image input) and achieves near-human performance on professional exams.",
