@@ -51,7 +51,8 @@
   "deepDive": [
     {
       "heading": "Amihud Illiquidity Ratio",
-      "body": "The Amihud (2002) illiquidity ratio: ILLIQ_i = (1/T_i) × Σ_{t=1}^{T_i} (|R_{i,t}| / VOLD_{i,t}), where |R_{i,t}| is the absolute daily return on stock i on day t, and VOLD_{i,t} is the daily dollar volume. Interpretation: the average absolute return per dollar of trading volume — a measure of price impact per unit of trade. High ILLIQ → high price impact → illiquid. Cross-sectional findings: ILLIQ is higher for small-cap stocks, stocks with lower analyst coverage, and during market stress. Time-series findings: market-wide ILLIQ rises sharply during crises (GFC 2008: ILLIQ rose 5-10×). Amihud showed that expected stock returns increase with expected illiquidity, consistent with an illiquidity premium. [1]"
+      "body": "The Amihud illiquidity ratio measures the average absolute daily return per dollar of trading volume — a measure of price impact per unit of trade. Higher values indicate greater illiquidity and therefore a larger price impact for any given order. The ratio is higher for small-cap stocks, stocks with lower analyst coverage, and during periods of market stress, when it can rise five- to ten-fold. Amihud showed that expected stock returns increase with expected illiquidity, consistent with an illiquidity premium: investors must be compensated for holding assets that are costly to trade. [1]",
+      "formula": "ILLIQ_i = (1/T_i) × Σ_{t=1}^{T_i} (|R_{i,t}| / VOLD_{i,t})"
     },
     {
       "heading": "Funding Liquidity vs Market Liquidity",

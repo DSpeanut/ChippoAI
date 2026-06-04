@@ -51,7 +51,8 @@
   "deepDive": [
     {
       "heading": "Price-Yield Relationship and Bond Pricing",
-      "body": "Bond price formula: P = Σ_{t=1}^{2T} (C/2) / (1+y/2)^t + F / (1+y/2)^{2T}, for semi-annual coupon payment (standard US Treasury convention). Key properties: (1) Price and yield move inversely; (2) Price = par (100) when coupon rate = YTM; price > par (premium) when coupon > YTM; price < par (discount) when coupon < YTM; (3) Price sensitivity increases with maturity and decreases with coupon rate; (4) Pull-to-par: as a bond approaches maturity, its price converges to par (regardless of where it traded earlier). Clean price vs dirty price: clean price excludes accrued interest (what's quoted); dirty price = clean price + accrued coupon since last payment date (what you actually pay). [1]"
+      "body": "A bond's price is the present value of all future coupon payments and the face value, discounted at its yield to maturity. For semi-annual coupon bonds, which are standard for US Treasuries, each period uses half the annual coupon and half the yield. Price and yield move inversely: the price equals par when the coupon rate equals the yield, trades at a premium when the coupon exceeds the yield, and trades at a discount when the coupon falls below the yield. Price sensitivity to yield changes increases with maturity and decreases with higher coupons. As a bond approaches maturity, its price converges to par regardless of where it traded earlier — this is the pull-to-par effect. The clean price excludes accrued interest and is what is quoted; the dirty price adds accrued interest since the last coupon date and is what you actually pay. [1]",
+      "formula": "P = Σ_{t=1}^{2T} (C/2)/(1+y/2)^t + F/(1+y/2)^{2T}"
     },
     {
       "heading": "Yield Measures: YTM, Current Yield, Yield Spread",
