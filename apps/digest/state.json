@@ -9,6 +9,8 @@
     "eigenvalues-eigenvectors",
     "rmse-metric",
     "drawdown",
-    "perplexity-eval"
+    "perplexity-eval",
+    "k-nearest-neighbors",
+    "map-estimation"
   ]
 }
