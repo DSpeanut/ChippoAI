@@ -21,6 +21,8 @@
     "greeks",
     "neural-architecture-search",
     "taylor-series",
-    "bootstrap"
+    "bootstrap",
+    "gru",
+    "swaps"
   ]
 }
