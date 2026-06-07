@@ -23,6 +23,8 @@
     "taylor-series",
     "bootstrap",
     "gru",
-    "swaps"
+    "swaps",
+    "feature-stores",
+    "rouge"
   ]
 }
