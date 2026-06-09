@@ -31,6 +31,8 @@
     "mode",
     "cross-validation",
     "bert-architecture",
-    "real-assets"
+    "real-assets",
+    "evaluation-under-imbalance",
+    "multi-armed-bandit"
   ]
 }
