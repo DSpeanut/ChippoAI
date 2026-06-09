@@ -29,6 +29,8 @@
     "correlation-risk",
     "cosine-annealing",
     "mode",
-    "cross-validation"
+    "cross-validation",
+    "bert-architecture",
+    "real-assets"
   ]
 }
