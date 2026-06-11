@@ -39,6 +39,8 @@
     "mean",
     "benchmark-selection",
     "tool-calling-patterns",
-    "lof"
+    "lof",
+    "concept-drift",
+    "huber-loss"
   ]
 }
