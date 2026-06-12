@@ -41,6 +41,8 @@
     "tool-calling-patterns",
     "lof",
     "concept-drift",
-    "huber-loss"
+    "huber-loss",
+    "bayesian-optimization-hpo",
+    "etl-vs-elt"
   ]
 }
