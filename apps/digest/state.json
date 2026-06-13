@@ -45,6 +45,8 @@
     "bayesian-optimization-hpo",
     "etl-vs-elt",
     "lasso-regression",
-    "agent-loop"
+    "agent-loop",
+    "mae-loss",
+    "logistic-regression"
   ]
 }
