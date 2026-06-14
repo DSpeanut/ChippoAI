@@ -51,6 +51,8 @@
     "chain-of-thought",
     "gradient-clipping",
     "class-weights",
-    "lambda-architecture"
+    "lambda-architecture",
+    "tf-idf",
+    "f1-score"
   ]
 }
