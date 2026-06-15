@@ -55,6 +55,8 @@
     "tf-idf",
     "f1-score",
     "data-warehouses",
-    "bonds"
+    "bonds",
+    "confusion-matrix",
+    "perceptron"
   ]
 }
