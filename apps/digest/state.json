@@ -53,6 +53,8 @@
     "class-weights",
     "lambda-architecture",
     "tf-idf",
-    "f1-score"
+    "f1-score",
+    "data-warehouses",
+    "bonds"
   ]
 }
