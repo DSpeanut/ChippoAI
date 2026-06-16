@@ -57,6 +57,8 @@
     "data-warehouses",
     "bonds",
     "confusion-matrix",
-    "perceptron"
+    "perceptron",
+    "information-ratio",
+    "automl"
   ]
 }
