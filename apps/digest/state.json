@@ -1,7 +1,5 @@
 {
   "recent": [
-    "dqn",
-    "reranking-systems",
     "mdp",
     "isolation-forest",
     "cvar",
@@ -59,6 +57,8 @@
     "confusion-matrix",
     "perceptron",
     "information-ratio",
-    "automl"
+    "automl",
+    "sample-space-events",
+    "activation-functions"
   ]
 }
