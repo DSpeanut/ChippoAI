@@ -1,7 +1,5 @@
 {
   "recent": [
-    "mdp",
-    "isolation-forest",
     "cvar",
     "yield-curve",
     "eigenvalues-eigenvectors",
@@ -59,6 +57,8 @@
     "information-ratio",
     "automl",
     "sample-space-events",
-    "activation-functions"
+    "activation-functions",
+    "p-value",
+    "z-test"
   ]
 }
