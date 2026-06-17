@@ -1,7 +1,5 @@
 {
   "recent": [
-    "cvar",
-    "yield-curve",
     "eigenvalues-eigenvectors",
     "rmse-metric",
     "drawdown",
@@ -59,6 +57,8 @@
     "sample-space-events",
     "activation-functions",
     "p-value",
-    "z-test"
+    "z-test",
+    "mean-variance-optimization",
+    "gradient-descent-math"
   ]
 }
