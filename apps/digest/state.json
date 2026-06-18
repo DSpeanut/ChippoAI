@@ -1,7 +1,5 @@
 {
   "recent": [
-    "eigenvalues-eigenvectors",
-    "rmse-metric",
     "drawdown",
     "perplexity-eval",
     "k-nearest-neighbors",
@@ -59,6 +57,8 @@
     "p-value",
     "z-test",
     "mean-variance-optimization",
-    "gradient-descent-math"
+    "gradient-descent-math",
+    "central-limit-theorem",
+    "message-passing"
   ]
 }
