@@ -1,7 +1,5 @@
 {
   "recent": [
-    "drawdown",
-    "perplexity-eval",
     "k-nearest-neighbors",
     "map-estimation",
     "bleu",
@@ -59,6 +57,8 @@
     "mean-variance-optimization",
     "gradient-descent-math",
     "central-limit-theorem",
-    "message-passing"
+    "message-passing",
+    "positional-encoding",
+    "dqn"
   ]
 }
