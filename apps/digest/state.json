@@ -1,7 +1,5 @@
 {
   "recent": [
-    "bleu",
-    "speech-to-text",
     "vision-language-models",
     "law-of-large-numbers",
     "llm-eval-frameworks",
@@ -59,6 +57,8 @@
     "positional-encoding",
     "dqn",
     "random-search",
-    "causal-inference"
+    "causal-inference",
+    "randomized-control-trials",
+    "variance"
   ]
 }
