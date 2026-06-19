@@ -1,7 +1,5 @@
 {
   "recent": [
-    "k-nearest-neighbors",
-    "map-estimation",
     "bleu",
     "speech-to-text",
     "vision-language-models",
@@ -59,6 +57,8 @@
     "central-limit-theorem",
     "message-passing",
     "positional-encoding",
-    "dqn"
+    "dqn",
+    "random-search",
+    "causal-inference"
   ]
 }
