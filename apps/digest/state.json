@@ -1,7 +1,5 @@
 {
   "recent": [
-    "llm-eval-frameworks",
-    "causal-lm",
     "greeks",
     "neural-architecture-search",
     "taylor-series",
@@ -59,6 +57,8 @@
     "randomized-control-trials",
     "variance",
     "mse-loss",
-    "perplexity"
+    "perplexity",
+    "data-drift",
+    "online-learning"
   ]
 }
