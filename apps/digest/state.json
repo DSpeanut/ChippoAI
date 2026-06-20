@@ -1,7 +1,5 @@
 {
   "recent": [
-    "vision-language-models",
-    "law-of-large-numbers",
     "llm-eval-frameworks",
     "causal-lm",
     "greeks",
@@ -59,6 +57,8 @@
     "random-search",
     "causal-inference",
     "randomized-control-trials",
-    "variance"
+    "variance",
+    "mse-loss",
+    "perplexity"
   ]
 }
