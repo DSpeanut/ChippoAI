@@ -1,7 +1,5 @@
 {
   "recent": [
-    "taylor-series",
-    "bootstrap",
     "gru",
     "swaps",
     "feature-stores",
@@ -59,6 +57,8 @@
     "data-drift",
     "online-learning",
     "hybrid-search",
-    "hierarchical-clustering"
+    "hierarchical-clustering",
+    "bagging",
+    "prompt-injection-defense"
   ]
 }
