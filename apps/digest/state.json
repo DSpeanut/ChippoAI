@@ -1,7 +1,5 @@
 {
   "recent": [
-    "greeks",
-    "neural-architecture-search",
     "taylor-series",
     "bootstrap",
     "gru",
@@ -59,6 +57,8 @@
     "mse-loss",
     "perplexity",
     "data-drift",
-    "online-learning"
+    "online-learning",
+    "hybrid-search",
+    "hierarchical-clustering"
   ]
 }
