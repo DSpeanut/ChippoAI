@@ -1,7 +1,5 @@
 {
   "recent": [
-    "gru",
-    "swaps",
     "feature-stores",
     "rouge",
     "correlation-risk",
@@ -59,6 +57,8 @@
     "hybrid-search",
     "hierarchical-clustering",
     "bagging",
-    "prompt-injection-defense"
+    "prompt-injection-defense",
+    "decision-tree-regressor",
+    "rnn"
   ]
 }
