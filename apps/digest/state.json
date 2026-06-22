@@ -1,7 +1,5 @@
 {
   "recent": [
-    "feature-stores",
-    "rouge",
     "correlation-risk",
     "cosine-annealing",
     "mode",
@@ -59,6 +57,8 @@
     "bagging",
     "prompt-injection-defense",
     "decision-tree-regressor",
-    "rnn"
+    "rnn",
+    "rag",
+    "tecton"
   ]
 }
