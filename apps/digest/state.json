@@ -1,7 +1,5 @@
 {
   "recent": [
-    "correlation-risk",
-    "cosine-annealing",
     "mode",
     "cross-validation",
     "bert-architecture",
@@ -59,6 +57,8 @@
     "decision-tree-regressor",
     "rnn",
     "rag",
-    "tecton"
+    "tecton",
+    "llama",
+    "model-registry"
   ]
 }
