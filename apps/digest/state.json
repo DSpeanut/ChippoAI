@@ -1,7 +1,5 @@
 {
   "recent": [
-    "mode",
-    "cross-validation",
     "bert-architecture",
     "real-assets",
     "evaluation-under-imbalance",
@@ -59,6 +57,8 @@
     "rag",
     "tecton",
     "llama",
-    "model-registry"
+    "model-registry",
+    "tracking-error",
+    "survivorship-bias"
   ]
 }
