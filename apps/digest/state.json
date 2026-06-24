@@ -1,7 +1,5 @@
 {
   "recent": [
-    "evaluation-under-imbalance",
-    "multi-armed-bandit",
     "adagrad",
     "vectors-matrices",
     "mean",
@@ -59,6 +57,8 @@
     "tracking-error",
     "survivorship-bias",
     "pre-training",
-    "one-hot-encoding"
+    "one-hot-encoding",
+    "nosql",
+    "logistic-regression-stats"
   ]
 }
