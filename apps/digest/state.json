@@ -1,7 +1,5 @@
 {
   "recent": [
-    "bert-architecture",
-    "real-assets",
     "evaluation-under-imbalance",
     "multi-armed-bandit",
     "adagrad",
@@ -59,6 +57,8 @@
     "llama",
     "model-registry",
     "tracking-error",
-    "survivorship-bias"
+    "survivorship-bias",
+    "pre-training",
+    "one-hot-encoding"
   ]
 }
