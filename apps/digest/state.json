@@ -1,7 +1,5 @@
 {
   "recent": [
-    "adagrad",
-    "vectors-matrices",
     "mean",
     "benchmark-selection",
     "tool-calling-patterns",
@@ -59,6 +57,8 @@
     "pre-training",
     "one-hot-encoding",
     "nosql",
-    "logistic-regression-stats"
+    "logistic-regression-stats",
+    "interaction-features",
+    "convex-optimization-portfolio"
   ]
 }
