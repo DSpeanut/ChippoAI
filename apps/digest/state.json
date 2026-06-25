@@ -1,7 +1,5 @@
 {
   "recent": [
-    "mean",
-    "benchmark-selection",
     "tool-calling-patterns",
     "lof",
     "concept-drift",
@@ -59,6 +57,8 @@
     "nosql",
     "logistic-regression-stats",
     "interaction-features",
-    "convex-optimization-portfolio"
+    "convex-optimization-portfolio",
+    "instruction-tuning",
+    "kl-divergence"
   ]
 }
