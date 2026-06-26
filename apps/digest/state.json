@@ -1,7 +1,5 @@
 {
   "recent": [
-    "concept-drift",
-    "huber-loss",
     "bayesian-optimization-hpo",
     "etl-vs-elt",
     "lasso-regression",
@@ -59,6 +57,8 @@
     "instruction-tuning",
     "kl-divergence",
     "rest-api-serving",
-    "mode"
+    "mode",
+    "mcp",
+    "ddpg"
   ]
 }
