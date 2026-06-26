@@ -1,7 +1,5 @@
 {
   "recent": [
-    "tool-calling-patterns",
-    "lof",
     "concept-drift",
     "huber-loss",
     "bayesian-optimization-hpo",
@@ -59,6 +57,8 @@
     "interaction-features",
     "convex-optimization-portfolio",
     "instruction-tuning",
-    "kl-divergence"
+    "kl-divergence",
+    "rest-api-serving",
+    "mode"
   ]
 }
