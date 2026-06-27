@@ -1,7 +1,5 @@
 {
   "recent": [
-    "lasso-regression",
-    "agent-loop",
     "mae-loss",
     "logistic-regression",
     "chain-of-thought",
@@ -59,6 +57,8 @@
     "mcp",
     "ddpg",
     "universal-approximation-theorem",
-    "yield-curve"
+    "yield-curve",
+    "distributed-training",
+    "reranking"
   ]
 }
