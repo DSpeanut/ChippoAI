@@ -1,7 +1,5 @@
 {
   "recent": [
-    "bayesian-optimization-hpo",
-    "etl-vs-elt",
     "lasso-regression",
     "agent-loop",
     "mae-loss",
@@ -59,6 +57,8 @@
     "rest-api-serving",
     "mode",
     "mcp",
-    "ddpg"
+    "ddpg",
+    "universal-approximation-theorem",
+    "yield-curve"
   ]
 }
