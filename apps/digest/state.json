@@ -1,7 +1,5 @@
 {
   "recent": [
-    "chain-of-thought",
-    "gradient-clipping",
     "class-weights",
     "lambda-architecture",
     "tf-idf",
@@ -59,6 +57,8 @@
     "distributed-training",
     "reranking",
     "quality-factor",
-    "cross-entropy"
+    "cross-entropy",
+    "llamaindex",
+    "rouge"
   ]
 }
