@@ -1,7 +1,5 @@
 {
   "recent": [
-    "mae-loss",
-    "logistic-regression",
     "chain-of-thought",
     "gradient-clipping",
     "class-weights",
@@ -59,6 +57,8 @@
     "universal-approximation-theorem",
     "yield-curve",
     "distributed-training",
-    "reranking"
+    "reranking",
+    "quality-factor",
+    "cross-entropy"
   ]
 }
