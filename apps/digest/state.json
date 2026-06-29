@@ -1,7 +1,5 @@
 {
   "recent": [
-    "class-weights",
-    "lambda-architecture",
     "tf-idf",
     "f1-score",
     "data-warehouses",
@@ -59,6 +57,8 @@
     "quality-factor",
     "cross-entropy",
     "llamaindex",
-    "rouge"
+    "rouge",
+    "lasso-regression",
+    "pca"
   ]
 }
