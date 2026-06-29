@@ -1,7 +1,5 @@
 {
   "recent": [
-    "tf-idf",
-    "f1-score",
     "data-warehouses",
     "bonds",
     "confusion-matrix",
@@ -59,6 +57,8 @@
     "llamaindex",
     "rouge",
     "lasso-regression",
-    "pca"
+    "pca",
+    "convolution-operation",
+    "few-shot-prompting"
   ]
 }
