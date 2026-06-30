@@ -1,7 +1,5 @@
 {
   "recent": [
-    "data-warehouses",
-    "bonds",
     "confusion-matrix",
     "perceptron",
     "information-ratio",
@@ -59,6 +57,8 @@
     "lasso-regression",
     "pca",
     "convolution-operation",
-    "few-shot-prompting"
+    "few-shot-prompting",
+    "matrix-factorization",
+    "edge-deployment"
   ]
 }
