@@ -1,7 +1,5 @@
 {
   "recent": [
-    "sample-space-events",
-    "activation-functions",
     "p-value",
     "z-test",
     "mean-variance-optimization",
@@ -59,6 +57,8 @@
     "correlation-risk",
     "visualization-techniques",
     "bayesian-vs-frequentist",
-    "momentum-factor"
+    "momentum-factor",
+    "stratified-sampling",
+    "layer-norm"
   ]
 }
