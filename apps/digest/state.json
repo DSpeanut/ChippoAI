@@ -1,7 +1,5 @@
 {
   "recent": [
-    "information-ratio",
-    "automl",
     "sample-space-events",
     "activation-functions",
     "p-value",
@@ -59,6 +57,8 @@
     "matrix-factorization",
     "edge-deployment",
     "correlation-risk",
-    "visualization-techniques"
+    "visualization-techniques",
+    "bayesian-vs-frequentist",
+    "momentum-factor"
   ]
 }
