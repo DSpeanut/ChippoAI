@@ -1,7 +1,5 @@
 {
   "recent": [
-    "p-value",
-    "z-test",
     "mean-variance-optimization",
     "gradient-descent-math",
     "central-limit-theorem",
@@ -59,6 +57,8 @@
     "bayesian-vs-frequentist",
     "momentum-factor",
     "stratified-sampling",
-    "layer-norm"
+    "layer-norm",
+    "kurtosis",
+    "feature-stores"
   ]
 }
