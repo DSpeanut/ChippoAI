@@ -1,7 +1,5 @@
 {
   "recent": [
-    "mean-variance-optimization",
-    "gradient-descent-math",
     "central-limit-theorem",
     "message-passing",
     "positional-encoding",
@@ -59,6 +57,8 @@
     "stratified-sampling",
     "layer-norm",
     "kurtosis",
-    "feature-stores"
+    "feature-stores",
+    "credit-spread",
+    "capm"
   ]
 }
