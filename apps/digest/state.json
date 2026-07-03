@@ -1,7 +1,5 @@
 {
   "recent": [
-    "central-limit-theorem",
-    "message-passing",
     "positional-encoding",
     "dqn",
     "random-search",
@@ -59,6 +57,8 @@
     "kurtosis",
     "feature-stores",
     "credit-spread",
-    "capm"
+    "capm",
+    "backpropagation",
+    "stationarity"
   ]
 }
