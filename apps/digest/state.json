@@ -1,7 +1,5 @@
 {
   "recent": [
-    "positional-encoding",
-    "dqn",
     "random-search",
     "causal-inference",
     "randomized-control-trials",
@@ -59,6 +57,8 @@
     "credit-spread",
     "capm",
     "backpropagation",
-    "stationarity"
+    "stationarity",
+    "reranking-systems",
+    "stemming-lemmatization"
   ]
 }
