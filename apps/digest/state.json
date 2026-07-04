@@ -1,7 +1,5 @@
 {
   "recent": [
-    "randomized-control-trials",
-    "variance",
     "mse-loss",
     "perplexity",
     "data-drift",
@@ -59,6 +57,8 @@
     "reranking-systems",
     "stemming-lemmatization",
     "cross-entropy-loss",
-    "rmsprop"
+    "rmsprop",
+    "mcmc",
+    "dqn"
   ]
 }
