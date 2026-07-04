@@ -1,7 +1,5 @@
 {
   "recent": [
-    "random-search",
-    "causal-inference",
     "randomized-control-trials",
     "variance",
     "mse-loss",
@@ -59,6 +57,8 @@
     "backpropagation",
     "stationarity",
     "reranking-systems",
-    "stemming-lemmatization"
+    "stemming-lemmatization",
+    "cross-entropy-loss",
+    "rmsprop"
   ]
 }
