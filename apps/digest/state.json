@@ -1,7 +1,5 @@
 {
   "recent": [
-    "data-drift",
-    "online-learning",
     "hybrid-search",
     "hierarchical-clustering",
     "bagging",
@@ -59,6 +57,8 @@
     "mcmc",
     "dqn",
     "bertscore",
-    "json-mode"
+    "json-mode",
+    "llm-as-judge",
+    "confounding-variables"
   ]
 }
