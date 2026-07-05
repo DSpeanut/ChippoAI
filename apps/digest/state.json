@@ -1,7 +1,5 @@
 {
   "recent": [
-    "mse-loss",
-    "perplexity",
     "data-drift",
     "online-learning",
     "hybrid-search",
@@ -59,6 +57,8 @@
     "cross-entropy-loss",
     "rmsprop",
     "mcmc",
-    "dqn"
+    "dqn",
+    "bertscore",
+    "json-mode"
   ]
 }
