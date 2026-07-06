@@ -1,7 +1,5 @@
 {
   "recent": [
-    "hybrid-search",
-    "hierarchical-clustering",
     "bagging",
     "prompt-injection-defense",
     "decision-tree-regressor",
@@ -59,6 +57,8 @@
     "bertscore",
     "json-mode",
     "llm-as-judge",
-    "confounding-variables"
+    "confounding-variables",
+    "tool-calling-patterns",
+    "emergent-abilities"
   ]
 }
