@@ -1,7 +1,5 @@
 {
   "recent": [
-    "decision-tree-regressor",
-    "rnn",
     "rag",
     "tecton",
     "llama",
@@ -59,6 +57,8 @@
     "tool-calling-patterns",
     "emergent-abilities",
     "data-lakes",
-    "bivariate-analysis"
+    "bivariate-analysis",
+    "message-passing",
+    "nlp-finance"
   ]
 }
