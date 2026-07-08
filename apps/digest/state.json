@@ -1,7 +1,5 @@
 {
   "recent": [
-    "tracking-error",
-    "survivorship-bias",
     "pre-training",
     "one-hot-encoding",
     "nosql",
@@ -59,6 +57,8 @@
     "correlation",
     "model-batching",
     "fundamental-analysis",
-    "content-moderation"
+    "content-moderation",
+    "gradient-boosting",
+    "svr"
   ]
 }
