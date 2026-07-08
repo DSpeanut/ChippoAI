@@ -1,7 +1,5 @@
 {
   "recent": [
-    "llama",
-    "model-registry",
     "tracking-error",
     "survivorship-bias",
     "pre-training",
@@ -59,6 +57,8 @@
     "message-passing",
     "nlp-finance",
     "correlation",
-    "model-batching"
+    "model-batching",
+    "fundamental-analysis",
+    "content-moderation"
   ]
 }
