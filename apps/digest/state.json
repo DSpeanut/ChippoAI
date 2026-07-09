@@ -1,7 +1,5 @@
 {
   "recent": [
-    "pre-training",
-    "one-hot-encoding",
     "nosql",
     "logistic-regression-stats",
     "interaction-features",
@@ -59,6 +57,8 @@
     "fundamental-analysis",
     "content-moderation",
     "gradient-boosting",
-    "svr"
+    "svr",
+    "gans",
+    "rmse-metric"
   ]
 }
