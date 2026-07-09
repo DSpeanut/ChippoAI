@@ -1,7 +1,5 @@
 {
   "recent": [
-    "nosql",
-    "logistic-regression-stats",
     "interaction-features",
     "convex-optimization-portfolio",
     "instruction-tuning",
@@ -59,6 +57,8 @@
     "gradient-boosting",
     "svr",
     "gans",
-    "rmse-metric"
+    "rmse-metric",
+    "parameter-servers",
+    "concept-drift"
   ]
 }
