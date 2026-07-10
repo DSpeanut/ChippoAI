@@ -1,7 +1,5 @@
 {
   "recent": [
-    "instruction-tuning",
-    "kl-divergence",
     "rest-api-serving",
     "mode",
     "mcp",
@@ -59,6 +57,8 @@
     "parameter-servers",
     "concept-drift",
     "agent-loop",
-    "gpt-4v"
+    "gpt-4v",
+    "normalizing-flows",
+    "causal-lm"
   ]
 }
