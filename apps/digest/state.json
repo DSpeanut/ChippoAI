@@ -1,7 +1,5 @@
 {
   "recent": [
-    "interaction-features",
-    "convex-optimization-portfolio",
     "instruction-tuning",
     "kl-divergence",
     "rest-api-serving",
@@ -59,6 +57,8 @@
     "gans",
     "rmse-metric",
     "parameter-servers",
-    "concept-drift"
+    "concept-drift",
+    "agent-loop",
+    "gpt-4v"
   ]
 }
