@@ -1,7 +1,5 @@
 {
   "recent": [
-    "mcp",
-    "ddpg",
     "universal-approximation-theorem",
     "yield-curve",
     "distributed-training",
@@ -59,6 +57,8 @@
     "normalizing-flows",
     "causal-lm",
     "masked-lm",
-    "mann-whitney-u"
+    "mann-whitney-u",
+    "alternative-data",
+    "jackknife"
   ]
 }
