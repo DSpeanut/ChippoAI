@@ -1,7 +1,5 @@
 {
   "recent": [
-    "rest-api-serving",
-    "mode",
     "mcp",
     "ddpg",
     "universal-approximation-theorem",
@@ -59,6 +57,8 @@
     "agent-loop",
     "gpt-4v",
     "normalizing-flows",
-    "causal-lm"
+    "causal-lm",
+    "masked-lm",
+    "mann-whitney-u"
   ]
 }
