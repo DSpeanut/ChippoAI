@@ -1,7 +1,5 @@
 {
   "recent": [
-    "universal-approximation-theorem",
-    "yield-curve",
     "distributed-training",
     "reranking",
     "quality-factor",
@@ -59,6 +57,8 @@
     "masked-lm",
     "mann-whitney-u",
     "alternative-data",
-    "jackknife"
+    "jackknife",
+    "greeks",
+    "ml-risk-models"
   ]
 }
