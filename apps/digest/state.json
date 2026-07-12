@@ -1,7 +1,5 @@
 {
   "recent": [
-    "distributed-training",
-    "reranking",
     "quality-factor",
     "cross-entropy",
     "llamaindex",
@@ -59,6 +57,8 @@
     "alternative-data",
     "jackknife",
     "greeks",
-    "ml-risk-models"
+    "ml-risk-models",
+    "causal-inference",
+    "ab-testing"
   ]
 }
