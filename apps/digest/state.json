@@ -1,7 +1,5 @@
 {
   "recent": [
-    "quality-factor",
-    "cross-entropy",
     "llamaindex",
     "rouge",
     "lasso-regression",
@@ -59,6 +57,8 @@
     "greeks",
     "ml-risk-models",
     "causal-inference",
-    "ab-testing"
+    "ab-testing",
+    "kl-divergence",
+    "outlier-detection"
   ]
 }
