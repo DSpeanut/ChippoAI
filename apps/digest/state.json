@@ -1,7 +1,5 @@
 {
   "recent": [
-    "llamaindex",
-    "rouge",
     "lasso-regression",
     "pca",
     "convolution-operation",
@@ -59,6 +57,8 @@
     "causal-inference",
     "ab-testing",
     "kl-divergence",
-    "outlier-detection"
+    "outlier-detection",
+    "stress-testing",
+    "sql-fundamentals"
   ]
 }
