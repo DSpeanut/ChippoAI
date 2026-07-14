@@ -1,7 +1,5 @@
 {
   "recent": [
-    "lasso-regression",
-    "pca",
     "convolution-operation",
     "few-shot-prompting",
     "matrix-factorization",
@@ -59,6 +57,8 @@
     "kl-divergence",
     "outlier-detection",
     "stress-testing",
-    "sql-fundamentals"
+    "sql-fundamentals",
+    "naive-bayes",
+    "langchain"
   ]
 }
