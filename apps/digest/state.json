@@ -1,7 +1,5 @@
 {
   "recent": [
-    "convolution-operation",
-    "few-shot-prompting",
     "matrix-factorization",
     "edge-deployment",
     "correlation-risk",
@@ -59,6 +57,8 @@
     "stress-testing",
     "sql-fundamentals",
     "naive-bayes",
-    "langchain"
+    "langchain",
+    "one-hot-encoding",
+    "low-volatility-factor"
   ]
 }
