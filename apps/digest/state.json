@@ -1,7 +1,5 @@
 {
   "recent": [
-    "correlation-risk",
-    "visualization-techniques",
     "bayesian-vs-frequentist",
     "momentum-factor",
     "stratified-sampling",
@@ -59,6 +57,8 @@
     "one-hot-encoding",
     "low-volatility-factor",
     "polynomial-regression",
-    "qda"
+    "qda",
+    "glove",
+    "randomized-control-trials"
   ]
 }
