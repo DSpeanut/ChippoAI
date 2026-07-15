@@ -1,7 +1,5 @@
 {
   "recent": [
-    "matrix-factorization",
-    "edge-deployment",
     "correlation-risk",
     "visualization-techniques",
     "bayesian-vs-frequentist",
@@ -59,6 +57,8 @@
     "naive-bayes",
     "langchain",
     "one-hot-encoding",
-    "low-volatility-factor"
+    "low-volatility-factor",
+    "polynomial-regression",
+    "qda"
   ]
 }
