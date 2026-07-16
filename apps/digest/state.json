@@ -1,7 +1,5 @@
 {
   "recent": [
-    "stratified-sampling",
-    "layer-norm",
     "kurtosis",
     "feature-stores",
     "credit-spread",
@@ -59,6 +57,8 @@
     "glove",
     "randomized-control-trials",
     "k-nearest-neighbors",
-    "llm-logging"
+    "llm-logging",
+    "clip",
+    "chain-of-thought"
   ]
 }
