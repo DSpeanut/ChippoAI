@@ -1,7 +1,5 @@
 {
   "recent": [
-    "credit-spread",
-    "capm",
     "backpropagation",
     "stationarity",
     "reranking-systems",
@@ -59,6 +57,8 @@
     "clip",
     "chain-of-thought",
     "variance",
-    "autocorrelation"
+    "autocorrelation",
+    "swaps",
+    "q-learning"
   ]
 }
