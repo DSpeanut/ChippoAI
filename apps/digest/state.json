@@ -1,7 +1,5 @@
 {
   "recent": [
-    "kurtosis",
-    "feature-stores",
     "credit-spread",
     "capm",
     "backpropagation",
@@ -59,6 +57,8 @@
     "k-nearest-neighbors",
     "llm-logging",
     "clip",
-    "chain-of-thought"
+    "chain-of-thought",
+    "variance",
+    "autocorrelation"
   ]
 }
