@@ -1,7 +1,5 @@
 {
   "recent": [
-    "backpropagation",
-    "stationarity",
     "reranking-systems",
     "stemming-lemmatization",
     "cross-entropy-loss",
@@ -59,6 +57,8 @@
     "variance",
     "autocorrelation",
     "swaps",
-    "q-learning"
+    "q-learning",
+    "rag",
+    "simple-linear-regression-stats"
   ]
 }
