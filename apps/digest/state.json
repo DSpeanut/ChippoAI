@@ -1,7 +1,5 @@
 {
   "recent": [
-    "reranking-systems",
-    "stemming-lemmatization",
     "cross-entropy-loss",
     "rmsprop",
     "mcmc",
@@ -59,6 +57,8 @@
     "swaps",
     "q-learning",
     "rag",
-    "simple-linear-regression-stats"
+    "simple-linear-regression-stats",
+    "vector-databases",
+    "embeddings-as-features"
   ]
 }
