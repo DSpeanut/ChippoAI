@@ -1,7 +1,5 @@
 {
   "recent": [
-    "mcmc",
-    "dqn",
     "bertscore",
     "json-mode",
     "llm-as-judge",
@@ -59,6 +57,8 @@
     "vector-databases",
     "embeddings-as-features",
     "interaction-features",
-    "autoencoders"
+    "autoencoders",
+    "plan-and-execute",
+    "seq2seq"
   ]
 }
