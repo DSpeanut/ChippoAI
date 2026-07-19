@@ -1,7 +1,5 @@
 {
   "recent": [
-    "cross-entropy-loss",
-    "rmsprop",
     "mcmc",
     "dqn",
     "bertscore",
@@ -59,6 +57,8 @@
     "rag",
     "simple-linear-regression-stats",
     "vector-databases",
-    "embeddings-as-features"
+    "embeddings-as-features",
+    "interaction-features",
+    "autoencoders"
   ]
 }
