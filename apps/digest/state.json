@@ -1,7 +1,5 @@
 {
   "recent": [
-    "bertscore",
-    "json-mode",
     "llm-as-judge",
     "confounding-variables",
     "tool-calling-patterns",
@@ -59,6 +57,8 @@
     "interaction-features",
     "autoencoders",
     "plan-and-execute",
-    "seq2seq"
+    "seq2seq",
+    "futures",
+    "mdp"
   ]
 }
