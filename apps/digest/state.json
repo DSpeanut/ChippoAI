@@ -1,7 +1,5 @@
 {
   "recent": [
-    "llm-as-judge",
-    "confounding-variables",
     "tool-calling-patterns",
     "emergent-abilities",
     "data-lakes",
@@ -59,6 +57,8 @@
     "plan-and-execute",
     "seq2seq",
     "futures",
-    "mdp"
+    "mdp",
+    "norms",
+    "anova"
   ]
 }
