@@ -1,7 +1,5 @@
 {
   "recent": [
-    "tool-calling-patterns",
-    "emergent-abilities",
     "data-lakes",
     "bivariate-analysis",
     "message-passing",
@@ -59,6 +57,8 @@
     "futures",
     "mdp",
     "norms",
-    "anova"
+    "anova",
+    "bayesian-vs-frequentist",
+    "content-based-filtering"
   ]
 }
