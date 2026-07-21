@@ -1,7 +1,5 @@
 {
   "recent": [
-    "data-lakes",
-    "bivariate-analysis",
     "message-passing",
     "nlp-finance",
     "correlation",
@@ -59,6 +57,8 @@
     "norms",
     "anova",
     "bayesian-vs-frequentist",
-    "content-based-filtering"
+    "content-based-filtering",
+    "lookahead-bias",
+    "lightgbm"
   ]
 }
