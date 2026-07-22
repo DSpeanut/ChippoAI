@@ -1,7 +1,5 @@
 {
   "recent": [
-    "correlation",
-    "model-batching",
     "fundamental-analysis",
     "content-moderation",
     "gradient-boosting",
@@ -59,6 +57,8 @@
     "lookahead-bias",
     "lightgbm",
     "skewness",
-    "lambda-architecture"
+    "lambda-architecture",
+    "search-ranking-system",
+    "statistical-power"
   ]
 }
