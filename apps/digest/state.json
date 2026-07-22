@@ -1,7 +1,5 @@
 {
   "recent": [
-    "message-passing",
-    "nlp-finance",
     "correlation",
     "model-batching",
     "fundamental-analysis",
@@ -59,6 +57,8 @@
     "bayesian-vs-frequentist",
     "content-based-filtering",
     "lookahead-bias",
-    "lightgbm"
+    "lightgbm",
+    "skewness",
+    "lambda-architecture"
   ]
 }
