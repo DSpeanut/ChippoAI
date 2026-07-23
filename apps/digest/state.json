@@ -1,7 +1,5 @@
 {
   "recent": [
-    "fundamental-analysis",
-    "content-moderation",
     "gradient-boosting",
     "svr",
     "gans",
@@ -59,6 +57,8 @@
     "skewness",
     "lambda-architecture",
     "search-ranking-system",
-    "statistical-power"
+    "statistical-power",
+    "dcf-analysis",
+    "memory-architectures"
   ]
 }
