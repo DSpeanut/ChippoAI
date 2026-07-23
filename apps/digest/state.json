@@ -1,7 +1,5 @@
 {
   "recent": [
-    "gradient-boosting",
-    "svr",
     "gans",
     "rmse-metric",
     "parameter-servers",
@@ -59,6 +57,8 @@
     "search-ranking-system",
     "statistical-power",
     "dcf-analysis",
-    "memory-architectures"
+    "memory-architectures",
+    "universal-approximation-theorem",
+    "reranking-systems"
   ]
 }
