@@ -1,7 +1,5 @@
 {
   "recent": [
-    "gans",
-    "rmse-metric",
     "parameter-servers",
     "concept-drift",
     "agent-loop",
@@ -59,6 +57,8 @@
     "dcf-analysis",
     "memory-architectures",
     "universal-approximation-theorem",
-    "reranking-systems"
+    "reranking-systems",
+    "data-sources",
+    "information-ratio"
   ]
 }
