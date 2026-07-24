@@ -1,7 +1,5 @@
 {
   "recent": [
-    "parameter-servers",
-    "concept-drift",
     "agent-loop",
     "gpt-4v",
     "normalizing-flows",
@@ -59,6 +57,8 @@
     "universal-approximation-theorem",
     "reranking-systems",
     "data-sources",
-    "information-ratio"
+    "information-ratio",
+    "short-term-memory",
+    "robust-optimization"
   ]
 }
