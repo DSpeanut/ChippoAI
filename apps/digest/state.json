@@ -1,7 +1,5 @@
 {
   "recent": [
-    "normalizing-flows",
-    "causal-lm",
     "masked-lm",
     "mann-whitney-u",
     "alternative-data",
@@ -59,6 +57,8 @@
     "short-term-memory",
     "robust-optimization",
     "rmse-metric",
-    "pca-math"
+    "pca-math",
+    "long-term-memory",
+    "dependency-parsing"
   ]
 }
