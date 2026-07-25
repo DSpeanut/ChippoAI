@@ -1,7 +1,5 @@
 {
   "recent": [
-    "agent-loop",
-    "gpt-4v",
     "normalizing-flows",
     "causal-lm",
     "masked-lm",
@@ -59,6 +57,8 @@
     "data-sources",
     "information-ratio",
     "short-term-memory",
-    "robust-optimization"
+    "robust-optimization",
+    "rmse-metric",
+    "pca-math"
   ]
 }
