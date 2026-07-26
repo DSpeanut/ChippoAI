@@ -1,7 +1,5 @@
 {
   "recent": [
-    "alternative-data",
-    "jackknife",
     "greeks",
     "ml-risk-models",
     "causal-inference",
@@ -59,6 +57,8 @@
     "long-term-memory",
     "dependency-parsing",
     "adam-optimizer",
-    "hierarchical-clustering"
+    "hierarchical-clustering",
+    "distributions-continuous",
+    "sgd"
   ]
 }
