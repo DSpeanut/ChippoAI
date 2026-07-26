@@ -1,7 +1,5 @@
 {
   "recent": [
-    "masked-lm",
-    "mann-whitney-u",
     "alternative-data",
     "jackknife",
     "greeks",
@@ -59,6 +57,8 @@
     "rmse-metric",
     "pca-math",
     "long-term-memory",
-    "dependency-parsing"
+    "dependency-parsing",
+    "adam-optimizer",
+    "hierarchical-clustering"
   ]
 }
