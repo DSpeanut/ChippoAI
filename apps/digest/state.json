@@ -1,7 +1,5 @@
 {
   "recent": [
-    "causal-inference",
-    "ab-testing",
     "kl-divergence",
     "outlier-detection",
     "stress-testing",
@@ -59,6 +57,8 @@
     "distributions-continuous",
     "sgd",
     "gradient-boosting",
-    "adf-test"
+    "adf-test",
+    "data-versioning-dvc",
+    "parameter-servers"
   ]
 }
