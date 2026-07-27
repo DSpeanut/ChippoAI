@@ -1,7 +1,5 @@
 {
   "recent": [
-    "greeks",
-    "ml-risk-models",
     "causal-inference",
     "ab-testing",
     "kl-divergence",
@@ -59,6 +57,8 @@
     "adam-optimizer",
     "hierarchical-clustering",
     "distributions-continuous",
-    "sgd"
+    "sgd",
+    "gradient-boosting",
+    "adf-test"
   ]
 }
