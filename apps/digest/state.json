@@ -1,7 +1,5 @@
 {
   "recent": [
-    "stress-testing",
-    "sql-fundamentals",
     "naive-bayes",
     "langchain",
     "one-hot-encoding",
@@ -59,6 +57,8 @@
     "data-versioning-dvc",
     "parameter-servers",
     "correlation",
-    "efficient-frontier"
+    "efficient-frontier",
+    "matrix-factorization",
+    "one-class-svm"
   ]
 }
