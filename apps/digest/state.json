@@ -1,7 +1,5 @@
 {
   "recent": [
-    "kl-divergence",
-    "outlier-detection",
     "stress-testing",
     "sql-fundamentals",
     "naive-bayes",
@@ -59,6 +57,8 @@
     "gradient-boosting",
     "adf-test",
     "data-versioning-dvc",
-    "parameter-servers"
+    "parameter-servers",
+    "correlation",
+    "efficient-frontier"
   ]
 }
