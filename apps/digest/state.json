@@ -1,7 +1,5 @@
 {
   "recent": [
-    "naive-bayes",
-    "langchain",
     "one-hot-encoding",
     "low-volatility-factor",
     "polynomial-regression",
@@ -59,6 +57,8 @@
     "correlation",
     "efficient-frontier",
     "matrix-factorization",
-    "one-class-svm"
+    "one-class-svm",
+    "llm-benchmarks",
+    "bleu"
   ]
 }
