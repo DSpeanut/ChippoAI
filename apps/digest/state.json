@@ -1,7 +1,5 @@
 {
   "recent": [
-    "one-hot-encoding",
-    "low-volatility-factor",
     "polynomial-regression",
     "qda",
     "glove",
@@ -59,6 +57,8 @@
     "matrix-factorization",
     "one-class-svm",
     "llm-benchmarks",
-    "bleu"
+    "bleu",
+    "tool-calling-patterns",
+    "mann-whitney-u"
   ]
 }
