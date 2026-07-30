@@ -1,7 +1,5 @@
 {
   "recent": [
-    "glove",
-    "randomized-control-trials",
     "k-nearest-neighbors",
     "llm-logging",
     "clip",
@@ -59,6 +57,8 @@
     "tool-calling-patterns",
     "mann-whitney-u",
     "undersampling",
-    "workflow-orchestration"
+    "workflow-orchestration",
+    "neural-network-architecture",
+    "risk-parity"
   ]
 }
