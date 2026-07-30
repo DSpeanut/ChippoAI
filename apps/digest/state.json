@@ -1,7 +1,5 @@
 {
   "recent": [
-    "polynomial-regression",
-    "qda",
     "glove",
     "randomized-control-trials",
     "k-nearest-neighbors",
@@ -59,6 +57,8 @@
     "llm-benchmarks",
     "bleu",
     "tool-calling-patterns",
-    "mann-whitney-u"
+    "mann-whitney-u",
+    "undersampling",
+    "workflow-orchestration"
   ]
 }
