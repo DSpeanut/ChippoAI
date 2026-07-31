@@ -1,7 +1,5 @@
 {
   "recent": [
-    "k-nearest-neighbors",
-    "llm-logging",
     "clip",
     "chain-of-thought",
     "variance",
@@ -59,6 +57,8 @@
     "undersampling",
     "workflow-orchestration",
     "neural-network-architecture",
-    "risk-parity"
+    "risk-parity",
+    "vision-language-models",
+    "bert-architecture"
   ]
 }
