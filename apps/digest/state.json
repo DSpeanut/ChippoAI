@@ -1,7 +1,5 @@
 {
   "recent": [
-    "clip",
-    "chain-of-thought",
     "variance",
     "autocorrelation",
     "swaps",
@@ -59,6 +57,8 @@
     "neural-network-architecture",
     "risk-parity",
     "vision-language-models",
-    "bert-architecture"
+    "bert-architecture",
+    "fasttext",
+    "return-prediction-ml"
   ]
 }
