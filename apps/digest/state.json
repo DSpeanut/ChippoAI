@@ -1,7 +1,5 @@
 {
   "recent": [
-    "variance",
-    "autocorrelation",
     "swaps",
     "q-learning",
     "rag",
@@ -59,6 +57,8 @@
     "vision-language-models",
     "bert-architecture",
     "fasttext",
-    "return-prediction-ml"
+    "return-prediction-ml",
+    "interest-rate-models",
+    "activation-functions"
   ]
 }
