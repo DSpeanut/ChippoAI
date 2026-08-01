@@ -1,7 +1,5 @@
 {
   "recent": [
-    "swaps",
-    "q-learning",
     "rag",
     "simple-linear-regression-stats",
     "vector-databases",
@@ -59,6 +57,8 @@
     "fasttext",
     "return-prediction-ml",
     "interest-rate-models",
-    "activation-functions"
+    "activation-functions",
+    "adamw",
+    "benchmark-selection"
   ]
 }
