@@ -1,7 +1,5 @@
 {
   "recent": [
-    "vector-databases",
-    "embeddings-as-features",
     "interaction-features",
     "autoencoders",
     "plan-and-execute",
@@ -59,6 +57,8 @@
     "adamw",
     "benchmark-selection",
     "etl-vs-elt",
-    "transfer-learning"
+    "transfer-learning",
+    "model-batching",
+    "swaps"
   ]
 }
