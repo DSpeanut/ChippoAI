@@ -1,7 +1,5 @@
 {
   "recent": [
-    "interaction-features",
-    "autoencoders",
     "plan-and-execute",
     "seq2seq",
     "futures",
@@ -59,6 +57,8 @@
     "etl-vs-elt",
     "transfer-learning",
     "model-batching",
-    "swaps"
+    "swaps",
+    "causal-inference",
+    "claude-agent-sdk"
   ]
 }
