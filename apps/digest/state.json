@@ -1,7 +1,5 @@
 {
   "recent": [
-    "plan-and-execute",
-    "seq2seq",
     "futures",
     "mdp",
     "norms",
@@ -59,6 +57,8 @@
     "model-batching",
     "swaps",
     "causal-inference",
-    "claude-agent-sdk"
+    "claude-agent-sdk",
+    "data-warehouses",
+    "black-litterman"
   ]
 }
