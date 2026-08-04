@@ -1,7 +1,5 @@
 {
   "recent": [
-    "norms",
-    "anova",
     "bayesian-vs-frequentist",
     "content-based-filtering",
     "lookahead-bias",
@@ -59,6 +57,8 @@
     "data-warehouses",
     "black-litterman",
     "t-test",
-    "mean-reversion"
+    "mean-reversion",
+    "umap",
+    "hdbscan"
   ]
 }
