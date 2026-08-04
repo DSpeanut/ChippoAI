@@ -1,7 +1,5 @@
 {
   "recent": [
-    "futures",
-    "mdp",
     "norms",
     "anova",
     "bayesian-vs-frequentist",
@@ -59,6 +57,8 @@
     "causal-inference",
     "claude-agent-sdk",
     "data-warehouses",
-    "black-litterman"
+    "black-litterman",
+    "t-test",
+    "mean-reversion"
   ]
 }
