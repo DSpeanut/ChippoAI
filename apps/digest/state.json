@@ -1,7 +1,5 @@
 {
   "recent": [
-    "bayesian-vs-frequentist",
-    "content-based-filtering",
     "lookahead-bias",
     "lightgbm",
     "skewness",
@@ -59,6 +57,8 @@
     "t-test",
     "mean-reversion",
     "umap",
-    "hdbscan"
+    "hdbscan",
+    "grid-search",
+    "glove"
   ]
 }
