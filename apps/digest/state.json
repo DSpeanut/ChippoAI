@@ -1,7 +1,5 @@
 {
   "recent": [
-    "lookahead-bias",
-    "lightgbm",
     "skewness",
     "lambda-architecture",
     "search-ranking-system",
@@ -59,6 +57,8 @@
     "umap",
     "hdbscan",
     "grid-search",
-    "glove"
+    "glove",
+    "hinge-loss",
+    "function-calling"
   ]
 }
