@@ -1,7 +1,5 @@
 {
   "recent": [
-    "skewness",
-    "lambda-architecture",
     "search-ranking-system",
     "statistical-power",
     "dcf-analysis",
@@ -59,6 +57,8 @@
     "grid-search",
     "glove",
     "hinge-loss",
-    "function-calling"
+    "function-calling",
+    "interaction-features",
+    "univariate-analysis"
   ]
 }
