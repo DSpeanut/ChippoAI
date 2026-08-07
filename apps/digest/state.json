@@ -1,7 +1,5 @@
 {
   "recent": [
-    "dcf-analysis",
-    "memory-architectures",
     "universal-approximation-theorem",
     "reranking-systems",
     "data-sources",
@@ -59,6 +57,8 @@
     "interaction-features",
     "univariate-analysis",
     "rmsprop",
-    "random-forest"
+    "random-forest",
+    "lda-dimensionality",
+    "correlation-risk"
   ]
 }
