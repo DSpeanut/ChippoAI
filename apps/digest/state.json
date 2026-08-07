@@ -1,7 +1,5 @@
 {
   "recent": [
-    "search-ranking-system",
-    "statistical-power",
     "dcf-analysis",
     "memory-architectures",
     "universal-approximation-theorem",
@@ -59,6 +57,8 @@
     "hinge-loss",
     "function-calling",
     "interaction-features",
-    "univariate-analysis"
+    "univariate-analysis",
+    "rmsprop",
+    "random-forest"
   ]
 }
