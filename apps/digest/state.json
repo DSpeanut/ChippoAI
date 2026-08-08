@@ -1,7 +1,5 @@
 {
   "recent": [
-    "universal-approximation-theorem",
-    "reranking-systems",
     "data-sources",
     "information-ratio",
     "short-term-memory",
@@ -59,6 +57,8 @@
     "rmsprop",
     "random-forest",
     "lda-dimensionality",
-    "correlation-risk"
+    "correlation-risk",
+    "datetime-features",
+    "curriculum-learning"
   ]
 }
