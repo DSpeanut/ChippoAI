@@ -1,7 +1,5 @@
 {
   "recent": [
-    "data-sources",
-    "information-ratio",
     "short-term-memory",
     "robust-optimization",
     "rmse-metric",
@@ -59,6 +57,8 @@
     "lda-dimensionality",
     "correlation-risk",
     "datetime-features",
-    "curriculum-learning"
+    "curriculum-learning",
+    "jackknife",
+    "data-type-casting"
   ]
 }
