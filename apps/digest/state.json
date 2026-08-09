@@ -1,7 +1,5 @@
 {
   "recent": [
-    "rmse-metric",
-    "pca-math",
     "long-term-memory",
     "dependency-parsing",
     "adam-optimizer",
@@ -59,6 +57,8 @@
     "jackknife",
     "data-type-casting",
     "kurtosis",
-    "rlhf"
+    "rlhf",
+    "emergent-abilities",
+    "law-of-large-numbers"
   ]
 }
