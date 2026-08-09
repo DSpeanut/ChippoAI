@@ -1,7 +1,5 @@
 {
   "recent": [
-    "short-term-memory",
-    "robust-optimization",
     "rmse-metric",
     "pca-math",
     "long-term-memory",
@@ -59,6 +57,8 @@
     "datetime-features",
     "curriculum-learning",
     "jackknife",
-    "data-type-casting"
+    "data-type-casting",
+    "kurtosis",
+    "rlhf"
   ]
 }
