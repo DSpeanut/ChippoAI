@@ -1,7 +1,5 @@
 {
   "recent": [
-    "long-term-memory",
-    "dependency-parsing",
     "adam-optimizer",
     "hierarchical-clustering",
     "distributions-continuous",
@@ -59,6 +57,8 @@
     "kurtosis",
     "rlhf",
     "emergent-abilities",
-    "law-of-large-numbers"
+    "law-of-large-numbers",
+    "glm",
+    "q-learning"
   ]
 }
