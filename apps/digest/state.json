@@ -1,7 +1,5 @@
 {
   "recent": [
-    "distributions-continuous",
-    "sgd",
     "gradient-boosting",
     "adf-test",
     "data-versioning-dvc",
@@ -59,6 +57,8 @@
     "glm",
     "q-learning",
     "ridge-regression",
-    "mcmc"
+    "mcmc",
+    "gpt-architecture",
+    "causal-lm"
   ]
 }
