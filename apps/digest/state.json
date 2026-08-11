@@ -1,7 +1,5 @@
 {
   "recent": [
-    "gradient-boosting",
-    "adf-test",
     "data-versioning-dvc",
     "parameter-servers",
     "correlation",
@@ -59,6 +57,8 @@
     "ridge-regression",
     "mcmc",
     "gpt-architecture",
-    "causal-lm"
+    "causal-lm",
+    "gcn",
+    "data-parallelism"
   ]
 }
