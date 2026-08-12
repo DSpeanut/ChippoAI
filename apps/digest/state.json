@@ -1,7 +1,5 @@
 {
   "recent": [
-    "correlation",
-    "efficient-frontier",
     "matrix-factorization",
     "one-class-svm",
     "llm-benchmarks",
@@ -59,6 +57,8 @@
     "gcn",
     "data-parallelism",
     "regime-detection",
-    "cvar"
+    "cvar",
+    "convex-optimization-portfolio",
+    "long-term-memory"
   ]
 }
