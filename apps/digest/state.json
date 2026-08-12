@@ -1,7 +1,5 @@
 {
   "recent": [
-    "data-versioning-dvc",
-    "parameter-servers",
     "correlation",
     "efficient-frontier",
     "matrix-factorization",
@@ -59,6 +57,8 @@
     "gpt-architecture",
     "causal-lm",
     "gcn",
-    "data-parallelism"
+    "data-parallelism",
+    "regime-detection",
+    "cvar"
   ]
 }
