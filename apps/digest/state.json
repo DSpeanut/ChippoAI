@@ -1,7 +1,5 @@
 {
   "recent": [
-    "llm-benchmarks",
-    "bleu",
     "tool-calling-patterns",
     "mann-whitney-u",
     "undersampling",
@@ -59,6 +57,8 @@
     "convex-optimization-portfolio",
     "long-term-memory",
     "map-estimation",
-    "lof"
+    "lof",
+    "matrix-factorization",
+    "duration"
   ]
 }
