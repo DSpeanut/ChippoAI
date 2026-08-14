@@ -1,7 +1,5 @@
 {
   "recent": [
-    "undersampling",
-    "workflow-orchestration",
     "neural-network-architecture",
     "risk-parity",
     "vision-language-models",
@@ -59,6 +57,8 @@
     "matrix-factorization",
     "duration",
     "effect-size",
-    "greeks"
+    "greeks",
+    "taylor-series",
+    "vaes"
   ]
 }
