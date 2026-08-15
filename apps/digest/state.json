@@ -1,7 +1,5 @@
 {
   "recent": [
-    "neural-network-architecture",
-    "risk-parity",
     "vision-language-models",
     "bert-architecture",
     "fasttext",
@@ -59,6 +57,8 @@
     "effect-size",
     "greeks",
     "taylor-series",
-    "vaes"
+    "vaes",
+    "early-stopping",
+    "market-microstructure"
   ]
 }
